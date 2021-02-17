@@ -40,10 +40,10 @@ def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection)
 
         speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
             auto_detect_source_language_config=auto_detect_source_language_config)
-    elif (languageDetection == "french"):
+    elif (languageDetection == "fr"):
         speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
             language="fr-CA")
-    elif (languageDetection == "english"):
+    elif (languageDetection == "en"):
         speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
             language="en-CA")
     else:
@@ -94,13 +94,16 @@ def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection)
 
 
 def main():
+    select_publish_date_start = "2020-06-12"
+    select_publish_date_end = "2020-06-30"
 
     home_path = '/Users/patrick/'
-    from_azure_file_path = home_path + 'Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline/from_azure/'
-    parkinglot_file_path = home_path + 'Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline/from_azure/parkinglot/'
-    to_hub_file_path = home_path + 'Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline/to_hub/'
-    ready_to_hub_file_path = home_path + 'Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline/to_hub/ready/'
-    done_file_path = home_path + 'Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline/to_hub/done/'
+    base_path = 'Dropbox/clessn-blend/_SharedFolder_clessn-blend/'
+    from_azure_file_path = home_path + base_path + 'from_azure/'
+    parkinglot_file_path = home_path +  base_path + 'from_azure/parkinglot/'
+    to_hub_file_path = home_path +  base_path + 'to_hub/'
+    ready_to_hub_file_path = home_path +  base_path + 'to_hub/ready/'
+    done_file_path = home_path +  base_path + 'to_hub/done/'
 
     p = get_play_list_from_youtube('https://www.youtube.com/playlist?list=PLdgoQ6C3ckQv0XCp8S9zSswMuiss8lvcC')
 
@@ -115,29 +118,39 @@ def main():
     i = 1
 
     for video in p.videos:
-        #if (video.title.find("COVID") != -1):
-            print('\n')
-            print(i)
-            print(video.title)
-            print(video.watch_url)
-            
-            video_uuid = video.watch_url.replace('/','')
-            video_uuid = video_uuid.replace(':','')
-            video_uuid = video_uuid.replace('=','')
-            video_uuid = video_uuid.replace('?','')
-            video_uuid = video_uuid.replace('.','')
+        print('\n')
+        print(i)
+        print(video.title)
+        print(video.watch_url)
 
+        if (video.publish_date.strftime("%Y-%m-%d") < select_publish_date_start or video.publish_date.strftime("%Y-%m-%d") > select_publish_date_end):
+            print("not in wanted date range")
+            continue
+        # </if video not within wanted date range>
+
+        #video_uuid = video.watch_url.replace('/','')
+        #video_uuid = video_uuid.replace(':','')
+        #video_uuid = video_uuid.replace('=','')
+        #video_uuid = video_uuid.replace('?','')
+        #video_uuid = video_uuid.replace('.','')
+        video_uuid = video.watch_url.split("?v=")[2]
+
+        language_list = ['fr', 'en']
+
+        for lang in language_list:
             transctipt_file_path = from_azure_file_path
-            transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+video_uuid+"---"+video.title
+            #transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+video_uuid+"---"+video.title+'.txt'
+            transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+"-"+lang+"-"+video_uuid+'.txt'
             transcript_full_name = transctipt_file_path+transcript_file_name
+            transcript_blng_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+video_uuid+'.txt'
 
-            if (transcript_file_name in file_list_full):
+            if ( {transcript_file_name, transcript_blng_name} & set(file_list_full) != set() ):
                 print('Already transcribed')
             else:
                 print('Downloading video')
                 vid = get_video_from_youtube(video.watch_url)
-                print('Transcribing')
-                transcribed_text = speech_continuous_recognition_with_file('youtubeAudio.wav', languageDetection='french')
+                print('Transcribing in '+lang)
+                transcribed_text = speech_continuous_recognition_with_file('youtubeAudio.wav', languageDetection=lang)
                 if (transcribed_text):
                     f = open(transcript_full_name,"w+") 
                     f.write(' '.join([str(elem) for elem in transcribed_text]))
@@ -147,7 +160,7 @@ def main():
 
             file_list_from_azure = [unicodedata.normalize('NFC', f) for f in os.listdir(from_azure_file_path)]
 
-            print(transcript_file_name)
+            print(transcript_full_name)
 
             if (transcript_file_name in file_list_from_azure): 
                 print('found file')  
@@ -166,21 +179,21 @@ def main():
                     f.write(transcribed_text)
                     f.close()
                 #</if (transcribed_text.split()[0] != 'URL'):>
-                
                 if ("ministre" in words_list[1:200]):
                     print("relevant")
                 else:
                     print("irrelevant")
-                    if (os.path.exists(transcript_full_name)):
-                        os.rename(transcript_full_name, parkinglot_file_path+transcript_file_name)
-            #</if (transcript_file_name in file_list_from_azure):>
+                    #if (os.path.exists(transcript_full_name)):
+                    #    os.rename(transcript_full_name, parkinglot_file_path+transcript_file_name)
+            #</if (transcript_file_name in file_list_from_azure):>               
 
-            if (i==10):
-                break
-            #</if (i==10)>
+        #</for lang in language_list>
 
-            i = i + 1
-        #</if (video.title.find("COVID") != -1):>
+        #if (i==10):
+        #    break
+        #</if (i==10)>
+
+        i = i + 1
     #</for video in p.videos:>
 #</main>
 
