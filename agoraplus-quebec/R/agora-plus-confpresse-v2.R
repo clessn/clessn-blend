@@ -159,6 +159,14 @@ if (mode.backend == "HUB") {
   # C'est pour éviter de lever des suspicions de la part des admins de  
   # l'assnat avec trop de http GET répetitifs trop rapprochés
   ###
+  dfCache.hub <- data.frame(uuid = character(),
+                            created = character(),
+                            modified = character(),
+                            metedata = character(),
+                            eventID = character(),
+                            eventHtml = character(),
+                            stringsAsFactors = FALSE)
+  
   if (mode.dfCacheUpdate != "rebuild" && mode.dfCacheUpdate != "skip") {
     dfCache.hub <- clessnhub::download_table('agoraplus_warehouse_cache_items')
     if (is.null(dfCache.hub)) {
@@ -180,7 +188,25 @@ if (mode.backend == "HUB") {
   ###
   # Récuperer les données Simple et Deep 
   ###
-  if (mode.dfSimpleDataUpdate != "rebuild" && mode.dfSimpleDataUpdate != "skip") {
+  dfSimple.hub <- data.frame(uuid = character(),
+                             created = character(),
+                             modified = character(),
+                             metedata = character(),
+                             eventID = character(),
+                             eventSourceType = character(),
+                             eventURL = character(),
+                             eventDate = character(), 
+                             eventStartTime = character(),
+                             eventEndTime = character(), 
+                             eventTitle = character(), 
+                             eventSubtitle = character(),
+                             eventSentenceCount = character(),
+                             eventParagraphCount = integer(),
+                             eventContent = character(),
+                             eventTranslatedContent = character(),
+                             stringsAsFactors = FALSE)
+
+    if (mode.dfSimpleDataUpdate != "rebuild" && mode.dfSimpleDataUpdate != "skip") {
     dfSimple.hub <- clessnhub::download_table('agoraplus_warehouse_event_items')
     if (is.null(dfSimple.hub)) {
       dfSimple.hub <- data.frame(uuid = character(),
@@ -205,6 +231,31 @@ if (mode.backend == "HUB") {
     dfSimple <- dfSimple.hub[,-c(1:4)]
   }
 
+  
+  dfDeep.hub <- data.frame(uuid = character(),
+                           created = character(),
+                           modified = character(),
+                           metedata = character(),
+                           eventID = character(),
+                           interventionSeqNum = integer(),
+                           speakerFirstName = character(),
+                           speakerLastName = character(),
+                           speakerFullName = character(),
+                           speakerGender = character(),
+                           speakerIsMinister = character(),
+                           speakerType = character(),
+                           speakerParty = character(),
+                           speakerCirconscription = character(),
+                           speakerMedia = character(),
+                           speakerSpeechType = character(),
+                           speakerSpeechLang = character(),
+                           speakerSpeechWordCount = integer(),
+                           speakerSpeechSentenceCount = integer(),
+                           speakerSpeechParagraphCount = integer(),
+                           speakerSpeech = character(),
+                           speakerTranslatedSpeech = character(), 
+                           stringsAsFactors = FALSE)
+  
   if (mode.dfDeepDataUpdate != "rebuild" && mode.dfDeepDataUpdate != "skip") {
     dfDeep.hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items')
     if (is.null(dfDeep.hub)) {
