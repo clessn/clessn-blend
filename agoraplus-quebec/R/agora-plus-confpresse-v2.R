@@ -366,7 +366,7 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
 #####
 
 # Hack here to focus only on one press conf :
-# list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-68309.html")
+#list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
 for (i in 1:length(list.urls)) {
   clessnhub::refresh_token(configuration$token, configuration$url)
@@ -556,7 +556,7 @@ for (i in 1:length(list.urls)) {
               grepl("^Une\\svoix(.*?):", intervention.start) ||
               grepl("^Des\\svoix(.*?):", intervention.start)) &&
              !grepl(",", str_match(intervention.start, "^(.*):")) &&
-             !grepl("cette transcription est une version prél", tolower(intervention.start))) {
+             !grepl("cette transcription est une version prél", tolower(intervention.start)) ) {
           # It's a new person speaking
           first.name <- NA
           last.name <- NA
@@ -640,8 +640,6 @@ for (i in 1:length(list.urls)) {
               # Journalist most likely
             }
             
-            speaker
-            
             if ( nrow(speaker) > 0 ) { ### DÉPUTÉ ###
                   ##cat("we have a politician", last.name, "\n")
               
@@ -649,7 +647,9 @@ for (i in 1:length(list.urls)) {
                   last.name <- trimws(last.name, which = c("both"))
                   if (length(last.name) == 0) last.name <- NA
                   first.name <- speaker[1,]$firstName
-                  gender <- if ( speaker[1,]$isFemale ) "F" else "M"
+                  #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
+                  gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                                      is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
                   if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                     type <- "fonctionnaire"
                     party <- NA
@@ -687,7 +687,10 @@ for (i in 1:length(list.urls)) {
                   if ( nrow(speaker) > 0 ) {
                     # we have a JOURNALIST
                     
-                    gender <- if ( speaker[1,]$isFemale ) "F" else "M"
+                    gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                                        is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                    
+                    #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
                     type <- "journaliste"
                     party <- NA
                     circ <- NA
@@ -701,6 +704,14 @@ for (i in 1:length(list.urls)) {
                       party <- NA
                       circ <- NA
                       media <- NA
+                    }
+                    else {
+                      # ATTENTION : here we have not been able to identify
+                      # Neither the moderator, nor a politician, nor a journalist
+                      if (is.na(first.name)) first.name <- words(str_match(intervention.start, "^(.*):"))[1]
+                      if (is.na(last.name)) last.name <- words(str_match(intervention.start, "^(.*):"))[2]
+                      gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                                          is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
                     }
                   }
                   
