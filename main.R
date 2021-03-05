@@ -1,0 +1,123 @@
+###############################################################################
+################         Script Definitions and Specs        ##################
+###############################################################################
+#                                                                             #
+#                                                                             #
+#                           main-agoraplus-quebec                             #
+#                                                                             #
+#                                                                             #
+#                                                                             #
+###############################################################################
+
+
+###############################################################################
+########################      Functions and Globals      ######################
+###############################################################################
+
+
+###############################################################################
+#   Function : installPackages
+#   This function installs all packages requires in this script and all the
+#   scripts called by this one
+#
+
+installPackages <- function() {
+  # Define the required packages if they are not installed
+  required_packages <- c("stringr", 
+                         "optparse",
+                         "clessn/clessnverse")
+  
+  # Install missing packages
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  
+  if (length(new_packages) >0) {
+    for (p in 1:length(new_packages)) {
+      if ( grepl("\\/", new_packages[p]) ) {
+        devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
+      } else {
+        install.packages(new_packages[p])
+      }  
+    }
+  } 
+  
+  
+  # load the packages
+  # We will not invoque the CLESSN packages with 'library'. The functions 
+  # in the package will have to be called explicitely with the package name
+  # in the prefix : example clessnverse::evaluateRelevanceIndex
+  for (p in 1:length(required_packages)) {
+    if ( !grepl("\\/", required_packages[p]) ) {
+      library(required_packages[p], character.only = TRUE)
+    } else {
+      if (grepl("clessn-hub-r", required_packages[p])) {
+        packagename <- "clessnhub"
+      } else {
+        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
+      }
+    } 
+  } 
+  
+} # </function installPackages>
+
+
+###############################################################################
+#   Globals
+#
+
+###############################################################################
+########################               MAIN              ######################
+###############################################################################
+
+tryCatch( 
+  {
+    installPackages()
+    
+    main_logger <- clessnverse::loginit("main.R", "file")
+
+    clessnverse::logit("======================================", main_logger)
+    clessnverse::logit(paste("Starting init program in main.R", 
+                             "with parms", 
+                             paste(commandArgs(), collapse=' ')), main_logger)
+    
+    clessnverse::version()
+  },
+
+  error = function(e) {
+    clessnverse::logit(paste(e, collapse=''), main_logger)
+    print(e)
+  },
+  
+  finally={
+    clessnverse::logit("Execution of init program terminated", main_logger)
+  }
+)
+
+tryCatch( 
+  {
+    scriptname <- "agora-plus-confpresse-v2.R"
+    logger <- clessnverse::loginit(scriptname, "file")
+    opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+                          hub_update = "update",csv_update = "skip",backend_type = "HUB", hub_env = "dev")
+    
+    clessnverse::logit(paste("launching", scriptname), main_logger)
+    
+    source(paste("./agoraplus-quebec/R/", scriptname, sep=""))
+  },
+  
+  error = function(e) {
+    print(e)
+    clessnverse::logit(paste(scriptname, ":", paste(e, collapse=' ')), main_logger)
+  },
+  
+  finally={
+    clessnverse::logit("Execution of agora-plus-confpresse-v2.R terminated", main_logger)
+    clessnverse::logclose(logger)
+    dfCacheConfPresse <- dfCache
+    dfSimpleConfPresse <- dfSimple
+    dfDeepConfPresse <- dfDeep
+  }
+)
+
+
+clessnverse::logclose(main_logger)
+

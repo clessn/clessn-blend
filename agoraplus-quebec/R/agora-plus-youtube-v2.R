@@ -1,45 +1,126 @@
 ###############################################################################
-##### Install the required packages if they are not installed
-#####
+################         Script Definitions and Specs        ##################
+###############################################################################
+#                                                                             #
+#                                                                             #
+#                            agora-plus-youtube                               #
+#                                                                             #
+#                                                                             #
+#                                                                             #
+###############################################################################
 
-required.packages <- c("textcat", 
-                       "stringr", 
-                       "tidyr", 
-                       "dplyr",
-                       "RCurl", 
-                       "dplyr", 
-                       "cld2", 
-                       "XML", 
-                       "xml2",
-                       "tm",
-                       "tidytext", 
-                       "tibble",
-                       "devtools",
-                       "clessn-verse",
-                       "clessn-hub-r"
-)
 
-### Install missing packages
-new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
+###############################################################################
+########################      Functions and Globals      ######################
+###############################################################################
 
-for (p in 1:length(new.packages)) {
-  if ( grepl("clessn", new.packages[p]) ) {
-    devtools::install_github(paste("clessn/",new.packages[p],sep=""))
-  } else {
-    install.packages(new.packages[p])
-  } 
-}
 
-### load the packages
-### We will not invoque the CLESSN packages with 'library'. The functions 
-### in the package will have to be called explicitely with the package name
-### in the prefix : example clessnverse::evaluateRelevanceIndex
-for (p in 1:length(required.packages)) {
-  if ( !grepl("clessn", required.packages[p]) ) {
-    library(required.packages[p], character.only = TRUE)
+###############################################################################
+### Function : installPackages
+### This function installs all packages requires in this script and all the
+### scripts called by this one
+###
+
+installPackages <- function() {
+  # Define the required packages if they are not installed
+  logit("installPackages: start")
+  logit("installPackages: set required packages")
+  required_packages <- c("stringr", 
+                         "tidyr",
+                         "optparse",
+                         "RCurl", 
+                         "httr",
+                         "jsonlite",
+                         "dplyr", 
+                         "XML", 
+                         "tm",
+                         "cld3",
+                         "textcat",
+                         "tidytext", 
+                         "tibble",
+                         "devtools",
+                         "countrycode",
+                         "clessn/clessnverse",
+                         "clessn/clessn-hub-r",
+                         "ropensci/gender",
+                         "lmullen/genderdata")
+  
+  # Install missing packages
+  logit("installPackages: installing missing packages:")
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  
+  for (p in 1:length(new_packages)) {
+    if ( grepl("\\/", new_packages[p]) ) {
+      logit(paste("installPackages: installing with devtools::install_github", new_packages[p]))
+      devtools::install_github(new_packages[p])
+    } else {
+      logit(paste("installPackages: installing with install.packages", new_packages[p]))
+      install.packages(new_packages[p])
+    }  
   }
+  
+  # load the packages
+  # We will not invoque the CLESSN packages with 'library'. The functions 
+  # in the package will have to be called explicitely with the package name
+  # in the prefix : example clessnverse::evaluateRelevanceIndex
+  for (p in 1:length(required_packages)) {
+    if ( !grepl("\\/", required_packages[p]) ) {
+      logit(paste("installPackages: loading", required_packages[p]))
+      library(required_packages[p], character.only = TRUE)
+    } else {
+      if (grepl("clessn-hub-r", required_packages[p])) {
+        packagename <- "clessnhub"
+      } else {
+        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
+      }
+      logit(paste("installPackages: loading", packagename))
+    }
+  }
+} # </function installPackages>
+
+###############################################################################
+#   Function : loginit, logit and logclose
+#   This function is used to log the script activities into a file for 
+#   automation debug and monitoring purposed
+#
+
+loginit <- function(script) {
+  log_handle <- file(paste("./log/",script,".log",sep=""), open = "at")
+  
+  return(log_handle)
 }
 
+logit <- function(message) {
+  cat(format(Sys.time(), "%Y-%m-%d %X"), "-", .ChildEnv$scriptname, ":", message, "\n", 
+      append = T,
+      file = .ChildEnv$logger)
+}
+
+logclose <- function(log_handle) {
+  close(log_handle)
+}
+
+
+###############################################################################
+#   Globals
+#   .ChildEnv : 
+#   .ChildEnv$scriptname
+#   .ChildEnv$logger
+#
+
+if (!exists(".ChildEnv")) .ChildEnv <- new.env()
+.ChildEnv$scriptname <- "agora-plus-youtube-v2.R"
+.ChildEnv$logger <- loginit(.ChildEnv$scriptname)
+
+
+###############################################################################
+########################               MAIN              ######################
+###############################################################################
+
+
+installPackages()
+
+#logclose(.ChildEnv$logger)
 
 ###############################################################################
 ##### Set the update modes of each database in the HUB
@@ -50,11 +131,11 @@ for (p in 1:length(required.packages)) {
 ##### rebuild : wipes out completely the dataset and rebuilds it from scratch
 ##### skip : does not make any change to the dataset
 #####
-mode.dfCacheUpdate <- "update"
-mode.dfSimpleDataUpdate <- "update"
-mode.dfDeepDataUpdate <- "update"
-mode.QuorumDataUpdate <- "update"
-mode.csvUpdate <- "skip"
+opt_cache_update <- "update"
+opt_simple_update <- "update"
+opt_deep_update <- "update"
+opt_hub_update <- "update"
+opt_csv_update <- "skip"
 
 
 #####
@@ -63,8 +144,8 @@ mode.csvUpdate <- "skip"
 #####         or for datamining and research or messing around
 ##### - HUB : work with the CLESSNHUB data directly : this is prod data
 #####
-#mode.backend <- "CSV"
-mode.backend <- "HUB"
+#opt_backend_type <- "CSV"
+opt_backend_type <- "HUB"
 
 
 
@@ -84,7 +165,7 @@ mode.backend <- "HUB"
 ### each press conference
 ###
 
-dataRootFolder <- "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/video_pipeline"
+dataRootFolder <- "../clessn-blend/_SharedFolder_clessn-blend"
 dataInputFolder <- paste(dataRootFolder, "/to_hub/ready", sep="")
 dataOutputFolder <- paste(dataRootFolder, "/to_hub/done", sep = "")
 fileList <- list.files(dataInputFolder)
@@ -99,12 +180,12 @@ fileList <- list.files(dataInputFolder)
 ### We only do this if we want ro rebuild those datasets from scratch to start fresh
 ### or if then don't exist in the environment of the current R session
 ###
-if ( !exists("dfCache") || mode.dfCacheUpdate == "rebuild" ) 
+if ( !exists("dfCache") || opt_cache_update == "rebuild" ) 
   dfCache <- data.frame(eventID = character(),
                         eventHtml = character(),
                         stringsAsFactors = FALSE)
 
-if ( !exists("dfSimple") || mode.dfSimpleDataUpdate == "rebuild" ) 
+if ( !exists("dfSimple") || opt_simple_update == "rebuild" ) 
   dfSimple <- data.frame(eventID = character(),
                          eventSourceType = character(),
                          eventURL = character(),
@@ -119,7 +200,7 @@ if ( !exists("dfSimple") || mode.dfSimpleDataUpdate == "rebuild" )
                          eventTranslatedContent = character(),
                          stringsAsFactors = FALSE)
 
-if ( !exists("dfDeep") || mode.dfDeepDataUpdate == "rebuild" ) 
+if ( !exists("dfDeep") || opt_deep_update == "rebuild" ) 
   dfDeep <- data.frame(eventID = character(),
                        interventionSeqNum = integer(),
                        speakerFirstName = character(),
@@ -152,10 +233,10 @@ if ( !exists("dfDeep") || mode.dfDeepDataUpdate == "rebuild" )
 #####                 to add relevant data on journalists in the interventions
 #####                 dataset
 #####
-if (mode.backend == "HUB") {
+if (opt_backend_type == "HUB") {
   ### Connect to the HUB
   clessnhub::configure()
-  if (mode.dfCacheUpdate != "rebuild" && mode.dfCacheUpdate != "skip") {  
+  if (opt_cache_update != "rebuild" && opt_cache_update != "skip") {  
     ###
     # Récuperer les données du cache pour ne pas avoir à aller rechercher 
     # sur le site de l'assnat ce qu'on est allé déjà chercher auparavant  
@@ -182,7 +263,7 @@ if (mode.backend == "HUB") {
   ###
   # Récuperer les données Simple et Deep 
   ###
-  if (mode.dfSimpleDataUpdate != "rebuild" && mode.dfSimpleDataUpdate != "skip") {
+  if (opt_simple_update != "rebuild" && opt_simple_update != "skip") {
     dfSimple.hub <- clessnhub::download_table('agoraplus_warehouse_event_items')
     if (is.null(dfSimple.hub)) {
       dfSimple.hub <- data.frame(uuid = character(),
@@ -207,7 +288,7 @@ if (mode.backend == "HUB") {
     dfSimple <- dfSimple.hub[,-c(1:4)]
   }  
   
-  if (mode.dfDeepDataUpdate != "rebuild" && mode.dfDeepDataUpdate != "skip") {
+  if (opt_deep_update != "rebuild" && opt_deep_update != "skip") {
     dfDeep.hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items')
     if (is.null(dfDeep.hub)) {
       dfDeep.hub <- data.frame(uuid = character(),
@@ -243,24 +324,24 @@ if (mode.backend == "HUB") {
   
   journalists <- clessnhub::download_table('warehouse_journalists')
   
-} #if (mode.backend == "HUB")
+} #if (opt_backend_type == "HUB")
 
 
-if (mode.backend == "CSV") {
+if (opt_backend_type == "CSV") {
   
-  if (mode.dfCacheUpdate != "rebuild")
+  if (opt_cache_update != "rebuild")
     dfCache <- read.csv2(file =
                            "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-youtube.csv",
                          #"/Users/patrick/dfCacheAgoraPlus-v3.csv",
                          sep=";", comment.char="#")  
   
-  if (mode.dfSimpleDataUpdate != "rebuild")
+  if (opt_simple_update != "rebuild")
     dfSimple <- read.csv2(file=
                             "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfSimpleAgoraPlus-youtube.csv",
                           #"/Users/patrick/dfSimpleAgoraPlus-v3.csv",
                           sep=";", comment.char="#", encoding = "UTF-8")
   
-  if (mode.dfDeepDataUpdate != "rebuild")
+  if (opt_deep_update != "rebuild")
     dfDeep <- read.csv2(file=
                           "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfDeepAgoraPlus-youtube.csv",
                         #"/Users/patrick/dfDeepAgoraPlus-v3.csv",
@@ -287,7 +368,7 @@ if (mode.backend == "CSV") {
   names(journalists)[names(journalists)=="user_id"] <- "twitterID"
   names(journalists)[names(journalists)=="protected"] <- "twitterAccountProtected"
 
-} #if (mode.backend == "CSV")
+} #if (opt_backend_type == "CSV")
 
 
 #####
@@ -310,7 +391,7 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
 i=1
 
 for (fileName in fileList) {
-  current.id <- str_match(fileName, "^.{10}(.*)---")[2]
+  current.id <- str_match(fileName, "^.{14}(.*).txt")[2]
   
   cat("********************** Transcription YouTube :", current.id, "**********************\n", sep = " ")
   #cat(current.id, "\n")
@@ -336,14 +417,14 @@ for (fileName in fileList) {
   version.finale <- TRUE
 
   if ( version.finale && 
-       ( ((mode.dfSimpleDataUpdate == "update" && !(current.id %in% dfSimple$eventID) ||
-           mode.dfSimpleDataUpdate == "refresh" ||
-           mode.dfSimpleDataUpdate == "rebuild") ||
-          (mode.dfDeepDataUpdate == "update" && !(current.id %in% dfDeep$eventID) ||
-           mode.dfDeepDataUpdate == "refresh" ||
-           mode.dfDeepDataUpdate == "rebuild")) ||
-         ((mode.QuorumDataUpdate == "refresh" ||
-           mode.QuorumDataUpdate == "update") && current.id %in% dfSimple$eventID))
+       ( ((opt_simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
+           opt_simple_update == "refresh" ||
+           opt_simple_update == "rebuild") ||
+          (opt_deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
+           opt_deep_update == "refresh" ||
+           opt_deep_update == "rebuild")) ||
+         ((opt_hub_update == "refresh" ||
+           opt_hub_update == "update") && current.id %in% dfSimple$eventID))
       ) {      
       ###############################
       # Columns of the simple dataset
@@ -552,8 +633,6 @@ for (fileName in fileList) {
             speech.paragraph.count <- speech.paragraph.count + 1
           }
           
-          language <- detect_language(str_replace_all(speech, "[[:punct:]]", ""))
-          
           if ( !(language %in% c("en","fr")) ) {
             language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
             if ( !(language %in% c("english","french")) ) { 
@@ -587,10 +666,10 @@ for (fileName in fileList) {
             
             matching.deep.row.index <- 0
             # Commit a new row if we rebuilt the df from scratch
-            if ( (mode.dfDeepDataUpdate == "rebuild") ||
-                 (mode.dfDeepDataUpdate == "refresh" && 
+            if ( (opt_deep_update == "rebuild") ||
+                 (opt_deep_update == "refresh" && 
                   nrow(dplyr::filter(dfDeep, eventID == current.id & interventionSeqNum == seqnum)) == 0) ||
-                 (mode.dfDeepDataUpdate == "update" && 
+                 (opt_deep_update == "update" && 
                   nrow(dplyr::filter(dfDeep, eventID == current.id & interventionSeqNum == seqnum)) == 0) ) {
               matching.deep.row.index <- nrow(dfDeep) + 1
               dfDeep   <- rbind.data.frame(dfDeep, data.frame(eventID = current.id,
@@ -615,7 +694,7 @@ for (fileName in fileList) {
             
             
             # Update the existing row with primary key eventID*interventionSeqNum  
-            if (mode.dfDeepDataUpdate == "refresh" && 
+            if (opt_deep_update == "refresh" && 
                 nrow(dplyr::filter(dfDeep, eventID == current.id & interventionSeqNum == seqnum)) > 0) {
               matching.deep.row.index <- which(dfDeep$eventID == current.id & dfDeep$interventionSeqNum == seqnum)
               
@@ -643,7 +722,7 @@ for (fileName in fileList) {
               deep.line.to.update <- data.frame()
             }
             
-            if (matching.deep.row.index == 0 && mode.QuorumDataUpdate == "refresh") {
+            if (matching.deep.row.index == 0 && opt_hub_update == "refresh") {
               matching.deep.row.index <- which(dfDeep$eventID == current.id & dfDeep$interventionSeqNum == seqnum)
             }
             
@@ -651,9 +730,9 @@ for (fileName in fileList) {
             ###
             ### If the backend is CLESSNHUB, we have to update the backend
             ### Either with a new record 
-            ### or with an existing record is mode.QuorumDataUpdate == "refresh"
+            ### or with an existing record is opt_hub_update == "refresh"
             ###
-            if ( mode.QuorumDataUpdate != "skip" && mode.backend == "HUB" && matching.deep.row.index > 0) {
+            if ( opt_hub_update != "skip" && opt_backend_type == "HUB" && matching.deep.row.index > 0) {
               matching.hub.row.index <- which(dfDeep.hub$eventID == dfDeep$eventID[matching.deep.row.index] & 
                                                 dfDeep.hub$interventionSeqNum == dfDeep$interventionSeqNum[matching.deep.row.index])
               if (length(matching.hub.row.index) == 0) {
@@ -708,7 +787,7 @@ for (fileName in fileList) {
       if (cached.html) {
         #cat("updating dfCache")
         matching.cache.row.index <- which(dfCache$eventID == current.id)
-        if (mode.dfCacheUpdate == "refresh") {
+        if (opt_cache_update == "refresh") {
           dfCache$eventHtml[matching.cache.row.index] = doc.youtube.original
         }
       } else {
@@ -727,9 +806,9 @@ for (fileName in fileList) {
       ###
       ### If the backend is CLESSNHUB, we have to update the backend
       ### Either with a new record 
-      ### or with an existing record is mode.QuorumDataUpdate == "refresh"
+      ### or with an existing record is opt_hub_update == "refresh"
       ###
-      if ( mode.QuorumDataUpdate != "skip" && mode.backend == "HUB" && matching.cache.row.index > 0) {
+      if ( opt_hub_update != "skip" && opt_backend_type == "HUB" && matching.cache.row.index > 0) {
         matching.hub.row.index <- which(dfCache.hub$eventID == dfCache$eventID[matching.cache.row.index])
         if (length(matching.hub.row.index) == 0) {
           # Here there was no existing observation in dfSimple for the event
@@ -759,7 +838,7 @@ for (fileName in fileList) {
       
       
       matching.simple.row.index <- 0
-      if ( mode.dfSimpleDataUpdate == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current.id)) > 0 ) {
+      if ( opt_simple_update == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current.id)) > 0 ) {
         matching.simple.row.index <- which(dfSimple$eventID == current.id)
         
         dfSimple[matching.simple.row.index,]$eventSourceType = current.source
@@ -775,9 +854,9 @@ for (fileName in fileList) {
         dfSimple[matching.simple.row.index,]$eventTranslatedContent = NA
       }
       
-      if ( (mode.dfSimpleDataUpdate == "rebuild") ||
-           (mode.dfSimpleDataUpdate == "update"  && nrow(dplyr::filter(dfSimple, eventID == current.id)) == 0) ||
-           (mode.dfSimpleDataUpdate == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current.id)) == 0) ) {
+      if ( (opt_simple_update == "rebuild") ||
+           (opt_simple_update == "update"  && nrow(dplyr::filter(dfSimple, eventID == current.id)) == 0) ||
+           (opt_simple_update == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current.id)) == 0) ) {
         
         matching.simple.row.index <- nrow(dfSimple) + 1
         
@@ -795,15 +874,15 @@ for (fileName in fileList) {
                                                           eventTranslatedContent = NA))
       }
       
-      if (matching.simple.row.index == 0 && mode.QuorumDataUpdate == "refresh") {
+      if (matching.simple.row.index == 0 && opt_hub_update == "refresh") {
         matching.simple.row.index <- which(dfSimple$eventID == current.id)
       }
       ###
       ### If the backend is CLESSNHUB, we have to update the backend
       ### Either with a new record 
-      ### or with an existing record is mode.QuorumDataUpdate == "refresh"
+      ### or with an existing record is opt_hub_update == "refresh"
       ###
-      if ( mode.QuorumDataUpdate != "skip" && mode.backend == "HUB" && matching.simple.row.index > 0) {
+      if ( opt_hub_update != "skip" && opt_backend_type == "HUB" && matching.simple.row.index > 0) {
         matching.hub.row.index <- which(dfSimple.hub$eventID == dfSimple$eventID[matching.simple.row.index])
         if (length(matching.hub.row.index) == 0) {
           # Here there was no existing observation in dfSimple for the event
@@ -842,7 +921,7 @@ for (fileName in fileList) {
 
 ######  On trie le dataset par date
 #dfDeep <- dfDeep %>% arrange(eventStartTime)
-if (mode.csvUpdate != "skip") { 
+if (opt_csv_update != "skip") { 
   write.csv2(dfCache, file=
                "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-youtube.csv",
              row.names = FALSE)

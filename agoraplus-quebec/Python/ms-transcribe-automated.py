@@ -1,7 +1,9 @@
 import pytube
+import dropbox
 import pydub
 import azure.cognitiveservices.speech as speechsdk
 import requests
+import datetime
 import time
 import sys
 import re
@@ -91,14 +93,87 @@ def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection)
     return(all_results)
     # </speech_continuous_recognition_with_file>
 
+def list_folder(dbx, folder, subfolder):
+    """List a folder.
+    Return a dict mapping unicode filenames to
+    FileMetadata|FolderMetadata entries.
+    """
+    if (folder == "" and subfolder == ""):
+        path=''
+    else:
+        path = '/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'))
+        while '//' in path:
+            path = path.replace('//', '/')
+        path = path.rstrip('/')
+    try:
+        res = dbx.files_list_folder(path)
+    except dropbox.exceptions.ApiError as err:
+        print('Folder listing failed for', path, '-- assumed empty:', err)
+        return {}
+    else:
+        rv = {}
+        file_list = []
+        for entry in res.entries:
+            rv[entry.name] = entry
+        for file in rv:
+            file_list.append(file)
+        return file_list
+
+def upload(dbx, fullname, folder, subfolder, name, overwrite=False):
+    """Upload a file.
+    Return the request response, or None in case of error.
+    """
+    path = '/%s/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'), name)
+    while '//' in path:
+        path = path.replace('//', '/')
+    mode = (dropbox.files.WriteMode.overwrite
+            if overwrite
+            else dropbox.files.WriteMode.add)
+    mtime = os.path.getmtime(fullname)
+    with open(fullname, 'rb') as f:
+        data = f.read()
+    #with stopwatch('upload %d bytes' % len(data)):
+    try:
+        print('trying to upload')
+        res = dbx.files_upload(
+            data, path, mode,
+            client_modified=datetime.datetime(*time.gmtime(mtime)[:6]),
+            mute=True)
+    except dropbox.exceptions.ApiError as err:
+        print('*** API error', err)
+        return None
+    print('uploaded as', res.name.encode('utf8'))
+    return res
+
+
+def download(dbx, folder, subfolder, name):
+    """Download a file.
+    Return the bytes of the file, or None if it doesn't exist.
+    """
+    path = '/%s/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'), name)
+    while '//' in path:
+        path = path.replace('//', '/')
+    #with stopwatch('download'):
+    try:
+        md, res = dbx.files_download(path)
+    except dropbox.exceptions.HttpError as err:
+        print('*** HTTP error', err)
+        return None
+    data = res.content
+    print(len(data), 'bytes; md:', md)
+    return data
 
 
 def main():
     select_publish_date_start = "2021-03-02"
     select_publish_date_end = "2021-03-02"
 
-    home_path = '/Users/patrick/'
-    base_path = 'Dropbox/clessn-blend/_SharedFolder_clessn-blend/'
+    TOKEN = '5C7ebqb9vcIAAAAAAAAAASJgLBAJLRjBwThwHLkuZIUmv7VgIdEXHS7A29x96JQc'
+    dbx = dropbox.Dropbox(oauth2_access_token=TOKEN)
+
+
+    home_path = ''
+    base_path = '/'
     from_azure_file_path = home_path + base_path + 'from_azure/'
     parkinglot_file_path = home_path +  base_path + 'from_azure/parkinglot/'
     to_hub_file_path = home_path +  base_path + 'to_hub/'
@@ -107,14 +182,14 @@ def main():
 
     p = get_play_list_from_youtube('https://www.youtube.com/playlist?list=PLdgoQ6C3ckQv0XCp8S9zSswMuiss8lvcC')
 
-    file_list_from_azure = [unicodedata.normalize('NFC', f) for f in os.listdir(from_azure_file_path)]
-    file_list_parkinglot = [unicodedata.normalize('NFC', f) for f in os.listdir(parkinglot_file_path)]
-    file_list_to_hub = [unicodedata.normalize('NFC', f) for f in os.listdir(to_hub_file_path)]
-    file_list_ready_to_hub = [unicodedata.normalize('NFC', f) for f in os.listdir(ready_to_hub_file_path)]
-    file_list_done = [unicodedata.normalize('NFC', f) for f in os.listdir(done_file_path)]
+    file_list_from_azure = list_folder(dbx,base_path,from_azure_file_path)
+    file_list_parkinglot = list_folder(dbx,base_path,parkinglot_file_path)
+    file_list_to_hub = list_folder(dbx,base_path,to_hub_file_path)
+    file_list_ready_to_hub = list_folder(dbx,base_path,ready_to_hub_file_path)
+    file_list_done = list_folder(dbx,base_path,done_file_path)
 
     file_list_full = file_list_from_azure + file_list_parkinglot + file_list_to_hub + file_list_ready_to_hub + file_list_done
-
+    
     i = 1
 
     for video in p.videos:
@@ -135,8 +210,8 @@ def main():
         #video_uuid = video_uuid.replace('.','')
         video_uuid = video.watch_url.split("?v=")[1]
         print(video_uuid)
-        #language_list = ['fr', 'en']
-        language_list = ['bilingual']
+
+        language_list = ['fr','en']
 
         for lang in language_list:
             transctipt_file_path = from_azure_file_path
@@ -153,19 +228,23 @@ def main():
                 print('Transcribing in '+lang)
                 transcribed_text = speech_continuous_recognition_with_file('youtubeAudio.wav', languageDetection=lang)
                 if (transcribed_text):
-                    f = open(transcript_full_name,"w+") 
+                    f = open(transcript_file_name,"w+") 
                     f.write(' '.join([str(elem) for elem in transcribed_text]))
                     f.close()
+                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, False)
+                    os.remove(transcript_file_name)
+
                 os.remove('youtubeAudio.wav')
             # </if (video.title in file_list_full)>
 
-            file_list_from_azure = [unicodedata.normalize('NFC', f) for f in os.listdir(from_azure_file_path)]
+            file_list_from_azure = list_folder(dbx,base_path,from_azure_file_path)
 
             print(transcript_full_name)
 
             if (transcript_file_name in file_list_from_azure): 
                 print('found file')  
-                f = open(transcript_full_name,"r")
+                download(dbx, '', from_azure_file_path, transcript_file_name)
+                f = open(transcript_file_name,"r")
                 transcribed_text = f.read()
                 lower_transcribed_text = transcribed_text.lower()
                 words_list = lower_transcribed_text.split()
@@ -179,6 +258,9 @@ def main():
                     transcribed_text = 'DATE  : ' + video.publish_date.strftime("%Y-%m-%d") + '\n' + transcribed_text
                     f.write(transcribed_text)
                     f.close()
+                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, False)
+                    os.remove(transcript_file_name)
+
                 #</if (transcribed_text.split()[0] != 'URL'):>
                 if ("ministre" in words_list[1:200]):
                     print("relevant")

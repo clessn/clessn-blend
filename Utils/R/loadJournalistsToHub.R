@@ -2,7 +2,7 @@
 ##### Install the required packages if they are not installed
 #####
 
-required.packages <- c("clessn-verse",
+required.packages <- c("clessnverse",
                        "clessn-hub-r",
                        "NLP")
 
@@ -64,27 +64,41 @@ purge_journalists_in_hub <- function(dataset) {
 }
 
 
-
-journalists <- read.csv(
-  "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/journalist_handle.csv",
-  sep=";")
-
-journalists <- journalists %>% rbind(c(NA, 0, "antoine gosselin", "TVA Nouvelles", "PAGosselinTVA", NA, NA, NA, NA, NA))
-journalists <- journalists %>% rbind(c(NA, 1, "gloria henriquez", "Global News", "GloriaMTL", NA, NA, NA, NA, NA))
-journalists <- journalists %>% rbind(c(NA, 0, "marco bélair", "Le Devoir", "MBelairCirino", NA, NA, NA, NA, NA))
-journalists <- journalists %>% rbind(c(NA, 1, "ariane lacoursère", "La Presse", NA, NA, NA, NA, NA, NA))
-journalists <- journalists %>% rbind(c(NA, 0, "philip authier", "Montreal Gazette", "PhilipAuthier", NA, NA, NA, NA, NA))
-journalists <- journalists %>% rbind(c(NA, 1, "angela mckenzie", "CTV", "AMacKenzieCTV", NA, NA, NA, NA, NA))
-
-journalists <- rbind(journalists, data.frame(X=NA,female=NA, author="journaliste", source=NA,
-                                             handle=NA,selfIdJourn=NA,realID=NA,user_id=NA,protected=NA))
-
-journalists$X <- NULL
+migrate_journalists_from_prod_to_dev <- function(dataset) {
+  clessnhub::configure("https://dev-clessn.apps.valeria.science")
+  
+  for (i in 1239:nrow(dataset)) {
+    hubline <- dataset[i,-c(1:4)]
+    hubline <- hubline %>%
+      mutate_if(is.numeric , replace_na, replace = 0) %>%
+      mutate_if(is.character , replace_na, replace = "") %>%
+      mutate_if(is.logical , replace_na, replace = 0)
+    print(hubline)
+    clessnhub::create_item(as.list(hubline), 'warehouse_journalists')
+  }
+}
+# journalists <- read.csv(
+#   "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/journalist_handle.csv",
+#   sep=";")
+# 
+# journalists <- journalists %>% rbind(c(NA, 0, "antoine gosselin", "TVA Nouvelles", "PAGosselinTVA", NA, NA, NA, NA, NA))
+# journalists <- journalists %>% rbind(c(NA, 1, "gloria henriquez", "Global News", "GloriaMTL", NA, NA, NA, NA, NA))
+# journalists <- journalists %>% rbind(c(NA, 0, "marco bélair", "Le Devoir", "MBelairCirino", NA, NA, NA, NA, NA))
+# journalists <- journalists %>% rbind(c(NA, 1, "ariane lacoursère", "La Presse", NA, NA, NA, NA, NA, NA))
+# journalists <- journalists %>% rbind(c(NA, 0, "philip authier", "Montreal Gazette", "PhilipAuthier", NA, NA, NA, NA, NA))
+# journalists <- journalists %>% rbind(c(NA, 1, "angela mckenzie", "CTV", "AMacKenzieCTV", NA, NA, NA, NA, NA))
+# 
+# journalists <- rbind(journalists, data.frame(X=NA,female=NA, author="journaliste", source=NA,
+#                                              handle=NA,selfIdJourn=NA,realID=NA,user_id=NA,protected=NA))
+# 
+# journalists$X <- NULL
 
 clessnhub::configure()
 
-hub_journalists <- clessnhub::download_table('warehouse_journalists')
+prod_journalists <- clessnhub::download_table('warehouse_journalists')
 
 #upload_journalists_to_hub(journalists)
-purge_journalists_in_hub(hub_journalists)
+#purge_journalists_in_hub(hub_journalists)
+migrate_journalists_from_prod_to_dev(prod_journalists)
+
 

@@ -1,149 +1,186 @@
 ###############################################################################
-##### Install the required packages if they are not installed
-#####
+################         Script Definitions and Specs        ##################
+###############################################################################
+#                                                                             #
+#                                                                             #
+#                             agora-plus-europe                               #
+#                                                                             #
+#                                                                             #
+#                                                                             #
+###############################################################################
 
-required_packages <- c("stringr", 
-                       "RCurl", 
-                       "httr",
-                       "jsonlite",
-                       "dplyr", 
-                       "XML", 
-                       "tm",
-                       "tidytext", 
-                       "tibble",
-                       "devtools",
-                       "countrycode",
-                       "clessn/clessnverse",
-                       "clessn/clessn-hub-r",
-                       "ropensci/gender",
-                       "lmullen/genderdata"
-                      )
-
-### Install missing packages
-new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-
-for (p in 1:length(new_packages)) {
-  if ( grepl("\\/", new_packages[p]) ) {
-    devtools::install_github(new_packages[p])
-  } else {
-    install.packages(new_packages[p])
-  }  
-}
 
 ###############################################################################
-##### load the packages
-##### We will not invoque the CLESSN packages with 'library'. The functions 
-##### in the package will have to be called explicitely with the package name
-##### in the prefix : example clessnverse::evaluateRelevanceIndex
-##### 
-for (p in 1:length(required_packages)) {
-  if ( !grepl("\\/", required_packages[p]) ) {
-    library(required_packages[p], character.only = TRUE)
-  } else {
-    if (grepl("clessn-hub-r", required_packages[p])) {
-      packagename <- "clessnhub"
+########################      Functions and Globals      ######################
+###############################################################################
+
+
+###############################################################################
+### Function : installPackages
+### This function installs all packages requires in this script and all the
+### scripts called by this one
+###
+
+installPackages <- function() {
+  # Define the required packages if they are not installed
+  logit("installPackages: start")
+  logit("installPackages: set required packages")
+  required_packages <- c("stringr", 
+                         "tidyr",
+                         "optparse",
+                         "RCurl", 
+                         "httr",
+                         "jsonlite",
+                         "dplyr", 
+                         "XML", 
+                         "tm",
+                         "tidytext", 
+                         "tibble",
+                         "devtools",
+                         "countrycode",
+                         "clessn/clessnverse",
+                         "clessn/clessn-hub-r",
+                         "ropensci/gender",
+                         "lmullen/genderdata")
+  
+  # Install missing packages
+  logit("installPackages: installing missing packages:")
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  
+  for (p in 1:length(new_packages)) {
+    if ( grepl("\\/", new_packages[p]) ) {
+      logit(paste("installPackages: installing with devtools::install_github", new_packages[p]))
+      devtools::install_github(new_packages[p])
     } else {
-      packagename <- str_split(required_packages[p], "\\/")[[1]][2]
-    }
-    library(packagename, character.only = TRUE)
+      logit(paste("installPackages: installing with install.packages", new_packages[p]))
+      install.packages(new_packages[p])
+    }  
   }
+  
+  # load the packages
+  # We will not invoque the CLESSN packages with 'library'. The functions 
+  # in the package will have to be called explicitely with the package name
+  # in the prefix : example clessnverse::evaluateRelevanceIndex
+  for (p in 1:length(required_packages)) {
+    if ( !grepl("\\/", required_packages[p]) ) {
+      logit(paste("installPackages: loading", required_packages[p]))
+      library(required_packages[p], character.only = TRUE)
+    } else {
+      if (grepl("clessn-hub-r", required_packages[p])) {
+        packagename <- "clessnhub"
+      } else {
+        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
+      }
+      logit(paste("installPackages: loading", packagename))
+    }
+  }
+} # </function installPackages>
+
+###############################################################################
+#   Function : loginit, logit and logclose
+#   This function is used to log the script activities into a file for 
+#   automation debug and monitoring purposed
+#
+
+loginit <- function(script) {
+  log_handle <- file(paste("./log/",script,".log",sep=""), open = "at")
+  
+  return(log_handle)
+}
+
+logit <- function(message) {
+  cat(format(Sys.time(), "%Y-%m-%d %X"), "-", .ChildEnv$scriptname, ":", message, "\n", 
+      append = T,
+      file = .ChildEnv$logger)
+}
+
+logclose <- function(log_handle) {
+  close(log_handle)
 }
 
 
 ###############################################################################
-##### Set the update modes of each database in the HUB
-#####
-##### Possible values : update, refresh, rebuild or skip
-##### update : updates the dataset by adding only new observations to it
-##### refresh : refreshes existing observations and adds new observations to the dataset
-##### rebuild : wipes out completely the dataset and rebuilds it from scratch
-##### skip : does not make any change to the dataset
-#####
-mode_dfCacheUpdate <- "skip"
-mode_dfSimpleUpdate <- "rebuild"
-mode_dfDeepUpdate <- "rebuild"
-mode_HubUpdate <- "skip"
-mode_csvUpdate <- "skip"
+#   Globals
+#
+#   .ChildEnv : 
+#   .ChildEnv$scriptname
+#   .ChildEnv$logger
+#    
+
+if (!exists(".ChildEnv")) {
+  .ChildEnv <- new.env()
+  .ChildEnv$scriptname <- "agora-plus-confpresse-v2.R"
+  .ChildEnv$logger <- loginit(.ChildEnv$scriptname)
+}
 
 
-#####
-##### set which backend we're working with
-##### - CSV : work with the CSV in the shared folders - good for testing
-#####         or for datamining and research or messing around
-##### - HUB : work with the CLESSNHUB data directly : this is prod data
-#####
-#mode_backend <- "CSV"
-mode_backend <- "CSV"
+
+###############################################################################
+########################               MAIN              ######################
+###############################################################################
 
 
-###
-### Define the datasets containing
-### - the cache which contains the previously scraped html content
-### - dfSimple which contains the entire content of each press conference per observation
-### - dfDeep which contains each intervention of each press conference per observation
-###
-### We only do this if we want ro rebuild those datasets from scratch to start fresh
-### or if then don't exist in the environment of the current R session
-###
-if ( !exists("dfCache") || mode_dfCacheUpdate == "rebuild" ) 
-  dfCache <- data.frame(uuid = character(),
-                        created = character(),
-                        modified = character(),
-                        metedata = character(),
-                        eventID = character(),
-                        eventHtml = character(),
-                        stringsAsFactors = FALSE)
 
-if ( !exists("dfSimple") || mode_dfSimpleUpdate == "rebuild" ) 
-  dfSimple <- data.frame(uuid = character(),
-                         created = character(),
-                         modified = character(),
-                         metedata = character(),
-                         eventID = character(),
-                         eventSourceType = character(),
-                         eventURL = character(),
-                         eventDate = character(), 
-                         eventStartTime = character(),
-                         eventEndTime = character(), 
-                         eventTitle = character(), 
-                         eventSubtitle = character(),
-                         eventWordCount = character(),
-                         eventSentenceCount = character(),
-                         eventParagraphCount = integer(),
-                         eventContent = character(),
-                         eventTranslatedContent = character(),
-                         stringsAsFactors = FALSE)
+# Install the rquired packages
+installPackages()
 
-if ( !exists("dfDeep") || mode_dfDeepUpdate == "rebuild" ) 
-  dfDeep <- data.frame(uuid = character(),
-                       created = character(),
-                       modified = character(),
-                       metedata = character(),
-                       eventID = character(),
-                       chapterNumber = character(),
-                       chapterTitle = character(),
-                       chapterTabledDocId = character(),
-                       chapterAdoptedDocId = character(),
-                       interventionSeqNum = integer(),
-                       speakerFirstName = character(),
-                       speakerLastName = character(),
-                       speakerFullName = character(),
-                       speakerGender = character(),
-                       speakerIsMinister = character(),
-                       speakerType = character(),
-                       speakerCountry = character(),
-                       speakerParty = character(),
-                       speakerPolGroup = character(),
-                       speakerDistrict = character(),
-                       speakerMedia = character(),
-                       speakerSpeechType = character(),
-                       speakerSpeechLang = character(),
-                       speakerSpeechWordCount = integer(),
-                       speakerSpeechSentenceCount = integer(),
-                       speakerSpeechParagraphCount = integer(),
-                       speakerSpeech = character(),
-                       speakerTranslatedSpeech = character(), 
-                       stringsAsFactors = FALSE)
+# Parse the command line options
+# Which are the update modes of each database in the HUB or in the CSV backend
+#
+# Possible values : update, refresh, rebuild or skip
+# update : updates the dataset by adding only new observations to it
+# refresh : refreshes existing observations and adds new observations to the dataset
+# rebuild : wipes out completely the dataset and rebuilds it from scratch
+# skip : does not make any change to the dataset
+option_list = list(
+  make_option(c("-c", "--cache_update"), type="character", default="skip", 
+              help="update mode of the cache [default= %default]", metavar="character"),
+  make_option(c("-s", "--simple_update"), type="character", default="rebuild", 
+              help="update mode of the simple dataframe [default= %default]", metavar="character"),
+  make_option(c("-d", "--deep_update"), type="character", default="rebuild", 
+              help="update mode of the deep dataframe [default= %default]", metavar="character"),
+  make_option(c("-h", "--hub_update"), type="character", default="skip", 
+              help="update mode of the hub [default= %default]", metavar="character"),
+  make_option(c("-f", "--csv_update"), type="character", default="skip", 
+              help="update mode of the simple dataframe [default= %default]", metavar="character"),
+  make_option(c("-b", "--backend_type"), type="character", default="HUB", 
+              help="type of the backend - either hub or csv [default= %default]", metavar="character")
+)
+
+opt_parser = OptionParser(option_list=option_list)
+opt = parse_args(opt_parser)
+
+opt_cache_update <- opt$cache_update
+opt_simple_update <- opt$simple_update
+opt_deep_update <- opt$deep_update
+opt_hub_update <- opt$hub_update
+opt_csv_update <- opt$csv_update
+
+# set which backend we're working with
+# - CSV : work with the CSV in the shared folders - good for testing
+#         or for datamining and research or messing around
+# - HUB : work with the CLESSNHUB data directly : this is prod data
+opt_backend_type <- opt$backend_type
+
+
+# Define the datasets containing
+# - the cache which contains the previously scraped html content
+# - dfSimple which contains the entire content of each press conference per observation
+# - dfDeep which contains each intervention of each press conference per observation
+#
+# We only do this if we want to rebuild those datasets from scratch to start fresh
+# or if then don't exist in the environment of the current R session
+if ( !exists("dfCache") || opt_cache_update == "rebuild" ) 
+  dfCache <- clessnverse::createCache(context = "europe")
+
+if ( !exists("dfSimple") || opt_simple_update == "rebuild" ) 
+  dfSimple <- clessnverse::createSimple(context = "europe")
+
+if ( !exists("dfDeep") || opt_deep_update == "rebuild" ) 
+  dfDeep <- clessnverse::createDeep(context = "europe")
+
+
+stop("done for now before we go further")
 
 #####
 ##### Get all data from the HUB or from CSV
@@ -157,7 +194,7 @@ if ( !exists("dfDeep") || mode_dfDeepUpdate == "rebuild" )
 #####                 to add relevant data on journalists in the interventions
 #####                 dataset
 #####
-if (mode_backend == "HUB") {
+if (opt_backend_type == "HUB") {
   ### Connect to the HUB
   clessnhub::configure()
 
@@ -167,7 +204,7 @@ if (mode_backend == "HUB") {
   # C'est pour éviter de lever des suspicions de la part des admins de  
   # l'assnat avec trop de http GET répetitifs trop rapprochés
   ###
-  if (mode_dfCacheUpdate != "rebuild") {
+  if (opt_cache_update != "rebuild") {
     dfCache_hub <- clessnhub::download_table('agoraplus_warehouse_cache_items')
     if (is.null(dfCache_hub)) {
       dfCache_hub <- data.frame(uuid = character(),
@@ -189,7 +226,7 @@ if (mode_backend == "HUB") {
   ###
   # Récuperer les données Simple et Deep 
   ###
-  if (mode_dfSimpleUpdate != "rebuild") {
+  if (opt_simple_update != "rebuild") {
     dfSimple_hub <- clessnhub::download_table('agoraplus_warehouse_event_items')
     if (is.null(dfSimple_hub)) {
       dfSimple_hub <- data.frame(uuid = character(),
@@ -215,7 +252,7 @@ if (mode_backend == "HUB") {
     dfSimple <- dfSimple_hub
   }
 
-  if (mode_dfDeepUpdate != "rebuild") {
+  if (opt_deep_update != "rebuild") {
     dfDeep_hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items')
     if (is.null(dfDeep_hub)) {
       dfDeep_hub <- data.frame(uuid = character(),
@@ -258,24 +295,24 @@ if (mode_backend == "HUB") {
   
   dfJournalists <- clessnhub::download_table('warehouse_journalists')
 
-} #if (mode_backend == "HUB")
+} #if (opt_backend_type == "HUB")
 
 
-if (mode_backend == "CSV1") {
+if (opt_backend_type == "CSV") {
   
-  if (mode_dfCacheUpdate != "rebuild")
+  if (opt_cache_update != "rebuild")
     dfCache <- read.csv2(file =
                            "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-v3.csv",
                            #"/Users/patrick/dfCacheAgoraPlus-v3.csv",
                            sep=";", comment.char="#")  
   
-  if (mode_dfSimpleUpdate != "rebuild")
+  if (opt_simple_update != "rebuild")
     dfSimple <- read.csv2(file=
                             "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfSimpleAgoraPlus-v3.csv",
                             #"/Users/patrick/dfSimpleAgoraPlus-v3.csv",
                           sep=";", comment.char="#", encoding = "UTF-8")
   
-  if (mode_dfDeepUpdate != "rebuild")
+  if (opt_deep_update != "rebuild")
     dfDeep <- read.csv2(file=
                           "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfDeepAgoraPlus-v3.csv",
                           #"/Users/patrick/dfDeepAgoraPlus-v3.csv",
@@ -303,7 +340,7 @@ if (mode_backend == "CSV1") {
   names(dfJournalists)[names(dfJournalists)=="user_id"] <- "twitterID"
   names(dfJournalists)[names(dfJournalists)=="protected"] <- "twitterAccountProtected"
 
-} #if (mode_backend == "CSV")
+} #if (opt_backend_type == "CSV")
 
 
 #####
@@ -365,7 +402,7 @@ pb_conf <- txtProgressBar(min = 0,      # Minimum value of the progress bar
 
 #for (i in 1:length(urls_list)) {
 for (i in 1:1) {
-  if (mode_backend == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
+  if (opt_backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
   
@@ -459,320 +496,165 @@ for (i in 1:1) {
   current_speaker_full_name <- ""
   
   for (j in 1:core_xml_nbchapters) {
-  cat(" chapter progress\r")
-  setTxtProgressBar(pb_chap, j)
-  # New chapter
+    cat(" chapter progress\r")
+    setTxtProgressBar(pb_chap, j)
+    # New chapter
+    
+    chapter_node <- core_xml[[j]]
+    chapter_number <- xmlGetAttr(chapter_node, "NUMBER")
+    chapter_title <- xmlValue(xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='FR']")[j])
+    
+    if (!is.null(chapter_node[["TL-CHAP"]][[2]])) {
+      # Here there is a URL within the title of the chapter => most likely a linked document 
+      chapter_tabled_docid <- str_split(xmlGetAttr(chapter_node[["TL-CHAP"]][[2]], "redmap-uri"), "/")[[1]][3]
+      
+      tabled_document_url <- paste("https://www.europarl.europa.eu/doceo/document/", chapter_tabled_docid, "_FR.html", sep = "")
+      tabled_document_html <- getURL(tabled_document_url)
+      tabled_document_html_table <- readHTMLTable(tabled_document_html)
+      
+      list1_id <- grep("Textes adoptés", tabled_document_html_table)[1]
+      list2_id <- grep("Textes adoptés", tabled_document_html_table[[list1_id]])[2]
+      chapter_adopted_docid <- tabled_document_html_table[[list1_id]][[list2_id]][which(grepl("Textes adoptés",tabled_document_html_table[[list1_id]][[list2_id]]))]
+      chapter_adopted_docid <- str_split(chapter_adopted_docid, " ")[[1]][length(str_split(chapter_adopted_docid, " ")[[1]])]
+      
+    } else {
+      chapter_tabled_docid <- NA
+      chapter_adopted_docid <- NA
+    }
+      
+    chapter_nodes_list <- names(core_xml[[j]])
+    
+    if ( "INTERVENTION" %in% chapter_nodes_list ) {
+      # There is one or more interventions in this section.
+      # From potentially multiple speakers
+      
+      # We have to loop through every intervention
+      for (k in which(chapter_nodes_list == "INTERVENTION")) {
+        intervention_seqnum <- intervention_seqnum + 1
+        speaker_speech <- ""
+        #cat("Intervention", intervention_seqnum, "\r", sep = " ")
+        
+        # Strip out the speaker info
+        intervention_node <- core_xml[[j]][[k]]
+        speaker_node <- intervention_node[["ORATEUR"]]
+        
+        speaker_full_name <- xmlGetAttr(speaker_node, "LIB")
+        speaker_last_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
+        speaker_first_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
+        speaker_full_name <- str_remove(speaker_full_name, "\\|\\s")
+        
+        dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
+        
+        if (!is.na(dfSpeaker$mepid)) {
+          speaker_mepid <- dfSpeaker$mepid
+          speaker_party <- dfSpeaker$party
+          speaker_polgroup <- case_when(xmlGetAttr(speaker_node, "PP") != "NULL" ~ 
+                                          paste(xmlGetAttr(speaker_node, "PP"), ":", dfSpeaker$polgroup, sep = " "),
+                                        TRUE ~ 
+                                          NA_character_)
+          speaker_country <- dfSpeaker$country
+        } else {
+          speaker_mepid <- NA
+          speaker_party <- case_when(xmlGetAttr(speaker_node, "PP") != "NULL" ~  xmlGetAttr(speaker_node, "PP"),
+                                     TRUE ~ NA_character_)
+          speaker_polgroup <- NA
+          speaker_country <- codelist$country.name.en[which(codelist$iso2c == xmlGetAttr(speaker_node, "LG"))]
+          if (length(speaker_country) == 0) speaker_country <- NA
+        }
+        
+        speaker_gender <- paste("", gender::gender(word(speaker_first_name)[1])$gender, sep = "")
+        speaker_is_minister <- NA
+        
+        speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", xmlValue(speaker_node[["EMPHAS"]])))
+        if ( str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
+        
+        speaker_district <- NA
+        speaker_media <- NA    
+        
+        speaker_speech_type <- NA
+        speaker_speech_lang <- xmlValue(speaker_node[["LG"]])
+        speaker_speech_word_count <- 0
+        speaker_speech_sentence_count <- 0
+        speaker_speech_paragraph_count <- 0
+        speaker_speech <- ""
+        speaker_translated_speech <- ""
+        
+        # Strip out the intervention by looping through paragraphs
+        for (l in which(names(intervention_node) == "PARA")) {
+          #cat("Paragraph", l, "\n", sep = " ")
+          if (is.na(speaker_type)) speaker_type <- xmlValue(intervention_node[["PARA"]][["EMPHAS"]])
+          speaker_speech <- paste(speaker_speech, xmlValue(intervention_node[[l]]), sep = " ")
+        } #for (l in which(names(intervention_node) == "PARA"))
+        
+        if (str_detect(speaker_speech, ". – ")) {
+          speaker_speech <- str_split(speaker_speech, ". – ")[[1]][2]
+        }
+        
+        speaker_speech <- trimws(speaker_speech, "left")
+        speaker_speech_word_count <- nrow(unnest_tokens(tibble(txt=speaker_speech), word, txt, token="words",format="text"))
+        speaker_speech_sentence_count <- nrow(unnest_tokens(tibble(txt=speaker_speech), sentence, txt, token="sentences",format="text"))
+        speaker_speech_paragraph_count <- length(which(names(intervention_node) == "PARA"))
+        
+        # Translation
+        speaker_translated_speech <- clessnverse::translateText(text = speaker_speech, engine = "azure", 
+                                                                target_lang = "fr", fake = TRUE)
+        
+        # commit to dfDeep and the Hub
+        dfInterventionRow <- data.frame(
+          uuid = "",
+          created = "",
+          modified = "",
+          metedata = "",
+          eventID = current_id,
+          chapterNumber = chapter_number,
+          chapterTitle = chapter_title,
+          chapterTabledDocId = chapter_tabled_docid,
+          chapterAdoptedDocId = chapter_adopted_docid,
+          interventionSeqNum = intervention_seqnum,
+          speakerFirstName = speaker_first_name,
+          speakerLastName = speaker_last_name,
+          speakerFullName = speaker_full_name,
+          speakerGender = speaker_gender,
+          speakerIsMinister = speaker_is_minister,
+          speakerType = speaker_type,
+          speakerCountry = speaker_country,
+          speakerParty = speaker_party,
+          speakerPolGroup = speaker_polgroup,
+          speakerDistrict = speaker_district,
+          speakerMedia = speaker_media,
+          speakerSpeechType = speaker_speech_type,
+          speakerSpeechLang = speaker_speech_lang,
+          speakerSpeechWordCount = speaker_speech_word_count,
+          speakerSpeechSentenceCount = speaker_speech_sentence_count,
+          speakerSpeechParagraphCount = speaker_speech_paragraph_count,
+          speakerSpeech = speaker_speech,
+          speakerTranslatedSpeech = speaker_translated_speech)
+        
+        dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
+                                                          dfDestination = dfDeep,
+                                                          hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
+                                                          modeLocalData = opt_deep_update, 
+                                                          modeHub = opt_hub_update)
+        
+        event_content <- paste(event_content, 
+                               case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_speech, "\n\n", sep=""),
+                                         TRUE ~ paste(speaker_full_name, 
+                                                      " (", 
+                                                      case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
+                                                      "). – ", speaker_speech, "\n\n", sep = "")), sep = "")
+        
+        event_translated_content <- paste(event_translated_content, 
+                                          case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_translated_speech, "\n\n", sep=""),
+                                                    TRUE ~ paste(speaker_full_name, 
+                                                                 " (", 
+                                                                 case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
+                                                                 "). – ", speaker_translated_speech, "\n\n", sep = "")), sep = "")
+        
+        current_speaker_full_name <- speaker_full_name
   
-  chapter_node <- core_xml[[j]]
-  chapter_number <- xmlGetAttr(chapter_node, "NUMBER")
-  chapter_title <- xmlValue(xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='FR']")[j])
-  
-  if (!is.null(chapter_node[["TL-CHAP"]][[2]])) {
-    # Here there is a URL within the title of the chapter => most likely a linked document 
-    chapter_tabled_docid <- str_split(xmlGetAttr(chapter_node[["TL-CHAP"]][[2]], "redmap-uri"), "/")[[1]][3]
-    
-    tabled_document_url <- paste("https://www.europarl.europa.eu/doceo/document/", chapter_tabled_docid, "_FR.html", sep = "")
-    tabled_document_html <- getURL(tabled_document_url)
-    tabled_document_html_table <- readHTMLTable(tabled_document_html)
-    
-    list1_id <- grep("Textes adoptés", tabled_document_html_table)[1]
-    list2_id <- grep("Textes adoptés", tabled_document_html_table[[list1_id]])[2]
-    chapter_adopted_docid <- tabled_document_html_table[[list1_id]][[list2_id]][which(grepl("Textes adoptés",tabled_document_html_table[[list1_id]][[list2_id]]))]
-    chapter_adopted_docid <- str_split(chapter_adopted_docid, " ")[[1]][length(str_split(chapter_adopted_docid, " ")[[1]])]
-    
-  } else {
-    chapter_tabled_docid <- NA
-    chapter_adopted_docid <- NA
-  }
-    
-  chapter_nodes_list <- names(core_xml[[j]])
-  
-  if ( "INTERVENTION" %in% chapter_nodes_list ) {
-    # There is one or more interventions in this section.
-    # From potentially multiple speakers
-    
-    # We have to loop through every intervention
-    for (k in which(chapter_nodes_list == "INTERVENTION")) {
-      intervention_seqnum <- intervention_seqnum + 1
-      speaker_speech <- ""
-      #cat("Intervention", intervention_seqnum, "\r", sep = " ")
+      } #for (k in which(chapter_nodes_list == "INTERVENTION"))
       
-      # Strip out the speaker info
-      intervention_node <- core_xml[[j]][[k]]
-      speaker_node <- intervention_node[["ORATEUR"]]
-      
-      speaker_full_name <- xmlGetAttr(speaker_node, "LIB")
-      speaker_last_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
-      speaker_first_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
-      speaker_full_name <- str_remove(speaker_full_name, "\\|\\s")
-      
-      dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
-      
-      if (!is.na(dfSpeaker$mepid)) {
-        speaker_mepid <- dfSpeaker$mepid
-        speaker_party <- dfSpeaker$party
-        speaker_polgroup <- case_when(xmlGetAttr(speaker_node, "PP") != "NULL" ~ 
-                                        paste(xmlGetAttr(speaker_node, "PP"), ":", dfSpeaker$polgroup, sep = " "),
-                                      TRUE ~ 
-                                        NA_character_)
-        speaker_country <- dfSpeaker$country
-      } else {
-        speaker_mepid <- NA
-        speaker_party <- case_when(xmlGetAttr(speaker_node, "PP") != "NULL" ~  xmlGetAttr(speaker_node, "PP"),
-                                   TRUE ~ NA_character_)
-        speaker_polgroup <- NA
-        speaker_country <- codelist$country.name.en[which(codelist$iso2c == xmlGetAttr(speaker_node, "LG"))]
-        if (length(speaker_country) == 0) speaker_country <- NA
-      }
-      
-      speaker_gender <- paste("", gender::gender(word(speaker_first_name)[1])$gender, sep = "")
-      speaker_is_minister <- NA
-      
-      speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", xmlValue(speaker_node[["EMPHAS"]])))
-      if ( str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
-      
-      speaker_district <- NA
-      speaker_media <- NA    
-      
-      speaker_speech_type <- NA
-      speaker_speech_lang <- xmlValue(speaker_node[["LG"]])
-      speaker_speech_word_count <- 0
-      speaker_speech_sentence_count <- 0
-      speaker_speech_paragraph_count <- 0
-      speaker_speech <- ""
-      speaker_translated_speech <- ""
-      
-      # Strip out the intervention by looping through paragraphs
-      for (l in which(names(intervention_node) == "PARA")) {
-        #cat("Paragraph", l, "\n", sep = " ")
-        if (is.na(speaker_type)) speaker_type <- xmlValue(intervention_node[["PARA"]][["EMPHAS"]])
-        speaker_speech <- paste(speaker_speech, xmlValue(intervention_node[[l]]), sep = " ")
-      } #for (l in which(names(intervention_node) == "PARA"))
-      
-      if (str_detect(speaker_speech, ". – ")) {
-        speaker_speech <- str_split(speaker_speech, ". – ")[[1]][2]
-      }
-      
-      speaker_speech <- trimws(speaker_speech, "left")
-      speaker_speech_word_count <- nrow(unnest_tokens(tibble(txt=speaker_speech), word, txt, token="words",format="text"))
-      speaker_speech_sentence_count <- nrow(unnest_tokens(tibble(txt=speaker_speech), sentence, txt, token="sentences",format="text"))
-      speaker_speech_paragraph_count <- length(which(names(intervention_node) == "PARA"))
-      
-      # Translation
-      speaker_translated_speech <- clessnverse::translateText(text = speaker_speech, engine = "azure", 
-                                                              target_lang = "fr", fake = TRUE)
-      
-      # commit to dfDeep and the Hub
-      dfInterventionRow <- data.frame(
-        uuid = "",
-        created = "",
-        modified = "",
-        metedata = "",
-        eventID = current_id,
-        chapterNumber = chapter_number,
-        chapterTitle = chapter_title,
-        chapterTabledDocId = chapter_tabled_docid,
-        chapterAdoptedDocId = chapter_adopted_docid,
-        interventionSeqNum = intervention_seqnum,
-        speakerFirstName = speaker_first_name,
-        speakerLastName = speaker_last_name,
-        speakerFullName = speaker_full_name,
-        speakerGender = speaker_gender,
-        speakerIsMinister = speaker_is_minister,
-        speakerType = speaker_type,
-        speakerCountry = speaker_country,
-        speakerParty = speaker_party,
-        speakerPolGroup = speaker_polgroup,
-        speakerDistrict = speaker_district,
-        speakerMedia = speaker_media,
-        speakerSpeechType = speaker_speech_type,
-        speakerSpeechLang = speaker_speech_lang,
-        speakerSpeechWordCount = speaker_speech_word_count,
-        speakerSpeechSentenceCount = speaker_speech_sentence_count,
-        speakerSpeechParagraphCount = speaker_speech_paragraph_count,
-        speakerSpeech = speaker_speech,
-        speakerTranslatedSpeech = speaker_translated_speech)
-      
-      dfDeep <- clessnverse::commitAgoraInterventions(dfSource = dfInterventionRow, 
-                                                      dfDestination = dfDeep,
-                                                      hubTableName = 'agoraeurope_warehouse_intervention_items', 
-                                                      modeLocalData = mode_dfDeepUpdate, 
-                                                      modeHub = mode_HubUpdate)
-      
-      event_content <- paste(event_content, 
-                             case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_speech, "\n\n", sep=""),
-                                       TRUE ~ paste(speaker_full_name, 
-                                                    " (", 
-                                                    case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
-                                                    "). – ", speaker_speech, "\n\n", sep = "")), sep = "")
-      
-      event_translated_content <- paste(event_translated_content, 
-                                        case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_translated_speech, "\n\n", sep=""),
-                                                  TRUE ~ paste(speaker_full_name, 
-                                                               " (", 
-                                                               case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
-                                                               "). – ", speaker_translated_speech, "\n\n", sep = "")), sep = "")
-      
-      current_speaker_full_name <- speaker_full_name
-
-
-  # 
-  # 
-  #     seqnum <- seqnum + 1
-  #     
-  #     first.name <- NA
-  #     last.name <- NA
-  #     full.name <- NA
-  #     gender <- NA
-  #     type <- NA
-  #     party <- NA
-  #     circ <- NA
-  #     media <- NA
-  #     speech.type <- NA
-  #     speech <- NA
-  #     
-  #     speaker <- data.frame()
-  #     
-  #   } #(j in 1:core_xml_nbchapters)
-  # } # for (j in 1:length(doc.text)) : loop back to the next 
-  # 
-  # 
-  # # Join all the elements of the character vector into a single
-  # # character string, separated by spaces for the simple dataSet
-  # collapsed.doc.text <- paste(paste(doc.text, "\n\n", sep=""), collapse = ' ')
-  # collapsed.doc.text <- str_replace_all(
-  #   string = collapsed.doc.text, pattern = "\n\n NA\n\n", replacement = "")
-  # 
-  # matching.cache.row.index <- 0
-  # if (cached_html) {
-  #   #cat("updating dfCache")
-  #   matching.cache.row.index <- which(dfCache$eventID == current_id)
-  #   if (mode_dfCacheUpdate == "refresh") {
-  #     dfCache$eventHtml[matching.cache.row.index] = doc_html
-  #   }
-  # } else {
-  #   #cat("adding to dfCache")
-  #   matching.cache.row.index <- which(dfCache$eventID == current_id)
-  #   if (length(matching.cache.row.index) > 0) {
-  #     # The entry already exists
-  #     # We do nothing
-  #   } else {
-  #     matching.cache.row.index <- nrow(dfCache) + 1
-  #     dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current_id, eventHtml = doc_html))
-  #   }
-  # }
-  #   
-  #   
-  # ###
-  # ### If the backend is CLESSNHUB, we have to update the backend
-  # ### Either with a new record 
-  # ### or with an existing record is mode_QuorumDataUpdate == "refresh"
-  # ###
-  # if ( mode_QuorumDataUpdate != "skip" && mode_backend == "HUB" && matching.cache.row.index > 0) {
-  #   matching.hub.row.index <- which(dfCache_hub$eventID == dfCache$eventID[matching.cache.row.index])
-  #   if (length(matching.hub.row.index) == 0) {
-  #     # Here there was no existing observation in dfSimple for the event
-  #     # being processed in this iteration so it's a new record that we
-  #     # have to add to the HUB
-  #     hubline.to.add <- dfCache[matching.cache.row.index,] %>% 
-  #       mutate_if(is.numeric , replace_na, replace = 0) %>% 
-  #       mutate_if(is.character , replace_na, replace = "") %>%
-  #       mutate_if(is.logical , replace_na, replace = 0)
-  #     
-  #     clessnhub::create_item(as.list(hubline.to.add), 'agoraplus_warehouse_cache_items')
-  #     hubline.to.add <- NULL
-  #   } else {
-  #     hubline.to.update <- dfCache[matching.cache.row.index,] %>% 
-  #       mutate_if(is.numeric , replace_na, replace = 0) %>% 
-  #       mutate_if(is.character , replace_na, replace = "") %>%
-  #       mutate_if(is.logical , replace_na, replace = 0)
-  #     
-  #     hubline.uuid <- dfCache_hub$uuid[matching.hub.row.index]
-  #     
-  #     clessnhub::edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_cache_items')
-  #     hubline.to.update <- NULL
-  #     hubline.uuid <- NULL
-  #   }
-  #   matching.hub.row.index <- NULL
-  # }
-  # 
-  # 
-  # matching.simple.row.index <- 0
-  # if ( mode_dfSimpleUpdate == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current_id)) > 0 ) {
-  #   matching.simple.row.index <- which(dfSimple$eventID == current_id)
-  #   
-  #   dfSimple[matching.simple.row.index,]$eventSourceType = event_source_type
-  #   dfSimple[matching.simple.row.index,]$eventURL = current_url
-  #   dfSimple[matching.simple.row.index,]$eventDate = as.character(date)
-  #   dfSimple[matching.simple.row.index,]$eventStartTime = as.character(time)
-  #   dfSimple[matching.simple.row.index,]$eventEndTime = as.character(end.time)
-  #   dfSimple[matching.simple.row.index,]$eventTitle = title
-  #   dfSimple[matching.simple.row.index,]$eventSubtitle = subtitle
-  #   dfSimple[matching.simple.row.index,]$eventSentenceCount = event.sentence.count
-  #   dfSimple[matching.simple.row.index,]$eventParagraphCount = event.paragraph.count
-  #   dfSimple[matching.simple.row.index,]$eventContent = collapsed.doc.text
-  #   dfSimple[matching.simple.row.index,]$eventTranslatedContent = NA
-  # }
-  # 
-  # if ( (mode_dfSimpleUpdate == "rebuild") ||
-  #      (mode_dfSimpleUpdate == "update"  && nrow(dplyr::filter(dfSimple, eventID == current_id)) == 0) ||
-  #      (mode_dfSimpleUpdate == "refresh" && nrow(dplyr::filter(dfSimple, eventID == current_id)) == 0) ) {
-  #   
-  #   matching.simple.row.index <- nrow(dfSimple) + 1
-  #   
-  #   dfSimple <- rbind.data.frame(dfSimple, data.frame(eventID = current_id,
-  #                                                     eventSourceType = event_source_type,
-  #                                                     eventURL = current_url,
-  #                                                     eventDate = as.character(date), 
-  #                                                     eventStartTime = as.character(time), 
-  #                                                     eventEndTime = as.character(end.time), 
-  #                                                     eventTitle = title, 
-  #                                                     eventSubtitle = subtitle, 
-  #                                                     eventSentenceCount = event.sentence.count,
-  #                                                     eventParagraphCount = event.paragraph.count,
-  #                                                     eventContent = collapsed.doc.text,
-  #                                                     eventTranslatedContent = NA))
-  # }
-  # 
-  # if (matching.simple.row.index == 0 && mode_QuorumDataUpdate == "refresh") {
-  #   matching.simple.row.index <- which(dfSimple$eventID == current_id)
-  # }
-  # ###
-  # ### If the backend is CLESSNHUB, we have to update the backend
-  # ### Either with a new record 
-  # ### or with an existing record is mode_QuorumDataUpdate == "refresh"
-  # ###
-  # if ( mode_QuorumDataUpdate != "skip" && mode_backend == "HUB" && matching.simple.row.index > 0) {
-  #   matching.hub.row.index <- which(dfSimple_hub$eventID == dfSimple$eventID[matching.simple.row.index])
-  #   if (length(matching.hub.row.index) == 0) {
-  #     # Here there was no existing observation in dfSimple for the event
-  #     # being processed in this iteration so it's a new record that we
-  #     # have to add to the HUB
-  #     hubline.to.add <- dfSimple[matching.simple.row.index,] %>% 
-  #       mutate_if(is.numeric , replace_na, replace = 0) %>% 
-  #       mutate_if(is.character , replace_na, replace = "") %>%
-  #       mutate_if(is.logical , replace_na, replace = 0)
-  #     
-  #     clessnhub::create_item(as.list(hubline.to.add), 'agoraplus_warehouse_event_items')
-  #     hubline.to.add <- NULL
-  #   } else {
-  #     hubline.to.update <- dfSimple[matching.simple.row.index,] %>% 
-  #       mutate_if(is.numeric , replace_na, replace = 0) %>% 
-  #       mutate_if(is.character , replace_na, replace = "") %>%
-  #       mutate_if(is.logical , replace_na, replace = 0)
-  #     
-  #     hubline.uuid <- dfSimple_hub$uuid[matching.hub.row.index]
-  #     
-  #     clessnhub::edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_event_items')
-  #     hubline.to.update <- NULL
-  #     hubline.uuid <- NULL
-  #   }
-  #   matching.hub.row.index <- NULL
-      
-      
-    } #for (k in which(chapter_nodes_list == "INTERVENTION"))
-    
-  } #if ( "INTERVENTION" %in% chapter_nodes_list )
+    } #if ( "INTERVENTION" %in% chapter_nodes_list )
   
   } #for (j in 1:core_xml_nbchapters)
   
@@ -780,48 +662,42 @@ for (i in 1:1) {
   event_sentence_count <- sum(dfDeep$speakerSpeechSentenceCount[which(dfDeep$eventID == current_id)])
   event_paragraph_count <- sum(dfDeep$speakerSpeechParagraphCount[which(dfDeep$eventID == current_id)])
   
-  dfSimple <- rbind.data.frame(dfSimple, data.frame(uuid = "",
-                                                  created = "",
-                                                  modified = "",
-                                                  metedata = "",
-                                                  eventID = current_id,
-                                                  eventSourceType = event_source_type,
-                                                  eventURL = current_url,
-                                                  eventDate = as.character(event_date),
-                                                  eventStartTime = as.character(event_start_time),
-                                                  eventEndTime = as.character(event_end_time),
-                                                  eventTitle = event_title,
-                                                  eventSubtitle = event_subtitle,
-                                                  eventWordCount = event_word_count,
-                                                  eventSentenceCount = event_sentence_count,
-                                                  eventParagraphCount = event_paragraph_count,
-                                                  eventContent = event_content,
-                                                  eventTranslatedContent = event_translated_content))
+  dfEventRow <- data.frame(uuid = "",
+                           created = "",
+                           modified = "",
+                           metedata = "",
+                           eventID = current_id,
+                           eventSourceType = event_source_type,
+                           eventURL = current_url,
+                           eventDate = as.character(event_date),
+                           eventStartTime = as.character(event_start_time),
+                           eventEndTime = as.character(event_end_time),
+                           eventTitle = event_title,
+                           eventSubtitle = event_subtitle,
+                           eventWordCount = event_word_count,
+                           eventSentenceCount = event_sentence_count,
+                           eventParagraphCount = event_paragraph_count,
+                           eventContent = event_content,
+                           eventTranslatedContent = event_translated_content)
   
-  if (cached_html) {
-    #cat("updating dfCache")
-    matching.cache.row.index <- which(dfCache$eventID == current_id)
-    if (mode_dfCacheUpdate == "refresh") {
-      dfCache$eventHtml[matching.cache.row.index] = doc_html
-    }
-  } else {
-    #cat("adding to dfCache")
-    matching.cache.row.index <- which(dfCache$eventID == current_id)
-    if (length(matching.cache.row.index) > 0) {
-      # The entry already exists
-      # We do nothing
-    } else {
-      matching.cache.row.index <- nrow(dfCache) + 1
-      dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current_id, eventHtml = doc_html))
-    }
-  }
-      
+  dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow, 
+                                             dfDestination = dfSimple,
+                                             hubTableName = 'agoraplus-eu_warehouse_event_items', 
+                                             modeLocalData = opt_simple_update, 
+                                             modeHub = opt_hub_update)
+  
+  
+  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = doc_html),
+                                            dfDestination = dfCache,
+                                            hubTableName = 'agoraplus-eu_warehouse_cache_items', 
+                                            modeLocalData = opt_cache_update, 
+                                            modeHub = opt_hub_update)
+  
 } #for (i in 1:length(urls_list))
 
 
 
-
-if (mode_csvUpdate != "skip" && mode_backend == "CSV") { 
+if (opt_csv_update != "skip" && opt_backend_type == "CSV") { 
   write.csv2(dfCache, file=
                "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-v3.csv",
                #"/Users/patrick/dfCacheAgoraPlus-v3.csv",

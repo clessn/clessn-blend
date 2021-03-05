@@ -1,0 +1,9 @@
+Columns: 8
+$ realID		<chr> 
+$ user_id		<chr> 
+$ author		<chr> 
+$ source		<chr> 
+$ female		<int> 
+$ handle		<chr> 
+$ selfIdJourn		<chr> 
+$ protected       	<chr> 
