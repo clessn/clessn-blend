@@ -189,7 +189,7 @@ def main():
     file_list_done = list_folder(dbx,base_path,done_file_path)
 
     file_list_full = file_list_from_azure + file_list_parkinglot + file_list_to_hub + file_list_ready_to_hub + file_list_done
-    
+
     i = 1
 
     for video in p.videos:
@@ -218,9 +218,10 @@ def main():
             #transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+video_uuid+"---"+video.title+'.txt'
             transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+"-"+lang+"-"+video_uuid+'.txt'
             transcript_full_name = transctipt_file_path+transcript_file_name
-            transcript_blng_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+video_uuid+'.txt'
+            transcript_blng_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+"bilingual"+"-"+video_uuid+'.txt'
+            transcript_neut_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+video_uuid+'.txt'
 
-            if ( {transcript_file_name, transcript_blng_name} & set(file_list_full) != set() ):
+            if ( {transcript_file_name, transcript_blng_name, transcript_neut_name} & set(file_list_full) != set() ):
                 print('Already transcribed')
             else:
                 print('Downloading video')
@@ -243,22 +244,25 @@ def main():
 
             if (transcript_file_name in file_list_from_azure): 
                 print('found file')  
-                download(dbx, '', from_azure_file_path, transcript_file_name)
-                f = open(transcript_file_name,"r")
-                transcribed_text = f.read()
+                print(from_azure_file_path)
+                print(transcript_file_name)
+                transcribed_text = download(dbx, '', from_azure_file_path, transcript_file_name)
+                transcribed_text = transcribed_text.decode('UTF-8')
+                #f = open(transcript_file_name,"r")
+                #transcribed_text = f.read()
                 lower_transcribed_text = transcribed_text.lower()
                 words_list = lower_transcribed_text.split()
-                f.close()
+                #f.close()
 
                 if (transcribed_text.split()[0] != 'DATE'):
-                    f = open(transcript_full_name,"w+")
+                    f = open(transcript_file_name,"w+")
                     transcribed_text = 'PATH  : ' + transcript_full_name + '\n\n' + transcribed_text
                     transcribed_text = 'URL   : ' + video.watch_url + '\n' + transcribed_text
                     transcribed_text = 'TITLE : ' + video.title + '\n' + transcribed_text
                     transcribed_text = 'DATE  : ' + video.publish_date.strftime("%Y-%m-%d") + '\n' + transcribed_text
                     f.write(transcribed_text)
                     f.close()
-                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, False)
+                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, True)
                     os.remove(transcript_file_name)
 
                 #</if (transcribed_text.split()[0] != 'URL'):>
