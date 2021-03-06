@@ -94,7 +94,7 @@ tryCatch(
 
 tryCatch( 
   {
-    scriptname <- "agora-plus-confpresse-v2.R"
+    scriptname <- "agoraplus-confpresse.R"
     logger <- clessnverse::loginit(scriptname, "file")
     opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
                           hub_update = "refresh",csv_update = "skip",backend_type = "HUB")
