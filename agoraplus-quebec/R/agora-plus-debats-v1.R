@@ -839,16 +839,12 @@ for (i in 1:length(list.urls)) {
           speech.paragraph.count <- speech.paragraph.count + 1
         }
         
-        language <- detect_language(str_replace_all(speech, "[[:punct:]]", ""))
-        
-        if ( !(language %in% c("en","fr")) ) {
           language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
           if ( !(language %in% c("english","french")) ) { 
             language <- NA
           }
           else language <- substr(language,1,2)
-        }
-        
+
         speech.sentence.count <- clessnverse::countSentences(paste(speech, collapse = ' '))
         speech.word.count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
         speech.paragraph.count <- str_count(speech, "\\n\\n")+1
@@ -898,7 +894,8 @@ for (i in 1:length(list.urls)) {
                                                             speakerSpeechSentenceCount = speech.sentence.count,
                                                             speakerSpeechParagraphCount = speech.paragraph.count,
                                                             speakerSpeech = speech,
-                                                            speakerTranslatedSpeech = NA))
+                                                            speakerTranslatedSpeech = NA,
+                                                            stringsAsFactors = FALSE))
           }
           
           
@@ -1009,7 +1006,7 @@ for (i in 1:length(list.urls)) {
           # We do nothing
         } else {
           matching.cache.row.index <- nrow(dfCache) + 1
-          dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current.id, eventHtml = doc.html.original))
+          dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current.id, eventHtml = doc.html.original, stringsAsFactors = FALSE))
         }
       }
       
@@ -1082,7 +1079,8 @@ for (i in 1:length(list.urls)) {
                                                           eventSentenceCount = event.sentence.count,
                                                           eventParagraphCount = event.paragraph.count,
                                                           eventContent = collapsed.doc.text,
-                                                          eventTranslatedContent = NA))
+                                                          eventTranslatedContent = NA,
+                                                          stringsAsFactors = FALSE))
       }
       
       if (matching.simple.row.index == 0 && opt_hub_update == "refresh") {

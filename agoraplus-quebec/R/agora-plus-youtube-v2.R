@@ -689,7 +689,8 @@ for (fileName in fileList) {
                                                               speakerSpeechSentenceCount = speech.sentence.count,
                                                               speakerSpeechParagraphCount = speech.paragraph.count,
                                                               speakerSpeech = speech,
-                                                              speakerTranslatedSpeech = NA))
+                                                              speakerTranslatedSpeech = NA,
+                                                              stringsAsFactors = FALSE))
             }
             
             
@@ -798,7 +799,7 @@ for (fileName in fileList) {
           # We do nothing
         } else {
           matching.cache.row.index <- nrow(dfCache) + 1
-          dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current.id, eventHtml = doc.youtube.original))
+          dfCache <- rbind.data.frame(dfCache, data.frame(eventID = current.id, eventHtml = doc.youtube.original, stringsAsFactors = FALSE))
         }
       }
       
@@ -871,7 +872,8 @@ for (fileName in fileList) {
                                                           eventSentenceCount = event.sentence.count,
                                                           eventParagraphCount = event.paragraph.count,
                                                           eventContent = collapsed.doc.text,
-                                                          eventTranslatedContent = NA))
+                                                          eventTranslatedContent = NA,
+                                                          stringsAsFactors = FALSE))
       }
       
       if (matching.simple.row.index == 0 && opt_hub_update == "refresh") {

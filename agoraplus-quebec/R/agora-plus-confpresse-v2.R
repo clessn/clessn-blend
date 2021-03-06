@@ -682,13 +682,11 @@ for (i in 1:5) {
           }
         }
         
-        if ( !(language %in% c("en","fr")) ) {
           language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
           if ( !(language %in% c("english","french")) ) { 
             language <- NA
           }
           else language <- substr(language,1,2)
-        }
         
         speech.sentence.count <- clessnverse::countSentences(paste(speech, collapse = ' '))
         speech.word.count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
@@ -736,7 +734,8 @@ for (i in 1:5) {
                                       speakerSpeechSentenceCount = speech.sentence.count,
                                       speakerSpeechParagraphCount = speech.paragraph.count,
                                       speakerSpeech = speech,
-                                      speakerTranslatedSpeech = NA)
+                                      speakerTranslatedSpeech = NA,
+                                      stringsAsFactors = FALSE)
           
           dfDeep <- clessnverse::commitDeepRows(row_to_commit, dfDeep, 'agoraplus_warehouse_intervention_items', opt$deep_update, opt$hub_update)
           
@@ -766,7 +765,7 @@ for (i in 1:5) {
       
       
       # Update the cache
-      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current.id, eventHtml = doc.html)
+      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current.id, eventHtml = doc.html, stringsAsFactors = FALSE)
       dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_update, opt$hub_update)
  
       # Update Simple
@@ -785,7 +784,8 @@ for (i in 1:5) {
                                   eventSentenceCount = event.sentence.count,
                                   eventParagraphCount = event.paragraph.count,
                                   eventContent = collapsed.doc.text,
-                                  eventTranslatedContent = NA)
+                                  eventTranslatedContent = NA,
+                                  stringsAsFactors = FALSE)
 
       dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_update, opt$hub_update)
       
