@@ -10,6 +10,7 @@ import re
 import io
 import os
 import unicodedata
+import logging
 
 
 
@@ -36,7 +37,7 @@ def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection)
     
     audio_input = speechsdk.AudioConfig(filename=fileToTranscribe)
 
-    if (languageDetection == "bilingual"):
+    if (languageDetection == "bi"):
         auto_detect_source_language_config = \
             speechsdk.languageconfig.AutoDetectSourceLanguageConfig(languages=["fr-CA", "en-CA"])
 
@@ -168,17 +169,17 @@ def main():
     select_publish_date_start = "2021-03-02"
     select_publish_date_end = "2021-03-02"
 
-    TOKEN = '5C7ebqb9vcIAAAAAAAAAASJgLBAJLRjBwThwHLkuZIUmv7VgIdEXHS7A29x96JQc'
+    #TOKEN = '5C7ebqb9vcIAAAAAAAAAASJgLBAJLRjBwThwHLkuZIUmv7VgIdEXHS7A29x96JQc'
+    TOKEN = 'zfzfAVJrCNIAAAAAAAAAAegaITGAQdHZIpeMjT_JhjXM9HIqykBIWwrFFN9VgCLh'
     dbx = dropbox.Dropbox(oauth2_access_token=TOKEN)
 
-
-    home_path = ''
-    base_path = '/'
-    from_azure_file_path = home_path + base_path + 'from_azure/'
-    parkinglot_file_path = home_path +  base_path + 'from_azure/parkinglot/'
-    to_hub_file_path = home_path +  base_path + 'to_hub/'
-    ready_to_hub_file_path = home_path +  base_path + 'to_hub/ready/'
-    done_file_path = home_path +  base_path + 'to_hub/done/'
+    home_path = '/'
+    base_path = 'clessn-blend/_SharedFolder_clessn-blend/'
+    from_azure_file_path = 'from_azure/'
+    parkinglot_file_path = 'from_azure/parkinglot/'
+    to_hub_file_path = 'to_hub/'
+    ready_to_hub_file_path = 'to_hub/ready/'
+    done_file_path = 'to_hub/done/'
 
     p = get_play_list_from_youtube('https://www.youtube.com/playlist?list=PLdgoQ6C3ckQv0XCp8S9zSswMuiss8lvcC')
 
@@ -218,7 +219,7 @@ def main():
             #transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+video_uuid+"---"+video.title+'.txt'
             transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+"-"+lang+"-"+video_uuid+'.txt'
             transcript_full_name = transctipt_file_path+transcript_file_name
-            transcript_blng_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+"bilingual"+"-"+video_uuid+'.txt'
+            transcript_blng_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+"bi"+"-"+video_uuid+'.txt'
             transcript_neut_name = transctipt_file_path+video.publish_date.strftime("%Y-%m-%d")+"-"+video_uuid+'.txt'
 
             if ( {transcript_file_name, transcript_blng_name, transcript_neut_name} & set(file_list_full) != set() ):
@@ -232,7 +233,7 @@ def main():
                     f = open(transcript_file_name,"w+") 
                     f.write(' '.join([str(elem) for elem in transcribed_text]))
                     f.close()
-                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, False)
+                    upload(dbx, transcript_file_name, '', base_path+from_azure_file_path, transcript_file_name, True)
                     os.remove(transcript_file_name)
 
                 os.remove('youtubeAudio.wav')
@@ -246,7 +247,7 @@ def main():
                 print('found file')  
                 print(from_azure_file_path)
                 print(transcript_file_name)
-                transcribed_text = download(dbx, '', from_azure_file_path, transcript_file_name)
+                transcribed_text = download(dbx, '', base_path+from_azure_file_path, transcript_file_name)
                 transcribed_text = transcribed_text.decode('UTF-8')
                 #f = open(transcript_file_name,"r")
                 #transcribed_text = f.read()
@@ -262,7 +263,7 @@ def main():
                     transcribed_text = 'DATE  : ' + video.publish_date.strftime("%Y-%m-%d") + '\n' + transcribed_text
                     f.write(transcribed_text)
                     f.close()
-                    upload(dbx, transcript_file_name, '', from_azure_file_path, transcript_file_name, True)
+                    upload(dbx, transcript_file_name, '', base_path+from_azure_file_path, transcript_file_name, True)
                     os.remove(transcript_file_name)
 
                 #</if (transcribed_text.split()[0] != 'URL'):>

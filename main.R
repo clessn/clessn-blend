@@ -40,7 +40,6 @@ installPackages <- function() {
     }
   } 
   
-  
   # load the packages
   # We will not invoque the CLESSN packages with 'library'. The functions 
   # in the package will have to be called explicitely with the package name
@@ -63,10 +62,13 @@ installPackages <- function() {
 ###############################################################################
 #   Globals
 #
+script_list <- c("agoraplus-conpresse.R", "agoraplus-debats.R", "agoraplus-youtube.R")
+
 
 ###############################################################################
 ########################               MAIN              ######################
 ###############################################################################
+
 
 tryCatch( 
   {
@@ -92,32 +94,32 @@ tryCatch(
   }
 )
 
-tryCatch( 
-  {
-    scriptname <- "agoraplus-confpresse.R"
-    logger <- clessnverse::loginit(scriptname, "file")
-    opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-                          hub_update = "refresh",csv_update = "skip",backend_type = "HUB")
+for (scriptname in script_list) {
+  tryCatch( 
+    {
+      logger <- clessnverse::loginit(scriptname, "file")
+      opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+                            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+      
+      clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
+      
+      source(paste("./agoraplus-quebec/R/", scriptname, sep=""))
+    },
     
-    clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
+    error = function(e) {
+      print(e)
+      clessnverse::logit(paste(scriptname, ":", paste(e, collapse=' ')), main_logger)
+    },
     
-    source(paste("./agoraplus-quebec/R/", scriptname, sep=""))
-  },
-  
-  error = function(e) {
-    print(e)
-    clessnverse::logit(paste(scriptname, ":", paste(e, collapse=' ')), main_logger)
-  },
-  
-  finally={
-    clessnverse::logit("Execution of agora-plus-confpresse-v2.R terminated", main_logger)
-    clessnverse::logclose(logger)
-    dfCacheConfPresse <- dfCache
-    dfSimpleConfPresse <- dfSimple
-    dfDeepConfPresse <- dfDeep
-  }
-)
-
+    finally={
+      clessnverse::logit(paste("Execution of", scriptname, "terminated"), main_logger)
+      clessnverse::logclose(logger)
+      dfCacheConfPresse <- dfCache
+      dfSimpleConfPresse <- dfSimple
+      dfDeepConfPresse <- dfDeep
+    }
+  )
+}
 
 clessnverse::logclose(main_logger)
 

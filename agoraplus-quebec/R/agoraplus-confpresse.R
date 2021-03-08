@@ -19,7 +19,7 @@
 ###############################################################################
 #   Function : installPackages
 #   This function installs all packages required in this script only
-
+#
 installPackages <- function() {
   # Define the required packages if they are not installed
   required_packages <- c("stringr",
@@ -43,7 +43,8 @@ installPackages <- function() {
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  
+  if (length(new_packages) >=1)   logit("installPackages: installing missing packages:")
+    
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
       devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
@@ -86,7 +87,7 @@ installPackages <- function() {
 # - CSV : work with the CSV in the shared folders - good for testing
 #         or for datamining and research or messing around
 # - HUB : work with the CLESSNHUB data directly : this is prod data
-
+#
 processCommandLineOptions <- function() {
   option_list = list(
     make_option(c("-c", "--cache_update"), type="character", default="rebuild", 
@@ -116,20 +117,10 @@ processCommandLineOptions <- function() {
 #
 #   scriptname
 #   logger
-#   
-#   Set the update modes of each database in the HUB from options in the
-#   command line when the script is called
 #
-#    Possible values : update, refresh, rebuild or skip
-#    update : updates the dataset by adding only new observations to it
-#    refresh : refreshes existing observations and adds new observations to the dataset
-#    rebuild : wipes out completely the dataset and rebuilds it from scratch
-#    skip : does not make any change to the dataset
-#    
-
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agora-plus-confpresse-v2.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
 if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file")
 
 # Create some reference vectors used for dates conversion or detecting patterns in the conferences
@@ -146,11 +137,25 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
                                    "prendre les questions", "prendre vos questions",
                                    "est-ce qu'il y a des questions", "passer aux questions")
 
+###############################################################################
+# Data source
+#
+# connect to the dataSource : the provincial parliament web site 
+# get the index page containing the URLs to all the press conference
+# to extract those URLS and get them individually in order to parse
+# each press conference
+#
+base.url <- "http://www.assnat.qc.ca"
+content.url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
+data <- xml2::read_html(paste(base.url,content.url,sep=""))
+urls <- rvest::html_nodes(data, 'li.icoHTML a')
+list.urls <- rvest::html_attr(urls, 'href')
+
+
 
 ###############################################################################
 ########################               MAIN              ######################
 ###############################################################################
-
 
 if (!exists("opt")) {
   opt <- processCommandLineOptions()
@@ -179,7 +184,6 @@ if ( opt$hub_update == "refresh" &&
 # - deputes     : a reference dataframe that contains the deputes in order
 #                 to add relevant data on journalists in the interventions
 #                 dataset
-#
 if (opt$backend_type == "HUB") {
   clessnverse::logit("getting data from HUB", logger)
   
@@ -271,7 +275,6 @@ if (opt$backend_type == "CSV") {
 
 # We only do this if we want to rebuild those datasets from scratch to start fresh
 # or if then don't exist in the environment of the current R session
-#
 if ( !exists("dfCache") || is.null(dfCache) || opt$cache_update == "rebuild" ) {
   clessnverse::logit("creating cache either because it doesn't exist or because its rebuild option", logger)
   dfCache <- clessnverse::createCache(context = "quebec")
@@ -288,34 +291,18 @@ if ( !exists("dfDeep") || is.null(dfDeep) || opt$deep_update == "rebuild" ) {
 }
 
 
-###############################################################################
-##### Get some data to start the fun!
-#####
-
-###
-### connect to the dataSource : the provincial parliament web site 
-### get the index page containing the URLs to all the press conference
-### to extract those URLS and get them individually in order to parse
-### each press conference
-###
-base.url <- "http://www.assnat.qc.ca"
-content.url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
-data <- xml2::read_html(paste(base.url,content.url,sep=""))
-urls <- rvest::html_nodes(data, 'li.icoHTML a')
-list.urls <- rvest::html_attr(urls, 'href')
 
 ###############################################################################
-##### Let's get serious!!!
-##### Run through the URLs list, get the html content from the cache if it is 
-##### in it, or from the assnat website and start parsing it o extract the
-##### press conference content
-#####
+# Let's get serious!!!
+# Run through the URLs list, get the html content from the cache if it is 
+# in it, or from the assnat website and start parsing it o extract the
+# press conference content
+#
 
 # Hack here to focus only on one press conf :
 #list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
-#for (i in 1:length(list.urls)) {
-for (i in 1:5) {
+for (i in 1:length(list.urls)) {
   clessnhub::refresh_token(configuration$token, configuration$url)
   current.url <- paste(base.url,list.urls[i],sep="")
   current.id <- str_replace_all(list.urls[i], "[[:punct:]]", "")
@@ -324,11 +311,9 @@ for (i in 1:5) {
 
   # Make sure the data comes from the pres conf (we know that from the URL)
   if (grepl("actualites-salle-presse", current.url)) {     
-    ###
     # If the data is not cache we get the raw html from assnat.qc.ca
     # if it is cached (we scarped it before), we prefer not to bombard
     # the website with HTTP_GET requests and ise the cached version
-    ###
     if ( !(current.id %in% dfCache$eventID) ) {
       # Read and parse HTML from the URL directly
       doc.html <- getURL(current.url)
@@ -359,8 +344,6 @@ for (i in 1:5) {
       clessnverse::logit("version préliminaire", logger)
     }
   
-    #cat("Version finale = ", version.finale,"\n")
-    
     #if ( version.finale && 
     if (( ((opt$simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
            opt$simple_update == "refresh" ||
@@ -484,11 +467,8 @@ for (i in 1:5) {
       event.paragraph.count <- length(doc.text) - 1
       event.sentence.count <- clessnverse::countVecSentences(doc.text) - 1
       
-      #for (j in 1:length(doc.text)) {
-      for (j in 1:10) {
-      
-        #cat("Conf:", i, "Paragraph:", j, "Intervention", seqnum, "\n", sep = " ")
-        
+      for (j in 1:length(doc.text)) {
+
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
         speech.paragraph.count <- 0
@@ -521,8 +501,6 @@ for (i in 1:5) {
           speech.paragraph.count <- 1
           speech.sentence.count <- 0
           speech.word.count <- 0
-          
-          ##cat("New person", doc.text[j], "\n")
           
           # let's rule out the moderator first
           if ( grepl("modérat", tolower(intervention.start)) ||
@@ -613,9 +591,6 @@ for (i in 1:5) {
                   
                   if (j == 1)
                     speech.type <- "allocution"
-                  #else
-                    #if (seqnum == 2 && dfDeep[nrow(dfDeep),]$speakerType == "Modérateur")
-                    #  speech.type <- "allocution"
                   else
                     if ( periode.de.questions || substr(doc.text[j-1], nchar(doc.text[j-1]), nchar(doc.text[j-1])) == "?" ) 
                       speech.type <- "réponse"
@@ -682,11 +657,11 @@ for (i in 1:5) {
           }
         }
         
-          language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
-          if ( !(language %in% c("english","french")) ) { 
-            language <- NA
-          }
-          else language <- substr(language,1,2)
+        language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
+        if ( !(language %in% c("english","french")) ) { 
+          language <- NA
+        }
+        else language <- substr(language,1,2)
         
         speech.sentence.count <- clessnverse::countSentences(paste(speech, collapse = ' '))
         speech.word.count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
@@ -698,7 +673,6 @@ for (i in 1:5) {
           full.name <- trimws(paste(na.omit(first.name), na.omit(last.name), sep = " "),which = "both")
         
         # If the next speaker is different or if it's the last record, then let's commit this observation into the dataset  
-        
         if ( ((grepl("^M\\.\\s+(.*?)\\s+:", substr(doc.text[j+1],1,40)) || 
                grepl("^Mme\\s+(.*?)\\s+:", substr(doc.text[j+1],1,40)) || 
                grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", substr(doc.text[j+1],1,40)) ||
