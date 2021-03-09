@@ -139,7 +139,7 @@ dataOutputFolder <- paste(dataRootFolder, "/to_hub/done", sep = "")
 #fileList <- list.files(dataInputFolder)
 
 #For dropbox API
-token <- readRDS("token-agoraplus.rds")
+token <- readRDS("token.rds")
 fileList <- rdrop2::drop_dir(dataInputFolder, dtoken = token)
 fileList <- fileList$name
 
