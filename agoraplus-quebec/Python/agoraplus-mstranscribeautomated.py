@@ -169,7 +169,6 @@ def main():
     select_publish_date_start = "2021-03-02"
     select_publish_date_end = "2021-03-02"
 
-    #TOKEN = '5C7ebqb9vcIAAAAAAAAAASJgLBAJLRjBwThwHLkuZIUmv7VgIdEXHS7A29x96JQc'
     TOKEN = 'zfzfAVJrCNIAAAAAAAAAAegaITGAQdHZIpeMjT_JhjXM9HIqykBIWwrFFN9VgCLh'
     dbx = dropbox.Dropbox(oauth2_access_token=TOKEN)
 

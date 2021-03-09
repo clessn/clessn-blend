@@ -22,8 +22,6 @@
 #
 installPackages <- function() {
   # Define the required packages if they are not installed
-  logit("installPackages: start")
-  logit("installPackages: set required packages")
   required_packages <- c("stringr", 
                          "tidyr",
                          "optparse",
@@ -33,7 +31,6 @@ installPackages <- function() {
                          "dplyr", 
                          "XML", 
                          "tm",
-                         "cld3",
                          "textcat",
                          "tidytext", 
                          "tibble",
@@ -45,15 +42,12 @@ installPackages <- function() {
                          "lmullen/genderdata")
   
   # Install missing packages
-  logit("installPackages: installing missing packages:")
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      logit(paste("installPackages: installing with devtools::install_github", new_packages[p]))
-      devtools::install_github(new_packages[p])
+      devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
     } else {
-      logit(paste("installPackages: installing with install.packages", new_packages[p]))
       install.packages(new_packages[p])
     }  
   }
@@ -64,7 +58,6 @@ installPackages <- function() {
   # in the prefix : example clessnverse::evaluateRelevanceIndex
   for (p in 1:length(required_packages)) {
     if ( !grepl("\\/", required_packages[p]) ) {
-      logit(paste("installPackages: loading", required_packages[p]))
       library(required_packages[p], character.only = TRUE)
     } else {
       if (grepl("clessn-hub-r", required_packages[p])) {
@@ -72,7 +65,6 @@ installPackages <- function() {
       } else {
         packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
       }
-      logit(paste("installPackages: loading", packagename))
     }
   }
 } # </function installPackages>
@@ -364,14 +356,14 @@ for (i in 1:length(list.urls)) {
     }
   
     if ( version.finale && 
-         ( ((opt_simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
-             opt_simple_update == "refresh" ||
-             opt_simple_update == "rebuild") ||
-            (opt_deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
-             opt_deep_update == "refresh" ||
-             opt_deep_update == "rebuild")) ||
-           ((opt_hub_update == "refresh" ||
-             opt_hub_update == "update") && current.id %in% dfSimple$eventID))
+         ( ((opt$simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
+             opt$simple_update == "refresh" ||
+             opt$simple_update == "rebuild") ||
+            (opt$deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
+             opt$deep_update == "refresh" ||
+             opt$deep_update == "rebuild")) ||
+           ((opt$hub_update == "refresh" ||
+             opt$hub_update == "update") && current.id %in% dfSimple$eventID))
     ) {
       
       ###############################

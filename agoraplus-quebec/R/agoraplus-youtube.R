@@ -22,8 +22,6 @@
 #
 installPackages <- function() {
   # Define the required packages if they are not installed
-  logit("installPackages: start")
-  logit("installPackages: set required packages")
   required_packages <- c("stringr", 
                          "tidyr",
                          "optparse",
@@ -41,15 +39,15 @@ installPackages <- function() {
                          "clessn/clessnverse",
                          "clessn/clessn-hub-r",
                          "ropensci/gender",
-                         "lmullen/genderdata")
+                         "lmullen/genderdata",
+                         "karthik/rdrop2")
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  if (length(new_packages) >=1) logit("installPackages: installing missing packages:")
-  
+
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p])
+      devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
     } else {
       install.packages(new_packages[p])
     }  
@@ -135,11 +133,15 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
 ###############################################################################
 #   Data source
 #
-dataRootFolder <- "../clessn-blend/_SharedFolder_clessn-blend"
+dataRootFolder <- "clessn-blend/_SharedFolder_clessn-blend"
 dataInputFolder <- paste(dataRootFolder, "/to_hub/ready", sep="")
 dataOutputFolder <- paste(dataRootFolder, "/to_hub/done", sep = "")
-fileList <- list.files(dataInputFolder)
+#fileList <- list.files(dataInputFolder)
 
+#For dropbox API
+token <- readRDS("token-agoraplus.rds")
+fileList <- rdrop2::drop_dir(dataInputFolder, dtoken = token)
+fileList <- fileList$name
 
 
 ###############################################################################
@@ -296,11 +298,14 @@ i=1
 for (fileName in fileList) {
   current.id <- str_match(fileName, "^.{14}(.*).txt")[2]
   
-  clessnverse::logit(paste("Conf", i, "de", length(list.urls), fileName, sep = " "), logger) 
+  clessnverse::logit(paste("Conf", i, "de", length(fileList), fileName, sep = " "), logger) 
   
   if ( !(current.id %in% dfCache$id) ) {
     # Read and parse HTML from the URL directly
-    doc.youtube <- readLines(paste(dataInputFolder, fileName, sep = "/"))
+    #doc.youtube <- readLines(paste(dataInputFolder, fileName, sep = "/"))
+    clessnverse::logit(paste("reading", paste(dataInputFolder, fileName, sep='/'), "from dropbox"), logger)
+    rdrop2::drop_download(paste(dataInputFolder, fileName, sep='/'), overwrite = T, dtoken = token)
+    doc.youtube <- readLines(fileName)
     doc.youtube.original <- paste(paste(doc.youtube, "\n\n", sep=""), collapse = ' ')
     doc.youtube <- doc.youtube[doc.youtube!=""]
     cached.html <- FALSE
@@ -319,14 +324,14 @@ for (fileName in fileList) {
   version.finale <- TRUE
 
   if ( version.finale && 
-       ( ((opt_simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
-           opt_simple_update == "refresh" ||
-           opt_simple_update == "rebuild") ||
-          (opt_deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
-           opt_deep_update == "refresh" ||
-           opt_deep_update == "rebuild")) ||
-         ((opt_hub_update == "refresh" ||
-           opt_hub_update == "update") && current.id %in% dfSimple$eventID))
+       ( ((opt$simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
+           opt$simple_update == "refresh" ||
+           opt$simple_update == "rebuild") ||
+          (opt$deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
+           opt$deep_update == "refresh" ||
+           opt$deep_update == "rebuild")) ||
+         ((opt$hub_update == "refresh" ||
+           opt$hub_update == "update") && current.id %in% dfSimple$eventID))
       ) {      
       ###############################
       # Columns of the simple dataset
@@ -386,6 +391,7 @@ for (fileName in fileList) {
       circ <- NA
       is.minister <- NA
       media <- NA
+      language <- NA
       speech.type <- NA
       speech <- NA
       
@@ -614,7 +620,7 @@ for (fileName in fileList) {
       collapsed.doc.text <- paste(paste(doc.text, "\n\n", sep=""), collapse = ' ')
       
       # Update the cache
-      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current.id, eventHtml = doc.html, stringsAsFactors = FALSE)
+      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current.id, eventHtml = doc.youtube.original, stringsAsFactors = FALSE)
       dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_update, opt$hub_update)
       
       # Update Simple
@@ -642,7 +648,9 @@ for (fileName in fileList) {
       
   } # version finale
   i <- i + 1
-  file.rename(paste(dataInputFolder, fileName, sep = "/"), paste(dataOutputFolder, fileName, sep = "/"))
+  file.remove(fileName)
+  rdrop2::drop_move(paste(dataInputFolder, fileName, sep='/'), paste(dataOutputFolder, fileName, sep='/'), dtoken = token)
+  #file.rename(paste(dataInputFolder, fileName, sep = "/"), paste(dataOutputFolder, fileName, sep = "/"))
 } #for (fileName in fileList)
 
 

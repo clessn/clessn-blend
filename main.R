@@ -62,7 +62,8 @@ installPackages <- function() {
 ###############################################################################
 #   Globals
 #
-script_list <- c("agoraplus-conpresse.R", "agoraplus-debats.R", "agoraplus-youtube.R")
+#script_list <- c("agoraplus-confpresse.R", "agoraplus-debats.R", "agoraplus-youtube.R")
+script_list <- c("agoraplus-confpresse.R")
 
 
 ###############################################################################

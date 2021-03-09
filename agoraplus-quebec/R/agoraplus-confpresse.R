@@ -43,8 +43,7 @@ installPackages <- function() {
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  if (length(new_packages) >=1)   logit("installPackages: installing missing packages:")
-    
+
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
       devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
@@ -302,12 +301,15 @@ if ( !exists("dfDeep") || is.null(dfDeep) || opt$deep_update == "rebuild" ) {
 # Hack here to focus only on one press conf :
 #list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
+
 for (i in 1:length(list.urls)) {
   clessnhub::refresh_token(configuration$token, configuration$url)
   current.url <- paste(base.url,list.urls[i],sep="")
   current.id <- str_replace_all(list.urls[i], "[[:punct:]]", "")
   
   clessnverse::logit(paste("Conf", i, "de", length(list.urls),sep = " "), logger)
+  cat("\nConf", i, "de", length(list.urls),"\n")
+  
 
   # Make sure the data comes from the pres conf (we know that from the URL)
   if (grepl("actualites-salle-presse", current.url)) {     
@@ -463,12 +465,18 @@ for (i in 1:length(list.urls)) {
       # Go through the vector of paragraphs of the event
       # and strip out any relevant info
       seqnum <- 1
-      
       event.paragraph.count <- length(doc.text) - 1
       event.sentence.count <- clessnverse::countVecSentences(doc.text) - 1
       
+      pb_chap <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
+                                       max = length(doc.text), # Maximum value of the progress bar
+                                       style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                                       width = 80,  # Progress bar width. Defaults to getOption("width")
+                                       char = "=")   # Character used to create the bar      
+      
       for (j in 1:length(doc.text)) {
-
+        setTxtProgressBar(pb_chap, j)
+        
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
         speech.paragraph.count <- 0
@@ -573,8 +581,10 @@ for (i in 1:length(list.urls)) {
                   if (length(last.name) == 0) last.name <- NA
                   first.name <- speaker[1,]$firstName
                   #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
-                  gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                                      is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                  #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
+                                      is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
                   if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                     type <- "fonctionnaire"
                     party <- NA
@@ -603,14 +613,17 @@ for (i in 1:length(list.urls)) {
                     speaker <- filter(journalists, tolower(paste(first.name, last.name, sep = " ")) == tolower(fullName))
                   }
                   else{
-                    speaker <- subset(journalists, grepl(tolower(last.name), tolower(fullName)))
+                    if (!is.na(last.name))
+                      speaker <- filter(journalists, str_detect(tolower(last.name), tolower(fullName)))
                   }
                   
                   if ( nrow(speaker) > 0 ) {
                     # we have a JOURNALIST
                     
-                    gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                                        is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                    #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                    #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                    gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
+                                        is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
                     
                     #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
                     type <- "journaliste"
@@ -632,8 +645,10 @@ for (i in 1:length(list.urls)) {
                       # Neither the moderator, nor a politician, nor a journalist
                       if (is.na(first.name)) first.name <- words(str_match(intervention.start, "^(.*):"))[1]
                       if (is.na(last.name)) last.name <- words(str_match(intervention.start, "^(.*):"))[2]
-                      gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                                          is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                      #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
+                      #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
+                      gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
+                                          is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
                     }
                   }
                   

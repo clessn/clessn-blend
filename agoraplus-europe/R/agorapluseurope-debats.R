@@ -393,11 +393,11 @@ urls_list <- rvest::html_attr(urls, 'href')
 #urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-18_FR.xml")
 urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml")
 
-pb_conf <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-                          max = length(urls_list), # Maximum value of the progress bar
-                          style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                          width = length(urls_list),   # Progress bar width. Defaults to getOption("width")
-                          char = "=")   # Character used to create the bar
+pb_conf <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
+                                 max = length(urls_list), # Maximum value of the progress bar
+                                 style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                                 width = length(urls_list),   # Progress bar width. Defaults to getOption("width")
+                                 char = "=")   # Character used to create the bar
 
 
 #for (i in 1:length(urls_list)) {
