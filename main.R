@@ -74,7 +74,7 @@ tryCatch(
   {
     installPackages()
     
-    main_logger <- clessnverse::loginit("main.R", "file")
+    main_logger <- clessnverse::loginit("main.R", "file", Sys.getenv("LOG_PATH"))
 
     clessnverse::logit("======================================", main_logger)
     clessnverse::logit(paste("Starting init program in main.R", 
@@ -97,7 +97,7 @@ tryCatch(
 for (scriptname in script_list) {
   tryCatch( 
     {
-      logger <- clessnverse::loginit(scriptname, "file")
+      logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
       opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
                             hub_update = "update",csv_update = "skip",backend_type = "HUB")
       
@@ -114,9 +114,6 @@ for (scriptname in script_list) {
     finally={
       clessnverse::logit(paste("Execution of", scriptname, "terminated"), main_logger)
       clessnverse::logclose(logger)
-      dfCacheConfPresse <- dfCache
-      dfSimpleConfPresse <- dfSimple
-      dfDeepConfPresse <- dfDeep
     }
   )
 }

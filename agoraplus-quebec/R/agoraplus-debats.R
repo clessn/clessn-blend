@@ -108,6 +108,23 @@ processCommandLineOptions <- function() {
   return(opt)
 }
 
+###############################################################################
+#   Function : removeSpeakerTitle
+#
+removeSpeakerTitle <- function(string) {
+  result <- ""
+  
+  if ( grepl("M\\.", string) )  result <- gsub("M.", "", string) 
+  if ( grepl("Mme", string) ) result <- gsub("Mme", "", string) 
+  
+  result <- sub("^\\s+", "", result)
+  result <- sub("\\s+$", "", result)
+  
+  if ( result == "" ) result <- string
+  
+  return(result)
+} 
+
 
 ###############################################################################
 #   Globals
@@ -118,7 +135,7 @@ processCommandLineOptions <- function() {
 installPackages()
 
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
-if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file")
+if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 # Create some reference vectors used for dates conversion or detecting patterns in the conferences
 months.fr <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
@@ -133,6 +150,21 @@ patterns.titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérate
 patterns.periode.de.questions <- c("période de questions", "période des questions",
                                    "prendre les questions", "prendre vos questions",
                                    "est-ce qu'il y a des questions", "passer aux questions")
+
+
+# opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+
+# Pour la PROD
+# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "patrickponcet")
+# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+
+# Pour le DEV
+# Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "test")
+# Sys.setenv(HUB_PASSWORD = "soleil123")
+
 
 ###############################################################################
 # Data source
@@ -188,7 +220,6 @@ if ( opt$hub_update == "refresh" &&
 # - deputes     : a reference dataframe that contains the deputes in order
 #                 to add relevant data on journalists in the interventions
 #                 dataset
-#
 if (opt$backend_type == "HUB") {
   clessnverse::logit("getting data from HUB", logger)
   
@@ -203,6 +234,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting cache from HUB", logger)
     dfCache <- clessnverse::loadCacheFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfCache from HUB because update mode is", 
+                             opt$cache_update, 
+                             case_when(exists("dfCache") && !is.null(dfCache) ~ "and it aleady exists")), 
+                       logger)
   }
   
   if (opt$simple_update != "rebuild" && opt$simple_update != "skip" && 
@@ -211,6 +247,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting simple from HUB", logger)
     dfSimple <- clessnverse::loadSimpleFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfSimple from HUB because update mode is", 
+                             opt$simple_update, 
+                             case_when(exists("dfSimple") && !is.null(dfSimple) ~ "and it aleady exists")), 
+                       logger)
   }
   
   if (opt$deep_update != "rebuild" && opt$deep_update != "skip" && 
@@ -219,6 +260,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting deep from HUB", logger)
     dfDeep <- clessnverse::loadDeepFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfDeep from HUB because update mode is", 
+                             opt$deep_update, 
+                             case_when(exists("dfDeep") && !is.null(dfDeep) ~ "and it aleady exists")), 
+                       logger)
   }
   
   clessnverse::logit("getting deputes from HUB", logger)
@@ -276,9 +322,10 @@ if (opt$backend_type == "CSV") {
   
 } #if (opt$backend_type == "CSV")
 
+
+
 # We only do this if we want to rebuild those datasets from scratch to start fresh
 # or if then don't exist in the environment of the current R session
-
 if ( !exists("dfCache") || is.null(dfCache) || opt$cache_update == "rebuild" ) {
   clessnverse::logit("creating cache either because it doesn't exist or because its rebuild option", logger)
   dfCache <- clessnverse::createCache(context = "quebec")
@@ -307,6 +354,8 @@ for (i in 1:length(list.urls)) {
   current.id <- str_replace_all(list.urls[i], "[[:punct:]]", "")
   
   clessnverse::logit(paste("Debate", i, "of", length(list.urls),sep = " "), logger)
+  cat("\nDebat", i, "de", length(list.urls),"\n")
+  
   
   # Make sure the data comes from the debats parlementaires (we know that from the URL)
   if (grepl("/travaux-parlementaires/assemblee-nationale/", current.url)) {     
@@ -349,9 +398,12 @@ for (i in 1:length(list.urls)) {
     # Valide la version : préliminaire ou finale
     if ( length(grep("version finale", tolower(doc.h2))) > 0 ) {
       version.finale <- TRUE
+      clessnverse::logit("version finale", logger)
+      cat("version finale")
     }
     else {
       version.finale <- FALSE
+      clessnverse::logit("version préliminaire", logger)
       cat("version préliminaire")
     }
   
@@ -481,8 +533,23 @@ for (i in 1:length(list.urls)) {
   
       event.paragraph.count <- length(doc.text) - 1
       event.sentence.count <- clessnverse::countVecSentences(doc.text) - 1
+
+      # pb_chap <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
+      #                                  max = length(doc.text), # Maximum value of the progress bar
+      #                                  style = 3,    # Progress bar style (also available style = 1 and style = 2)
+      #                                  width = 80,  # Progress bar width. Defaults to getOption("width")
+      #                                  char = "=")   # Character used to create the bar      
       
       for (j in 1:length(doc.text)) {
+        # setTxtProgressBar(pb_chap, j)
+        cat(j, "\r")
+        
+        # Skip if this intervention already is in the dataset
+        if (nrow(dfDeep[dfDeep$eventID == current.id & dfDeep$interventionSeqNum == seqnum,]) > 0 &&
+            opt$deep_update != "refresh") {
+          seqnum <- seqnum+1
+          next
+        }
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
@@ -786,7 +853,7 @@ for (i in 1:length(list.urls)) {
           
           speaker <- data.frame()
         } #If the next speaker is different or if it's the last record
-      } # for (j in 1:length(doc.text)) : loop back to the next 
+      } # for (j in 1:length(doc.text)) : loop back to the next intervention
       
       
       # Join all the elements of the character vector into a single

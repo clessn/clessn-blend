@@ -27,6 +27,7 @@ installPackages <- function() {
                          "optparse",
                          "RCurl", 
                          "httr",
+                         "httpuv",
                          "jsonlite",
                          "dplyr", 
                          "XML", 
@@ -119,7 +120,7 @@ processCommandLineOptions <- function() {
 installPackages()
 
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
-if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file")
+if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 # Create some reference vectors used for dates conversion or detecting patterns in the conferences
 patterns.titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérateur", "La Modératrice",
@@ -130,6 +131,21 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
                                    "prendre les questions", "prendre vos questions",
                                    "est-ce qu'il y a des questions", "passer aux questions")
 
+
+#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+
+# Pour la PROD
+#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+#Sys.setenv(HUB_USERNAME = "patrickponcet")
+#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+
+# Pour le DEV
+ # Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+ # Sys.setenv(HUB_USERNAME = "test")
+ # Sys.setenv(HUB_PASSWORD = "soleil123")
+
+
 ###############################################################################
 #   Data source
 #
@@ -139,10 +155,18 @@ dataOutputFolder <- paste(dataRootFolder, "/to_hub/done", sep = "")
 #fileList <- list.files(dataInputFolder)
 
 #For dropbox API
+clessnverse::logit("reading drop box token", logger)
 token <- readRDS("token.rds")
-fileList <- rdrop2::drop_dir(dataInputFolder, dtoken = token)
-fileList <- fileList$name
+fileListDataFrame <- rdrop2::drop_dir(dataInputFolder, dtoken = token)
 
+
+if (length(fileListDataFrame) == 0) {
+  clessnverse::logit(paste("no file to process in ",dataRootFolder,'/',dataInputFolder,sep=''), logger)
+  clessnverse::logclose(logger)
+  stop("abort because no file to process", call. = FALSE)
+} else {
+  fileList <- fileListDataFrame$name
+}
 
 ###############################################################################
 ########################               MAIN              ######################
@@ -176,7 +200,6 @@ if ( opt$hub_update == "refresh" &&
 # - deputes     : a reference dataframe that contains the deputes in order
 #                 to add relevant data on journalists in the interventions
 #                 dataset
-#
 if (opt$backend_type == "HUB") {
   clessnverse::logit("getting data from HUB", logger)
   
@@ -191,6 +214,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting cache from HUB", logger)
     dfCache <- clessnverse::loadCacheFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfCache from HUB because update mode is", 
+                             opt$cache_update, 
+                             case_when(exists("dfCache") && !is.null(dfCache) ~ "and it aleady exists")), 
+                       logger)
   }
   
   if (opt$simple_update != "rebuild" && opt$simple_update != "skip" && 
@@ -199,6 +227,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting simple from HUB", logger)
     dfSimple <- clessnverse::loadSimpleFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfSimple from HUB because update mode is", 
+                             opt$simple_update, 
+                             case_when(exists("dfSimple") && !is.null(dfSimple) ~ "and it aleady exists")), 
+                       logger)
   }
   
   if (opt$deep_update != "rebuild" && opt$deep_update != "skip" && 
@@ -207,6 +240,11 @@ if (opt$backend_type == "HUB") {
     
     clessnverse::logit("getting deep from HUB", logger)
     dfDeep <- clessnverse::loadDeepFromHub("quebec")
+  } else {
+    clessnverse::logit(paste("not retrieving dfDeep from HUB because update mode is", 
+                             opt$deep_update, 
+                             case_when(exists("dfDeep") && !is.null(dfDeep) ~ "and it aleady exists")), 
+                       logger)
   }
   
   clessnverse::logit("getting deputes from HUB", logger)
@@ -264,9 +302,10 @@ if (opt$backend_type == "CSV") {
   
 } #if (opt$backend_type == "CSV")
 
+
+
 # We only do this if we want to rebuild those datasets from scratch to start fresh
 # or if then don't exist in the environment of the current R session
-  
 if ( !exists("dfCache") || is.null(dfCache) || opt$cache_update == "rebuild" ) {
   clessnverse::logit("creating cache either because it doesn't exist or because its rebuild option", logger)
   dfCache <- clessnverse::createCache(context = "quebec")
@@ -299,12 +338,14 @@ for (fileName in fileList) {
   current.id <- str_match(fileName, "^.{14}(.*).txt")[2]
   
   clessnverse::logit(paste("Conf", i, "de", length(fileList), fileName, sep = " "), logger) 
+  cat("\nConf", i, "de", length(fileList), fileName, "\n", sep = " ")
   
   if ( !(current.id %in% dfCache$id) ) {
     # Read and parse HTML from the URL directly
     #doc.youtube <- readLines(paste(dataInputFolder, fileName, sep = "/"))
     clessnverse::logit(paste("reading", paste(dataInputFolder, fileName, sep='/'), "from dropbox"), logger)
     rdrop2::drop_download(paste(dataInputFolder, fileName, sep='/'), overwrite = T, dtoken = token)
+    clessnverse::logit(paste("reading", fileName, "from cwd"), logger)
     doc.youtube <- readLines(fileName)
     doc.youtube.original <- paste(paste(doc.youtube, "\n\n", sep=""), collapse = ' ')
     doc.youtube <- doc.youtube[doc.youtube!=""]
@@ -410,7 +451,7 @@ for (fileName in fileList) {
         
         for (j in 1:length(doc.text)) {
           
-          cat("Conf:", i, "Paragraph:", j, "Intervention", seqnum, "\n", sep = " ")
+          cat("Conf:", i, "Paragraph:", j, "Intervention", seqnum, "\r", sep = " ")
           
           # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
           # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
@@ -648,8 +689,90 @@ for (fileName in fileList) {
       
   } # version finale
   i <- i + 1
+  
+  
+  #lessnverse::logit(paste("uploading", fileName, "to", dataOutputFolder), logger)
+  #rdrop2::drop_upload(fileName, path=dataOutputFolder, dtoken = token)
+  
+  clessnverse::logit(paste("removing", fileName, "from cwd"), logger)
   file.remove(fileName)
-  rdrop2::drop_move(paste(dataInputFolder, fileName, sep='/'), paste(dataOutputFolder, fileName, sep='/'), dtoken = token)
+  
+  #clessnverse::logit(paste("removing", fileName, "from", dataInputFolder, "in dropbox"), logger)
+  #rdrop2::drop_delete(paste(dataInputFolder,fileName,sep='/'), dtoken = token)
+  
+
+  clessnverse::logit(paste("moving", fileName, "from", dataInputFolder, "to", dataInputFolder, "in dropbox"), logger)
+  #rdrop2::drop_move(paste(dataInputFolder,fileName,sep='/'), paste(dataOutputFolder,fileName,sep='/'), dtoken = token)
+
+  # curl -X POST https://api.dropboxapi.com/2/files/move_v2 \
+  # --header "Authorization: Bearer bCkxvWvn6BcAAAAAAAAAAQ_FDe6vaE2LeqrMnwwuoMsVWEHUPvJ9J5nynBa74mu-" \
+  # --header "Content-Type: application/json" \
+  # --data "{\"from_path\": \"/Homework/math\",\"to_path\": \"/Homework/algebra\",\"allow_shared_folder\": false,\"autorename\": false,\"allow_ownership_transfer\": false}"
+  
+  body <- paste('{\"from_path\": \"/',
+                dataInputFolder,'/',fileName,
+                '\",\"to_path\": \"/',
+                dataOutputFolder,'/',fileName,
+                '\",\"allow_shared_folder\": false,\"autorename\": false,\"allow_ownership_transfer\": false}',
+                sep='')
+  
+  r <- httr::POST(url = 'https://api.dropboxapi.com/2/files/move_v2',
+                  add_headers('Authorization' = paste("Bearer", token$credentials$access_token),
+                              'Content-Type' = 'application/json'),
+                  body = body,
+                  encode = "form")
+                  #httr::verbose(info = FALSE))
+  
+  if (r$status_code == 200) {
+    clessnverse::logit(paste("file", fileName, "sucessfully moved"), logger)
+  } else {
+    print(httr::content(r)$error_summary)
+    clessnverse::logit(paste("Error", httr::content(r)$error_summary, "attempting to move file", fileName), logger)
+    if (grepl("conflict", httr::content(r)$error_summary)) {
+
+      clessnverse::logit(paste("file", fileName, "already exists in destination.  Deleting it from destination and trying to move again"), logger)
+      # curl -X POST https://api.dropboxapi.com/2/file_requests/delete \
+      # --header "Authorization: Bearer " \
+      # --header "Content-Type: application/json" \
+      # --data "{\"ids\": [\"oaCAVmEyrqYnkZX9955Y\",\"BaZmehYoXMPtaRmfTbSG\"]}"
+      body <- paste('{\"path\": \"/',
+                    dataOutputFolder,'/',fileName,
+                    '\"}',
+                    sep='')
+      
+      s <- httr::POST(url = 'https://api.dropboxapi.com/2/files/delete_v2',
+                      add_headers('Authorization' = paste("Bearer", token$credentials$access_token),
+                                  'Content-Type' = 'application/json'),
+                      body = body,
+                      encode = "form")
+                      #httr::verbose(info = FALSE))
+      
+      if (s$status_code == 200) {
+        clessnverse::logit("destination file deleted, trying to move again", logger)
+        body <- paste('{\"from_path\": \"/',
+                      dataInputFolder,'/',fileName,
+                      '\",\"to_path\": \"/',
+                      dataOutputFolder,'/',fileName,
+                      '\",\"allow_shared_folder\": false,\"autorename\": false,\"allow_ownership_transfer\": false}',
+                      sep='')
+        
+        t <- httr::POST(url = 'https://api.dropboxapi.com/2/files/move_v2',
+                        add_headers('Authorization' = paste("Bearer", token$credentials$access_token),
+                                    'Content-Type' = 'application/json'),
+                        body = body,
+                        encode = "form")
+                        #httr::verbose(info = FALSE))
+        if (t$status_code == 200) {
+          clessnverse::logit("file moved", logger)
+        } else {
+          clessnverse::logit("something went wrong while trying to move file", logger)
+        }
+      } else {
+        clessnverse::logit("could not delete destination file", logger)
+      }
+    }
+  }
+  
   #file.rename(paste(dataInputFolder, fileName, sep = "/"), paste(dataOutputFolder, fileName, sep = "/"))
 } #for (fileName in fileList)
 
