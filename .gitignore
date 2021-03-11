@@ -154,3 +154,4 @@ _minted*
 .Rproj.user
 .httr-oauth
 token.rds
+__pycache__
