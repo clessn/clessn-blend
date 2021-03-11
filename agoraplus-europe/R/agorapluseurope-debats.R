@@ -23,8 +23,6 @@
 
 installPackages <- function() {
   # Define the required packages if they are not installed
-  logit("installPackages: start")
-  logit("installPackages: set required packages")
   required_packages <- c("stringr", 
                          "tidyr",
                          "optparse",
@@ -44,15 +42,12 @@ installPackages <- function() {
                          "lmullen/genderdata")
   
   # Install missing packages
-  logit("installPackages: installing missing packages:")
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      logit(paste("installPackages: installing with devtools::install_github", new_packages[p]))
       devtools::install_github(new_packages[p])
     } else {
-      logit(paste("installPackages: installing with install.packages", new_packages[p]))
       install.packages(new_packages[p])
     }  
   }
@@ -63,7 +58,6 @@ installPackages <- function() {
   # in the prefix : example clessnverse::evaluateRelevanceIndex
   for (p in 1:length(required_packages)) {
     if ( !grepl("\\/", required_packages[p]) ) {
-      logit(paste("installPackages: loading", required_packages[p]))
       library(required_packages[p], character.only = TRUE)
     } else {
       if (grepl("clessn-hub-r", required_packages[p])) {
@@ -71,96 +65,130 @@ installPackages <- function() {
       } else {
         packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
       }
-      logit(paste("installPackages: loading", packagename))
     }
   }
 } # </function installPackages>
 
+
 ###############################################################################
-#   Function : loginit, logit and logclose
-#   This function is used to log the script activities into a file for 
-#   automation debug and monitoring purposed
+#   Function : processCommandLineOptions
 #
-
-loginit <- function(script) {
-  log_handle <- file(paste("./log/",script,".log",sep=""), open = "at")
+# Parse the command line options
+# Which are the update modes of each database in the HUB or in the CSV backend
+#
+# Possible values : update, refresh, rebuild or skip
+# - update : updates the dataset by adding only new observations to it
+# - refresh : refreshes existing observations and adds new observations to the dataset
+# - rebuild : wipes out completely the dataset and rebuilds it from scratch
+# - skip : does not make any change to the dataset
+# set which backend we're working with
+# - CSV : work with the CSV in the shared folders - good for testing
+#         or for datamining and research or messing around
+# - HUB : work with the CLESSNHUB data directly : this is prod data
+#
+processCommandLineOptions <- function() {
+  option_list = list(
+    make_option(c("-c", "--cache_update"), type="character", default="rebuild", 
+                help="update mode of the cache [default= %default]", metavar="character"),
+    make_option(c("-s", "--simple_update"), type="character", default="rebuild", 
+                help="update mode of the simple dataframe [default= %default]", metavar="character"),
+    make_option(c("-d", "--deep_update"), type="character", default="rebuild", 
+                help="update mode of the deep dataframe [default= %Adefault]", metavar="character"),
+    make_option(c("-h", "--hub_update"), type="character", default="skip", 
+                help="update mode of the hub [default= %default]", metavar="character"),
+    make_option(c("-f", "--csv_update"), type="character", default="skip", 
+                help="update mode of the simple dataframe [default= %default]", metavar="character"),
+    make_option(c("-b", "--backend_type"), type="character", default="HUB", 
+                help="type of the backend - either hub or csv [default= %default]", metavar="character")
+  )
   
-  return(log_handle)
-}
-
-logit <- function(message) {
-  cat(format(Sys.time(), "%Y-%m-%d %X"), "-", .ChildEnv$scriptname, ":", message, "\n", 
-      append = T,
-      file = .ChildEnv$logger)
-}
-
-logclose <- function(log_handle) {
-  close(log_handle)
+  opt_parser = OptionParser(option_list=option_list)
+  opt = parse_args(opt_parser)
+  
+  return(opt)
 }
 
 
 ###############################################################################
 #   Globals
 #
-#   .ChildEnv : 
-#   .ChildEnv$scriptname
-#   .ChildEnv$logger
-#    
+#   scriptname
+#   logger
+#
+installPackages()
 
-if (!exists(".ChildEnv")) {
-  .ChildEnv <- new.env()
-  .ChildEnv$scriptname <- "agora-plus-confpresse-v2.R"
-  .ChildEnv$logger <- loginit(.ChildEnv$scriptname)
-}
+if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
+if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
+# Create some reference vectors used for dates conversion or detecting patterns in the conferences
+patterns.titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérateur", "La Modératrice",
+                     "journaliste :", "Le Président", "La Présidente", "La Vice-Présidente",
+                     "Le Vice-Président", "Titre :")
+
+patterns.periode.de.questions <- c("période de questions", "période des questions",
+                                   "prendre les questions", "prendre vos questions",
+                                   "est-ce qu'il y a des questions", "passer aux questions")
+
+
+# Pour la PROD
+#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+
+#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+#Sys.setenv(HUB_USERNAME = "patrickponcet")
+#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+
+
+###############################################################################
+#   Data source
+#
+
+# connect to the dataSource : the provincial parliament web site 
+# get the index page containing the URLs to all the national assembly debates
+# to extract those URLS and get them individually in order to parse
+# each debate
+#
+base_url <- "https://www.europarl.europa.eu"
+content_url <- "/plenary/fr/debates-video.html#sidesForm"
+
+source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
+source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
+
+urls <- rvest::html_nodes(source_page, 'a')
+urls <- urls[grep("\\.xml", urls)]
+urls <- urls[grep("https", urls)]
+
+urls_list <- rvest::html_attr(urls, 'href')
+
+
+###############################################################################
+##### Let's get serious!!!
+##### Run through the URLs list, get the html content from the cache if it is 
+##### in it, or from the assnat website and start parsing it o extract the
+##### press conference content
+#####
+#urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-18_FR.xml")
+urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml")
 
 
 ###############################################################################
 ########################               MAIN              ######################
 ###############################################################################
 
+if (!exists("opt")) {
+  opt <- processCommandLineOptions()
+}
 
+clessnverse::logit(paste("command line options: ", 
+                         paste(c(rbind(paste(" ",names(opt),"=",sep=''),opt)), collapse='')), logger)
 
-# Install the rquired packages
-installPackages()
-
-# Parse the command line options
-# Which are the update modes of each database in the HUB or in the CSV backend
-#
-# Possible values : update, refresh, rebuild or skip
-# update : updates the dataset by adding only new observations to it
-# refresh : refreshes existing observations and adds new observations to the dataset
-# rebuild : wipes out completely the dataset and rebuilds it from scratch
-# skip : does not make any change to the dataset
-option_list = list(
-  make_option(c("-c", "--cache_update"), type="character", default="skip", 
-              help="update mode of the cache [default= %default]", metavar="character"),
-  make_option(c("-s", "--simple_update"), type="character", default="rebuild", 
-              help="update mode of the simple dataframe [default= %default]", metavar="character"),
-  make_option(c("-d", "--deep_update"), type="character", default="rebuild", 
-              help="update mode of the deep dataframe [default= %default]", metavar="character"),
-  make_option(c("-h", "--hub_update"), type="character", default="skip", 
-              help="update mode of the hub [default= %default]", metavar="character"),
-  make_option(c("-f", "--csv_update"), type="character", default="skip", 
-              help="update mode of the simple dataframe [default= %default]", metavar="character"),
-  make_option(c("-b", "--backend_type"), type="character", default="HUB", 
-              help="type of the backend - either hub or csv [default= %default]", metavar="character")
-)
-
-opt_parser = OptionParser(option_list=option_list)
-opt = parse_args(opt_parser)
-
-opt_cache_update <- opt$cache_update
-opt_simple_update <- opt$simple_update
-opt_deep_update <- opt$deep_update
-opt_hub_update <- opt$hub_update
-opt_csv_update <- opt$csv_update
-
-# set which backend we're working with
-# - CSV : work with the CSV in the shared folders - good for testing
-#         or for datamining and research or messing around
-# - HUB : work with the CLESSNHUB data directly : this is prod data
-opt_backend_type <- opt$backend_type
+# Process incompatible option sets
+if ( opt$hub_update == "refresh" && 
+     (opt$simple_update == "rebuild" || opt$deep_update == "rebuild" ||
+      opt$simple_update == "skip" || opt$deep_update == "skip") ) 
+  stop(paste("this set of options:", 
+             paste("--hub_update=", opt$hub_update, " --simple_update=", opt$simple_update, " --deep_update=", opt$deep_update, sep=''),
+             "will duplicate entries in the HUB, if you want to refresh the hub use refresh on all datasets"), call. = F)
 
 
 # Define the datasets containing
@@ -361,37 +389,7 @@ patterns_periode_de_questions <- c("période de questions", "période des questi
                                    "est-ce qu'il y a des questions", "passer aux questions")
 
 
-###############################################################################
-##### Get some data to start the fun!
-#####
 
-###
-### connect to the dataSource : the provincial parliament web site 
-### get the index page containing the URLs to all the press conference
-### to extract those URLS and get them individually in order to parse
-### each press conference
-###
-base_url <- "https://www.europarl.europa.eu"
-content_url <- "/plenary/fr/debates-video.html#sidesForm"
-
-source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
-source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
-
-urls <- rvest::html_nodes(source_page, 'a')
-urls <- urls[grep("\\.xml", urls)]
-urls <- urls[grep("https", urls)]
-
-urls_list <- rvest::html_attr(urls, 'href')
-
-
-###############################################################################
-##### Let's get serious!!!
-##### Run through the URLs list, get the html content from the cache if it is 
-##### in it, or from the assnat website and start parsing it o extract the
-##### press conference content
-#####
-#urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-18_FR.xml")
-urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml")
 
 pb_conf <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
                                  max = length(urls_list), # Maximum value of the progress bar
