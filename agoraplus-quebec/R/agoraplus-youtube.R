@@ -27,7 +27,6 @@ installPackages <- function() {
                          "optparse",
                          "RCurl", 
                          "httr",
-                         "httpuv",
                          "jsonlite",
                          "dplyr", 
                          "XML", 
@@ -36,12 +35,10 @@ installPackages <- function() {
                          "tidytext", 
                          "tibble",
                          "devtools",
-                         "countrycode",
                          "clessn/clessnverse",
                          "clessn/clessn-hub-r",
-                         "ropensci/gender",
-                         "lmullen/genderdata",
-                         "karthik/rdrop2")
+                         "karthik/rdrop2",
+                         "httpuv")
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]

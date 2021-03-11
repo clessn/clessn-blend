@@ -35,11 +35,8 @@ installPackages <- function() {
                          "tidytext", 
                          "tibble",
                          "devtools",
-                         "countrycode",
                          "clessn/clessnverse",
-                         "clessn/clessn-hub-r",
-                         "ropensci/gender",
-                         "lmullen/genderdata")
+                         "clessn/clessn-hub-r")
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
