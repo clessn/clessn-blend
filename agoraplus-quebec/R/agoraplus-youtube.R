@@ -37,8 +37,8 @@ installPackages <- function() {
                          "devtools",
                          "clessn/clessnverse",
                          "clessn/clessn-hub-r",
-                         "karthik/rdrop2",
-                         "httpuv")
+                         "karthik/rdrop2")
+                         #"httpuv")
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
