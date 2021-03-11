@@ -136,13 +136,13 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
                                    "prendre les questions", "prendre vos questions",
                                    "est-ce qu'il y a des questions", "passer aux questions")
 
-opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-             hub_update = "update",csv_update = "skip",backend_type = "HUB")
+# opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+#              hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
-Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-Sys.setenv(HUB_USERNAME = "patrickponcet")
-Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "patrickponcet")
+# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
 # Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
