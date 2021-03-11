@@ -167,11 +167,19 @@ def download(dbx, folder, subfolder, name):
 
 
 def main():
+    logging.info("==============================================")
     logging.info("starting youtube video extractor python script")
-    todays_date = datetime.date.today()
-    todays_date = todays_date.strftime("%Y-%m-%d")
-    select_publish_date_start = todays_date
-    select_publish_date_end = todays_date
+
+    extract_date = os.environ.get('YOUTUBE_EXTRACT_DATE')
+    if (extract_date == None):
+        todays_date = datetime.date.today()
+        extract_date = todays_date.strftime("%Y-%m-%d")
+
+    select_publish_date_start = extract_date
+    select_publish_date_end = extract_date
+
+    logging.info("extract start date is " + select_publish_date_start)
+    logging.info("extract end date id " + select_publish_date_end)
 
     TOKEN = os.environ.get('DROPBOX_TOKEN')
     dbx = dropbox.Dropbox(oauth2_access_token=TOKEN)

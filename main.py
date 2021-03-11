@@ -23,6 +23,8 @@ except Exception as e:
 
 else:
     print("Python script finished successfuly")
+    logging.info("Python script finished successfuly")
 
 finally:
     print("finally done")
+    logging.info("finally done")
