@@ -1,7 +1,7 @@
 # Create My Dropbox Token
 
 # Run this first and follow the instructions
-install.package("rdrop2")
+devtools::install_github("karthik/rdrop2")
 
 token <- rdrop2::drop_auth()
 saveRDS(token, "token.rds")
