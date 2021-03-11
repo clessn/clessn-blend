@@ -155,3 +155,5 @@ _minted*
 .httr-oauth
 token.rds
 __pycache__
+env
+.env
