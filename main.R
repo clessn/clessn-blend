@@ -25,6 +25,7 @@ installPackages <- function() {
   # Define the required packages if they are not installed
   required_packages <- c("stringr", 
                          "optparse",
+                         "sendmailR",
                          "clessn/clessnverse")
   
   # Install missing packages
@@ -33,7 +34,7 @@ installPackages <- function() {
   if (length(new_packages) >0) {
     for (p in 1:length(new_packages)) {
       if ( grepl("\\/", new_packages[p]) ) {
-        devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = TRUE, build = FALSE)
       } else {
         install.packages(new_packages[p])
       }  
@@ -113,10 +114,11 @@ for (scriptname in script_list) {
     
     finally={
       clessnverse::logit(paste("Execution of", scriptname, "terminated"), main_logger)
-      clessnverse::logclose(logger)
+      clessnverse::logit(paste("Exitting main.R normally"), main_logger)
+      logger <- clessnverse::logclose(logger)
     }
   )
 }
 
-clessnverse::logclose(main_logger)
+main_logger <- clessnverse::logclose(main_logger)
 

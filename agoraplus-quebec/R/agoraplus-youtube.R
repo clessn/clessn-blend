@@ -76,7 +76,7 @@ installPackages <- function() {
 installPackages()
 
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
-if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
            hub_update = "update",csv_update = "skip",backend_type = "HUB")
@@ -129,7 +129,7 @@ filelist_df <- clessnverse::dbxListDir(dir=paste("/",data_input_folder, sep=""),
 
 if (nrow(filelist_df) == 0) {
   clessnverse::logit(paste("no file to process in ",data_root_folder,'/',data_input_folder,sep=''), logger)
-  clessnverse::logclose(logger)
+  logger <- clessnverse::logclose(logger)
   #stop("This not an error - this is normal behaviour - program stopped because no youtube transcription to process in to_hub/ready folder in dropbox", call. = FALSE)
   invokeRestart("abort")
 } else {
