@@ -81,7 +81,7 @@ if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+            hub_update = "update",csv_update = "skip",backend_type = "CSV")
 
 # Pour la PROD
 #Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
@@ -89,9 +89,9 @@ opt <- list(cache_update = "update",simple_update = "update",deep_update = "upda
 #Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
-#Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "test")
-#Sys.setenv(HUB_PASSWORD = "soleil123")
+Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+Sys.setenv(HUB_USERNAME = "test")
+Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -443,17 +443,11 @@ for (i in 1:length(urls_list)) {
 
 
 
-if (opt_csv_update != "skip" && opt_backend_type == "CSV") { 
-  write.csv2(dfCache, file=
-               "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-v3.csv",
-               #"/Users/patrick/dfCacheAgoraPlus-v3.csv",
-               row.names = FALSE)
-  write.csv2(dfDeep, file=
-               "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfDeepAgoraPlus-v3.csv",
-               #"/Users/patrick/dfDeepAgoraPlus-v3.csv",
-               row.names = FALSE)
-  write.csv2(dfSimple, file=
-               "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfSimpleAgoraPlus-v3.csv",
-               #"/Users/patrick/dfSimpleAgoraPlus-v3.csv",
-               row.names = FALSE)
+if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
+  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
 }
+
+clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+logger <- clessnverse::logclose(logger)
