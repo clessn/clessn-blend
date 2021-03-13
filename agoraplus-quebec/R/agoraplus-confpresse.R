@@ -79,8 +79,8 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-# opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-#             hub_update = "update",csv_update = "skip",backend_type = "HUB")
+opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+            hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
 #Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
@@ -88,9 +88,9 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 #Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
-#Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "test")
-#Sys.setenv(HUB_PASSWORD = "soleil123")
+Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+Sys.setenv(HUB_USERNAME = "test")
+Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -205,8 +205,8 @@ for (i in 1:length(list_urls)) {
            opt$deep_update == "refresh" ||
            opt$deep_update == "rebuild")) ||
          ((opt$hub_update == "refresh" ||
-           opt$hub_update == "update") && current_id %in% dfSimple$eventID))
-      ) {
+           opt$hub_update == "update") && current_id %in% dfSimple$eventID)
+      )) {
       
       ###############################
       # Columns of the simple dataset
@@ -393,9 +393,11 @@ for (i in 1:length(list_urls)) {
                  str_detect(intervention_start, "^Mme(.*):") ) {
               # il faut voir maintenant s'il y a quelque chose entre parenthèses :
               # c'est soit la circonscription du député, soit le prénom du journaliste
-              
-              if ( str_detect(intervention_start, "^M\\.(.*):") ) gender.femme <- 0
-              else gender.femme <- 1
+              if ( !str_detect(intervention_start, "^Mme(.*):") ) {
+                gender_femme <- 0
+              } else { 
+                gender_femme <- 1
+              }
               
               if ( !is.na(str_match(intervention_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]) ) {
                 # We have a string of type "M. | Mme string1 (string2) :" avec string 2 = 
@@ -407,7 +409,7 @@ for (i in 1:length(list_urls)) {
                 if ( nrow(filter(deputes, currentDistrict == first_name)) > 0 ) {
                   circ <- first_name
                   first_name <- NA
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender.femme)
+                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender_femme)
                 } else {
                   speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(firstName) == tolower(first_name))
                 }
@@ -420,9 +422,9 @@ for (i in 1:length(list_urls)) {
                   ln1 <- word(last_name, 1)
                   ln2 <- word(last_name, 2)
                   if (is.na(ln2)) {
-                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender.femme)
+                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
                   } else {
-                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender.femme)
+                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
                   }
                   ln1 <- NA
                   ln2 <- NA
@@ -440,10 +442,10 @@ for (i in 1:length(list_urls)) {
                   if (length(last_name) == 0) last_name <- NA
                   first_name <- speaker[1,]$firstName
                   #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
-                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                  #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
-                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
-                                      is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
+                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                  #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
+                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                                      is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                   if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                     type <- "fonctionnaire"
                     party <- NA
@@ -479,10 +481,10 @@ for (i in 1:length(list_urls)) {
                   if ( nrow(speaker) > 0 ) {
                     # we have a JOURNALIST
                     
-                    #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                    #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
-                    gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
-                                        is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
+                    #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                    #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
+                    gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                                        is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                     
                     #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
                     type <- "journaliste"
@@ -498,16 +500,15 @@ for (i in 1:length(list_urls)) {
                       party <- NA
                       circ <- NA
                       media <- NA
-                    }
-                    else {
+                    } else {
                       # ATTENTION : here we have not been able to identify
                       # Neither the moderator, nor a politician, nor a journalist
                       if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
                       if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
-                      #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
-                      #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
-                      gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
-                                          is.na(gender) && !speaker$isFemale[1] == 0 || gender.femme == 0 ~ "M")
+                      #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                      #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
+                      gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                                          is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                     }
                   }
                   
