@@ -646,8 +646,8 @@ for (i in 1:length(list_urls)) {
 
 if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
   write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep=''), row.names = FALSE)
 }
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
