@@ -46,7 +46,7 @@ installPackages <- function() {
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p])
+      devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
     } else {
       install.packages(new_packages[p])
     }  

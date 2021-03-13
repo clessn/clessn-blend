@@ -15,14 +15,14 @@
 ###############################################################################
 
 
-
 ###############################################################################
-#   Function : installPackages
-#   This function installs all packages required in this script only
+# Function : installPackages
+# This function installs all packages requires in this script and all the
+# scripts called by this one
 #
 installPackages <- function() {
   # Define the required packages if they are not installed
-  required_packages <- c("stringr",
+  required_packages <- c("stringr", 
                          "tidyr",
                          "optparse",
                          "RCurl", 
@@ -40,10 +40,10 @@ installPackages <- function() {
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-
+  
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
+      devtools::install_github(new_packages[p], upgrade = "never", quiet =TRUE, build = FALSE)
     } else {
       install.packages(new_packages[p])
     }  
@@ -64,48 +64,7 @@ installPackages <- function() {
       }
     }
   }
-  
 } # </function installPackages>
-
-
-###############################################################################
-#   Function : processCommandLineOptions
-#
-# Parse the command line options
-# Which are the update modes of each database in the HUB or in the CSV backend
-#
-# Possible values : update, refresh, rebuild or skip
-# - update : updates the dataset by adding only new observations to it
-# - refresh : refreshes existing observations and adds new observations to the dataset
-# - rebuild : wipes out completely the dataset and rebuilds it from scratch
-# - skip : does not make any change to the dataset
-# set which backend we're working with
-# - CSV : work with the CSV in the shared folders - good for testing
-#         or for datamining and research or messing around
-# - HUB : work with the CLESSNHUB data directly : this is prod data
-#
-processCommandLineOptions <- function() {
-  option_list = list(
-    make_option(c("-c", "--cache_update"), type="character", default="rebuild", 
-                help="update mode of the cache [default= %default]", metavar="character"),
-    make_option(c("-s", "--simple_update"), type="character", default="rebuild", 
-                help="update mode of the simple dataframe [default= %default]", metavar="character"),
-    make_option(c("-d", "--deep_update"), type="character", default="rebuild", 
-                help="update mode of the deep dataframe [default= %Adefault]", metavar="character"),
-    make_option(c("-h", "--hub_update"), type="character", default="skip", 
-                help="update mode of the hub [default= %default]", metavar="character"),
-    make_option(c("-f", "--csv_update"), type="character", default="skip", 
-                help="update mode of the simple dataframe [default= %default]", metavar="character"),
-    make_option(c("-b", "--backend_type"), type="character", default="HUB", 
-                help="type of the backend - either hub or csv [default= %default]", metavar="character")
-  )
-  
-  opt_parser = OptionParser(option_list=option_list)
-  opt = parse_args(opt_parser)
-  
-  return(opt)
-}
-
 
 
 ###############################################################################
@@ -116,35 +75,37 @@ processCommandLineOptions <- function() {
 #
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
 if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-# Create some reference vectors used for dates conversion or detecting patterns in the conferences
-months.fr <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
-               "octobre", "novembre", "décembre")
-months.en <- c("january", "february", "march", "april", "may", "june", "july", "august", "september",
-               "october", "november", "december")
-
-patterns.titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérateur", "La Modératrice",
-                     "journaliste :", "Le Président", "La Présidente", "La Vice-Présidente",
-                     "Le Vice-Président", "Titre :")
-
-patterns.periode.de.questions <- c("période de questions", "période des questions",
-                                   "prendre les questions", "prendre vos questions",
-                                   "est-ce qu'il y a des questions", "passer aux questions")
-
-# opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-#              hub_update = "update",csv_update = "skip",backend_type = "HUB")
+opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+            hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
-# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-# Sys.setenv(HUB_USERNAME = "patrickponcet")
-# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+#Sys.setenv(HUB_USERNAME = "patrickponcet")
+#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
-# Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-# Sys.setenv(HUB_USERNAME = "test")
-# Sys.setenv(HUB_PASSWORD = "soleil123")
+#Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+#Sys.setenv(HUB_USERNAME = "test")
+#Sys.setenv(HUB_PASSWORD = "soleil123")
+
+if (!exists("opt")) {
+  opt <- clessnverse::processCommandLineOptions()
+}
+
+if (opt$backend_type == "HUB") 
+  clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+                                        Sys.getenv('HUB_USERNAME'), 
+                                        Sys.getenv('HUB_PASSWORD'), 
+                                        Sys.getenv('HUB_URL'))
+
+if (opt$backend_type == "CSV")
+  clessnverse::loadAgoraplusCSVDatasets("quebec", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
+
+# Load all objects used for ETL
+clessnverse::loadETLRefData()
 
 
 ###############################################################################
@@ -159,154 +120,26 @@ base.url <- "http://www.assnat.qc.ca"
 content.url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
 data <- xml2::read_html(paste(base.url,content.url,sep=""))
 urls <- rvest::html_nodes(data, 'li.icoHTML a')
+
+# To obtain the list of conferences available in the FIRST search results page (default page)
 list.urls <- rvest::html_attr(urls, 'href')
+
+# Hack here to focus only on one press conf :
+#list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
+
+
+
+
+
+
+
+
 
 
 
 ###############################################################################
 ########################               MAIN              ######################
 ###############################################################################
-
-
-if (!exists("opt")) {
-  opt <- processCommandLineOptions()
-}
-
-clessnverse::logit(paste("command line options: ", 
-                         paste(c(rbind(paste(" ",names(opt),"=",sep=''),opt)), collapse='')), logger)
-
-# Process incompatible option sets
-if ( opt$hub_update == "refresh" && 
-    (opt$simple_update == "rebuild" || opt$deep_update == "rebuild" ||
-     opt$simple_update == "skip" || opt$deep_update == "skip") ) 
-  stop(paste("this set of options:", 
-             paste("--hub_update=", opt$hub_update, " --simple_update=", opt$simple_update, " --deep_update=", opt$deep_update, sep=''),
-             "will duplicate entries in the HUB, if you want to refresh the hub use refresh on all datasets"), call. = F)
-
-# Get all data from the HUB or from CSV.  If neither was successful, then
-# create empty datasets from scratch
-#
-# - Cache which contains the raw html scraped from the assnat.qc.ca site
-# - dfSimple which contains one observation per event (débat or press conf)
-# - dfDeep which contains one observation per intervention per event
-# - journalists : a reference dataframe that contains the journalists in order
-#                 to add relevant data on journalists in the interventions
-#                 dataset
-# - deputes     : a reference dataframe that contains the deputes in order
-#                 to add relevant data on journalists in the interventions
-#                 dataset
-if (opt$backend_type == "HUB") {
-  clessnverse::logit("getting data from HUB", logger)
-  
-  # Connect to the HUB
-  clessnverse::logit(paste("login to the HUB", Sys.getenv("HUB_URL")), logger)
-  clessnhub::login(username = Sys.getenv("HUB_USERNAME"), password = Sys.getenv("HUB_PASSWORD"), url = Sys.getenv("HUB_URL"))
-
-  # Récuperer les données de Cache, Simple et Deep 
-  if (opt$cache_update != "rebuild" && opt$cache_update != "skip" && 
-      (!exists("dfCache") || is.null(dfCache) || nrow(dfCache) == 0) ||
-      opt$hub_update == "refresh") {
-    
-    clessnverse::logit("getting cache from HUB", logger)
-    dfCache <- clessnverse::loadCacheFromHub("quebec")
-  } else {
-    clessnverse::logit(paste("not retrieving dfCache because update mode is", 
-                             opt$cache_update, 
-                             case_when(exists("dfCache") && !is.null(dfCache) ~ "and it aleady exists")), 
-                       logger)
-  }
-
-  if (opt$simple_update != "rebuild" && opt$simple_update != "skip" && 
-      (!exists("dfSimple") || is.null(dfSimple) || nrow(dfSimple) == 0) ||
-      opt$hub_update == "refresh") {
-    
-    clessnverse::logit("getting simple from HUB", logger)
-    dfSimple <- clessnverse::loadSimpleFromHub("quebec")
-  }
-
-  if (opt$deep_update != "rebuild" && opt$deep_update != "skip" && 
-      (!exists("dfDeep") || is.null(dfDeep) || nrow(dfDeep) == 0) ||
-      opt$hub_update == "refresh") {
-    
-    clessnverse::logit("getting deep from HUB", logger)
-    dfDeep <- clessnverse::loadDeepFromHub("quebec")
-  }
-  
-  clessnverse::logit("getting deputes from HUB", logger)
-  deputes <- clessnhub::download_table('warehouse_quebec_mnas')
-  deputes <- deputes %>% separate(lastName, c("lastName1", "lastName2"), " ")
-  
-  clessnverse::logit("getting journalists from HUB", logger)
-  journalists <- clessnhub::download_table('warehouse_journalists')
-
-} #if (opt$backend_type == "HUB")
-
-
-if (opt$backend_type == "CSV") {
-  clessnverse::logit("getting data from CSV", logger)
-  
-  base_csv_folder <- "../clessn-blend/_SharedFolder_clessn-blend/data/"
-  
-  if (opt$cache_update != "rebuild" && opt$cache_update != "skip") {
-    clessnverse::logit("getting journalists from CSV", logger)
-    dfCache <- read.csv2(file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''),
-                           sep = ";", comment.char = "#")  
-  }
-  
-  if (opt$simple_update != "rebuild" && opt$simple_update != "skip") {
-    clessnverse::logit("getting Simple from CSV", logger)
-    dfSimple <- read.csv2(file= paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep=''),
-                          sep = ";", comment.char = "#", encoding = "UTF-8")
-  }
-  
-  if (opt$deep_update != "rebuild" && opt$deep_update != "skip") {
-    clessnverse::logit("getting Deep from CSV", logger)
-    dfDeep <- read.csv2(file=paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep=''),
-                        sep = ";", comment.char = "#", encoding = "UTF-8")
-  }
-  
-
-  clessnverse::logit("getting deputes from CSV", logger)
-  deputes <- read.csv(file = paste(base_csv_folder,"Deputes_Quebec_Coordonnees.csv"), sep = ";")
-  deputes <- deputes %>% separate(nom, c("firstName", "lastName1", "lastName2"), " ")
-  names(deputes)[names(deputes)=="femme"] <- "isFemale"
-  names(deputes)[names(deputes)=="parti"] <- "party"
-  names(deputes)[names(deputes)=="circonscription"] <- "currentDistrict"
-  names(deputes)[names(deputes)=="ministre"] <- "isMinister"
-  
-  clessnverse::logit("getting journalits from CSV", logger)
-  journalists <- read.csv(file = paste(base_csv_folder, "journalist_handle.csv", sep = ";"), sep = ";")
-  journalists$X <- NULL
-  names(journalists)[names(journalists)=="female"] <- "isFemale"
-  names(journalists)[names(journalists)=="author"] <- "fullName"
-  names(journalists)[names(journalists)=="selfIdJourn"] <- "thinkIsJournalist"
-  names(journalists)[names(journalists)=="handle"] <- "twitterHandle"
-  names(journalists)[names(journalists)=="realID"] <- "twittweJobTitle"
-  names(journalists)[names(journalists)=="user_id"] <- "twitterID"
-  names(journalists)[names(journalists)=="protected"] <- "twitterAccountProtected"
-
-} #if (opt$backend_type == "CSV")
-
-
-
-# We only do this if we want to rebuild those datasets from scratch to start fresh
-# or if then don't exist in the environment of the current R session
-if ( !exists("dfCache") || is.null(dfCache) || opt$cache_update == "rebuild" ) {
-  clessnverse::logit("creating cache either because it doesn't exist or because its rebuild option", logger)
-  dfCache <- clessnverse::createCache(context = "quebec")
-}
-
-if ( !exists("dfSimple") || is.null(dfSimple) || opt$simple_update == "rebuild" ) {
-  clessnverse::logit("creating Simple either because it doesn't exist or because its rebuild option", logger)
-  dfSimple <- clessnverse::createSimple(context = "quebec")
-}
-
-if ( !exists("dfDeep") || is.null(dfDeep) || opt$deep_update == "rebuild" ) {
-  clessnverse::logit("creating Deep either because it doesn't exist or because its rebuild option", logger)
-  dfDeep <- clessnverse::createDeep(context = "quebec")
-}
-
-
 
 ###############################################################################
 # Let's get serious!!!
@@ -315,8 +148,6 @@ if ( !exists("dfDeep") || is.null(dfDeep) || opt$deep_update == "rebuild" ) {
 # press conference content
 #
 
-# Hack here to focus only on one press conf :
-#list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
 
 for (i in 1:length(list.urls)) {

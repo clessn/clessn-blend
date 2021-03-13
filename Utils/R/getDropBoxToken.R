@@ -35,3 +35,50 @@ print(token$credentials$access_token)
 # - Then create an environment variable (system-wide) called DROPBOX_TOKEN on your system 
 #   that contains the value of that token string
 # - You may now run the agoraplus-youtube.R and the agoraplusmstranscribeautomated.py scripts
+
+# set dropbox oauth2 endpoints
+dropbox <- httr::oauth_endpoints(
+  authorize = "https://www.dropbox.com/oauth2/authorize",
+  access = "https://api.dropbox.com/oauth2/token"
+)
+
+# registered dropbox app's key & secret
+dropbox_app <- httr::oauth_app("agora+", "oan106vfhg7gnxa", "vl4e1ujwfynpzwf")
+
+# get the token
+dropbox_token <- httr::oauth2.0_token(endpoint = dropbox, app = dropbox_app, cache = TRUE, use_oob = FALSE)
+
+mytoken <- rdrop2::drop_auth(key = "oan106vfhg7gnxa", secret = "vl4e1ujwfynpzwf")
+
+r <- POST("https://api.dropbox.com/oauth2/token",
+          config = list(),
+          body = list(
+            grant_type="client_credentials",
+            client_id="oan106vfhg7gnxa",
+            client_secret="vl4e1ujwfynpzwf",
+            scope="api_suburbperformance_read"
+          ),
+          encode = "form"
+)
+warn_for_status(r)          
+content(r)
+
+# curl -X POST https://api.dropboxapi.com/2/files/list_folder \
+# --header "Authorization: Bearer cgx3e0Jqng0AAAAAAAAAAVJ2Obxnvk-5t4sjAV56zHSLClD0bGqwmhTAhTkD87vU" \
+# --header "Content-Type: application/json" \
+# --data "{\"path\": \"/Homework/math\",\"recursive\": false,\"include_media_info\": false,\"include_deleted\": false,\"include_has_explicit_shared_members\": false,\"include_mounted_folders\": true,\"include_non_downloadable_files\": true}"
+
+body <- paste('{\"path\": \"/',
+              "clessn-blend",
+              '\",\"recursive\": false,\"include_media_info\": false,\"include_deleted\": false,\"include_has_explicit_shared_members\": false,\"include_mounted_folders\": true,\"include_non_downloadable_files\": true}',
+              sep='')
+
+s <- httr::POST(url = 'https://api.dropboxapi.com/2/files/list_folder',
+                httr::add_headers('Authorization' = paste("Bearer", "aVPJM4fsRpIAAAAAAAAAAdKU15GLcG9JrZBr5m9sj2P14OusKL5UUqjIY0VtU5cw"),
+                            'Content-Type' = 'application/json'),
+                body = body,
+                #encode = "form",
+                httr::verbose(info = FALSE))
+
+httr::content(s)
+httr::
