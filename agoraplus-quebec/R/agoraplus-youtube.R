@@ -530,5 +530,5 @@ if (opt$csv_update != "skip" && opt$backend_type == "CSV") {
 }
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
-clessnverse::logclose(logger)
+logger <- clessnverse::logclose(logger)
 
