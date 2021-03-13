@@ -114,11 +114,11 @@ for (scriptname in script_list) {
     
     finally={
       clessnverse::logit(paste("Execution of", scriptname, "terminated"), main_logger)
-      clessnverse::logit(paste("Exitting main.R normally"), main_logger)
       logger <- clessnverse::logclose(logger)
     }
   )
 }
 
+clessnverse::logit(paste("Exitting main.R normally"), main_logger)
 main_logger <- clessnverse::logclose(main_logger)
 
