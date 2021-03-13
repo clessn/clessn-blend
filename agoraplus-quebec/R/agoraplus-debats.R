@@ -148,7 +148,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 # press conference content
 #
 for (i in 1:length(list_urls)) {
-  clessnhub::refresh_token(configuration$token, configuration$url)
+  if (opt_backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- str_replace_all(list_urls[i], "[[:punct:]]", "")
   
