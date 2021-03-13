@@ -44,12 +44,13 @@ installPackages <- function() {
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
       devtools::install_github(new_packages[p], upgrade = "never", quiet =TRUE, build = FALSE)
+      
     } else {
       install.packages(new_packages[p])
     }  
   }
-  
-  # load the packages
+
+    # load the packages
   # We will not invoque the CLESSN packages with 'library'. The functions 
   # in the package will have to be called explicitely with the package name
   # in the prefix : example clessnverse::evaluateRelevanceIndex
@@ -116,16 +117,16 @@ clessnverse::loadETLRefData()
 # to extract those URLS and get them individually in order to parse
 # each press conference
 #
-base.url <- "http://www.assnat.qc.ca"
-content.url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
-data <- xml2::read_html(paste(base.url,content.url,sep=""))
+base_url <- "http://www.assnat.qc.ca"
+content_url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
+data <- xml2::read_html(paste(base_url,content_url,sep=""))
 urls <- rvest::html_nodes(data, 'li.icoHTML a')
 
 # To obtain the list of conferences available in the FIRST search results page (default page)
-list.urls <- rvest::html_attr(urls, 'href')
+list_urls <- rvest::html_attr(urls, 'href')
 
 # Hack here to focus only on one press conf :
-#list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
+#list_urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
 
 
@@ -150,61 +151,61 @@ list.urls <- rvest::html_attr(urls, 'href')
 
 
 
-for (i in 1:length(list.urls)) {
+for (i in 1:length(list_urls)) {
   clessnhub::refresh_token(configuration$token, configuration$url)
-  current.url <- paste(base.url,list.urls[i],sep="")
-  current.id <- str_replace_all(list.urls[i], "[[:punct:]]", "")
+  current_url <- paste(base_url,list_urls[i],sep="")
+  current_id <- str_replace_all(list_urls[i], "[[:punct:]]", "")
   
-  clessnverse::logit(paste("Conf", i, "de", length(list.urls),sep = " "), logger)
-  cat("\nConf", i, "de", length(list.urls),"\n")
+  clessnverse::logit(paste("Conf", i, "de", length(list_urls),sep = " "), logger)
+  cat("\nConf", i, "de", length(list_urls),"\n")
   
 
   # Make sure the data comes from the pres conf (we know that from the URL)
-  if (grepl("actualites-salle-presse", current.url)) {     
+  if (grepl("actualites-salle-presse", current_url)) {     
     # If the data is not cache we get the raw html from assnat.qc.ca
     # if it is cached (we scarped it before), we prefer not to bombard
     # the website with HTTP_GET requests and ise the cached version
-    if ( !(current.id %in% dfCache$eventID) ) {
+    if ( !(current_id %in% dfCache$eventID) ) {
       # Read and parse HTML from the URL directly
-      doc.html <- getURL(current.url)
-      parsed.html <- htmlParse(doc.html, asText = TRUE)
-      cached.html <- FALSE
-      clessnverse::logit(paste(current.id, "not cached"), logger)
+      doc_html <- getURL(current_url)
+      parsed_html <- htmlParse(doc_html, asText = TRUE)
+      cached_html <- FALSE
+      clessnverse::logit(paste(current_id, "not cached"), logger)
     } else{ 
       # Retrieve the XML structure from dfCache and Parse
-      doc.html <- dfCache$eventHtml[which(dfCache$eventID==current.id)]
-      parsed.html <- htmlParse(doc.html, asText = TRUE)
-      cached.html <- TRUE
-      clessnverse::logit(paste(current.id, "cached"), logger)
+      doc_html <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
+      parsed_html <- htmlParse(doc_html, asText = TRUE)
+      cached_html <- TRUE
+      clessnverse::logit(paste(current_id, "cached"), logger)
     }
       
     # Dissect the text based on html tags
-    doc.h1 <- xpathApply(parsed.html, '//h1', xmlValue)
-    doc.h2 <- xpathApply(parsed.html, '//h2', xmlValue)
-    doc.h3 <- xpathApply(parsed.html, '//h3', xmlValue)
-    doc.span <- xpathApply(parsed.html, '//span', xmlValue)
-    doc.span <- unlist(doc.span)
+    doc_h1 <- xpathApply(parsed_html, '//h1', xmlValue)
+    doc_h2 <- xpathApply(parsed_html, '//h2', xmlValue)
+    doc_h3 <- xpathApply(parsed_html, '//h3', xmlValue)
+    doc_span <- xpathApply(parsed_html, '//span', xmlValue)
+    doc_span <- unlist(doc_span)
     
     # Valide la version : préliminaire ou finale
-    if ( length(grep("version finale", tolower(doc.h2))) > 0 ) {
-      version.finale <- TRUE
+    if ( length(grep("version finale", tolower(doc_h2))) > 0 ) {
+      version_finale <- TRUE
       clessnverse::logit("version finale", logger)
       cat("version finale")
     } else {
-      version.finale <- FALSE
+      version_finale <- FALSE
       clessnverse::logit("version préliminaire", logger)
       cat("version préliminaire")
     }
   
-    #if ( version.finale && 
-    if (( ((opt$simple_update == "update" && !(current.id %in% dfSimple$eventID) ||
+    #if ( version_finale && 
+    if (( ((opt$simple_update == "update" && !(current_id %in% dfSimple$eventID) ||
            opt$simple_update == "refresh" ||
            opt$simple_update == "rebuild") ||
-          (opt$deep_update == "update" && !(current.id %in% dfDeep$eventID) ||
+          (opt$deep_update == "update" && !(current_id %in% dfDeep$eventID) ||
            opt$deep_update == "refresh" ||
            opt$deep_update == "rebuild")) ||
          ((opt$hub_update == "refresh" ||
-           opt$hub_update == "update") && current.id %in% dfSimple$eventID))
+           opt$hub_update == "update") && current_id %in% dfSimple$eventID))
       ) {
       
       ###############################
@@ -213,26 +214,26 @@ for (i in 1:length(list.urls)) {
       time <- NA
       title <- NA
       subtitle <- NA
-      end.time <- NA
-      doc.text <- NA
+      end_time <- NA
+      doc_text <- NA
       
       # Extract SourceType    
-      current.source <- doc.span[32]
-      current.source <- gsub("\n","",current.source)
-      current.source <- gsub("\r","",current.source)
-      current.source <- sub("^\\s+", "", current.source)
-      current.source <- sub("\\s+$", "", current.source)
+      current_source <- doc_span[32]
+      current_source <- gsub("\n","",current_source)
+      current_source <- gsub("\r","",current_source)
+      current_source <- sub("^\\s+", "", current_source)
+      current_source <- sub("\\s+$", "", current_source)
       
       # Extract date of the conference
-      date.time <- doc.h3[6]
-      date <- word(date.time[1],2:5)
+      date_time <- doc_h3[6]
+      date <- word(date_time[1],2:5)
       date <- gsub(",", "", date)
-      day.of.week <- date[1]
-      datestr <- paste(date[2],months.en[match(tolower(date[3]),months.fr)],date[4])
+      day_of_week <- date[1]
+      datestr <- paste(date[2],months_en[match(tolower(date[3]),months_fr)],date[4])
       date <- as.Date(datestr, format = "%d %B %Y")
       
       # Extract start time of the conference
-      time <- word(date.time[1],6:8)
+      time <- word(date_time[1],6:8)
       if (time[3] == "") time[3] <- "00"
       time <- paste(time[1], ":", time[3])
       time <- gsub(" ", "", time)
@@ -241,13 +242,13 @@ for (i in 1:length(list.urls)) {
       serial <- (time)
       
       # Title and subtitle of the conference  
-      title <- doc.h1[2]
+      title <- doc_h1[2]
       title <- gsub("\n","",title)
       title <- gsub("\r","",title)
       title <- sub("^\\s+", "", title)
       title <- sub("\\s+$", "", title)
       
-      subtitle <- doc.h2[4]
+      subtitle <- doc_h2[4]
       subtitle <- gsub("\n","",subtitle)
       subtitle <- gsub("\r","",subtitle)
       subtitle <- sub("^\\s+", "", subtitle)
@@ -257,79 +258,79 @@ for (i in 1:length(list.urls)) {
       # Extract all the paragraphs (HTML tag is p, starting at
       # the root of the document). Unlist flattens the list to
       # create a character vector.
-      doc.text <- unlist(xpathApply(parsed.html, '//p', xmlValue))
+      doc_text <- unlist(xpathApply(parsed_html, '//p', xmlValue))
       
       # Replace all \n by spaces and clean leading and trailing spaces
       # and clean the conference vector of unneeded paragraphs
       
-      doc.text <- gsub('\\n',' ', doc.text)
-      doc.text <- sub("^\\s+", "", doc.text)
-      doc.text <- sub("\\s+$", "", doc.text)
-      doc.text[1] <- NA
-      doc.text[2] <- NA
-      doc.text[3] <- NA
-      doc.text[4] <- NA
-      doc.text[5] <- NA
-      doc.text <- na.omit(doc.text)  
+      doc_text <- gsub('\\n',' ', doc_text)
+      doc_text <- sub("^\\s+", "", doc_text)
+      doc_text <- sub("\\s+$", "", doc_text)
+      doc_text[1] <- NA
+      doc_text[2] <- NA
+      doc_text[3] <- NA
+      doc_text[4] <- NA
+      doc_text[5] <- NA
+      doc_text <- na.omit(doc_text)  
       
       # Figure out the end time of the conference
-      end.time <- doc.text[length(doc.text)]
-      end.time <- gsub("\\(",'', end.time)
-      end.time <- gsub("\\)",'', end.time)
-      end.time <- words(end.time)
+      end_time <- doc_text[length(doc_text)]
+      end_time <- gsub("\\(",'', end_time)
+      end_time <- gsub("\\)",'', end_time)
+      end_time <- words(end_time)
       
-      if ( end.time[length(end.time)] == "heures" ) {
-        end.time[length(end.time)] <- ":"
-        end.time[length(end.time)+1] <- "00"
+      if ( end_time[length(end_time)] == "heures" ) {
+        end_time[length(end_time)] <- ":"
+        end_time[length(end_time)+1] <- "00"
       }
       
-      end.time <- paste(end.time[length(end.time)-2],":",end.time[length(end.time)])
-      end.time <- gsub(" ", "", end.time)
-      end.time <- strptime(paste(date,end.time), "%Y-%m-%d %H:%M")
+      end_time <- paste(end_time[length(end_time)-2],":",end_time[length(end_time)])
+      end_time <- gsub(" ", "", end_time)
+      end_time <- strptime(paste(date,end_time), "%Y-%m-%d %H:%M")
       
       # We no longer need the last line
-      doc.text[length(doc.text)] <- NA
+      doc_text[length(doc_text)] <- NA
       
       # Remove consecutive spaces (cleaning)
-      doc.text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", doc.text, perl=TRUE)
+      doc_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", doc_text, perl=TRUE)
     
 
       ####################################
       # The colums of the detailed dataset
-      first.name <- NA
-      last.name <- NA
-      full.name <- NA
+      first_name <- NA
+      last_name <- NA
+      full_name <- NA
       gender <- NA
       type <- NA
       party <- NA
       circ <- NA
-      is.minister <- NA
+      is_minister <- NA
       media <- NA
-      speech.type <- NA
+      speech_type <- NA
       speech <- NA
       
       speaker <- data.frame()
-      periode.de.questions <- FALSE
+      periode_de_questions <- FALSE
       
       ########################################################
       # Go through the vector of paragraphs of the event
       # and strip out any relevant info
       seqnum <- 1
-      event.paragraph.count <- length(doc.text) - 1
-      event.sentence.count <- clessnverse::countVecSentences(doc.text) - 1
+      event_paragraph_count <- length(doc_text) - 1
+      event_sentence_count <- clessnverse::countVecSentences(doc_text) - 1
       
       #pb_chap <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
-      #                                 max = length(doc.text), # Maximum value of the progress bar
+      #                                 max = length(doc_text), # Maximum value of the progress bar
       #                                 style = 3,    # Progress bar style (also available style = 1 and style = 2)
       #                                 width = 80,  # Progress bar width. Defaults to getOption("width")
       #                                 char = "=")   # Character used to create the bar      
       
-      for (j in 1:length(doc.text)) {
+      for (j in 1:length(doc_text)) {
         #setTxtProgressBar(pb_chap, j)
         cat(j, "\r")
         
         # Skip if this intervention already is in the dataset
-        if (nrow(dfDeep[dfDeep$eventID == current.id & dfDeep$interventionSeqNum == seqnum,]) > 0 &&
+        if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum,]) > 0 &&
             opt$deep_update != "refresh") {
           seqnum <- seqnum+1
           next
@@ -337,87 +338,87 @@ for (i in 1:length(list.urls)) {
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
-        speech.paragraph.count <- 0
-        intervention.start <- substr(doc.text[j],1,40)
+        speech_paragraph_count <- 0
+        intervention_start <- substr(doc_text[j],1,40)
   
-        if ( (grepl("^M\\.\\s+(.*?)\\s+:", intervention.start) || 
-              grepl("^Mme\\s+(.*?)\\s+:", intervention.start) || 
-              grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", intervention.start) ||
-              grepl("^Titre(.*?):", intervention.start) ||
-              grepl("^Journaliste(.*?):", intervention.start) ||
-              grepl("^Modérat(.*?):", intervention.start) ||
-              grepl("^Une\\svoix(.*?):", intervention.start) ||
-              grepl("^Des\\svoix(.*?):", intervention.start)) &&
-             !grepl(",", str_match(intervention.start, "^(.*):")) &&
-             !grepl("cette transcription est une version préliminaire", tolower(doc.text[j])) ) {
+        if ( (grepl("^M\\.\\s+(.*?)\\s+:", intervention_start) || 
+              grepl("^Mme\\s+(.*?)\\s+:", intervention_start) || 
+              grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", intervention_start) ||
+              grepl("^Titre(.*?):", intervention_start) ||
+              grepl("^Journaliste(.*?):", intervention_start) ||
+              grepl("^Modérat(.*?):", intervention_start) ||
+              grepl("^Une\\svoix(.*?):", intervention_start) ||
+              grepl("^Des\\svoix(.*?):", intervention_start)) &&
+             !grepl(",", str_match(intervention_start, "^(.*):")) &&
+             !grepl("cette transcription est une version préliminaire", tolower(doc_text[j])) ) {
           # It's a new person speaking
-          first.name <- NA
-          last.name <- NA
-          full.name <- NA
+          first_name <- NA
+          last_name <- NA
+          full_name <- NA
           gender <- NA
           type <- NA
           party <- NA
           circ <- NA
-          is.minister <- NA
+          is_minister <- NA
           media <- NA
-          speech.type <- NA
+          speech_type <- NA
           speech <- NA
           speaker <- data.frame()
           
-          speech.paragraph.count <- 1
-          speech.sentence.count <- 0
-          speech.word.count <- 0
+          speech_paragraph_count <- 1
+          speech_sentence_count <- 0
+          speech_word_count <- 0
           
           # let's rule out the moderator first
-          if ( grepl("modérat", tolower(intervention.start)) ||
-               grepl("président", tolower(intervention.start)) ) { ### MODERATEUR ###
+          if ( grepl("modérat", tolower(intervention_start)) ||
+               grepl("président", tolower(intervention_start)) ) { ### MODERATEUR ###
   
-            first.name <- "Modérateur"
-            last.name <- "Modérateur"
+            first_name <- "Modérateur"
+            last_name <- "Modérateur"
             gender <- NA
             type <- "modérateur"
             party <- NA
             circ <- NA
             media <- NA
-            speech.type <- "modération"
-            speech <- substr(doc.text[j], unlist(gregexpr(":", intervention.start))+1, nchar(doc.text[j]))
+            speech_type <- "modération"
+            speech <- substr(doc_text[j], unlist(gregexpr(":", intervention_start))+1, nchar(doc_text[j]))
             speech <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", speech, perl=TRUE)
             
-            if (  1 %in% match(patterns.periode.de.questions, tolower(c(intervention.start)),FALSE) )
-              periode.de.questions <- TRUE
+            if (  1 %in% match(patterns_periode_de_questions, tolower(c(intervention_start)),FALSE) )
+              periode_de_questions <- TRUE
             
           } else {  ### DÉPUTÉ or JOURNALIST ###
             
-            if ( str_detect(intervention.start, "^M\\.(.*):") ||
-                 str_detect(intervention.start, "^Mme(.*):") ) {
+            if ( str_detect(intervention_start, "^M\\.(.*):") ||
+                 str_detect(intervention_start, "^Mme(.*):") ) {
               # il faut voir maintenant s'il y a quelque chose entre parenthèses :
               # c'est soit la circonscription du député, soit le prénom du journaliste
               
-              if ( str_detect(intervention.start, "^M\\.(.*):") ) gender.femme <- 0
+              if ( str_detect(intervention_start, "^M\\.(.*):") ) gender.femme <- 0
               else gender.femme <- 1
               
-              if ( !is.na(str_match(intervention.start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]) ) {
+              if ( !is.na(str_match(intervention_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]) ) {
                 # We have a string of type "M. | Mme string1 (string2) :" avec string 2 = 
                 # first name or circonscription
-                last.name <- str_match(intervention.start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]
-                first.name <- str_match(intervention.start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[4]
+                last_name <- str_match(intervention_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]
+                first_name <- str_match(intervention_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[4]
                 
                 # Is the first name a first name or the circonscription?
-                if ( nrow(filter(deputes, currentDistrict == first.name)) > 0 ) {
-                  circ <- first.name
-                  first.name <- NA
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last.name) | tolower(lastName2) == tolower(last.name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender.femme)
+                if ( nrow(filter(deputes, currentDistrict == first_name)) > 0 ) {
+                  circ <- first_name
+                  first_name <- NA
+                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender.femme)
                 } else {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last.name) | tolower(lastName2) == tolower(last.name)) & tolower(firstName) == tolower(first.name))
+                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(firstName) == tolower(first_name))
                 }
                 
               } else {
-                if ( !is.na(str_match(intervention.start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]) ) {
-                  # We have a string of type "M. | Mme string :" with string = last.name
-                  last.name <- str_match(intervention.start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]
-                  first.name <- NA
-                  ln1 <- word(last.name, 1)
-                  ln2 <- word(last.name, 2)
+                if ( !is.na(str_match(intervention_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]) ) {
+                  # We have a string of type "M. | Mme string :" with string = last_name
+                  last_name <- str_match(intervention_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]
+                  first_name <- NA
+                  ln1 <- word(last_name, 1)
+                  ln2 <- word(last_name, 2)
                   if (is.na(ln2)) {
                     speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender.femme)
                   } else {
@@ -432,12 +433,12 @@ for (i in 1:length(list.urls)) {
             }
             
             if ( nrow(speaker) > 0 ) { ### DÉPUTÉ ###
-                  ##cat("we have a politician", last.name, "\n")
+                  ##cat("we have a politician", last_name, "\n")
               
-                  last.name <- paste(na.omit(speaker[1,]$lastName1), na.omit(speaker[1,]$lastName2), sep = " ")
-                  last.name <- trimws(last.name, which = c("both"))
-                  if (length(last.name) == 0) last.name <- NA
-                  first.name <- speaker[1,]$firstName
+                  last_name <- paste(na.omit(speaker[1,]$lastName1), na.omit(speaker[1,]$lastName2), sep = " ")
+                  last_name <- trimws(last_name, which = c("both"))
+                  if (length(last_name) == 0) last_name <- NA
+                  first_name <- speaker[1,]$firstName
                   #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
                   #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
                   #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
@@ -455,24 +456,24 @@ for (i in 1:length(list.urls)) {
                   }
                   
                   media <- NA
-                  is.minister <- speaker$isMinister[1]
+                  is_minister <- speaker$isMinister[1]
                   
                   if (j == 1)
-                    speech.type <- "allocution"
+                    speech_type <- "allocution"
                   else
-                    if ( periode.de.questions || substr(doc.text[j-1], nchar(doc.text[j-1]), nchar(doc.text[j-1])) == "?" ) 
-                      speech.type <- "réponse"
+                    if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) 
+                      speech_type <- "réponse"
                   else
-                      speech.type <- "commentaire"
+                      speech_type <- "commentaire"
   
             } else { ### JOURNALIST ###
               
-                  if ( !is.na(first.name) ){
-                    speaker <- filter(journalists, tolower(paste(first.name, last.name, sep = " ")) == tolower(fullName))
+                  if ( !is.na(first_name) ){
+                    speaker <- filter(journalists, tolower(paste(first_name, last_name, sep = " ")) == tolower(fullName))
                   }
                   else{
-                    if (!is.na(last.name))
-                      speaker <- filter(journalists, str_detect(tolower(last.name), tolower(fullName)))
+                    if (!is.na(last_name))
+                      speaker <- filter(journalists, str_detect(tolower(last_name), tolower(fullName)))
                   }
                   
                   if ( nrow(speaker) > 0 ) {
@@ -489,9 +490,9 @@ for (i in 1:length(list.urls)) {
                     circ <- NA
                     media <- speaker[1,]$source
                   } else {
-                    if ( str_detect(intervention.start, "Journaliste :(.*)") ){
-                      first.name <- NA
-                      last.name <- NA
+                    if ( str_detect(intervention_start, "Journaliste :(.*)") ){
+                      first_name <- NA
+                      last_name <- NA
                       gender <- NA
                       type <- "journaliste"
                       party <- NA
@@ -501,8 +502,8 @@ for (i in 1:length(list.urls)) {
                     else {
                       # ATTENTION : here we have not been able to identify
                       # Neither the moderator, nor a politician, nor a journalist
-                      if (is.na(first.name)) first.name <- words(str_match(intervention.start, "^(.*):"))[1]
-                      if (is.na(last.name)) last.name <- words(str_match(intervention.start, "^(.*):"))[2]
+                      if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
+                      if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
                       #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender.femme == 1 ~ "F",
                       #                    is.na(gender) && !speaker[1,]$isFemale || gender.femme == 0 ~ "M")
                       gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender.femme == 1 ~ "F",
@@ -510,13 +511,13 @@ for (i in 1:length(list.urls)) {
                     }
                   }
                   
-                  if ( periode.de.questions ) speech.type <- "question"
+                  if ( periode_de_questions ) speech_type <- "question"
                   else
-                  if ( grepl("?",doc.text[j]) ) speech.type <- "question" else speech.type <- "commentaire"
+                  if ( grepl("?",doc_text[j]) ) speech_type <- "question" else speech_type <- "commentaire"
             }
             
             
-            speech <- substr(doc.text[j], unlist(gregexpr(":", intervention.start))+1, nchar(doc.text[j]))
+            speech <- substr(doc_text[j], unlist(gregexpr(":", intervention_start))+1, nchar(doc_text[j]))
             speech <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", speech, perl=TRUE)
             
           }
@@ -524,9 +525,9 @@ for (i in 1:length(list.urls)) {
         } else {
           # It's the same person as in the previous paragraph speaking
           # We will append it to the same row instead of creating an extra row for a new paragraph
-          if (!grepl("version non révisée", doc.text[j])) {
-            speech <- paste(speech,"\n\n",doc.text[j], sep="")
-            speech.paragraph.count <- speech.paragraph.count + 1
+          if (!grepl("version non révisée", doc_text[j])) {
+            speech <- paste(speech,"\n\n",doc_text[j], sep="")
+            speech_paragraph_count <- speech_paragraph_count + 1
           }
         }
         
@@ -536,27 +537,27 @@ for (i in 1:length(list.urls)) {
         }
         else language <- substr(language,1,2)
         
-        speech.sentence.count <- clessnverse::countSentences(paste(speech, collapse = ' '))
-        speech.word.count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
-        speech.paragraph.count <- str_count(speech, "\\n\\n")+1
+        speech_sentence_count <- clessnverse::countSentences(paste(speech, collapse = ' '))
+        speech_word_count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
+        speech_paragraph_count <- str_count(speech, "\\n\\n")+1
         
-        if (is.na(first.name) && is.na(last.name)) 
-          full.name <- NA
+        if (is.na(first_name) && is.na(last_name)) 
+          full_name <- NA
         else 
-          full.name <- trimws(paste(na.omit(first.name), na.omit(last.name), sep = " "),which = "both")
+          full_name <- trimws(paste(na.omit(first_name), na.omit(last_name), sep = " "),which = "both")
         
         # If the next speaker is different or if it's the last record, then let's commit this observation into the dataset  
-        if ( ((grepl("^M\\.\\s+(.*?)\\s+:", substr(doc.text[j+1],1,40)) || 
-               grepl("^Mme\\s+(.*?)\\s+:", substr(doc.text[j+1],1,40)) || 
-               grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", substr(doc.text[j+1],1,40)) ||
-               grepl("^Titre(.*?):", substr(doc.text[j+1],1,40)) ||
-               grepl("^Journaliste(.*?):", substr(doc.text[j+1],1,40)) ||
-               grepl("^Modérat(.*?):", substr(doc.text[j+1],1,40)) ||
-               grepl("^Une\\svoix(.*?):", substr(doc.text[j+1],1,40)) ||
-               grepl("^Des\\svoix(.*?):", substr(doc.text[j+1],1,40))) &&
-              !grepl(",", str_match(substr(doc.text[j+1],1,40), "^(.*):"))) &&
-              !is.na(doc.text[j]) || 
-              (j == length(doc.text)-1 && is.na(doc.text[j+1])) 
+        if ( ((grepl("^M\\.\\s+(.*?)\\s+:", substr(doc_text[j+1],1,40)) || 
+               grepl("^Mme\\s+(.*?)\\s+:", substr(doc_text[j+1],1,40)) || 
+               grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", substr(doc_text[j+1],1,40)) ||
+               grepl("^Titre(.*?):", substr(doc_text[j+1],1,40)) ||
+               grepl("^Journaliste(.*?):", substr(doc_text[j+1],1,40)) ||
+               grepl("^Modérat(.*?):", substr(doc_text[j+1],1,40)) ||
+               grepl("^Une\\svoix(.*?):", substr(doc_text[j+1],1,40)) ||
+               grepl("^Des\\svoix(.*?):", substr(doc_text[j+1],1,40))) &&
+              !grepl(",", str_match(substr(doc_text[j+1],1,40), "^(.*):"))) &&
+              !is.na(doc_text[j]) || 
+              (j == length(doc_text)-1 && is.na(doc_text[j+1])) 
            ) {
           
           # Update Deep
@@ -564,22 +565,22 @@ for (i in 1:length(list.urls)) {
                                       created = "",
                                       modified = "",
                                       metadata = "",
-                                      eventID = current.id,
+                                      eventID = current_id,
                                       interventionSeqNum = seqnum,
-                                      speakerFirstName = first.name,
-                                      speakerLastName = last.name,
-                                      speakerFullName = full.name,
+                                      speakerFirstName = first_name,
+                                      speakerLastName = last_name,
+                                      speakerFullName = full_name,
                                       speakerGender = gender,
-                                      speakerIsMinister = is.minister,
+                                      speakerIsMinister = is_minister,
                                       speakerType = type,
                                       speakerParty = party,
                                       speakerCirconscription = circ,
                                       speakerMedia = media,
-                                      speakerSpeechType = speech.type,
+                                      speakerSpeechType = speech_type,
                                       speakerSpeechLang = language,
-                                      speakerSpeechWordCount = speech.word.count,
-                                      speakerSpeechSentenceCount = speech.sentence.count,
-                                      speakerSpeechParagraphCount = speech.paragraph.count,
+                                      speakerSpeechWordCount = speech_word_count,
+                                      speakerSpeechSentenceCount = speech_sentence_count,
+                                      speakerSpeechParagraphCount = speech_paragraph_count,
                                       speakerSpeech = speech,
                                       speakerTranslatedSpeech = NA,
                                       stringsAsFactors = FALSE)
@@ -588,31 +589,31 @@ for (i in 1:length(list.urls)) {
           
           seqnum <- seqnum + 1
           
-          first.name <- NA
-          last.name <- NA
-          full.name <- NA
+          first_name <- NA
+          last_name <- NA
+          full_name <- NA
           gender <- NA
           type <- NA
           party <- NA
           circ <- NA
           media <- NA
-          speech.type <- NA
+          speech_type <- NA
           speech <- NA
           
           speaker <- data.frame()
         } #If the next speaker is different or if it's the last record
-      } # for (j in 1:length(doc.text)) : loop back to the next intervention
+      } # for (j in 1:length(doc_text)) : loop back to the next intervention
       
 
       # Join all the elements of the character vector into a single
       # character string, separated by spaces for the simple dataSet
-      collapsed.doc.text <- paste(paste(doc.text, "\n\n", sep=""), collapse = ' ')
-      collapsed.doc.text <- str_replace_all(
-        string = collapsed.doc.text, pattern = "\n\n NA\n\n", replacement = "")
+      collapsed_doc_text <- paste(paste(doc_text, "\n\n", sep=""), collapse = ' ')
+      collapsed_doc_text <- str_replace_all(
+        string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
       
       
       # Update the cache
-      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current.id, eventHtml = doc.html, stringsAsFactors = FALSE)
+      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current_id, eventHtml = doc_html, stringsAsFactors = FALSE)
       dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_update, opt$hub_update)
  
       # Update Simple
@@ -620,17 +621,17 @@ for (i in 1:length(list.urls)) {
                                   created = "",
                                   modified = "",
                                   metadata = "",
-                                  eventID = current.id,
-                                  eventSourceType = current.source,
-                                  eventURL = current.url,
+                                  eventID = current_id,
+                                  eventSourceType = current_source,
+                                  eventURL = current_url,
                                   eventDate = as.character(date), 
                                   eventStartTime = as.character(time), 
-                                  eventEndTime = as.character(end.time), 
+                                  eventEndTime = as.character(end_time), 
                                   eventTitle = title, 
                                   eventSubtitle = subtitle, 
-                                  eventSentenceCount = event.sentence.count,
-                                  eventParagraphCount = event.paragraph.count,
-                                  eventContent = collapsed.doc.text,
+                                  eventSentenceCount = event_sentence_count,
+                                  eventParagraphCount = event_paragraph_count,
+                                  eventContent = collapsed_doc_text,
                                   eventTranslatedContent = NA,
                                   stringsAsFactors = FALSE)
 
@@ -638,7 +639,7 @@ for (i in 1:length(list.urls)) {
       
     } # version finale
     
-  } #if (grepl("actualites-salle-presse", current.url))
+  } #if (grepl("actualites-salle-presse", current_url))
   
 } #for (i in 1:nrow(result))
 
