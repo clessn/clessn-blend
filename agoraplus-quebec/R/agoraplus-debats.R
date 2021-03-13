@@ -31,10 +31,10 @@ installPackages <- function() {
                          "dplyr", 
                          "XML", 
                          "tm",
-                         "textcat",
                          "tidytext", 
                          "tibble",
                          "devtools",
+                         "textcat",
                          "clessn/clessnverse",
                          "clessn/clessn-hub-r")
   
@@ -144,7 +144,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 ###############################################################################
 # Let's get serious!!!
 # Run through the URLs list, get the html content from the cache if it is 
-# in it, or from the assnat website and start parsing it o extract the
+# in it, or from the assnat website and start parsing it to extract the
 # press conference content
 #
 for (i in 1:length(list_urls)) {

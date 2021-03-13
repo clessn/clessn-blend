@@ -167,11 +167,22 @@ def download(dbx, folder, subfolder, name):
 
 
 def main():
+    logger = logging.getLogger()
+    
+    if (not logging.getLogger().hasHandlers()):
+        scriptname = 'agoraplusmstranscribeautomated.py'
+        filename = os.environ.get('LOG_PATH') + '/' + scriptname + '.log'
+        print('logging to ' + filename)
+        logging.basicConfig(level=logging.INFO, filename=filename, filemode='w+', \
+            format='%(asctime)s : %(levelname)s - %(message)s',datefmt='%d-%b-%y %H:%M:%S')
+        logging.info('logging to ' + filename)
+    
+
     logging.info("==============================================")
     logging.info("starting youtube video extractor python script")
 
     extract_date = os.environ.get('YOUTUBE_EXTRACT_DATE')
-    if (extract_date == None):
+    if (extract_date == "0"):
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
 
@@ -293,6 +304,7 @@ def main():
 
         i = i + 1
     #</for video in p.videos:>
+    logging.shutdown()
 #</main>
 
 

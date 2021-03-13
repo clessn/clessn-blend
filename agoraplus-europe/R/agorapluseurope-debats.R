@@ -16,11 +16,10 @@
 
 
 ###############################################################################
-### Function : installPackages
-### This function installs all packages requires in this script and all the
-### scripts called by this one
-###
-
+# Function : installPackages
+# This function installs all packages requires in this script and all the
+# scripts called by this one
+#
 installPackages <- function() {
   # Define the required packages if they are not installed
   required_packages <- c("stringr", 
@@ -46,7 +45,7 @@ installPackages <- function() {
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", build = FALSE)
+      devtools::install_github(new_packages[p], upgrade = "never", quiet =TRUE, build = FALSE)
     } else {
       install.packages(new_packages[p])
     }  
@@ -71,45 +70,6 @@ installPackages <- function() {
 
 
 ###############################################################################
-#   Function : processCommandLineOptions
-#
-# Parse the command line options
-# Which are the update modes of each database in the HUB or in the CSV backend
-#
-# Possible values : update, refresh, rebuild or skip
-# - update : updates the dataset by adding only new observations to it
-# - refresh : refreshes existing observations and adds new observations to the dataset
-# - rebuild : wipes out completely the dataset and rebuilds it from scratch
-# - skip : does not make any change to the dataset
-# set which backend we're working with
-# - CSV : work with the CSV in the shared folders - good for testing
-#         or for datamining and research or messing around
-# - HUB : work with the CLESSNHUB data directly : this is prod data
-#
-processCommandLineOptions <- function() {
-  option_list = list(
-    make_option(c("-c", "--cache_update"), type="character", default="rebuild", 
-                help="update mode of the cache [default= %default]", metavar="character"),
-    make_option(c("-s", "--simple_update"), type="character", default="rebuild", 
-                help="update mode of the simple dataframe [default= %default]", metavar="character"),
-    make_option(c("-d", "--deep_update"), type="character", default="rebuild", 
-                help="update mode of the deep dataframe [default= %Adefault]", metavar="character"),
-    make_option(c("-h", "--hub_update"), type="character", default="skip", 
-                help="update mode of the hub [default= %default]", metavar="character"),
-    make_option(c("-f", "--csv_update"), type="character", default="skip", 
-                help="update mode of the simple dataframe [default= %default]", metavar="character"),
-    make_option(c("-b", "--backend_type"), type="character", default="HUB", 
-                help="type of the backend - either hub or csv [default= %default]", metavar="character")
-  )
-  
-  opt_parser = OptionParser(option_list=option_list)
-  opt = parse_args(opt_parser)
-  
-  return(opt)
-}
-
-
-###############################################################################
 #   Globals
 #
 #   scriptname
@@ -118,31 +78,41 @@ processCommandLineOptions <- function() {
 installPackages()
 
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
-if (!exists("logger")) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-# Create some reference vectors used for dates conversion or detecting patterns in the conferences
-patterns.titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérateur", "La Modératrice",
-                     "journaliste :", "Le Président", "La Présidente", "La Vice-Présidente",
-                     "Le Vice-Président", "Titre :")
-
-patterns.periode.de.questions <- c("période de questions", "période des questions",
-                                   "prendre les questions", "prendre vos questions",
-                                   "est-ce qu'il y a des questions", "passer aux questions")
-
+opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+            hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
-#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
-
 #Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
 #Sys.setenv(HUB_USERNAME = "patrickponcet")
 #Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
+# Pour le DEV
+#Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+#Sys.setenv(HUB_USERNAME = "test")
+#Sys.setenv(HUB_PASSWORD = "soleil123")
+
+if (!exists("opt")) {
+  opt <- clessnverse::processCommandLineOptions()
+}
+
+if (opt$backend_type == "HUB") 
+  clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+                                        Sys.getenv('HUB_USERNAME'), 
+                                        Sys.getenv('HUB_PASSWORD'), 
+                                        Sys.getenv('HUB_URL'))
+
+if (opt$backend_type == "CSV")
+  clessnverse::loadAgoraplusCSVDatasets("quebec", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
+
+# Load all objects used for ETL
+clessnverse::loadETLRefData()
+
 
 ###############################################################################
-#   Data source
+# Data source
 #
-
 # connect to the dataSource : the provincial parliament web site 
 # get the index page containing the URLs to all the national assembly debates
 # to extract those URLS and get them individually in order to parse
@@ -160,246 +130,24 @@ urls <- urls[grep("https", urls)]
 
 urls_list <- rvest::html_attr(urls, 'href')
 
-
-###############################################################################
-##### Let's get serious!!!
-##### Run through the URLs list, get the html content from the cache if it is 
-##### in it, or from the assnat website and start parsing it o extract the
-##### press conference content
-#####
+# Hack here to use another data source
 #urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-18_FR.xml")
 urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml")
+
+
 
 
 ###############################################################################
 ########################               MAIN              ######################
 ###############################################################################
 
-if (!exists("opt")) {
-  opt <- processCommandLineOptions()
-}
-
-clessnverse::logit(paste("command line options: ", 
-                         paste(c(rbind(paste(" ",names(opt),"=",sep=''),opt)), collapse='')), logger)
-
-# Process incompatible option sets
-if ( opt$hub_update == "refresh" && 
-     (opt$simple_update == "rebuild" || opt$deep_update == "rebuild" ||
-      opt$simple_update == "skip" || opt$deep_update == "skip") ) 
-  stop(paste("this set of options:", 
-             paste("--hub_update=", opt$hub_update, " --simple_update=", opt$simple_update, " --deep_update=", opt$deep_update, sep=''),
-             "will duplicate entries in the HUB, if you want to refresh the hub use refresh on all datasets"), call. = F)
-
-
-# Define the datasets containing
-# - the cache which contains the previously scraped html content
-# - dfSimple which contains the entire content of each press conference per observation
-# - dfDeep which contains each intervention of each press conference per observation
+###############################################################################
+# Let's get serious!!!
+# Run through the URLs list, get the html content from the cache if it is 
+# in it, or from the assnat website and start parsing it to extract the
+# debates content
 #
-# We only do this if we want to rebuild those datasets from scratch to start fresh
-# or if then don't exist in the environment of the current R session
-if ( !exists("dfCache") || opt_cache_update == "rebuild" ) 
-  dfCache <- clessnverse::createCache(context = "europe")
-
-if ( !exists("dfSimple") || opt_simple_update == "rebuild" ) 
-  dfSimple <- clessnverse::createSimple(context = "europe")
-
-if ( !exists("dfDeep") || opt_deep_update == "rebuild" ) 
-  dfDeep <- clessnverse::createDeep(context = "europe")
-
-
-stop("done for now before we go further")
-
-#####
-##### Get all data from the HUB or from CSV
-##### - Cache which contains the raw html scraped from the assnat.qc.ca site
-##### - dfSimple which contains one observation per event (débat or press conf)
-##### - dfDeep which contains one observation per intervention per event
-##### - journalists : a reference dataframe that contains the journalists in order
-#####                 to add relevant data on journalists in the interventions
-#####                 dataset
-##### - deputes     : a reference dataframe that contains the deputes in order
-#####                 to add relevant data on journalists in the interventions
-#####                 dataset
-#####
-if (opt_backend_type == "HUB") {
-  ### Connect to the HUB
-  clessnhub::configure()
-
-  ###
-  # Récuperer les données du cache pour ne pas avoir à aller rechercher 
-  # sur le site de l'assnat ce qu'on est allé déjà chercher auparavant  
-  # C'est pour éviter de lever des suspicions de la part des admins de  
-  # l'assnat avec trop de http GET répetitifs trop rapprochés
-  ###
-  if (opt_cache_update != "rebuild") {
-    dfCache_hub <- clessnhub::download_table('agoraplus_warehouse_cache_items')
-    if (is.null(dfCache_hub)) {
-      dfCache_hub <- data.frame(uuid = character(),
-                                created = character(),
-                                modified = character(),
-                                metedata = character(),
-                                eventID = character(),
-                                eventHtml = character(),
-                                stringsAsFactors = FALSE)
-    } 
-    
-    #dfCache <- dfCache_hub[,-c(1:4)]
-    dfCache <- dfCache_hub
-  }
-
-  
-  
-  
-  ###
-  # Récuperer les données Simple et Deep 
-  ###
-  if (opt_simple_update != "rebuild") {
-    dfSimple_hub <- clessnhub::download_table('agoraplus_warehouse_event_items')
-    if (is.null(dfSimple_hub)) {
-      dfSimple_hub <- data.frame(uuid = character(),
-                                 created = character(),
-                                 modified = character(),
-                                 metedata = character(),
-                                 eventID = character(),
-                                 eventSourceType = character(),
-                                 eventURL = character(),
-                                 eventDate = character(), 
-                                 eventStartTime = character(),
-                                 eventEndTime = character(), 
-                                 eventTitle = character(), 
-                                 eventSubtitle = character(),
-                                 eventSentenceCount = character(),
-                                 eventParagraphCount = integer(),
-                                 eventContent = character(),
-                                 eventTranslatedContent = character(),
-                                 stringsAsFactors = FALSE)
-    }
-    
-    #dfSimple <- dfSimple_hub[,-c(1:4)]
-    dfSimple <- dfSimple_hub
-  }
-
-  if (opt_deep_update != "rebuild") {
-    dfDeep_hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items')
-    if (is.null(dfDeep_hub)) {
-      dfDeep_hub <- data.frame(uuid = character(),
-                               created = character(),
-                               modified = character(),
-                               metedata = character(),
-                               eventID = character(),
-                               chapterNumber = character(),
-                               chapterTitle = character(),
-                               chapterTabledDocId = character(),
-                               chapterAdoptedDocId = character(),
-                               interventionSeqNum = integer(),
-                               speakerFirstName = character(),
-                               speakerLastName = character(),
-                               speakerFullName = character(),
-                               speakerGender = character(),
-                               speakerIsMinister = character(),
-                               speakerType = character(),
-                               speakerCountry = character(),
-                               speakerParty = character(),
-                               speakerPolGroup = character(),
-                               speakerDistrict = character(),
-                               speakerMedia = character(),
-                               speakerSpeechType = character(),
-                               speakerSpeechLang = character(),
-                               speakerSpeechWordCount = integer(),
-                               speakerSpeechSentenceCount = integer(),
-                               speakerSpeechParagraphCount = integer(),
-                               speakerSpeech = character(),
-                               speakerTranslatedSpeech = character(), 
-                               stringsAsFactors = FALSE)
-    }
-    
-    #dfDeep <- dfDeep_hub[,-c(1:4)]
-    dfDeep <- dfDeep_hub
-  }
-  
-  dfDeputes <- clessnhub::download_table('warehouse_quebec_mnas')
-  dfDeputes <- dfDeputes %>% separate(lastName, c("lastName1", "lastName2"), " ")
-  
-  dfJournalists <- clessnhub::download_table('warehouse_journalists')
-
-} #if (opt_backend_type == "HUB")
-
-
-if (opt_backend_type == "CSV") {
-  
-  if (opt_cache_update != "rebuild")
-    dfCache <- read.csv2(file =
-                           "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfCacheAgoraPlus-v3.csv",
-                           #"/Users/patrick/dfCacheAgoraPlus-v3.csv",
-                           sep=";", comment.char="#")  
-  
-  if (opt_simple_update != "rebuild")
-    dfSimple <- read.csv2(file=
-                            "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfSimpleAgoraPlus-v3.csv",
-                            #"/Users/patrick/dfSimpleAgoraPlus-v3.csv",
-                          sep=";", comment.char="#", encoding = "UTF-8")
-  
-  if (opt_deep_update != "rebuild")
-    dfDeep <- read.csv2(file=
-                          "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/dfDeepAgoraPlus-v3.csv",
-                          #"/Users/patrick/dfDeepAgoraPlus-v3.csv",
-                        sep=";", comment.char="#", encoding = "UTF-8")
-  
-
-  dfDeputes <- read.csv(
-    "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/Deputes_Quebec_Coordonnees.csv",
-    sep=";")
-  dfDeputes <- dfDeputes %>% separate(nom, c("firstName", "lastName1", "lastName2"), " ")
-  names(dfDeputes)[names(dfDeputes)=="femme"] <- "isFemale"
-  names(dfDeputes)[names(dfDeputes)=="parti"] <- "party"
-  names(dfDeputes)[names(dfDeputes)=="circonscription"] <- "currentDistrict"
-  names(dfDeputes)[names(dfDeputes)=="ministre"] <- "isMinister"
-  
-  dfJournalists <- read.csv(
-    "../quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/journalist_handle.csv",
-    sep=";")
-  dfJournalists$X <- NULL
-  names(dfJournalists)[names(dfJournalists)=="female"] <- "isFemale"
-  names(dfJournalists)[names(dfJournalists)=="author"] <- "fullName"
-  names(dfJournalists)[names(dfJournalists)=="selfIdJourn"] <- "thinkIsJournalist"
-  names(dfJournalists)[names(dfJournalists)=="handle"] <- "twitterHandle"
-  names(dfJournalists)[names(dfJournalists)=="realID"] <- "twittweJobTitle"
-  names(dfJournalists)[names(dfJournalists)=="user_id"] <- "twitterID"
-  names(dfJournalists)[names(dfJournalists)=="protected"] <- "twitterAccountProtected"
-
-} #if (opt_backend_type == "CSV")
-
-
-#####
-##### Create some reference vectors used for dates conversion or detecting 
-##### patterns in the conferences
-#####
-months_fr <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
-               "octobre", "novembre", "décembre")
-months_en <- c("january", "february", "march", "april", "may", "june", "july", "august", "september",
-               "october", "november", "december")
-
-patterns_titres <- c("M\\.", "Mme", "Modérateur", "Modératrice", "Le Modérateur", "La Modératrice",
-                     "journaliste :", "Le Président", "La Présidente", "La Vice-Présidente",
-                     "Le Vice-Président", "Titre :")
-
-patterns_periode_de_questions <- c("période de questions", "période des questions",
-                                   "prendre les questions", "prendre vos questions",
-                                   "est-ce qu'il y a des questions", "passer aux questions")
-
-
-
-
-pb_conf <- utils::txtProgressBar(min = 0,      # Minimum value of the progress bar
-                                 max = length(urls_list), # Maximum value of the progress bar
-                                 style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                                 width = length(urls_list),   # Progress bar width. Defaults to getOption("width")
-                                 char = "=")   # Character used to create the bar
-
-
-#for (i in 1:length(urls_list)) {
-for (i in 1:1) {
+for (i in 1:length(urls_list)) {
   if (opt_backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")

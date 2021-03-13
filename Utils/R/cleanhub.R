@@ -19,7 +19,7 @@ if (tolower(cache_answer) == "y" && nrow(dfCache.hub) > 0) {
   }
 }
 
-cat("Cache contains", nrow(dfSimple.hub), "rows.", sep = ' ')
+cat("Simple contains", nrow(dfSimple.hub), "rows.", sep = ' ')
 simple_answer <- readline(prompt="Continue (y/N): ")
 if (tolower(simple_answer) == "y" && nrow(dfSimple.hub) > 0) {
   for (i in 1:nrow(dfSimple.hub)) {
@@ -27,7 +27,7 @@ if (tolower(simple_answer) == "y" && nrow(dfSimple.hub) > 0) {
   }
 }
 
-cat("Cache contains", nrow(dfDeep.hub), "rows.", sep = ' ')
+cat("Deep contains", nrow(dfDeep.hub), "rows.", sep = ' ')
 deep_answer <- readline(prompt="Continue (y/N): ")
 if (tolower(deep_answer) == "y" && nrow(dfDeep.hub) > 0) {
   for (i in 1:nrow(dfDeep.hub)) {
