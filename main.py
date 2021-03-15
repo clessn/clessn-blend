@@ -10,7 +10,7 @@ print("Running python script")
 print('------')
 
 try: 
-    scriptname = 'agoraplus-mstranscribeautomated.py'
+    scriptname = 'agoraplusmstranscribeautomated.py'
     filename = os.environ.get('LOG_PATH') + '/' + scriptname + '.log'
     print('logging to ' + filename)
     logging.basicConfig(level=logging.INFO, filename=filename, filemode='w+', format='%(asctime)s : %(levelname)s - %(message)s',datefmt='%d-%b-%y %H:%M:%S')

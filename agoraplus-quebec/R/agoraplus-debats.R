@@ -78,18 +78,18 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+            hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
-#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "patrickponcet")
-#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "patrickponcet")
+# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
-# Pour le DEV
-#Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "test")
-#Sys.setenv(HUB_PASSWORD = "soleil123")
+#Pour le DEV
+Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+Sys.setenv(HUB_USERNAME = "test")
+Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -272,6 +272,7 @@ for (i in 1:length(list_urls)) {
       # the root of the document). Unlist flattens the list to
       # create a character vector.
       doc_text <- unlist(xpathApply(parsed_html, '//p', xmlValue))
+      doc_text <- gsub('\u00a0',' ', doc_text)
       
       # Replace all \n by spaces and clean leading and trailing spaces
       # and clean the conference vector of unneeded paragraphs
@@ -361,8 +362,8 @@ for (i in 1:length(list_urls)) {
               grepl("^Titre(.*?):", intervention_start) ||
               grepl("^Journaliste(.*?):", intervention_start) ||
               grepl("^Modérat(.*?):", intervention_start) ||
-              grepl("^Une\\svoix(.*?):", intervention_start) ||
-              grepl("^Des\\svoix(.*?):", intervention_start)) &&
+              grepl("^une\\svoix(.*?):", tolower(intervention_start)) ||
+              grepl("^des\\svoix(.*?):", tolower(intervention_start))) &&
              !grepl(",", str_match(intervention_start, "^(.*):")) ) {
           # It's a new person speaking
           first_name <- NA
@@ -399,7 +400,7 @@ for (i in 1:length(list_urls)) {
               first_name <- "François"
               gender <- "M"
               #speaker <- subset(deputes, grepl(paste(tolower(first_name),tolower(last_name),sep=" "),tolower(nom)))
-              speaker <- filter(deputes, tolower(firstName) == tolower(first_name) & (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)))
+              speaker <- dplyr::filter(deputes, tolower(firstName) == tolower(first_name) & (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)))
               
             } else {
               if ( grepl("le vice-président(.*):", tolower(intervention_start)) ||
@@ -408,7 +409,7 @@ for (i in 1:length(list_urls)) {
                 
                 if ( grepl("mme(.*):", tolower(intervention_start)) )
                   gender_femme <- 1
-                else
+                else 
                   gender_femme <- 0
                     
                 last_name <- clessnverse::removeSpeakerTitle(str_match(intervention_start, "\\((.*)\\)\\s+:")[2])
@@ -417,9 +418,9 @@ for (i in 1:length(list_urls)) {
                 ln1 <- word(last_name, 1)
                 ln2 <- word(last_name, 2)
                 if (is.na(ln2)) {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
                 } else {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
                 }
                 ln1 <- NA
                 ln2 <- NA
@@ -437,7 +438,7 @@ for (i in 1:length(list_urls)) {
               last_name <- trimws(last_name, which = c("both"))
               if (length(last_name) == 0) last_name <- NA
               first_name <- speaker[1,]$firstName
-              gender <- if ( speaker[1,]$isFemale ) "F" else "M"
+              gender <- if ( speaker[1,]$isFemale == 1) "F" else "M"
               if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                 type <- "fonctionnaire"
                 party <- NA
@@ -519,7 +520,7 @@ for (i in 1:length(list_urls)) {
                   last_name <- trimws(last_name, which = c("both"))
                   if (length(last_name) == 0) last_name <- NA
                   first_name <- speaker[1,]$firstName
-                  gender <- if ( speaker[1,]$isFemale ) "F" else "M"
+                  gender <- if ( speaker[1,]$isFemale == 1 ) "F" else "M"
                   if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                     type <- "fonctionnaire"
                     party <- NA
@@ -533,6 +534,11 @@ for (i in 1:length(list_urls)) {
                   
                   media <- NA
                   is_minister <- speaker$isMinister[1]
+            } else {
+              # ATTENTION : here we have not been able to identify
+              # Neither the moderator, nor a politician, nor a journalist
+              if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
+              if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
             } # ( nrow(speaker) > 0 ) 
 
                         
@@ -557,6 +563,7 @@ for (i in 1:length(list_urls)) {
             speaker <- data.frame()
             speech_type <- "titre"
           }
+          
             
           if ( grepl("secrétaire", tolower(intervention_start)) ) {
             first_name <- NA
@@ -568,6 +575,11 @@ for (i in 1:length(list_urls)) {
             media <- NA
             speaker <- data.frame()
             speech_type <- "modération"
+          }
+          
+          if ( grepl("voix\\s:", tolower(intervention_start)) ) {
+            first_name <- "Des"
+            last_name <- "Voix"
           }
           
           speech <- substr(doc_text[j], unlist(gregexpr(":", intervention_start))+1, nchar(doc_text[j]))

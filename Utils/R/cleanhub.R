@@ -11,8 +11,8 @@ dfDeep.hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items'
 ##### Purge all
 #####
 cat("Cache contains", nrow(dfCache.hub), "rows.", sep = ' ')
-cache_answer <- readline(prompt="Continue (y/N): ")
-
+#cache_answer <- readline(prompt="Continue (y/N): ")
+cache_answer <- "y"
 if (tolower(cache_answer) == "y" && nrow(dfCache.hub) > 0) {
   for (i in 1:nrow(dfCache.hub)) {
     clessnhub::delete_item(dfCache.hub$uuid[i], 'agoraplus_warehouse_cache_items')
@@ -20,7 +20,8 @@ if (tolower(cache_answer) == "y" && nrow(dfCache.hub) > 0) {
 }
 
 cat("Simple contains", nrow(dfSimple.hub), "rows.", sep = ' ')
-simple_answer <- readline(prompt="Continue (y/N): ")
+#simple_answer <- readline(prompt="Continue (y/N): ")
+simple_answer <- "y"
 if (tolower(simple_answer) == "y" && nrow(dfSimple.hub) > 0) {
   for (i in 1:nrow(dfSimple.hub)) {
     clessnhub::delete_item(dfSimple.hub$uuid[i], 'agoraplus_warehouse_event_items')
@@ -28,7 +29,8 @@ if (tolower(simple_answer) == "y" && nrow(dfSimple.hub) > 0) {
 }
 
 cat("Deep contains", nrow(dfDeep.hub), "rows.", sep = ' ')
-deep_answer <- readline(prompt="Continue (y/N): ")
+#deep_answer <- readline(prompt="Continue (y/N): ")
+deep_answer <- "y"
 if (tolower(deep_answer) == "y" && nrow(dfDeep.hub) > 0) {
   for (i in 1:nrow(dfDeep.hub)) {
     clessnhub::delete_item(dfDeep.hub$uuid[i], 'agoraplus_warehouse_intervention_items')

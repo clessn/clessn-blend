@@ -35,7 +35,7 @@ installPackages <- function() {
                          "tibble",
                          "devtools",
                          "countrycode",
-                         "clessn/clessnverse",
+                         #"clessn/clessnverse",
                          "clessn/clessn-hub-r",
                          "ropensci/gender",
                          "lmullen/genderdata")
@@ -77,11 +77,11 @@ installPackages <- function() {
 #
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
+if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-            hub_update = "update",csv_update = "skip",backend_type = "CSV")
+             hub_update = "skip",csv_update = "update",backend_type = "CSV")
 
 # Pour la PROD
 #Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
@@ -131,10 +131,10 @@ urls <- urls[grep("https", urls)]
 urls_list <- rvest::html_attr(urls, 'href')
 
 # Hack here to use another data source
-#urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-18_FR.xml")
-urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml")
-
-
+urls_list <- urls_list[1:8]
+urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
+urls_list[10] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-11_FR.xml"
+urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml"
 
 
 ###############################################################################
@@ -147,13 +147,13 @@ urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-1
 # in it, or from the assnat website and start parsing it to extract the
 # debates content
 #
-for (i in 1:length(urls_list)) {
-  if (opt_backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
+for (i in 1:1) {
+  if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
   
-  cat(" conférence progress: \r")
-  setTxtProgressBar(pb_conf, i)
+  clessnverse::logit(paste("Debate", i, "of", length(urls_list),sep = " "), logger)
+  cat("\nDebat", i, "de", length(urls_list),"\n")
   
 
   ###
@@ -233,7 +233,7 @@ for (i in 1:length(urls_list)) {
   pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
                           max = core_xml_nbchapters, # Maximum value of the progress bar
                           style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                          width = core_xml_nbchapters,   # Progress bar width. Defaults to getOption("width")
+                          width = 80,   # Progress bar width. Defaults to getOption("width")
                           char = "=")   # Character used to create the bar
   
   event_content <- ""
@@ -244,8 +244,8 @@ for (i in 1:length(urls_list)) {
   for (j in 1:core_xml_nbchapters) {
     cat(" chapter progress\r")
     setTxtProgressBar(pb_chap, j)
-    # New chapter
     
+    # New chapter
     chapter_node <- core_xml[[j]]
     chapter_number <- xmlGetAttr(chapter_node, "NUMBER")
     chapter_title <- xmlValue(xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='FR']")[j])
@@ -277,6 +277,14 @@ for (i in 1:length(urls_list)) {
       # We have to loop through every intervention
       for (k in which(chapter_nodes_list == "INTERVENTION")) {
         intervention_seqnum <- intervention_seqnum + 1
+        
+        # Skip if this intervention already is in the dataset
+        if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == intervention_seqnum,]) > 0 &&
+            opt$deep_update != "refresh") {
+          intervention_seqnum <- intervention_seqnum+1
+          next
+        }
+        
         speaker_speech <- ""
         #cat("Intervention", intervention_seqnum, "\r", sep = " ")
         
@@ -312,7 +320,8 @@ for (i in 1:length(urls_list)) {
         speaker_is_minister <- NA
         
         speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", xmlValue(speaker_node[["EMPHAS"]])))
-        if ( str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
+        
+        if (!is.na(speaker_type) && str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
         
         speaker_district <- NA
         speaker_media <- NA    
@@ -379,8 +388,8 @@ for (i in 1:length(urls_list)) {
         dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
                                                           dfDestination = dfDeep,
                                                           hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
-                                                          modeLocalData = opt_deep_update, 
-                                                          modeHub = opt_hub_update)
+                                                          modeLocalData = opt$deep_update, 
+                                                          modeHub = opt$hub_update)
         
         event_content <- paste(event_content, 
                                case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_speech, "\n\n", sep=""),
@@ -429,15 +438,15 @@ for (i in 1:length(urls_list)) {
   dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow, 
                                              dfDestination = dfSimple,
                                              hubTableName = 'agoraplus-eu_warehouse_event_items', 
-                                             modeLocalData = opt_simple_update, 
-                                             modeHub = opt_hub_update)
+                                             modeLocalData = opt$simple_update, 
+                                             modeHub = opt$hub_update)
   
   
   dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = doc_html),
                                             dfDestination = dfCache,
                                             hubTableName = 'agoraplus-eu_warehouse_cache_items', 
-                                            modeLocalData = opt_cache_update, 
-                                            modeHub = opt_hub_update)
+                                            modeLocalData = opt$cache_update, 
+                                            modeHub = opt$hub_update)
   
 } #for (i in 1:length(urls_list))
 
@@ -445,8 +454,8 @@ for (i in 1:length(urls_list)) {
 
 if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
   write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep=''), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep=''), row.names = FALSE)
 }
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)

@@ -259,6 +259,8 @@ for (i in 1:length(list_urls)) {
       # the root of the document). Unlist flattens the list to
       # create a character vector.
       doc_text <- unlist(xpathApply(parsed_html, '//p', xmlValue))
+      doc_text <- gsub('\u00a0',' ', doc_text)
+      
       
       # Replace all \n by spaces and clean leading and trailing spaces
       # and clean the conference vector of unneeded paragraphs
