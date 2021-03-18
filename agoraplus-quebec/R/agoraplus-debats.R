@@ -75,7 +75,7 @@ installPackages <- function() {
 #
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 # opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
@@ -323,6 +323,7 @@ for (i in 1:length(list_urls)) {
       speech_type <- NA
       speech <- NA
       
+      gender_femme <- 0
       speaker <- data.frame()
       periode_de_questions <- FALSE
       
@@ -475,6 +476,7 @@ for (i in 1:length(list_urls)) {
                 }
                 else {
                   last_name <- str_match(intervention_start, "M\\.\\s+(.*?)\\s+\\(")[2]
+                  gender_femme <- 0
                 }
                 
               } else {
@@ -485,6 +487,7 @@ for (i in 1:length(list_urls)) {
                 }
                 else {
                   last_name <- str_match(intervention_start, "M\\.\\s+(.*?)\\s+:")[2]
+                  gender_femme <- 0
                 }
                 
               }
@@ -562,6 +565,7 @@ for (i in 1:length(list_urls)) {
             media <- NA
             speaker <- data.frame()
             speech_type <- "titre"
+            speech <- stringr::str_match(speech, "^Titre\\s:\\s(.*)")[2]
           }
           
             
@@ -580,6 +584,8 @@ for (i in 1:length(list_urls)) {
           if ( grepl("voix\\s:", tolower(intervention_start)) ) {
             first_name <- "Des"
             last_name <- "Voix"
+            gender <- NA
+            gender_femme <- 0
           }
           
           speech <- substr(doc_text[j], unlist(gregexpr(":", intervention_start))+1, nchar(doc_text[j]))

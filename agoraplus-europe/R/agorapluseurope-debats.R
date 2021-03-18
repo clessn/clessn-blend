@@ -80,8 +80,8 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-             hub_update = "skip",csv_update = "update",backend_type = "CSV")
+opt <- list(cache_update = "rebuild",simple_update = "rebuild",deep_update = "rebuild",
+             hub_update = "skip",csv_update = "skip",backend_type = "CSV")
 
 # Pour la PROD
 #Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
@@ -89,9 +89,9 @@ opt <- list(cache_update = "update",simple_update = "update",deep_update = "upda
 #Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
-Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-Sys.setenv(HUB_USERNAME = "test")
-Sys.setenv(HUB_PASSWORD = "soleil123")
+# Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "test")
+# Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -104,7 +104,7 @@ if (opt$backend_type == "HUB")
                                         Sys.getenv('HUB_URL'))
 
 if (opt$backend_type == "CSV")
-  clessnverse::loadAgoraplusCSVDatasets("quebec", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
+  clessnverse::loadAgoraplusCSVDatasets("europe", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
 
 # Load all objects used for ETL
 clessnverse::loadETLRefData()
@@ -118,23 +118,45 @@ clessnverse::loadETLRefData()
 # to extract those URLS and get them individually in order to parse
 # each debate
 #
-base_url <- "https://www.europarl.europa.eu"
-content_url <- "/plenary/fr/debates-video.html#sidesForm"
 
-source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
-source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
+scraping_method <- "DateRange"
+#scraping_method <- "FrontPage"
 
-urls <- rvest::html_nodes(source_page, 'a')
-urls <- urls[grep("\\.xml", urls)]
-urls <- urls[grep("https", urls)]
+start_date <- "2020-02-08"
+#num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
+num_days <- 8
 
-urls_list <- rvest::html_attr(urls, 'href')
+if (scraping_method == "frontpage") {
+  base_url <- "https://www.europarl.europa.eu"
+  content_url <- "/plenary/fr/debates-video.html#sidesForm"
+  
+  source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
+  source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
+  
+  urls <- rvest::html_nodes(source_page, 'a')
+  urls <- urls[grep("\\.xml", urls)]
+  urls <- urls[grep("https", urls)]
+  
+  urls_list <- rvest::html_attr(urls, 'href')
+  urls_list <- as.list(urls_list)
+}
+
+if (scraping_method == "DateRange") {
+  date_vect <- seq( as.Date(start_date), by=1, len=num_days)
+  
+  urls_list <- list()
+  
+  for (d in date_vect) {
+    print(as.Date(d, "1970-01-01"))
+    urls_list <- c(urls_list, paste("https://www.europarl.europa.eu/doceo/document/CRE-9-", as.character(as.Date(d, "1970-01-01")), "_FR.xml",sep= ''))
+  }
+}
 
 # Hack here to use another data source
-urls_list <- urls_list[1:8]
-urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
-urls_list[10] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-11_FR.xml"
-urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml"
+#urls_list <- urls_list[1:8]
+#urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
+#urls_list[10] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-11_FR.xml"
+#urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml"
 
 
 ###############################################################################
@@ -147,7 +169,7 @@ urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12
 # in it, or from the assnat website and start parsing it to extract the
 # debates content
 #
-for (i in 1:1) {
+for (i in 1:length(urls_list)) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
@@ -163,12 +185,18 @@ for (i in 1:1) {
   ###
   if ( !(current_id %in% dfCache$eventID) ) {
     # Read and parse HTML from the URL directly
-    doc_html <- getURL(current_url)
-    doc_xml <- xmlTreeParse(doc_html, useInternalNodes = TRUE)
-    top_xml <- xmlRoot(doc_xml)
-    head_xml <- top_xml[[1]]
-    core_xml <- top_xml[[2]]
-    cached_html <- FALSE
+    #doc_html <- getURL(current_url)
+    r <- httr::GET(current_url)
+    if (r$status_code == 200) {
+      doc_html <- httr::content(r)
+      doc_xml <- xmlTreeParse(doc_html, useInternalNodes = TRUE)
+      top_xml <- xmlRoot(doc_xml)
+      head_xml <- top_xml[[1]]
+      core_xml <- top_xml[[2]]
+      cached_html <- FALSE
+    } else {
+      next
+    }
   } else{ 
     # Retrieve the XML structure from dfCache and Parse
     doc_html <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
@@ -185,7 +213,8 @@ for (i in 1:1) {
     
   ###############################
   # Columns of the simple dataset
-  event_source_type <- xpathApply(source_page_html, '//title', xmlValue)[[1]]
+  #event_source_type <- xpathApply(source_page_html, '//title', xmlValue)[[1]]
+  event_source_type <- "Débats et vidéos | Plénière | Parlement européen"
   event_url <- current_url
   event_date <- substr(xmlGetAttr(core_xml[[2]][["NUMERO"]], "VOD-START"),1,10)
   event_start_time <- substr(xmlGetAttr(core_xml[[2]][["NUMERO"]], "VOD-START"),12,19)
@@ -223,7 +252,7 @@ for (i in 1:1) {
   speaker_speech <- NA
   speaker_translated_speech <- NA
   
-  speaker <- data.frame()
+  dfSpeaker <- data.frame()
 
   ########################################################
   # Go through the xml document chapter by chapter

@@ -83,9 +83,9 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 #             hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
 # Pour la PROD
-#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "patrickponcet")
-#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
+# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
+# Sys.setenv(HUB_USERNAME = "patrickponcet")
+# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
 
 # Pour le DEV
 # Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
@@ -365,6 +365,8 @@ for (i in 1:length(list_urls)) {
           media <- NA
           speech_type <- NA
           speech <- NA
+          
+          gender_femme <- 0
           speaker <- data.frame()
           
           speech_paragraph_count <- 1
@@ -472,51 +474,51 @@ for (i in 1:length(list_urls)) {
   
             } else { ### JOURNALIST ###
               
-                  if ( !is.na(first_name) ){
-                    speaker <- filter(journalists, tolower(paste(first_name, last_name, sep = " ")) == tolower(fullName))
-                  }
-                  else{
-                    if (!is.na(last_name))
-                      speaker <- filter(journalists, str_detect(tolower(last_name), tolower(fullName)))
-                  }
-                  
-                  if ( nrow(speaker) > 0 ) {
-                    # we have a JOURNALIST
-                    
-                    #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
-                    #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
-                    gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                        is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
-                    
-                    #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
-                    type <- "journaliste"
-                    party <- NA
-                    circ <- NA
-                    media <- speaker[1,]$source
-                  } else {
-                    if ( str_detect(intervention_start, "Journaliste :(.*)") ){
-                      first_name <- NA
-                      last_name <- NA
-                      gender <- NA
-                      type <- "journaliste"
-                      party <- NA
-                      circ <- NA
-                      media <- NA
-                    } else {
-                      # ATTENTION : here we have not been able to identify
-                      # Neither the moderator, nor a politician, nor a journalist
-                      if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
-                      if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
-                      #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
-                      #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
-                      gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                          is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
-                    }
-                  }
-                  
-                  if ( periode_de_questions ) speech_type <- "question"
-                  else
-                  if ( grepl("?",doc_text[j]) ) speech_type <- "question" else speech_type <- "commentaire"
+              if ( !is.na(first_name) ){
+                speaker <- filter(journalists, tolower(paste(first_name, last_name, sep = " ")) == tolower(fullName))
+              }
+              else{
+                if (!is.na(last_name))
+                  speaker <- filter(journalists, str_detect(tolower(last_name), tolower(fullName)))
+              }
+              
+              if ( nrow(speaker) > 0 ) {
+                # we have a JOURNALIST
+                
+                #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
+                gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                                    is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
+                
+                #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
+                type <- "journaliste"
+                party <- NA
+                circ <- NA
+                media <- speaker[1,]$source
+              } else {
+                if ( str_detect(intervention_start, "Journaliste :(.*)") ){
+                  first_name <- NA
+                  last_name <- NA
+                  gender <- NA
+                  type <- "journaliste"
+                  party <- NA
+                  circ <- NA
+                  media <- NA
+                } else {
+                  # ATTENTION : here we have not been able to identify
+                  # Neither the moderator, nor a politician, nor a journalist
+                  if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
+                  if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
+                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                  #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
+                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                                      is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
+                }
+              }
+              
+              if ( periode_de_questions ) speech_type <- "question"
+              else
+              if ( grepl("?",doc_text[j]) ) speech_type <- "question" else speech_type <- "commentaire"
             }
             
             
