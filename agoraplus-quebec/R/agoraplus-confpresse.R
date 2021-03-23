@@ -327,16 +327,16 @@ for (i in 1:length(list_urls)) {
       #                                 width = 80,  # Progress bar width. Defaults to getOption("width")
       #                                 char = "=")   # Character used to create the bar      
       
-      for (j in 1:length(doc_text)) {
+      for (j in 1:length(doc_text))  {
         #setTxtProgressBar(pb_chap, j)
         cat(j, "\r")
         
         # Skip if this intervention already is in the dataset
-        if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum,]) > 0 &&
-            opt$deep_update != "refresh") {
-          seqnum <- seqnum+1
-          next
-        }
+        #if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum,]) > 0 &&
+        #    opt$deep_update != "refresh") {
+        #  seqnum <- seqnum+1
+        #  next
+        #}
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker

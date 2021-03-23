@@ -157,6 +157,10 @@ if (scraping_method == "DateRange") {
 #urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
 #urls_list[10] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-11_FR.xml"
 #urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml"
+urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml",
+               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-06-18_FR.xml",
+               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-10-19_FR.xml",
+               "https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-20_FR.xml")
 
 
 ###############################################################################
@@ -308,11 +312,11 @@ for (i in 1:length(urls_list)) {
         intervention_seqnum <- intervention_seqnum + 1
         
         # Skip if this intervention already is in the dataset
-        if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == intervention_seqnum,]) > 0 &&
-            opt$deep_update != "refresh") {
-          intervention_seqnum <- intervention_seqnum+1
-          next
-        }
+        #if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == intervention_seqnum,]) > 0 &&
+        #    opt$deep_update != "refresh") {
+        #  intervention_seqnum <- intervention_seqnum+1
+        #  next
+        #}
         
         speaker_speech <- ""
         #cat("Intervention", intervention_seqnum, "\r", sep = " ")
@@ -382,7 +386,6 @@ for (i in 1:length(urls_list)) {
         # Translation
         speaker_translated_speech <- clessnverse::translateText(text = speaker_speech, engine = "azure", 
                                                                 target_lang = "fr", fake = TRUE)
-        
         # commit to dfDeep and the Hub
         dfInterventionRow <- data.frame(
           uuid = "",
@@ -413,20 +416,17 @@ for (i in 1:length(urls_list)) {
           speakerSpeechParagraphCount = speaker_speech_paragraph_count,
           speakerSpeech = speaker_speech,
           speakerTranslatedSpeech = speaker_translated_speech)
-        
         dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
                                                           dfDestination = dfDeep,
                                                           hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
                                                           modeLocalData = opt$deep_update, 
                                                           modeHub = opt$hub_update)
-        
         event_content <- paste(event_content, 
                                case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_speech, "\n\n", sep=""),
                                          TRUE ~ paste(speaker_full_name, 
                                                       " (", 
                                                       case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
                                                       "). – ", speaker_speech, "\n\n", sep = "")), sep = "")
-        
         event_translated_content <- paste(event_translated_content, 
                                           case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_translated_speech, "\n\n", sep=""),
                                                     TRUE ~ paste(speaker_full_name, 
@@ -441,11 +441,10 @@ for (i in 1:length(urls_list)) {
     } #if ( "INTERVENTION" %in% chapter_nodes_list )
   
   } #for (j in 1:core_xml_nbchapters)
-  
   event_word_count <- sum(dfDeep$speakerSpeechWordCount[which(dfDeep$eventID == current_id)])
   event_sentence_count <- sum(dfDeep$speakerSpeechSentenceCount[which(dfDeep$eventID == current_id)])
   event_paragraph_count <- sum(dfDeep$speakerSpeechParagraphCount[which(dfDeep$eventID == current_id)])
-  
+
   dfEventRow <- data.frame(uuid = "",
                            created = "",
                            modified = "",
@@ -463,29 +462,26 @@ for (i in 1:length(urls_list)) {
                            eventParagraphCount = event_paragraph_count,
                            eventContent = event_content,
                            eventTranslatedContent = event_translated_content)
-  
+
   dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow, 
                                              dfDestination = dfSimple,
                                              hubTableName = 'agoraplus-eu_warehouse_event_items', 
                                              modeLocalData = opt$simple_update, 
                                              modeHub = opt$hub_update)
-  
-  
-  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = doc_html),
+
+  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html), stringsAsFactors = F),
                                             dfDestination = dfCache,
                                             hubTableName = 'agoraplus-eu_warehouse_cache_items', 
                                             modeLocalData = opt$cache_update, 
                                             modeHub = opt$hub_update)
-  
 } #for (i in 1:length(urls_list))
 
 
-
-if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep=''), row.names = FALSE)
-}
+#if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
+#  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
+#  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
+#  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
+#}
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
