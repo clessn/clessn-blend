@@ -78,18 +78,9 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
 
-# Pour la PROD
-# Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-# Sys.setenv(HUB_USERNAME = "patrickponcet")
-# Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
-
-#Pour le DEV
-Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-Sys.setenv(HUB_USERNAME = "test")
-Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
