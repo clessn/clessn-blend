@@ -337,12 +337,12 @@ for (i in 1:length(list_urls)) {
         cat(j, "\r")
         
         # Skip if this intervention already is in the dataset
-        matching_row <- which(dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum)
-        if (length(matching_row) > 0 && opt$deep_update != "refresh") {
-         seqnum <- seqnum+1
-         matching_row <- NULL
-         next
-        }
+        #matching_row <- which(dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum)
+        #if (length(matching_row) > 0 && opt$deep_update != "refresh") {
+        # seqnum <- seqnum+1
+        # matching_row <- NULL
+        # next
+        #}
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
