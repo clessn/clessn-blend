@@ -146,7 +146,7 @@ i=1
 
 for (filename in filelist) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
-  current_id <- str_match(filename, "^.{14}(.*).txt")[2]
+  current_id <- str_match(filename, "^.{10}(.*).txt")[2]
   
   clessnverse::logit(paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
   cat("\nConf", i, "de", length(filelist), filename, "\n", sep = " ")
