@@ -35,7 +35,7 @@ installPackages <- function() {
                          "tibble",
                          "devtools",
                          "countrycode",
-                         #"clessn/clessnverse",
+                         "clessn/clessnverse",
                          "clessn/clessn-hub-r",
                          "ropensci/gender",
                          "lmullen/genderdata")
@@ -80,33 +80,26 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "rebuild",simple_update = "rebuild",deep_update = "rebuild",
-             hub_update = "skip",csv_update = "skip",backend_type = "CSV")
+opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+             hub_update = "skip",csv_update = "update",backend_type = "CSV")
 
-# Pour la PROD
-#Sys.setenv(HUB_URL = "https://clessn.apps.valeria.science")
-#Sys.setenv(HUB_USERNAME = "patrickponcet")
-#Sys.setenv(HUB_PASSWORD = "s0ci4lResQ")
-
-# Pour le DEV
-# Sys.setenv(HUB_URL = "https://dev-clessn.apps.valeria.science")
-# Sys.setenv(HUB_USERNAME = "test")
-# Sys.setenv(HUB_PASSWORD = "soleil123")
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") 
+if (opt$backend_type == "HUB") {
   clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
                                         Sys.getenv('HUB_USERNAME'), 
                                         Sys.getenv('HUB_PASSWORD'), 
                                         Sys.getenv('HUB_URL'))
+}
 
-if (opt$backend_type == "CSV")
-  clessnverse::loadAgoraplusCSVDatasets("europe", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
+if (opt$backend_type == "CSV") {
+  clessnverse::loadAgoraplusCSVDatasets("europe", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-europe")
+}
 
-# Load all objects used for ETL
+  # Load all objects used for ETL
 clessnverse::loadETLRefData()
 
 
@@ -122,9 +115,9 @@ clessnverse::loadETLRefData()
 scraping_method <- "DateRange"
 #scraping_method <- "FrontPage"
 
-start_date <- "2020-02-08"
+start_date <- "2019-07-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 8
+num_days <- 730
 
 if (scraping_method == "frontpage") {
   base_url <- "https://www.europarl.europa.eu"
@@ -145,22 +138,28 @@ if (scraping_method == "DateRange") {
   date_vect <- seq( as.Date(start_date), by=1, len=num_days)
   
   urls_list <- list()
+  nb_deb <- 0
   
   for (d in date_vect) {
-    print(as.Date(d, "1970-01-01"))
-    urls_list <- c(urls_list, paste("https://www.europarl.europa.eu/doceo/document/CRE-9-", as.character(as.Date(d, "1970-01-01")), "_FR.xml",sep= ''))
+    url <- paste("https://www.europarl.europa.eu/doceo/document/CRE-9-", as.character(as.Date(d, "1970-01-01")), "_FR.html",sep= '')
+    urls_list <- c(urls_list, url)
+    r <- httr::GET(url)
+    if (r$status_code == 200) {
+     nb_deb <- nb_deb + 1
+    }
   }
 }
+
 
 # Hack here to use another data source
 #urls_list <- urls_list[1:8]
 #urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
 #urls_list[10] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-11_FR.xml"
 #urls_list[11] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml"
-urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml",
-               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-06-18_FR.xml",
-               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-10-19_FR.xml",
-               "https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-20_FR.xml")
+#urls_list <- list("https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-12_FR.xml",
+#               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-06-18_FR.xml",
+#               "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-10-19_FR.xml",
+#               "https://www.europarl.europa.eu/doceo/document/CRE-9-2021-01-20_FR.xml")
 
 
 ###############################################################################
@@ -220,9 +219,9 @@ for (i in 1:length(urls_list)) {
   #event_source_type <- xpathApply(source_page_html, '//title', xmlValue)[[1]]
   event_source_type <- "Débats et vidéos | Plénière | Parlement européen"
   event_url <- current_url
-  event_date <- substr(xmlGetAttr(core_xml[[2]][["NUMERO"]], "VOD-START"),1,10)
-  event_start_time <- substr(xmlGetAttr(core_xml[[2]][["NUMERO"]], "VOD-START"),12,19)
-  event_end_time <- substr(xmlGetAttr(core_xml[[core_xml_nbchapters]][["NUMERO"]], "VOD-END"),12,19)
+  event_date <- substr(xmlGetAttr(core_xml[[2]][["TL-CHAP"]], "VOD-START"),1,10)
+  event_start_time <- substr(xmlGetAttr(core_xml[[2]][["TL-CHAP"]], "VOD-START"),12,19)
+  event_end_time <- substr(xmlGetAttr(core_xml[[core_xml_nbchapters]][["TL-CHAP"]], "VOD-END"),12,19)
   event_title <- NA
   event_subtitle <- NA
   event_word_count <- NA
@@ -385,7 +384,10 @@ for (i in 1:length(urls_list)) {
         
         # Translation
         speaker_translated_speech <- clessnverse::translateText(text = speaker_speech, engine = "azure", 
-                                                                target_lang = "fr", fake = TRUE)
+                                                                target_lang = "fr", fake = FALSE)
+        
+        if (is.null(speaker_translated_speech)) speaker_translated_speech <- NA
+          
         # commit to dfDeep and the Hub
         dfInterventionRow <- data.frame(
           uuid = "",
@@ -477,11 +479,11 @@ for (i in 1:length(urls_list)) {
 } #for (i in 1:length(urls_list))
 
 
-#if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-#  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
-#  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
-#  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-03-22.csv",sep=''), row.names = FALSE)
-#}
+if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
+  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
+}
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
