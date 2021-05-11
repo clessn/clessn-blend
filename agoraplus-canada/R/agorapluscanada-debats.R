@@ -563,7 +563,12 @@ for (i_url in 1:length(urls_list_fr)) {
             speaker_is_minister <- if (speaker_type == "Premier ministre" || speaker_type == "Ministre") 1 else 0
             speaker_party <- dfSpeaker$party
             
-            intervention_text <- XML::xmlValue(intervention_node[["Content"]])
+            # Now run through the intervention paragraphs and build the intervention with paragraphs breaks
+            intervention_text <- ""
+            
+            for (i_intervention_paragraph in 1:length(which(names(intervention_content_node) == "ParaText"))) {
+              intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_paragraph]]), sep='\n\n')
+            }
             
             intervention_word_count <- nrow(unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
             intervention_sentence_count <- nrow(unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
