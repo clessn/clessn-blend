@@ -80,7 +80,7 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "skip",simple_update = "update",deep_update = "update",
+opt <- list(cache_update = "skip",simple_update = "rebuild",deep_update = "rebuild",
             hub_update = "skip",csv_update = "skip",backend_type = "CSV")
 
 
@@ -118,7 +118,8 @@ base_url <- "https://www.noscommunes.ca"
 hansard_url1 <- "/Content/House"
 hansard_url2 <- "/Debates"
 hansard_url3 <- "/HAN"
-hansard_url4 <- "-F.XML"
+hansard_url4fr <- "-F.XML"
+hansard_url4en <- "-F.XML"
 
 if (scraping_method == "Latest") {
   content_url <- "/PublicationSearch/fr/?PubType=37&xml=1"
@@ -133,8 +134,10 @@ if (scraping_method == "Latest") {
   session_num <- latest_handsard$Session
   parliam_num <- latest_handsard$Parliament
   
-  url <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4,sep='')
-  urls_list <- url
+  url_fr <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
+  urls_list_fr <- url_fr
+  url_en <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
+  urls_list_en <- url_en
 }
 
 if (scraping_method == "SessionRange") {
@@ -144,15 +147,18 @@ if (scraping_method == "SessionRange") {
   start_session <- 2
   nb_session <- 1
   start_seance <- 60
-  nb_seance <- 20
+  nb_seance <- 2
 
-  urls_list <- c()
+  urls_list_fr <- c()
+  urls_list_en <- c()
   
   for (p in start_parliam:(start_parliam+nb_parliam-1)) {
     for (s in start_session:(start_session+nb_session-1)) {
       for (seance in start_seance:(start_seance+nb_seance-1)) {
-        url <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4,sep= '')
-        urls_list <- append(urls_list, url)
+        url_fr <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4fr,sep= '')
+        urls_list_fr <- append(urls_list_fr, url_fr)
+        url_en <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4en,sep= '')
+        urls_list_en <- append(urls_list_en, url_en)
       }
     }
   }
@@ -170,13 +176,13 @@ if (scraping_method == "SessionRange") {
 # in it, or from the assnat website and start parsing it to extract the
 # debates content
 #
-for (i_url in 1:length(urls_list)) {
+for (i_url in 1:length(urls_list_fr)) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
-  current_url <- urls_list[[i_url]]
-  current_id <- stringr::str_replace_all(urls_list[i_url], "[[:punct:]]", "")
+  current_url_fr <- urls_list_fr[[i_url]]
+  current_id <- stringr::str_replace_all(urls_list_fr[i_url], "[[:punct:]]", "")
   
-  clessnverse::logit(paste("Debate", i_url, "of", length(urls_list),sep = " "), logger)
-  cat("\nDebat", i_url, "de", length(urls_list),"\n")
+  clessnverse::logit(paste("Debate", i_url, "of", length(urls_list_fr),sep = " "), logger)
+  cat("\nDebat", i_url, "de", length(urls_list_fr),"\n")
   
   
   ###
@@ -186,50 +192,60 @@ for (i_url in 1:length(urls_list)) {
   ###
   if ( !(current_id %in% dfCache$eventID) ) {
     # Read and parse HTML from the URL directly
-    #doc_html <- getURL(current_url)
-    r <- httr::GET(current_url)
-    if (r$status_code == 200) {
-      doc_html <- httr::content(r)
-      doc_xml <- XML::xmlParse(doc_html, useInternalNodes = TRUE)
-      top_xml <- XML::xmlRoot(doc_xml)
-      title_xml <- top_xml[["DocumentTitle"]]
-      header_xml <- top_xml[["ExtractedInformation"]]
-      hansard_body_xml <- top_xml[["HansardBody"]]
+    #doc_html_fr <- getURL(current_url_fr)
+    r_fr <- httr::GET(current_url_fr)
+    if (r_fr$status_code == 200) {
+      current_url_en <- urls_list_en[[i_url]]
+      r_en <- httr::GET(current_url_en)
+      if (r_en$status_code == 200) {
+        doc_html_en <- httr::content(r_fr)
+        doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
+        top_xml_en <- XML::xmlRoot(doc_xml_en)
+        title_xml_en <- top_xml_en[["DocumentTitle"]]
+        header_xml_en <- top_xml_en[["ExtractedInformation"]]
+        hansard_body_xml_en <- top_xml_en[["HansardBody"]]
+      }
+      doc_html_fr <- httr::content(r_fr)
+      doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
+      top_xml_fr <- XML::xmlRoot(doc_xml_fr)
+      title_xml_fr <- top_xml_fr[["DocumentTitle"]]
+      header_xml_fr <- top_xml_fr[["ExtractedInformation"]]
+      hansard_body_xml_fr <- top_xml_fr[["HansardBody"]]
       cached_html <- FALSE
     } else {
       next
     }
   } else{ 
     # Retrieve the XML structure from dfCache and Parse
-    doc_html <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
-    doc_xml <- xmlParse(doc_html, useInternalNodes = TRUE)
-    top_xml <- xmlRoot(doc_xml)
-    title_xml <- top_xml[["DocumentTitle"]]
-    header_xml <- top_xml[["ExtractedInformation"]]
-    hansard_body_xml <- top_xml[["HansardBody"]]
+    doc_html_fr <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
+    doc_xml_fr <- xmlParse(doc_html_fr, useInternalNodes = TRUE)
+    top_xml_fr <- xmlRoot(doc_xml_fr)
+    title_xml_fr <- top_xml_fr[["DocumentTitle"]]
+    header_xml_fr <- top_xml_fr[["ExtractedInformation"]]
+    hansard_body_xml_fr <- top_xml_fr[["HansardBody"]]
     cached_html <- TRUE
   }
 
   # Get the length of all branches of the XML document
-  header_xml_length <- length(names(header_xml))
-  hansard_body_xml_length <- length(names(hansard_body_xml))
+  header_xml_fr_length <- length(names(header_xml_fr))
+  hansard_body_xml_fr_length <- length(names(hansard_body_xml_fr))
   
-  for (i_header_child_node in 1:header_xml_length) {
-    header_child_node_attr <- XML::xmlGetAttr(header_xml[[i_header_child_node]], "Name")
+  for (i_header_child_node in 1:header_xml_fr_length) {
+    header_child_node_attr <- XML::xmlGetAttr(header_xml_fr[[i_header_child_node]], "Name")
     
-    if (header_child_node_attr == "Institution") event_source_type <- paste(XML::xmlValue(header_xml[[i_header_child_node]]), " | Parlement du Canada", sep='')
-    if (header_child_node_attr == "InstitutionDebate") event_title <- trimws(XML::xmlValue(header_xml[[i_header_child_node]]))
-    if (header_child_node_attr == "MetaVolumeNumber") event_volume_number <- XML::xmlValue(header_xml[[i_header_child_node]])
-    if (header_child_node_attr == "MetaNumberNumber") event_hansard_number <- XML::xmlValue(header_xml[[i_header_child_node]])
-    if (header_child_node_attr == "ParliamentNumber") event_parliam_number <- XML::xmlValue(header_xml[[i_header_child_node]])
-    if (header_child_node_attr == "SessionNumber") event_session_number <- XML::xmlValue(header_xml[[i_header_child_node]])
-    if (header_child_node_attr == "MetaCreationTime") event_date_time <- XML::xmlValue(header_xml[[i_header_child_node]])
+    if (header_child_node_attr == "Institution") event_source_type <- paste(XML::xmlValue(header_xml_fr[[i_header_child_node]]), " | Parlement du Canada", sep='')
+    if (header_child_node_attr == "InstitutionDebate") event_title <- trimws(XML::xmlValue(header_xml_fr[[i_header_child_node]]))
+    if (header_child_node_attr == "MetaVolumeNumber") event_volume_number <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
+    if (header_child_node_attr == "MetaNumberNumber") event_hansard_number <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
+    if (header_child_node_attr == "ParliamentNumber") event_parliam_number <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
+    if (header_child_node_attr == "SessionNumber") event_session_number <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
+    if (header_child_node_attr == "MetaCreationTime") event_date_time <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
   }
   
   ###############################
   # Columns of the simple dataset
   event_source_type <- event_source_type
-  event_url <- current_url
+  event_url <- current_url_fr
   event_date <- substr(event_date_time,1,10)
   event_start_time <- substr(event_date_time,12,19)
   event_end_time <- NA
@@ -283,7 +299,7 @@ for (i_url in 1:length(urls_list)) {
   ##########################################################
   # Go through the xml document subject of business by 
   # subject of business and count them per order of business 
-  nb_interventions <- length(gregexpr('(?=<Intervention)', XML::toString.XMLNode(hansard_body_xml), perl=TRUE)[[1]])
+  nb_interventions <- length(gregexpr('(?=<Intervention)', XML::toString.XMLNode(hansard_body_xml_fr), perl=TRUE)[[1]])
   
   
   
@@ -305,10 +321,10 @@ for (i_url in 1:length(urls_list)) {
   # Now we go through every child node of the hansard body and parse
   # i_oob is the Order of Business item index (l'index de l'item dans l'ordre du jour)
   
-  for (i_oob in 1:length(names(hansard_body_xml))) {
+  for (i_oob in 1:length(names(hansard_body_xml_fr))) {
     
     # New oob
-    oob_node <- hansard_body_xml[[i_oob]]
+    oob_node <- hansard_body_xml_fr[[i_oob]]
     if (XML::xmlName(oob_node) == "Intro") next
     
     # At this point we have an order of business item
@@ -359,7 +375,11 @@ for (i_url in 1:length(urls_list)) {
         } 
         
         sob_title <- if (!is.null(XML::xmlValue(sob_node[["SubjectOfBusinessTitle"]]))) trimws(XML::xmlValue(sob_node[["SubjectOfBusinessTitle"]])) else NA_character_
+        if (is.na(sob_title)) {
+          sob_title <- if (!is.null(XML::xmlValue(sob_node[["SubjectOfBusinessQualifier"]]))) trimws(XML::xmlValue(sob_node[["SubjectOfBusinessQualifier"]])) else NA_character_
+        }
         
+                
         sob_procedural_text <- if (!is.null(XML::xmlValue(sob_node[["ProceduralText"]]))) trimws(XML::xmlValue(sob_node[["ProceduralText"]])) else NA_character_
         
         # Then we start stripping the content out by going through each node sequentially
@@ -457,17 +477,29 @@ for (i_url in 1:length(urls_list)) {
             #title_patterns <- stringr::str_match(tolower(speaker_value), tolower(patterns_titres))
             
             speaker_full_name <- speaker_value
-
-            if (length(grep("vice-président", speaker_value)) > 0) {
+            if (length(grep("vice-présidente? adjointe?", speaker_value)) > 0) {
               if (length(grep("^(.*)\\(M(.|me|adame) (.*)\\)", speaker_value)) > 0) {
-                matches <- stringr::str_match(speaker_value, "^(.*)\\(M(.|me|adame) (.*)\\)")
-                speaker_full_name <- matches[length(matches)]
+                name_matches <- stringr::str_match(speaker_value, "^(.*)\\(M(.|me|adame) (.*)\\)")
+                speaker_full_name <- name_matches[length(name_matches)]
                 speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
                 speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
-              }
+              } 
             }
             
+            if (length(grep("Le vice-président", speaker_value)) > 0) {
+              name_matches <- ""
+              name_matches[1] <- ""
+              name_matches[2] <- "M."
+              speaker_full_name = "Bruce Stanton"
+              speaker_first_name = "Bruce"
+              speaker_last_name = "Stanton"
+            }
+            
+
             if (length(grep("Le Président", speaker_value)) > 0) {
+              name_matches <- ""
+              name_matches[1] <- ""
+              name_matches[2] <- "M."
               speaker_full_name <- "Anthony Rota"
               speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
@@ -475,47 +507,46 @@ for (i_url in 1:length(urls_list)) {
             
             if (length(grep("L.?hon.", speaker_value)) > 0) {
               if (length(grep("^L.?hon.\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
-                matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
+                name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
               else
                 if (length(grep("^L.?hon.\\s(.*)", speaker_value)) > 0)
-                  matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
-                
-              #matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
-              speaker_full_name <- matches[2]
+                  name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+
+              #name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
+              speaker_full_name <- name_matches[2]
               speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
             }
             
             if (length(grep("Le très hon.", speaker_value)) > 0) {
-              matches <- stringr::str_match(speaker_value, "^Le très hon.\\s(.*)\\s\\((.*)\\)")
-              speaker_full_name <- matches[2]
+              name_matches <- stringr::str_match(speaker_value, "^Le très hon.\\s(.*)\\s\\((.*)\\)")
+              speaker_full_name <- name_matches[2]
               speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
             }
-            
+
             if (length(grep("^(M\\.|Mme)\\s(.*)", speaker_value)) > 0) {
               if (length(grep("^(M\\.|Mme)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)", speaker_value)) > 0)
                 # string de type M. Nom Prénom (blah blah (blah) blah blah )
-                matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)")
+                name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)")
               else
                 if (length(grep("^(M\\.|Mme)\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
                   # string de type M. Nom Prénom (blah blah)
-                  matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\)")
+                  name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\)")
                 else
                   if (length(grep("^(M\\.|Mme)\\s(.*)", speaker_value)) > 0)
                     # string de typr M Nom Prénom
-                    matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)")
+                    name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)")
 
-              speaker_full_name <- matches[3]
+              speaker_full_name <- name_matches[3]
               speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
             }
             
-            
             if (!is.null(speaker_first_name) && !is.na(speaker_first_name)) {
-                if (!is.na(matches[2]) && matches[2] == "M.") speaker_gender <- "M"
-                if (!is.na(matches[2]) && matches[2] == "Mme") speaker_gender <- "F"
-                if (is.na(matches[2]) || matches[2] != "M." && matches[2] != "Mme") {
+                if (!is.na(name_matches[2]) && name_matches[2] == "M.") speaker_gender <- "M"
+                if (!is.na(name_matches[2]) && name_matches[2] == "Mme") speaker_gender <- "F"
+                if (is.na(name_matches[2]) || name_matches[2] != "M." && name_matches[2] != "Mme") {
                   speaker_gender <- gender::gender(speaker_first_name)$gender
                   speaker_gender <- dplyr::case_when(speaker_gender == "male" ~ "M",
                                                      speaker_gender == "female" ~ "F",
@@ -529,7 +560,7 @@ for (i_url in 1:length(urls_list)) {
             
             speaker_district <- dfSpeaker$district
             speaker_province <- dfSpeaker$province
-            speaker_is_minister <- if (speaker_type == "96" || speaker_type == "1" || speaker_type == "4") 1 else 0
+            speaker_is_minister <- if (speaker_type == "Premier ministre" || speaker_type == "Ministre") 1 else 0
             speaker_party <- dfSpeaker$party
             
             intervention_text <- XML::xmlValue(intervention_node[["Content"]])
@@ -546,6 +577,7 @@ for (i_url in 1:length(urls_list)) {
               modified = "",
               metadata = "",
               eventID = current_id,
+              eventDate = as.character(event_date),
               objectOfBusinessId = oob_id,
               objectOfBusinessRubric = oob_rubric,
               objectOfBusinessTitle = oob_title,
@@ -607,7 +639,7 @@ for (i_url in 1:length(urls_list)) {
       
     } #if ( "SubjectOfBusiness" %in% oob_sob_list )
     
-  } #for (i_oob in names(hansard_body_xml))
+  } #for (i_oob in names(hansard_body_xml_fr))
   
   event_word_count <- sum(dfDeep$interventionWordCount[which(dfDeep$eventID == current_id)])
   event_sentence_count <- sum(dfDeep$interventionSentenceCount[which(dfDeep$eventID == current_id)])
@@ -619,7 +651,7 @@ for (i_url in 1:length(urls_list)) {
                            metadata = "",
                            eventID = current_id,
                            eventSourceType = event_source_type,
-                           eventURL = current_url,
+                           eventURL = current_url_fr,
                            eventDate = as.character(event_date),
                            eventStartTime = as.character(event_start_time),
                            eventEndTime = as.character(event_end_time),
@@ -637,7 +669,7 @@ for (i_url in 1:length(urls_list)) {
                                             modeLocalData = opt$simple_update, 
                                             modeHub = opt$hub_update)
   
-  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html), stringsAsFactors = F),
+  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html_fr), stringsAsFactors = F),
                                           dfDestination = dfCache,
                                           hubTableName = 'agoraplus-eu_warehouse_cache_items', 
                                           modeLocalData = opt$cache_update, 
@@ -646,9 +678,9 @@ for (i_url in 1:length(urls_list)) {
 
 
 if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-04-28-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-04-28-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-04-28-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
 }
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
