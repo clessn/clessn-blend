@@ -173,7 +173,7 @@ if (scraping_method == "DateRange") {
 # debates content
 #
 for (i in 1:length(urls_list)) {
-  if (opt$backend_type == "HUB") clessnhub::v1_refresh_token(configuration$token, configuration$url)
+  if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
   
