@@ -146,8 +146,8 @@ if (scraping_method == "SessionRange") {
   nb_parliam <- 1
   start_session <- 2
   nb_session <- 1
-  start_seance <- 60
-  nb_seance <- 2
+  start_seance <- 61
+  nb_seance <- 1
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -325,24 +325,29 @@ for (i_url in 1:length(urls_list_fr)) {
     
     # New oob
     oob_node <- hansard_body_xml_fr[[i_oob]]
-    if (XML::xmlName(oob_node) == "Intro") next
     
-    # At this point we have an order of business item
+    # At this point we have the Intro or an order of business item
     oob_seqnum <- oob_seqnum + 1
     
-    oob_id <- if(!is.null(XML::xmlGetAttr(oob_node, "id"))) XML::xmlGetAttr(oob_node, "id") else NA_character_
+    if (XML::xmlName(oob_node) == "Intro") {
+      oob_id <- "Intro"
+      oob_rubric <- "Intro"
+      oob_title <- "Intro"
+      oob_catchline <- "Intro"
+      
+    } else {
+      oob_id <- if(!is.null(XML::xmlGetAttr(oob_node, "id"))) XML::xmlGetAttr(oob_node, "id") else NA_character_
+      oob_rubric <- if(!is.null(XML::xmlGetAttr(oob_node, "Rubric"))) trimws(XML::xmlGetAttr(oob_node, "Rubric")) else NA_character_
+      oob_title <- if(!is.null(XML::xmlValue(oob_node[["OrderOfBusinessTitle"]]))) trimws(XML::xmlValue(oob_node[["OrderOfBusinessTitle"]])) else NA_character_
+      oob_catchline <- if(!is.null(XML::xmlValue(oob_node[["CatchLine"]]))) XML::xmlValue(oob_node[["CatchLine"]]) else NA_character_
     
-    oob_rubric <- if(!is.null(XML::xmlGetAttr(oob_node, "Rubric"))) trimws(XML::xmlGetAttr(oob_node, "Rubric")) else NA_character_
+      if (is.na(oob_title) && !is.na(oob_catchline)) oob_title <- oob_catchline
     
-    oob_title <- if(!is.null(XML::xmlValue(oob_node[["OrderOfBusinessTitle"]]))) trimws(XML::xmlValue(oob_node[["OrderOfBusinessTitle"]])) else NA_character_
-
-    oob_catchline <- if(!is.null(XML::xmlValue(oob_node[["CatchLine"]]))) XML::xmlValue(oob_node[["CatchLine"]]) else NA_character_
+      if (!is.na(oob_catchline) && !is.na(oob_title) && tolower(oob_catchline) != tolower(oob_title)) {
+        oob_title <- paste(oob_title, ": ", oob_catchline, sep='')
+      }
+    }  
     
-    if (is.na(oob_title) && !is.na(oob_catchline)) oob_title <- oob_catchline
-    
-    if (!is.na(oob_catchline) && !is.na(oob_title) && tolower(oob_catchline) != tolower(oob_title)) {
-      oob_title <- paste(oob_title, ": ", oob_catchline, sep='')
-    }
     
     oob_sob_list <- names(oob_node)
     
