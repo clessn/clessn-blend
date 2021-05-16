@@ -151,7 +151,7 @@ if ( !exists("dfDeep") || mode.dfDeepDataUpdate == "rebuild" )
 #####
 if (mode.backend == "HUB") {
   ### Connect to the HUB
-  clessnhub::configure()
+  clessnhub::v1_configure()
 
   ###
   # Récuperer les données du cache pour ne pas avoir à aller rechercher 
@@ -168,7 +168,7 @@ if (mode.backend == "HUB") {
                             stringsAsFactors = FALSE)
   
   if (mode.dfCacheUpdate != "rebuild" && mode.dfCacheUpdate != "skip") {
-    dfCache.hub <- clessnhub::download_table('agoraplus_warehouse_cache_items')
+    dfCache.hub <- clessnhub::v1_download_table('agoraplus_warehouse_cache_items')
     if (is.null(dfCache.hub)) {
       dfCache.hub <- data.frame(uuid = character(),
                                    created = character(),
@@ -207,7 +207,7 @@ if (mode.backend == "HUB") {
                              stringsAsFactors = FALSE)
 
     if (mode.dfSimpleDataUpdate != "rebuild" && mode.dfSimpleDataUpdate != "skip") {
-    dfSimple.hub <- clessnhub::download_table('agoraplus_warehouse_event_items')
+    dfSimple.hub <- clessnhub::v1_download_table('agoraplus_warehouse_event_items')
     if (is.null(dfSimple.hub)) {
       dfSimple.hub <- data.frame(uuid = character(),
                                     created = character(),
@@ -257,7 +257,7 @@ if (mode.backend == "HUB") {
                            stringsAsFactors = FALSE)
   
   if (mode.dfDeepDataUpdate != "rebuild" && mode.dfDeepDataUpdate != "skip") {
-    dfDeep.hub <- clessnhub::download_table('agoraplus_warehouse_intervention_items')
+    dfDeep.hub <- clessnhub::v1_download_table('agoraplus_warehouse_intervention_items')
     if (is.null(dfDeep.hub)) {
       dfDeep.hub <- data.frame(uuid = character(),
                                   created = character(),
@@ -287,10 +287,10 @@ if (mode.backend == "HUB") {
     dfDeep <- dfDeep.hub[,-c(1:4)]
   }
   
-  deputes <- clessnhub::download_table('warehouse_quebec_mnas')
+  deputes <- clessnhub::v1_download_table('warehouse_quebec_mnas')
   deputes <- deputes %>% separate(lastName, c("lastName1", "lastName2"), " ")
   
-  journalists <- clessnhub::download_table('warehouse_journalists')
+  journalists <- clessnhub::v1_download_table('warehouse_journalists')
 
 } #if (mode.backend == "HUB")
 
@@ -369,7 +369,7 @@ patterns.periode.de.questions <- c("période de questions", "période des questi
 #list.urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
 
 for (i in 1:length(list.urls)) {
-  clessnhub::refresh_token(configuration$token, configuration$url)
+  clessnhub::v1_refresh_token(configuration$token, configuration$url)
   current.url <- paste(base.url,list.urls[i],sep="")
   current.id <- str_replace_all(list.urls[i], "[[:punct:]]", "")
   
@@ -849,7 +849,7 @@ for (i in 1:length(list.urls)) {
                 mutate_if(is.character , replace_na, replace = "") %>%
                 mutate_if(is.logical , replace_na, replace = 0)
               
-              clessnhub::create_item(as.list(hubline.to.add), 'agoraplus_warehouse_intervention_items')
+              clessnhub::v1_create_item(as.list(hubline.to.add), 'agoraplus_warehouse_intervention_items')
               hubline.to.add <- NULL
             } else {
               hubline.to.update <- dfDeep[matching.deep.row.index,] %>% 
@@ -859,7 +859,7 @@ for (i in 1:length(list.urls)) {
               
               hubline.uuid <- dfDeep.hub$uuid[matching.hub.row.index]
               
-              clessnhub::edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_intervention_items')
+              clessnhub::v1_edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_intervention_items')
               hubline.to.update <- NULL
               hubline.uuid <- NULL
             }
@@ -926,7 +926,7 @@ for (i in 1:length(list.urls)) {
             mutate_if(is.character , replace_na, replace = "") %>%
             mutate_if(is.logical , replace_na, replace = 0)
           
-          clessnhub::create_item(as.list(hubline.to.add), 'agoraplus_warehouse_cache_items')
+          clessnhub::v1_create_item(as.list(hubline.to.add), 'agoraplus_warehouse_cache_items')
           hubline.to.add <- NULL
         } else {
           hubline.to.update <- dfCache[matching.cache.row.index,] %>% 
@@ -936,7 +936,7 @@ for (i in 1:length(list.urls)) {
           
           hubline.uuid <- dfCache.hub$uuid[matching.hub.row.index]
           
-          clessnhub::edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_cache_items')
+          clessnhub::v1_edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_cache_items')
           hubline.to.update <- NULL
           hubline.uuid <- NULL
         }
@@ -1000,7 +1000,7 @@ for (i in 1:length(list.urls)) {
             mutate_if(is.character , replace_na, replace = "") %>%
             mutate_if(is.logical , replace_na, replace = 0)
           
-          clessnhub::create_item(as.list(hubline.to.add), 'agoraplus_warehouse_event_items')
+          clessnhub::v1_create_item(as.list(hubline.to.add), 'agoraplus_warehouse_event_items')
           hubline.to.add <- NULL
         } else {
           hubline.to.update <- dfSimple[matching.simple.row.index,] %>% 
@@ -1010,7 +1010,7 @@ for (i in 1:length(list.urls)) {
           
           hubline.uuid <- dfSimple.hub$uuid[matching.hub.row.index]
           
-          clessnhub::edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_event_items')
+          clessnhub::v1_edit_item(hubline.uuid, as.list(hubline.to.update), 'agoraplus_warehouse_event_items')
           hubline.to.update <- NULL
           hubline.uuid <- NULL
         }

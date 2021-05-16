@@ -119,7 +119,7 @@ hansard_url1 <- "/Content/House"
 hansard_url2 <- "/Debates"
 hansard_url3 <- "/HAN"
 hansard_url4fr <- "-F.XML"
-hansard_url4en <- "-F.XML"
+hansard_url4en <- "-E.XML"
 
 if (scraping_method == "Latest") {
   content_url <- "/PublicationSearch/fr/?PubType=37&xml=1"
@@ -136,7 +136,7 @@ if (scraping_method == "Latest") {
   
   url_fr <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
   urls_list_fr <- url_fr
-  url_en <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
+  url_en <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4en,sep='')
   urls_list_en <- url_en
 }
 
@@ -198,7 +198,7 @@ for (i_url in 1:length(urls_list_fr)) {
       current_url_en <- urls_list_en[[i_url]]
       r_en <- httr::GET(current_url_en)
       if (r_en$status_code == 200) {
-        doc_html_en <- httr::content(r_fr)
+        doc_html_en <- httr::content(r_en)
         doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
         top_xml_en <- XML::xmlRoot(doc_xml_en)
         title_xml_en <- top_xml_en[["DocumentTitle"]]
@@ -565,10 +565,30 @@ for (i_url in 1:length(urls_list_fr)) {
             
             # Now run through the intervention paragraphs and build the intervention with paragraphs breaks
             intervention_text <- ""
+            intervention_text_fr <- ""
+            intervention_text_en <- ""
+            intervention_id <- ""
             
             for (i_intervention_paragraph in 1:length(which(names(intervention_content_node) == "ParaText"))) {
-              intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_paragraph]]), sep='\n\n')
+              intervention_id <- XML::xmlGetAttr(intervention_node[["Content"]][[i_intervention_paragraph]], "id")
+              
+              if (intervention_lang == "fr") {
+                intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_paragraph]]), sep='\n\n')
+                intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_paragraph]]), sep='\n\n')
+                intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+              }     
+              
+              if (intervention_lang == "en") {
+                intervention_text <- paste(intervention_text, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+                intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_paragraph]]), sep='\n\n')
+                intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+              }              
             }
+            
+            intervention_text <- trimws(intervention_text, "both")
+            intervention_text_fr <- trimws(intervention_text_fr, "both")
+            intervention_text_en <- trimws(intervention_text_en, "both")
+            
             
             intervention_word_count <- nrow(unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
             intervention_sentence_count <- nrow(unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
@@ -613,8 +633,9 @@ for (i_url in 1:length(urls_list_fr)) {
               interventionSentenceCount = intervention_sentence_count,
               interventionParagraphCount = intervention_paragraph_count,
               interventionText = intervention_text,
-              interventionTranslatedText = intervention_translated_text
-              )
+              interventionTextFR = intervention_text_fr,
+              interventionTextEN = intervention_text_en
+            )
 
             dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
                                                   dfDestination = dfDeep,
@@ -622,20 +643,21 @@ for (i_url in 1:length(urls_list_fr)) {
                                                   modeLocalData = opt$deep_update, 
                                                   modeHub = opt$hub_update)
             event_content <- paste(event_content, 
-                                   case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text, "\n\n", sep=""),
+                                   case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text_fr, "\n\n", sep=""),
                                              TRUE ~ paste(speaker_full_name, 
                                                           " (", 
                                                           speaker_party,
-                                                          "). – ", intervention_text, "\n\n", sep = "")), sep = "")
+                                                          "). – ", intervention_text_fr, "\n\n", sep = "")), sep = "")
+            
+            event_translated_content <- paste(event_translated_content, 
+                                   case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text_en, "\n\n", sep=""),
+                                             TRUE ~ paste(speaker_full_name, 
+                                                          " (", 
+                                                          speaker_party,
+                                                          "). – ", intervention_text_en, "\n\n", sep = "")), sep = "")
             
             current_speaker_full_name <- speaker_full_name
-            #event_translated_content <- paste(event_translated_content, 
-            #                                  case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_translated_speech, "\n\n", sep=""),
-            #                                            TRUE ~ paste(speaker_full_name, 
-            #                                                         " (", 
-            #                                                         case_when(is.na(speaker_polgroup) ~ speaker_type, TRUE ~  xmlGetAttr(speaker_node, "PP")),
-            #                                                         "). – ", speaker_translated_speech, "\n\n", sep = "")), sep = "")
-            
+
           } #if (XML::xmlName(sob_content_node[[i_sob_content]]) == "Intervention")
           
         } #for (i_sob_content in 1::length(names(sob_content_node)))
@@ -683,9 +705,9 @@ for (i_url in 1:length(urls_list_fr)) {
 
 
 if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-05-09-notranslate.csv",sep='/'), row.names = FALSE)
+  write.csv1(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep='/'), row.names = FALSE)
 }
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)

@@ -143,7 +143,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 
 
 for (i in 1:length(list_urls)) {
-  if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
+  if (opt$backend_type == "HUB") clessnhub::v1_refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- str_replace_all(list_urls[i], "[[:punct:]]", "")
   
