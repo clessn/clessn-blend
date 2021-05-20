@@ -571,6 +571,10 @@ for (i_url in 1:length(urls_list_fr)) {
             
             dfSpeaker <- clessnverse::getCanadaMepData(speaker_full_name)
             
+            speaker_first_name <- trimws(speaker_first_name, "both")
+            speaker_last_name <- trimws(speaker_last_name, "both")
+            speaker_full_name <- trimws(speaker_full_name, "both")
+            
             speaker_district <- dfSpeaker$district
             speaker_province <- dfSpeaker$province
             speaker_is_minister <- if (speaker_type == "Premier ministre" || speaker_type == "Ministre") 1 else 0
