@@ -82,7 +82,7 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "skip",simple_update = "rebuild",deep_update = "rebuild",
+opt <- list(cache_update = "skip",simple_update = "update",deep_update = "update",
             hub_update = "skip",csv_update = "skip",backend_type = "CSV")
 
 
@@ -128,7 +128,8 @@ if (scraping_method == "Latest") {
 
   source_page <- NULL
   
-  while (is.null(source_page)) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
+  i_get_attempt <- 1
+  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
   
   source_page_xml <- XML::xmlParse(source_page$result$content, useInternalNodes = TRUE)
   root_xml <- XML::xmlRoot(source_page_xml)
@@ -150,8 +151,8 @@ if (scraping_method == "SessionRange") {
   nb_parliam <- 1
   start_session <- 2
   nb_session <- 1
-  start_seance <- 36
-  nb_seance <- 365
+  start_seance <- 90
+  nb_seance <- 110
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -200,21 +201,24 @@ for (i_url in 1:length(urls_list_fr)) {
     r_fr <- NULL
     r_en <- NULL
     
-    while(is.null(r_fr)) { r_fr <- safe_GET(current_url_fr) }
+    i_get_attempt <- 1
+    while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
     
     if (r_fr$result$status_code == 200) {
       current_url_en <- urls_list_en[[i_url]]
-      while(is.null(r_en)) { r_en <- safe_GET(current_url_en) }
+      
+      i_get_attempt <- 1
+      while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
       
       if (r_en$result$status_code == 200) {
-        doc_html_en <- httr::content(r_en$result)
+        doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
         doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
         top_xml_en <- XML::xmlRoot(doc_xml_en)
         title_xml_en <- top_xml_en[["DocumentTitle"]]
         header_xml_en <- top_xml_en[["ExtractedInformation"]]
         hansard_body_xml_en <- top_xml_en[["HansardBody"]]
       }
-      doc_html_fr <- httr::content(r_fr$result)
+      doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
       doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
       top_xml_fr <- XML::xmlRoot(doc_xml_fr)
       title_xml_fr <- top_xml_fr[["DocumentTitle"]]
@@ -343,7 +347,6 @@ for (i_url in 1:length(urls_list_fr)) {
       oob_rubric <- "Intro"
       oob_title <- "Intro"
       oob_catchline <- "Intro"
-      
     } else {
       oob_id <- if(!is.null(XML::xmlGetAttr(oob_node, "id"))) XML::xmlGetAttr(oob_node, "id") else NA_character_
       oob_rubric <- if(!is.null(XML::xmlGetAttr(oob_node, "Rubric"))) trimws(XML::xmlGetAttr(oob_node, "Rubric")) else NA_character_
@@ -362,7 +365,18 @@ for (i_url in 1:length(urls_list_fr)) {
     
     # Then we get into the subjects of business
     if ( "SubjectOfBusiness" %in% oob_sob_list ) {
-      # We have to loop through every subject of business
+      # We have to loop through every subject of business but first
+      # let's see if there is any floor language tag (anomaly seen in hansard 31 of session 43-1)
+      if ("FloorLanguage" %in% oob_sob_list) {
+        sob_node <- oob_node[[which(oob_sob_list == "FloorLanguage")]]
+        if (!is.null(XML::xmlGetAttr(sob_node, "language"))) {
+          intervention_lang <- tolower(XML::xmlGetAttr(sob_node, "language")) 
+        } else {
+          intervention_lang <- NA_character_
+        }
+      }
+      
+      intervention_id <- NA
       
       for (i_sob in which(oob_sob_list == "SubjectOfBusiness")) {
         sob_id <- NA
@@ -460,6 +474,8 @@ for (i_url in 1:length(urls_list_fr)) {
             # Type of the intervention
             intervention_type <- XML::xmlGetAttr(sob_content_node[[i_sob_content]], "Type")
             
+            intervention_id <- XML::xmlGetAttr(sob_content_node[[i_sob_content]], "id")
+            
             intervention_node <- sob_content_node[[i_sob_content]]
             
             intervention_content_node <- intervention_node[["Content"]]
@@ -468,21 +484,31 @@ for (i_url in 1:length(urls_list_fr)) {
             # Identify the speaker and speaker type
             speaker_node <- intervention_node[["PersonSpeaking"]]
             speaker_type <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "Type")
+            if (!is.null(speaker_type)) {
+              speaker_type <- dplyr::case_when(speaker_type == "18" ~ "Secrétaire parlementaire",
+                                               speaker_type == "2"  ~ "Député(e)",
+                                               speaker_type == "13" ~ "Député(e)",
+                                               speaker_type == "1"  ~ "Premier ministre",
+                                               speaker_type == "15" ~ "Président",
+                                               speaker_type == "9"  ~ "Chef de l'opposition",
+                                               speaker_type == "10"  ~ "Chef de l'opposition",
+                                               speaker_type == "4"  ~ "Ministre",
+                                               speaker_type == "20" ~ "Ministre",
+                                               speaker_type == "96" ~ "Ministre",
+                                               speaker_type == "7"  ~ "Leader parlementaire de l'opposition",
+                                               speaker_type == "93" ~ "Vice-président(e) adjoint(e)",
+                                               speaker_type == "92" ~ "Vice-président(e) adjoint(e)",
+                                               speaker_type == "22" ~ "Vice-président(e)",
+                                               speaker_type == "60056" ~ "Leader adjoint(e) du gouvernement à la Chambre des communes",
+                                               TRUE ~ speaker_type) 
+            } else {
+              speaker_type <- NA
+            }
+              
             
-            speaker_type <- dplyr::case_when(speaker_type == "18" ~ "Secrétaire parlementaire",
-                                             speaker_type == "2"  ~ "Député",
-                                             speaker_type == "1"  ~ "Premier ministre",
-                                             speaker_type == "15" ~ "Président",
-                                             speaker_type == "9"  ~ "Chef de l'opposition",
-                                             speaker_type == "4"  ~ "Ministre",
-                                             speaker_type == "96" ~ "Ministre",
-                                             speaker_type == "7"  ~ "Leader parlementaire de l'opposition",
-                                             speaker_type == "93" ~ "vice-président(e) adjoint(e)",
-                                             speaker_type == "92" ~ "vice-président(e) adjoint(e)",
-                                             speaker_type == "22" ~ "vice-président(e)",
-                                             TRUE ~ speaker_type)
-            
-            if (speaker_type == "Ministre" || speaker_type == "Premier ministre") speaker_is_minister <- 1
+            #if (!is.na(speaker_type)) {
+            #  if (!is.na(speaker_type) && (speaker_type == "Ministre" || speaker_type == "Premier ministre")) speaker_is_minister <- 1
+            #} 
 
             speaker_id <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "DbId")
             speaker_value <- XML::xmlValue(speaker_node[["Affiliation"]])
@@ -490,7 +516,8 @@ for (i_url in 1:length(urls_list_fr)) {
             #title_patterns <- stringr::str_match(tolower(speaker_value), tolower(patterns_titres))
             
             speaker_full_name <- speaker_value
-            if (length(grep("vice-présidente? adjointe?", speaker_value)) > 0) {
+            
+            if (length(grep(tolower("vice-présidente? adjointe?"), tolower(speaker_value))) > 0) {
               if (length(grep("^(.*)\\(M(.|me|adame) (.*)\\)", speaker_value)) > 0) {
                 name_matches <- stringr::str_match(speaker_value, "^(.*)\\(M(.|me|adame) (.*)\\)")
                 speaker_full_name <- name_matches[length(name_matches)]
@@ -499,7 +526,7 @@ for (i_url in 1:length(urls_list_fr)) {
               } 
             }
             
-            if (length(grep("Le vice-président", speaker_value)) > 0) {
+            if (length(grep("le vice-président", tolower(speaker_value))) > 0) {
               name_matches <- ""
               name_matches[1] <- ""
               name_matches[2] <- "M."
@@ -508,8 +535,54 @@ for (i_url in 1:length(urls_list_fr)) {
               speaker_last_name = "Stanton"
             }
             
+            if (length(grep("la vice-présidente", tolower(speaker_value))) > 0) {
+              name_matches <- ""
+              name_matches[1] <- ""
+              name_matches[2] <- "Mme"
+              speaker_type <- "Vice-président(e)"
+              
+              speaker_full_name <- "Vice Président(e)"
+              speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+              speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+            }
+            
+            if (length(grep("la vice-présidente adjointe", tolower(speaker_value))) > 0) {
+              speaker_type <- "Vice-président(e)"
+              
+              if (length(grep("(L|l)a (V|v)ice-présidente (A|a)djointe\\s\\(Mme\\s(.*)\\)", speaker_value)) > 0) {
+                name_matches <- stringr::str_match(speaker_value, "(L|l)a (V|v)ice-présidente (A|a)djointe\\s\\(Mme\\s(.*)\\)")
+                speaker_type <- " Vice-président(e) adjoint(e)"
+                speaker_full_name <- name_matches[length(name_matches)]
+                speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+                speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+              } else {
+                speaker_full_name <- "Vice Président(e)"
+                speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+                speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+              }
+            }
+            
+            if (length(grep("Le président suppléant", speaker_value)) > 0) {
+              if (length(grep("Le président suppléant\\s\\((M\\.|Monsieur|Mr\\.)\\s(.*)\\)", speaker_value)) > 0) {
+                name_matches <- stringr::str_match(speaker_value, "Le président suppléant\\s\\((M\\.|Monsieur|Mr\\.)\\s(.*)\\)")
+                speaker_type <- "Vice-président(e) suppléant(e)"
+                speaker_full_name <- name_matches[length(name_matches)]
+                speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+                speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+              } 
+            }
+            
+            if (length(grep("La présidente suppléante", speaker_value)) > 0) {
+              if (length(grep("La présidente suppléante\\s\\((Mme|Madame)\\s(.*)\\)", speaker_value)) > 0) {
+                name_matches <- stringr::str_match(speaker_value, "La présidente suppléante\\s\\((Mme|Madame)\\s(.*)\\)")
+                speaker_type <- "Vice-président(e) suppléant(e)"
+                speaker_full_name <- name_matches[length(name_matches)]
+                speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+                speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+              } 
+            }
 
-            if (length(grep("Le Président", speaker_value)) > 0) {
+            if (length(grep("le président", tolower(speaker_value))) > 0) {
               name_matches <- ""
               name_matches[1] <- ""
               name_matches[2] <- "M."
@@ -518,12 +591,25 @@ for (i_url in 1:length(urls_list_fr)) {
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
             }
             
+            if (length(grep("le greffier de la chambre", tolower(speaker_value))) > 0) {
+              name_matches <- ""
+              name_matches[1] <- ""
+              name_matches[2] <- "M."
+              speaker_type <- "Greffier de la chambre"
+              speaker_full_name <- "Undetermined Speaker"
+              speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
+              speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
+            }
+
             if (length(grep("L.?hon.", speaker_value)) > 0) {
-              if (length(grep("^L.?hon.\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
-                name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
+              if (length(grep("^L.?hon.\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)", speaker_value)) > 0)
+                name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)")
               else
-                if (length(grep("^L.?hon.\\s(.*)", speaker_value)) > 0)
-                  name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+                if (length(grep("^L.?hon.\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
+                  name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
+                else
+                  if (length(grep("^L.?hon.\\s(.*)", speaker_value)) > 0)
+                    name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
 
               #name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
               speaker_full_name <- name_matches[2]
@@ -538,18 +624,22 @@ for (i_url in 1:length(urls_list_fr)) {
               speaker_last_name <- paste(strsplit(speaker_full_name," ")[[1]][2:length(strsplit(speaker_full_name," ")[[1]])],collapse = ' ')
             }
 
-            if (length(grep("^(M\\.|Mme)\\s(.*)", speaker_value)) > 0) {
-              if (length(grep("^(M\\.|Mme)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)", speaker_value)) > 0)
-                # string de type M. Nom Prénom (blah blah (blah) blah blah )
-                name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)")
+            if (length(grep("^(M\\.|Mme|Mr\\.)\\s(.*)", speaker_value)) > 0) {
+              if (length(grep("^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\((.*)\\)(.*)\\)", speaker_value)) > 0)
+                # string de type M. Nom Prénom (blah blah (blah blah) blah blah (blah blah blah) blah blah)
+                name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\((.*)\\)(.*)\\)")
               else
-                if (length(grep("^(M\\.|Mme)\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
-                  # string de type M. Nom Prénom (blah blah)
-                  name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)\\s\\((.*)\\)")
+                if (length(grep("^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)", speaker_value)) > 0)
+                  # string de type M. Nom Prénom (blah blah blah) blah blah )
+                  name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\((.*)\\)(.*)\\)")
                 else
-                  if (length(grep("^(M\\.|Mme)\\s(.*)", speaker_value)) > 0)
-                    # string de typr M Nom Prénom
-                    name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme)\\s(.*)")
+                  if (length(grep("^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\)", speaker_value)) > 0)
+                    # string de type M. Nom Prénom (blah blah)
+                    name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme|Mr\\.)\\s(.*)\\s\\((.*)\\)")
+                  else
+                    if (length(grep("^(M\\.|Mme|Mr\\.)\\s(.*)", speaker_value)) > 0)
+                      # string de typr M Nom Prénom
+                      name_matches <- stringr::str_match(speaker_value, "^(M\\.|Mme|Mr\\.)\\s(.*)")
 
               speaker_full_name <- name_matches[3]
               speaker_first_name <- strsplit(speaker_full_name," ")[[1]][1]
@@ -569,22 +659,28 @@ for (i_url in 1:length(urls_list_fr)) {
                 }
             }
             
-            dfSpeaker <- clessnverse::getCanadaMepData(speaker_full_name)
-            
             speaker_first_name <- trimws(speaker_first_name, "both")
             speaker_last_name <- trimws(speaker_last_name, "both")
             speaker_full_name <- trimws(speaker_full_name, "both")
             
+            if (!is.na(speaker_full_name) && str_detect(speaker_full_name, "’")) speaker_full_name <- gsub("’", "'",speaker_full_name) 
+            if (!is.na(speaker_first_name) && str_detect(speaker_first_name, "’")) speaker_first_name <- gsub("’", "'",speaker_first_name) 
+            if (!is.na(speaker_last_name) && str_detect(speaker_last_name, "’")) speaker_last_name <- gsub("’", "'",speaker_last_name) 
+            
+            dfSpeaker <- clessnverse::getCanadaMepData(speaker_full_name)
+            
             speaker_district <- dfSpeaker$district
             speaker_province <- dfSpeaker$province
-            speaker_is_minister <- if (speaker_type == "Premier ministre" || speaker_type == "Ministre") 1 else 0
+            speaker_is_minister <- if (!is.na(speaker_type) && (speaker_type == "Premier ministre" || speaker_type == "Ministre")) 1 else 0
             speaker_party <- dfSpeaker$party
+            
+            if (is.na(speaker_party) && speaker_full_name != "Undetermined Speaker") { stop("bingo") }
             
             # Now run through the intervention content and build the intervention with paragraphs breaks
             intervention_text <- ""
             intervention_text_fr <- ""
             intervention_text_en <- ""
-            intervention_id <- ""
+            para_text_id <- ""
             
             for (i_intervention_subnode in 1:length(names(intervention_content_node))) {
               
@@ -610,18 +706,18 @@ for (i_url in 1:length(urls_list_fr)) {
               
               if (XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ParaText") {
                 
-                intervention_id <- XML::xmlGetAttr(intervention_node[["Content"]][[i_intervention_subnode]], "id")
+                para_text_id <- XML::xmlGetAttr(intervention_node[["Content"]][[i_intervention_subnode]], "id")
                 
                 if (intervention_lang == "fr") {
                   intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                 }     
                 
                 if (intervention_lang == "en") {
-                  intervention_text <- paste(intervention_text, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text <- paste(intervention_text, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", intervention_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                 }
                 
                 para_node <- intervention_node[["Content"]][[i_intervention_subnode]]
@@ -698,6 +794,7 @@ for (i_url in 1:length(urls_list_fr)) {
               speakerParty = speaker_party,
               speakerDistrict = speaker_district,
               speakerMedia = speaker_media,
+              interventionID = intervention_id,
               interventionDocId = intervention_doc_id,
               interventionDocTitle = intervention_doc_title,
               interventionType = intervention_type,
@@ -731,6 +828,8 @@ for (i_url in 1:length(urls_list_fr)) {
                                                           "). – ", intervention_text_en, "\n\n", sep = "")), sep = "")
             
             current_speaker_full_name <- speaker_full_name
+            
+            intervention_id <- NA
 
           } #if (XML::xmlName(sob_content_node[[i_sob_content]]) == "Intervention")
           
@@ -779,7 +878,7 @@ for (i_url in 1:length(urls_list_fr)) {
 
 
 if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv1(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep='/'), row.names = FALSE)
+  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep='/'), row.names = FALSE)
   write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep='/'), row.names = FALSE)
   write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep='/'), row.names = FALSE)
 }
