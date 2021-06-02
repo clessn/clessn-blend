@@ -76,7 +76,7 @@ installPackages <- function() {
 #
 installPackages()
 
-clif (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 # opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
@@ -142,7 +142,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 
 
 
-for (i in 1:length(list_urls)) {
+for (i in 1:10) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- str_replace_all(list_urls[i], "[[:punct:]]", "")
