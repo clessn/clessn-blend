@@ -100,7 +100,7 @@ for (scriptname in script_list) {
     {
       logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
       opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update",
-                  dataframe_mode = "update", hub_update = "update")
+                  dataframe_mode = "update", hub_mode = "update")
       
       clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
       
