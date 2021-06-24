@@ -78,8 +78,8 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "update",simple_mode = "update", 
-            deep_mode = "update", hub_mode = "update")
+#opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", 
+#            dataframe_update = "update", hub_mode = "update")
 
 
 if (!exists("opt")) {
@@ -509,6 +509,7 @@ for (filename in filelist) {
   #file.rename(paste(data_input_folder, filename, sep = "/"), paste(data_output_folder, filename, sep = "/"))
   
 } #for (filename in filelist)
+
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)

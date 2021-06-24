@@ -16,6 +16,7 @@ import logging
 
 def get_video_from_youtube(video_url):
     # Convert video
+    logging.info("Fetching URL" + video_url)
     vid = pytube.YouTube(url=video_url)
     aud = vid.streams.filter(only_audio=True, subtype="mp4")
     aud.first().download(filename="youtubeAudio")
@@ -27,6 +28,7 @@ def get_video_from_youtube(video_url):
 
 
 def get_play_list_from_youtube(url):
+    logging.info("Fetching Playlist" + url)
     p = pytube.Playlist(url)
     return(p)
 
@@ -100,6 +102,7 @@ def list_folder(dbx, folder, subfolder):
     Return a dict mapping unicode filenames to
     FileMetadata|FolderMetadata entries.
     """
+    logging.info("Listing folder" + folder + subfolder)
     if (folder == "" and subfolder == ""):
         path=''
     else:
@@ -125,6 +128,7 @@ def upload(dbx, fullname, folder, subfolder, name, overwrite=False):
     """Upload a file.
     Return the request response, or None in case of error.
     """
+    logging.info("Uploading " + folder + subfolder + name)
     path = '/%s/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'), name)
     while '//' in path:
         path = path.replace('//', '/')
@@ -152,6 +156,7 @@ def download(dbx, folder, subfolder, name):
     """Download a file.
     Return the bytes of the file, or None if it doesn't exist.
     """
+    logging.info("Downloading " + folder + subfolder + name)
     path = '/%s/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'), name)
     while '//' in path:
         path = path.replace('//', '/')

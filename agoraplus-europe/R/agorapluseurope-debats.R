@@ -80,7 +80,7 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
+opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", dataframe_mode = "update",
              hub_update = "skip",csv_update = "update",backend_type = "CSV")
 
 
@@ -312,7 +312,7 @@ for (i in 1:length(urls_list)) {
         
         # Skip if this intervention already is in the dataset
         #if (nrow(dfDeep[dfDeep$eventID == current_id & dfDeep$interventionSeqNum == intervention_seqnum,]) > 0 &&
-        #    opt$deep_update != "refresh") {
+        #    opt$deep_mode != "refresh") {
         #  intervention_seqnum <- intervention_seqnum+1
         #  next
         #}
@@ -421,7 +421,7 @@ for (i in 1:length(urls_list)) {
         dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
                                                           dfDestination = dfDeep,
                                                           hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
-                                                          modeLocalData = opt$deep_update, 
+                                                          modeLocalData = opt$deep_mode, 
                                                           modeHub = opt$hub_update)
         event_content <- paste(event_content, 
                                case_when(speaker_full_name == current_speaker_full_name ~ paste(speaker_speech, "\n\n", sep=""),
@@ -468,13 +468,13 @@ for (i in 1:length(urls_list)) {
   dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow, 
                                              dfDestination = dfSimple,
                                              hubTableName = 'agoraplus-eu_warehouse_event_items', 
-                                             modeLocalData = opt$simple_update, 
+                                             modeLocalData = opt$simple_mode, 
                                              modeHub = opt$hub_update)
 
   dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html), stringsAsFactors = F),
                                             dfDestination = dfCache,
                                             hubTableName = 'agoraplus-eu_warehouse_cache_items', 
-                                            modeLocalData = opt$cache_update, 
+                                            modeLocalData = opt$cache_mode, 
                                             modeHub = opt$hub_update)
 } #for (i in 1:length(urls_list))
 

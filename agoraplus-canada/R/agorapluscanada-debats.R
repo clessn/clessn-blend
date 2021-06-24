@@ -82,7 +82,7 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_update = "skip",simple_update = "update",deep_update = "update",
+opt <- list(cache_mode = "skip",simple_mode = "update",deep_mode = "update", dataframe_mode = "update",
             hub_update = "skip",csv_update = "skip",backend_type = "CSV")
 
 
@@ -810,7 +810,7 @@ for (i_url in 1:length(urls_list_fr)) {
             dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
                                                   dfDestination = dfDeep,
                                                   hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
-                                                  modeLocalData = opt$deep_update, 
+                                                  modeLocalData = opt$deep_mode, 
                                                   modeHub = opt$hub_update)
             
             event_content <- paste(event_content, 
@@ -866,13 +866,13 @@ for (i_url in 1:length(urls_list_fr)) {
   dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow, 
                                             dfDestination = dfSimple,
                                             hubTableName = 'agoraplus-eu_warehouse_event_items', 
-                                            modeLocalData = opt$simple_update, 
+                                            modeLocalData = opt$simple_mode, 
                                             modeHub = opt$hub_update)
   
   dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html_fr), stringsAsFactors = F),
                                           dfDestination = dfCache,
                                           hubTableName = 'agoraplus-eu_warehouse_cache_items', 
-                                          modeLocalData = opt$cache_update, 
+                                          modeLocalData = opt$cache_mode, 
                                           modeHub = opt$hub_update)
 } #for (i_url in 1:length(urls_list))
 

@@ -79,20 +79,19 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "rebuild",simple_mode = "update",
-            deep_mode = "update", hub_mode = "update")
+#opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", 
+#            dataframe_mode = "update", hub_mode = "update")
 
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") {
+if (opt$backend_type == "HUB") 
   clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
                                         Sys.getenv('HUB_USERNAME'), 
                                         Sys.getenv('HUB_PASSWORD'), 
                                         Sys.getenv('HUB_URL'))
-}
 
 
 # Load all objects used for ETL
@@ -141,7 +140,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 
 
 
-for (i in 1:30) {
+for (i in 1:20) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- stringr::str_replace_all(list_urls[i], "[[:punct:]]", "")
@@ -157,7 +156,7 @@ for (i in 1:30) {
     # the website with HTTP_GET requests and ise the cached version
     if ( !(current_id %in% dfCache$eventID) ) {
       # Read and parse HTML from the URL directly
-      doc_html <- RCurl::getURL(current_url)
+      doc_html <- getURL(current_url)
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
       clessnverse::logit(paste(current_id, "not cached"), logger)
@@ -216,14 +215,14 @@ for (i in 1:30) {
       
       # Extract date of the conference
       date_time <- doc_h3[6]
-      date <- stringr::word(date_time[1],2:5)
+      date <- word(date_time[1],2:5)
       date <- gsub(",", "", date)
       day_of_week <- date[1]
       datestr <- paste(date[2],months_en[match(tolower(date[3]),months_fr)],date[4])
       date <- as.Date(datestr, format = "%d %B %Y")
       
       # Extract start time of the conference
-      time <- stringr::word(date_time[1],6:8)
+      time <- word(date_time[1],6:8)
       if (time[3] == "") time[3] <- "00"
       time <- paste(time[1], ":", time[3])
       time <- gsub(" ", "", time)
@@ -248,7 +247,7 @@ for (i in 1:30) {
       # Extract all the paragraphs (HTML tag is p, starting at
       # the root of the document). Unlist flattens the list to
       # create a character vector.
-      doc_text <- unlist(XML::xpathApply(parsed_html, '//p', XML::xmlValue))
+      doc_text <- unlist(XML::xpathApply(parsed_html, '//p', xmlValue))
       doc_text <- gsub('\u00a0',' ', doc_text)
       
       
@@ -269,7 +268,7 @@ for (i in 1:30) {
       end_time <- doc_text[length(doc_text)]
       end_time <- gsub("\\(",'', end_time)
       end_time <- gsub("\\)",'', end_time)
-      end_time <- clessnverse::splitWords(end_time)
+      end_time <- words(end_time)
       
       if ( end_time[length(end_time)] == "heures" ) {
         end_time[length(end_time)] <- ":"
@@ -400,12 +399,12 @@ for (i in 1:30) {
                 first_name <- stringr::str_match(intervention_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[4]
                 
                 # Is the first name a first name or the circonscription?
-                if ( nrow(dplyr::filter(deputes, currentDistrict == first_name)) > 0 ) {
+                if ( nrow(filter(deputes, currentDistrict == first_name)) > 0 ) {
                   circ <- first_name
                   first_name <- NA
-                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender_femme)
+                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(currentDistrict) == tolower(circ) & isFemale == gender_femme)
                 } else {
-                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(firstName) == tolower(first_name))
+                  speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & tolower(firstName) == tolower(first_name))
                 }
                 
               } else {
@@ -413,12 +412,12 @@ for (i in 1:30) {
                   # We have a string of type "M. | Mme string :" with string = last_name
                   last_name <- stringr::str_match(intervention_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]
                   first_name <- NA
-                  ln1 <- stringr::word(last_name, 1)
-                  ln2 <- stringr::word(last_name, 2)
+                  ln1 <- word(last_name, 1)
+                  ln2 <- word(last_name, 2)
                   if (is.na(ln2)) {
-                    speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
+                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
                   } else {
-                    speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
+                    speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
                   }
                   ln1 <- NA
                   ln2 <- NA
@@ -436,9 +435,9 @@ for (i in 1:30) {
                   if (length(last_name) == 0) last_name <- NA
                   first_name <- speaker[1,]$firstName
                   #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
-                  #gender <- dplyr::case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
                   #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
-                  gender <- dplyr::case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                       is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                   if ( tolower(speaker[1,]$party) == "fonctionnaire" ) {
                     type <- "fonctionnaire"
@@ -465,19 +464,19 @@ for (i in 1:30) {
             } else { ### JOURNALIST ###
               
               if ( !is.na(first_name) ){
-                speaker <- dplyr::filter(journalists, tolower(paste(first_name, last_name, sep = " ")) == tolower(fullName))
+                speaker <- filter(journalists, tolower(paste(first_name, last_name, sep = " ")) == tolower(fullName))
               }
               else{
                 if (!is.na(last_name))
-                  speaker <- dplyr::filter(journalists, stringr::str_detect(tolower(last_name), tolower(fullName)))
+                  speaker <- filter(journalists, stringr::str_detect(tolower(last_name), tolower(fullName)))
               }
               
               if ( nrow(speaker) > 0 ) {
                 # we have a JOURNALIST
                 
-                #gender <- dplyr::case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
                 #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
-                gender <- dplyr::case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                     is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                 
                 #gender <- if ( is.na(gender) && speaker[1,]$isFemale ) "F" else "M"
@@ -497,11 +496,11 @@ for (i in 1:30) {
                 } else {
                   # ATTENTION : here we have not been able to identify
                   # Neither the moderator, nor a politician, nor a journalist
-                  if (is.na(first_name)) first_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[1]
-                  if (is.na(last_name)) last_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[2]
-                  #gender <- dplyr::case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
+                  if (is.na(first_name)) first_name <- words(stringr::str_match(intervention_start, "^(.*):"))[1]
+                  if (is.na(last_name)) last_name <- words(stringr::str_match(intervention_start, "^(.*):"))[2]
+                  #gender <- case_when(is.na(gender) && speaker[1,]$isFemale  || gender_femme == 1 ~ "F",
                   #                    is.na(gender) && !speaker[1,]$isFemale || gender_femme == 0 ~ "M")
-                  gender <- dplyr::case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                  gender <- case_when(is.na(gender) && speaker$isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                       is.na(gender) && !speaker$isFemale[1] == 0 || gender_femme == 0 ~ "M")
                 }
               }
@@ -526,14 +525,14 @@ for (i in 1:30) {
           }
         }
         
-        language <- textcat::textcat(stringr::str_replace_all(speech, "[[:punct:]]", ""))
+        language <- textcat(stringr::str_replace_all(speech, "[[:punct:]]", ""))
         if ( !(language %in% c("english","french")) ) { 
           language <- NA
         }
         else language <- substr(language,1,2)
         
         speech_sentence_count <- clessnverse::countSentences(paste(speech, collapse = ' '))
-        speech_word_count <- clessnverse::countWords(speech)
+        speech_word_count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
         speech_paragraph_count <- stringr::str_count(speech, "\\n\\n")+1
         
         if (is.na(first_name) && is.na(last_name)) 

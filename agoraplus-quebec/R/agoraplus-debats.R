@@ -78,22 +78,20 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-#opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-#            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+opt <- list(cache_mode = "rebuild", simple_mode = "update",
+            deep_mode = "update", hub_mode = "update")
 
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") 
+if (opt$backend_type == "HUB") {
   clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
                                         Sys.getenv('HUB_USERNAME'), 
                                         Sys.getenv('HUB_PASSWORD'), 
                                         Sys.getenv('HUB_URL'))
-
-if (opt$backend_type == "CSV")
-  clessnverse::loadAgoraplusCSVDatasets("quebec", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/")
+}
 
 # Load all objects used for ETL
 clessnverse::loadETLRefData()
@@ -111,13 +109,13 @@ base_url <- "http://www.assnat.qc.ca"
 content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 
 # Pour rouler le script sur une base quotidienne et aller chercher les débats récents Utiliser le ligne ci-dessous
-doc_html <- getURL(paste(base_url,content_url,sep=""))
+doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
 #doc_html <- getURL("file:///Users/patrick/Dropbox/quorum-agoraplus-graphiques/_SharedFolder_quorum-agoraplus-graphiques/data/JournalDebatsHistorique2020.html")
 
-parsed_html <- htmlParse(doc_html, asText = TRUE)
-doc_urls <- xpathSApply(parsed_html, "//a/@href")
+parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
+doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
 list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 
 
@@ -141,7 +139,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 for (i in 1:length(list_urls)) {
   if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
-  current_id <- str_replace_all(list_urls[i], "[[:punct:]]", "")
+  current_id <- stringr::str_replace_all(list_urls[i], "[[:punct:]]", "")
   
   clessnverse::logit(paste("Debate", i, "of", length(list_urls),sep = " "), logger)
   cat("\nDebat", i, "de", length(list_urls),"\n")
@@ -156,22 +154,22 @@ for (i in 1:length(list_urls)) {
     ###
     if ( !(current_id %in% dfCache$eventID) ) {
       # Read and parse HTML from the URL directly
-      doc_html <- getURL(current_url)
+      doc_html <- RCurl::getURL(current_url)
       doc_html.original <- doc_html
-      doc_html <- str_replace_all(doc_html, "<a name=\"_Toc([:digit:]{8})\">([:alpha:])",
+      doc_html <- stringr::str_replace_all(doc_html, "<a name=\"_Toc([:digit:]{8})\">([:alpha:])",
                                   "<a name=\"_Toc\\1\">Titre : \\2")
-      doc_html <- str_replace_all(doc_html, "<a name=\"Page([:digit:]{5})\"></a>([:alpha:])",
+      doc_html <- stringr::str_replace_all(doc_html, "<a name=\"Page([:digit:]{5})\"></a>([:alpha:])",
                                   "<a name=\"Page\\1\"></a>Titre : \\2")
-      parsed_html <- htmlParse(doc_html, asText = TRUE)
+      parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
       clessnverse::logit(paste(current_id, "not cached"), logger)
     } else{ 
       # Retrieve the XML structure from dfCache and Parse
       doc_html <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
       doc_html.original <- doc_html
-      doc_html <- str_replace_all(doc_html, "<a name=\"_Toc([:digit:]{8})\">([:alpha:])",
+      doc_html <- stringr::str_replace_all(doc_html, "<a name=\"_Toc([:digit:]{8})\">([:alpha:])",
                                   "<a name=\"_Toc\\1\">Titre : \\2")
-      doc_html <- str_replace_all(doc_html, "<a name=\"Page([:digit:]{5})\"></a>([:alpha:])",
+      doc_html <- stringr::str_replace_all(doc_html, "<a name=\"Page([:digit:]{5})\"></a>([:alpha:])",
                                   "<a name=\"Page\\1\"></a>Titre : \\2")
       parsed_html <- htmlParse(doc_html, asText = TRUE)
       cached_html <- TRUE
@@ -179,10 +177,10 @@ for (i in 1:length(list_urls)) {
     }
     
     # Dissect the text based on html tags
-    doc_h1 <- xpathApply(parsed_html, '//h1', xmlValue)
-    doc_h2 <- xpathApply(parsed_html, '//h2', xmlValue)
-    doc_h3 <- xpathApply(parsed_html, '//h3', xmlValue)
-    doc_span <- xpathApply(parsed_html, '//span', xmlValue)
+    doc_h1 <- XML::xpathApply(parsed_html, '//h1', XML::xmlValue)
+    doc_h2 <- XML::xpathApply(parsed_html, '//h2', XML::xmlValue)
+    doc_h3 <- XML::xpathApply(parsed_html, '//h3', XML::xmlValue)
+    doc_span <- XML::xpathApply(parsed_html, '//span', XML::xmlValue)
     doc_span <- unlist(doc_span)
     
     # Valide la version : préliminaire ou finale
@@ -198,14 +196,14 @@ for (i in 1:length(list_urls)) {
     }
   
     if ( version_finale && 
-         ( ((opt$simple_update == "update" && !(current_id %in% dfSimple$eventID) ||
-             opt$simple_update == "refresh" ||
-             opt$simple_update == "rebuild") ||
-            (opt$deep_update == "update" && !(current_id %in% dfDeep$eventID) ||
-             opt$deep_update == "refresh" ||
-             opt$deep_update == "rebuild")) ||
-           ((opt$hub_update == "refresh" ||
-             opt$hub_update == "update") && current_id %in% dfSimple$eventID))
+         ( ((opt$simple_mode == "update" && !(current_id %in% dfSimple$eventID) ||
+             opt$simple_mode == "refresh" ||
+             opt$simple_mode == "rebuild") ||
+            (opt$deep_mode == "update" && !(current_id %in% dfDeep$eventID) ||
+             opt$deep_mode == "refresh" ||
+             opt$deep_mode == "rebuild")) ||
+           ((opt$hub_mode == "refresh" ||
+             opt$hub_mode == "update") && current_id %in% dfSimple$eventID))
     ) {
       
       ###############################
@@ -232,14 +230,14 @@ for (i in 1:length(list_urls)) {
       date_time <- sub("^\\s+", "", date_time)
       date_time <- sub("\\s+$", "", date_time)
       
-      date <- word(date_time[1],2:5)
+      date <- stringr::word(date_time[1],2:5)
       date <- gsub(",", "", date)
       day_of_week <- date[1]
       datestr <- paste(date[2],months_en[match(tolower(date[3]),months_fr)],date[4])
       date <- as.Date(datestr, format = "%d %B %Y")
       
       # Extract start time of the conference
-      time <- word(date_time[1],6:8)
+      time <- stringr::word(date_time[1],6:8)
       if (time[3] == "") time[3] <- "00"
       time <- paste(time[1], ":", time[3])
       time <- gsub(" ", "", time)
@@ -262,7 +260,7 @@ for (i in 1:length(list_urls)) {
       # Extract all the paragraphs (HTML tag is p, starting at
       # the root of the document). Unlist flattens the list to
       # create a character vector.
-      doc_text <- unlist(xpathApply(parsed_html, '//p', xmlValue))
+      doc_text <- unlist(XML::xpathApply(parsed_html, '//p', XML::xmlValue))
       doc_text <- gsub('\u00a0',' ', doc_text)
       
       # Replace all \n by spaces and clean leading and trailing spaces
@@ -282,8 +280,8 @@ for (i in 1:length(list_urls)) {
       end_time <- doc_text[length(doc_text)]
       end_time <- gsub("\\(",'', end_time)
       end_time <- gsub("\\)",'', end_time)
-      end_time <- words(end_time)
-      
+      end_time <- clessnverse::splitWords(end_time)
+
       if ( end_time[length(end_time)] == "heures" ) {
         end_time[length(end_time)] <- ":"
         end_time[length(end_time)+1] <- "00"
@@ -338,7 +336,7 @@ for (i in 1:length(list_urls)) {
         
         # Skip if this intervention already is in the dataset
         #matching_row <- which(dfDeep$eventID == current_id & dfDeep$interventionSeqNum == seqnum)
-        #if (length(matching_row) > 0 && opt$deep_update != "refresh") {
+        #if (length(matching_row) > 0 && opt$deep_mode != "refresh") {
         # seqnum <- seqnum+1
         # matching_row <- NULL
         # next
@@ -357,7 +355,7 @@ for (i in 1:length(list_urls)) {
               grepl("^Modérat(.*?):", intervention_start) ||
               grepl("^une\\svoix(.*?):", tolower(intervention_start)) ||
               grepl("^des\\svoix(.*?):", tolower(intervention_start))) &&
-             !grepl(",", str_match(intervention_start, "^(.*):")) ) {
+             !grepl(",", stringr::str_match(intervention_start, "^(.*):")) ) {
           # It's a new person speaking
           first_name <- NA
           last_name <- NA
@@ -384,7 +382,7 @@ for (i in 1:length(list_urls)) {
             
             # On enlève les parenthèses
             if ( grepl("Mme", intervention_start) || grepl("M\\.", intervention_start) ) 
-              last_name <- clessnverse::removeSpeakerTitle(str_match(intervention_start, "\\((.*)\\)\\s+:")[2])
+              last_name <- clessnverse::removeSpeakerTitle(stringr::str_match(intervention_start, "\\((.*)\\)\\s+:")[2])
             
             if ( grepl("le président(.*):", tolower(intervention_start)) ||
                  grepl("la présidente(.*):", tolower(intervention_start)) ) {
@@ -405,11 +403,11 @@ for (i in 1:length(list_urls)) {
                 else 
                   gender_femme <- 0
                     
-                last_name <- clessnverse::removeSpeakerTitle(str_match(intervention_start, "\\((.*)\\)\\s+:")[2])
+                last_name <- clessnverse::removeSpeakerTitle(stringr::str_match(intervention_start, "\\((.*)\\)\\s+:")[2])
                 
                 #speaker <- subset(deputes, grepl(tolower(last_name), tolower(nom)) & grepl(gender_femme, femme))
-                ln1 <- word(last_name, 1)
-                ln2 <- word(last_name, 2)
+                ln1 <- stringr::word(last_name, 1)
+                ln2 <- stringr::word(last_name, 2)
                 if (is.na(ln2)) {
                   speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
                 } else {
@@ -455,30 +453,30 @@ for (i in 1:length(list_urls)) {
           } else {  ### DÉPUTÉ ou SECRÉTAIRE ###
             gender_femme <- 0
             
-            if ( grepl("Mme", str_match(intervention_start, "(.+)\\s+:")[1]) || 
-                 grepl("M\\.", str_match(intervention_start, "(.+)\\s+:")[1]) ) {
+            if ( grepl("Mme", stringr::str_match(intervention_start, "(.+)\\s+:")[1]) || 
+                 grepl("M\\.", stringr::str_match(intervention_start, "(.+)\\s+:")[1]) ) {
               
-              if ( grepl("\\(", str_match(intervention_start, "(.+)\\s+:")[1]) ) {
+              if ( grepl("\\(", stringr::str_match(intervention_start, "(.+)\\s+:")[1]) ) {
                 
-                circ <- clessnverse::removeSpeakerTitle(str_match(intervention_start, "\\((.*)\\)")[2])
+                circ <- clessnverse::removeSpeakerTitle(stringr::str_match(intervention_start, "\\((.*)\\)")[2])
                 
-                if ( grepl("Mme", str_match(intervention_start, "(.+)\\s+:"))[1] ) {
-                  last_name <- str_match(intervention_start, "Mme\\s+(.*?)\\s+\\(")[2]
+                if ( grepl("Mme", stringr::str_match(intervention_start, "(.+)\\s+:"))[1] ) {
+                  last_name <- stringr::str_match(intervention_start, "Mme\\s+(.*?)\\s+\\(")[2]
                   gender_femme <- 1
                 }
                 else {
-                  last_name <- str_match(intervention_start, "M\\.\\s+(.*?)\\s+\\(")[2]
+                  last_name <- stringr::str_match(intervention_start, "M\\.\\s+(.*?)\\s+\\(")[2]
                   gender_femme <- 0
                 }
                 
               } else {
                 
-                if ( grepl("Mme", str_match(intervention_start, "(.+)\\s+:"))[1] ) {
-                  last_name <- str_match(intervention_start, "Mme\\s+(.*?)\\s+:")[2]
+                if ( grepl("Mme", stringr::str_match(intervention_start, "(.+)\\s+:"))[1] ) {
+                  last_name <- stringr::str_match(intervention_start, "Mme\\s+(.*?)\\s+:")[2]
                   gender_femme <- 1
                 }
                 else {
-                  last_name <- str_match(intervention_start, "M\\.\\s+(.*?)\\s+:")[2]
+                  last_name <- stringr::str_match(intervention_start, "M\\.\\s+(.*?)\\s+:")[2]
                   gender_femme <- 0
                 }
                 
@@ -486,22 +484,22 @@ for (i in 1:length(list_urls)) {
               last_name <- sub("^\\s+", "", last_name)
               last_name <- sub("\\s+$", "", last_name)
               
-              ln1 <- word(last_name, 1)
-              ln2 <- word(last_name, 2)
+              ln1 <- stringr::word(last_name, 1)
+              ln2 <- stringr::word(last_name, 2)
               
               first_name <- NA
               
               if ( is.na(circ) ) {
                if (is.na(ln2)) {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & isFemale == gender_femme)
                 } else {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & isFemale == gender_femme)
                 }
               } else {
                 if (is.na(ln2)) {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & tolower(currentDistrict) == tolower(circ))
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) | tolower(lastName2) == tolower(ln1)) & tolower(currentDistrict) == tolower(circ))
                 } else {
-                  speaker <- filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & tolower(currentDistrict) == tolower(circ))
+                  speaker <- dplyr::filter(deputes, (tolower(lastName1) == tolower(ln1) & tolower(lastName2) == tolower(ln2)) & tolower(currentDistrict) == tolower(circ))
                 }
               }
               
@@ -532,8 +530,8 @@ for (i in 1:length(list_urls)) {
             } else {
               # ATTENTION : here we have not been able to identify
               # Neither the moderator, nor a politician, nor a journalist
-              if (is.na(first_name)) first_name <- words(str_match(intervention_start, "^(.*):"))[1]
-              if (is.na(last_name)) last_name <- words(str_match(intervention_start, "^(.*):"))[2]
+              if (is.na(first_name)) first_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[1]
+              if (is.na(last_name)) last_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[2]
             } # ( nrow(speaker) > 0 ) 
 
                         
@@ -591,15 +589,15 @@ for (i in 1:length(list_urls)) {
           speech_paragraph_count <- speech_paragraph_count + 1
         }
         
-        language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
+        language <- textcat::textcat(stringr::str_replace_all(speech, "[[:punct:]]", ""))
         if ( !(language %in% c("english","french")) ) { 
           language <- NA
         }
         else language <- substr(language,1,2)
 
         speech_sentence_count <- clessnverse::countSentences(paste(speech, collapse = ' '))
-        speech_word_count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
-        speech_paragraph_count <- str_count(speech, "\\n\\n")+1
+        speech_word_count <- clessnverse::countWords(speech)
+        speech_paragraph_count <- stringr::str_count(speech, "\\n\\n")+1
 
         if (is.na(first_name) && is.na(last_name)) 
           full_name <- NA
@@ -615,7 +613,7 @@ for (i in 1:length(list_urls)) {
                grepl("^Modérat(.*?):", substr(doc_text[j+1],1,40)) ||
                grepl("^Une\\svoix(.*?):", substr(doc_text[j+1],1,40)) ||
                grepl("^Des\\svoix(.*?):", substr(doc_text[j+1],1,40))) &&
-              !grepl(",", str_match(substr(doc_text[j+1],1,40), "^(.*):"))) &&
+              !grepl(",", stringr::str_match(substr(doc_text[j+1],1,40), "^(.*):"))) &&
               !is.na(doc_text[j]) || 
               (j == length(doc_text)-1 && is.na(doc_text[j+1]))
            ) {  
@@ -645,7 +643,7 @@ for (i in 1:length(list_urls)) {
                                       speakerTranslatedSpeech = NA,
                                       stringsAsFactors = FALSE)
           
-          dfDeep <- clessnverse::commitDeepRows(row_to_commit, dfDeep, 'agoraplus_warehouse_intervention_items', opt$deep_update, opt$hub_update)
+          dfDeep <- clessnverse::commitDeepRows(row_to_commit, dfDeep, 'agoraplus_warehouse_intervention_items', opt$deep_mode, opt$hub_mode)
   
           seqnum <- seqnum + 1
           matching_row <- NULL
@@ -669,12 +667,12 @@ for (i in 1:length(list_urls)) {
       # Join all the elements of the character vector into a single
       # character string, separated by spaces for the simple dataSet
       collapsed_doc_text <- paste(paste(doc_text, "\n\n", sep=""), collapse = ' ')
-      collapsed_doc_text <- str_replace_all(
+      collapsed_doc_text <- stringr::str_replace_all(
         string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
       
       # Update the cache
       row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = current_id, eventHtml = doc_html, stringsAsFactors = FALSE)
-      dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_update, opt$hub_update)
+      dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
       
       # Update Simple
       row_to_commit <- data.frame(uuid = "",
@@ -695,7 +693,7 @@ for (i in 1:length(list_urls)) {
                                   eventTranslatedContent = NA,
                                   stringsAsFactors = FALSE)
       
-      dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_update, opt$hub_update)
+      dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
       
     } # version finale
     
@@ -703,14 +701,6 @@ for (i in 1:length(list_urls)) {
   
 } #for (i in 1:nrow(result))
 
-
-
-
-if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus.csv",sep=''), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus.csv",sep=''), row.names = FALSE)
-}
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)

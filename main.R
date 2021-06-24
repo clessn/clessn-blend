@@ -99,8 +99,8 @@ for (scriptname in script_list) {
   tryCatch( 
     {
       logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
-      opt <- list(cache_update = "update",simple_update = "update",deep_update = "update",
-                            hub_update = "update",csv_update = "skip",backend_type = "HUB")
+      opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update",
+                  dataframe_mode = "update", hub_update = "update")
       
       clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
       
