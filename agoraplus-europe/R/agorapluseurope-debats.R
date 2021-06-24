@@ -80,24 +80,18 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", dataframe_mode = "update",
-             hub_update = "skip",csv_update = "update",backend_type = "CSV")
+opt <- list(cache_mode = "update", simple_mode = "update", deep_mode = "update", 
+            dataframe_mode = "update", hub_mode = "skip")
 
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") {
-  clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-                                        Sys.getenv('HUB_USERNAME'), 
-                                        Sys.getenv('HUB_PASSWORD'), 
-                                        Sys.getenv('HUB_URL'))
-}
-
-if (opt$backend_type == "CSV") {
-  clessnverse::loadAgoraplusCSVDatasets("europe", opt, "../clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-europe")
-}
+clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+                                      Sys.getenv('HUB_USERNAME'), 
+                                      Sys.getenv('HUB_PASSWORD'), 
+                                      Sys.getenv('HUB_URL'))
 
   # Load all objects used for ETL
 clessnverse::loadETLRefData()
@@ -173,7 +167,7 @@ if (scraping_method == "DateRange") {
 # debates content
 #
 for (i in 1:length(urls_list)) {
-  if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
+  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
   
@@ -478,12 +472,6 @@ for (i in 1:length(urls_list)) {
                                             modeHub = opt$hub_update)
 } #for (i in 1:length(urls_list))
 
-
-if (opt$csv_update != "skip" && opt$backend_type == "CSV") { 
-  write.csv2(dfCache, file=paste(base_csv_folder,"dfCacheAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfDeep, file = paste(base_csv_folder,"dfDeepAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
-  write.csv2(dfSimple, file = paste(base_csv_folder,"dfSimpleAgoraPlus-2021-03-28-notranslate.csv",sep='/'), row.names = FALSE)
-}
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)

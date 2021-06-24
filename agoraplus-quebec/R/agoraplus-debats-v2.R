@@ -92,11 +92,10 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") {
-  clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-                                        Sys.getenv('HUB_USERNAME'), 
-                                        Sys.getenv('HUB_PASSWORD'), 
-                                        Sys.getenv('HUB_URL'))
+clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+                                      Sys.getenv('HUB_USERNAME'), 
+                                      Sys.getenv('HUB_PASSWORD'), 
+                                      Sys.getenv('HUB_URL'))
   
   if (opt$dataframe_mode %in% c("update","refresh")) {
     clessnverse::logit("Retreiving interventions from hub with download data = FALSE", logger)
@@ -181,7 +180,7 @@ list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-deba
 #
 for (i in 1:length(list_urls)) {
   
-  if (opt$backend_type == "HUB") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))#clessnhub::refresh_token(hub_config$token, hub_config$url)
+  if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- gsub("[[:punct:]]", "", paste(stringr::str_sub(event_url,71,74), stringr::str_sub(event_url,90,105),sep=''))

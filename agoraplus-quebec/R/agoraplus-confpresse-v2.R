@@ -87,11 +87,10 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (opt$backend_type == "HUB") 
-  clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-                                        Sys.getenv('HUB_USERNAME'), 
-                                        Sys.getenv('HUB_PASSWORD'), 
-                                        Sys.getenv('HUB_URL'))
+clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+                                      Sys.getenv('HUB_USERNAME'), 
+                                      Sys.getenv('HUB_PASSWORD'), 
+                                      Sys.getenv('HUB_URL'))
 
 
 # Load all objects used for ETL
@@ -141,7 +140,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 
 
 for (i in 1:20) {
-  if (opt$backend_type == "HUB") clessnhub::refresh_token(configuration$token, configuration$url)
+  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- stringr::str_replace_all(list_urls[i], "[[:punct:]]", "")
   
