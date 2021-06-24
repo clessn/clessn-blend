@@ -75,7 +75,7 @@ installPackages <- function() {
 #
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agoraplus-debats.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-debats-v2.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 # Script command line options:

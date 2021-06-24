@@ -75,7 +75,7 @@ installPackages <- function() {
 #
 installPackages()
 
-if (!exists("scriptname")) scriptname <- "agoraplus-youtube.R"
+if (!exists("scriptname")) scriptname <- "agoraplus-youtube-v2.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
 #opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", 
