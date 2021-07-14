@@ -744,8 +744,7 @@ for (i in 1:length(list_urls)) {
               !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1])) &&
               stringr::str_detect(next_paragraph_start, "^(.*):") &&
               !is.na(doc_text[j]) || 
-              (j == length(doc_text) && is.na(doc_text[j+1]))
-           ) {  
+              (j == length(doc_text) && is.na(doc_text[j+1])) ) {  
           
           # Update Deep
           row_to_commit <- data.frame(uuid = "",
@@ -761,7 +760,7 @@ for (i in 1:length(list_urls)) {
                                       speakerIsMinister = speaker_is_minister,
                                       speakerType = speaker_type,
                                       speakerParty = speaker_party,
-                                      speakerDistrict = speaker_district,
+                                      speakerCirconscription = speaker_district,
                                       speakerMedia = speaker_media,
                                       speakerSpeechType = intervention_type,
                                       speakerSpeechLang = language,
@@ -776,48 +775,48 @@ for (i in 1:length(list_urls)) {
           
           # Update intervention in hub v2
           v2_row_to_commit <- data.frame(eventID = event_id,
-                                   eventDate = event_date,
-                                   eventStartTime = event_start_time,
-                                   eventEndTime = event_end_time,
-                                   eventTitle = event_title,
-                                   eventSubTitle = event_subtitle,
-                                   interventionSeqNum = intervention_seqnum,
-                                   objectOfBusinessID = NA,
-                                   objectOfBusinessRubric = oob_rubric,
-                                   objectOfBusinessTitle = oob_title,
-                                   objectOfBusinessSeqNum = NA,
-                                   subjectOfBusinessID = NA,
-                                   subjectOfBusinessTitle = sob_title,
-                                   subjectOfBusinessHeader = NA,
-                                   subjectOfBusinessSeqNum = NA,
-                                   subjectOfBusinessProceduralText = sob_procedural_text,
-                                   subjectOfBusinessTabledDocID = NA,
-                                   subjectOfBusinessTabledDocTitle = NA,
-                                   subjectOfBusinessAdoptedDocID = NA,
-                                   subjectOfBusinessAdoptedDocTitle = NA,
-                                   speakerID = NA,
-                                   speakerFirstName = speaker_first_name,
-                                   speakerLastName = speaker_last_name,
-                                   speakerFullName = speaker_full_name,
-                                   speakerGender = speaker_gender,
-                                   speakerType = speaker_type,
-                                   speakerCountry = "CA",
-                                   speakerIsMinister = speaker_is_minister,
-                                   speakerParty = speaker_party,
-                                   speakerPolGroup = NA,
-                                   speakerDistrict = speaker_district,
-                                   interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
-                                   interventionDocID = NA,
-                                   interventionDocTitle = NA,
-                                   interventionType = intervention_type,
-                                   interventionLang = language,
-                                   interventionWordCount = speech_word_count,
-                                   interventionSentenceCount = speech_sentence_count,
-                                   interventionParagraphCount = speech_paragraph_count,
-                                   interventionText = intervention_text,
-                                   interventionTextFR = NA,
-                                   interventionTextEN = NA,
-                                   stringsAsFactors = FALSE)
+                                         eventDate = event_date,
+                                         eventStartTime = event_start_time,
+                                         eventEndTime = event_end_time,
+                                         eventTitle = event_title,
+                                         eventSubTitle = event_subtitle,
+                                         interventionSeqNum = intervention_seqnum,
+                                         objectOfBusinessID = NA,
+                                         objectOfBusinessRubric = oob_rubric,
+                                         objectOfBusinessTitle = oob_title,
+                                         objectOfBusinessSeqNum = NA,
+                                         subjectOfBusinessID = NA,
+                                         subjectOfBusinessTitle = sob_title,
+                                         subjectOfBusinessHeader = NA,
+                                         subjectOfBusinessSeqNum = NA,
+                                         subjectOfBusinessProceduralText = sob_procedural_text,
+                                         subjectOfBusinessTabledDocID = NA,
+                                         subjectOfBusinessTabledDocTitle = NA,
+                                         subjectOfBusinessAdoptedDocID = NA,
+                                         subjectOfBusinessAdoptedDocTitle = NA,
+                                         speakerID = NA,
+                                         speakerFirstName = speaker_first_name,
+                                         speakerLastName = speaker_last_name,
+                                         speakerFullName = speaker_full_name,
+                                         speakerGender = speaker_gender,
+                                         speakerType = speaker_type,
+                                         speakerCountry = "CA",
+                                         speakerIsMinister = speaker_is_minister,
+                                         speakerParty = speaker_party,
+                                         speakerPolGroup = NA,
+                                         speakerDistrict = speaker_district,
+                                         interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
+                                         interventionDocID = NA,
+                                         interventionDocTitle = NA,
+                                         interventionType = intervention_type,
+                                         interventionLang = language,
+                                         interventionWordCount = speech_word_count,
+                                         interventionSentenceCount = speech_sentence_count,
+                                         interventionParagraphCount = speech_paragraph_count,
+                                         interventionText = intervention_text,
+                                         interventionTextFR = NA,
+                                         interventionTextEN = NA,
+                                         stringsAsFactors = FALSE)
           
           v2_metadata_to_commit <- list("format"="html","url"=event_url,"location"="CA-QC",
                                      "parliament_number"=parliament_number, "parliament_session"=parliament_session)
@@ -831,21 +830,12 @@ for (i in 1:length(list_urls)) {
           intervention_seqnum <- intervention_seqnum + 1
           matching_row <- NULL
           
-          #speaker_first_name <- NA
-          #speaker_last_name <- NA
-          #speaker_full_name <- NA
-          #speaker_gender <- NA
-          #speaker_type <- NA
-          #speaker_party <- NA
-          #speaker_district <- NA
-          #intervention_type <- NA
           sob_procedural_text <- NA
           intervention_text <- NA
           speech_paragraph_count <- 0
           speech_sentence_count <- 0
           speech_word_count <- 0
           
-          #speaker <- data.frame()
         } #If the next speaker is different or if it's the last record
       } # for (j in 1:length(doc_text)) : loop back to the next intervention
       
