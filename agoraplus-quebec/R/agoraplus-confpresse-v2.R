@@ -426,6 +426,8 @@ for (i in 1:length(list_urls)) {
                 (j == length(doc_text) && is.na(doc_text[j+1]))) {
               intervention_seqnum <- intervention_seqnum + 1
             }
+            intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
+            intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             matching_row <- NULL
             next
           }
@@ -587,7 +589,7 @@ for (i in 1:length(list_urls)) {
                   if (is.na(speaker_last_name)) speaker_last_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[2]
                   
                   gender <- case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                      is.na(speaker_gender) && !speaker$data.Mais aisFemale[1] == 0 || gender_femme == 0 ~ "M")
+                                      is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
                 }
               }
               
@@ -597,8 +599,8 @@ for (i in 1:length(list_urls)) {
             }
             
             
-            speech <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
-            speech <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", speech, perl=TRUE)
+            intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
+            intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             
           } # fin  ### DÉPUTÉ or JOURNALIST ###
           
@@ -606,20 +608,20 @@ for (i in 1:length(list_urls)) {
           # It's the same person as in the previous paragraph speaking
           # We will append it to the same row instead of creating an extra row for a new paragraph
           if (!grepl("version non révisée", doc_text[j])) {
-            speech <- paste(speech,"\n\n",doc_text[j], sep="")
+            intervention_text <- paste(intervention_text,"\n\n",doc_text[j], sep="")
             speech_paragraph_count <- speech_paragraph_count + 1
           }
         }
         
-        language <- textcat(stringr::str_replace_all(speech, "[[:punct:]]", ""))
+        language <- textcat(stringr::str_replace_all(intervention_text, "[[:punct:]]", ""))
         if ( !(language %in% c("english","french")) ) { 
           language <- NA
         }
         else language <- substr(language,1,2)
         
-        speech_sentence_count <- clessnverse::countSentences(paste(speech, collapse = ' '))
-        speech_word_count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
-        speech_paragraph_count <- stringr::str_count(speech, "\\n\\n")+1
+        speech_sentence_count <- clessnverse::countSentences(paste(intervention_text, collapse = ' '))
+        speech_word_count <- length(words(removePunctuation(paste(intervention_text, collapse = ' '))))
+        speech_paragraph_count <- stringr::str_count(intervention_text, "\\n\\n")+1
         
         if (is.na(first_name) && is.na(last_name)) 
           full_name <- NA
@@ -661,7 +663,7 @@ for (i in 1:length(list_urls)) {
                                       speakerSpeechWordCount = speech_word_count,
                                       speakerSpeechSentenceCount = speech_sentence_count,
                                       speakerSpeechParagraphCount = speech_paragraph_count,
-                                      speakerSpeech = speech,
+                                      speakerSpeech = intervention_text,
                                       speakerTranslatedSpeech = NA,
                                       stringsAsFactors = FALSE)
           
@@ -678,7 +680,7 @@ for (i in 1:length(list_urls)) {
           speaker_district <- NA
           media <- NA
           intervention_type <- NA
-          speech <- NA
+          intervention_text <- NA
           
           speaker <- data.frame()
         } #If the next speaker is different or if it's the last record
