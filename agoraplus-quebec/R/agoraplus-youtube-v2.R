@@ -78,8 +78,8 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube-v2.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-#opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update", 
-#            dataframe_update = "update", hub_mode = "update")
+opt <- list(cache_mode = "skip",simple_mode = "update",deep_mode = "update", 
+            dataframe_update = "update", hub_mode = "update")
 
 
 if (!exists("opt")) {
@@ -92,7 +92,9 @@ clessnverse::loadAgoraplusHUBDatasets("quebec", opt,
                                       Sys.getenv('HUB_URL'))
 
 # Load all objects used for ETL
-clessnverse::loadETLRefData()
+clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
+                            password = Sys.getenv('HUB_PASSWORD'), 
+                            url = Sys.getenv('HUB_URL'))
 
 
 ###############################################################################
@@ -142,7 +144,7 @@ i=1
 
 for (filename in filelist) {
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
-  current_id <- str_match(filename, "^.{10}(.*).txt")[2]
+  current_id <- stringr::str_match(filename, "^.{10}(.*).txt")[2]
   
   clessnverse::logit(paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
   cat("\nConf", i, "de", length(filelist), filename, "\n", sep = " ")
@@ -156,15 +158,15 @@ for (filename in filelist) {
     doc_youtube.original <- paste(paste(doc_youtube, "\n\n", sep=""), collapse = ' ')
     doc_youtube <- doc_youtube[doc_youtube!=""]
     cached_html <- FALSE
-    current_url <- str_match(doc_youtube[3], "^URL   : (.*)")[2]
+    current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
     clessnverse::logit(paste(current_id, "not cached"), logger)
   } else{ 
     # Retrieve the XML structure from dfCache and Parse
     doc_youtube.original <- dfCache$html[which(dfCache$eventID==current_id)]
-    doc_youtube <- str_split(doc_youtube.original, '\n\n')[[1]]
+    doc_youtube <- stringr::str_split(doc_youtube.original, '\n\n')[[1]]
     doc_youtube <- doc_youtube[doc_youtube!=""]
     cached_html <- TRUE
-    current_url <- str_match(doc_youtube[3], "^URL   : (.*)")[2]
+    current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
     clessnverse::logit(paste(current_id, "cached"), logger)
   }
     
@@ -193,7 +195,7 @@ for (filename in filelist) {
       current_source <- "Conférences de Presse YouTube"
 
       # Extract date of the conference
-      date <- str_match(doc_youtube[1], "^DATE  : (.*)")[2]
+      date <- stringr::str_match(doc_youtube[1], "^DATE  : (.*)")[2]
 
       # Extract start time of the conference
       time <- NA
@@ -202,7 +204,7 @@ for (filename in filelist) {
       end_time <- NA
       
       # Title and subtitle of the conference  
-      title <- str_match(doc_youtube[2], "^TITLE : (.*)")[2]
+      title <- stringr::str_match(doc_youtube[2], "^TITLE : (.*)")[2]
       subtitle <- NA
 
         
@@ -271,7 +273,7 @@ for (filename in filelist) {
                 grepl("^Modérat(.*?):", intervention_start) ||
                 grepl("^Une\\svoix(.*?):", intervention_start) ||
                 grepl("^Des\\svoix(.*?):", intervention_start)) &&
-               !grepl(",", str_match(intervention_start, "^(.*):")) ) {
+               !grepl(",", stringr::str_match(intervention_start, "^(.*):")) ) {
             # It's a new person speaking
             first_name <- NA
             last_name <- NA
@@ -291,29 +293,29 @@ for (filename in filelist) {
             speech_word_count <- 0
             
             # let's rule out the president first
-            if ( str_detect(intervention_start, "^Modérateur\\s?:\\s+") ) { ### MODERATEUR ###
+            if ( stringr::str_detect(intervention_start, "^Modérateur\\s?:\\s+") ) { ### MODERATEUR ###
               is_minister <- 0
               speech_type <- "modération"
               type <- "modérateur"
 
-              if (  j>1 && TRUE %in% str_detect(doc_text[j], patterns_periode_de_questions) )
+              if (  j>1 && TRUE %in% stringr::str_detect(doc_text[j], patterns_periode_de_questions) )
                 periode_de_questions <- TRUE
-            } #str_detect(intervention_start, "^Modérateur\\s?:\\s+")
+            } #stringr::str_detect(intervention_start, "^Modérateur\\s?:\\s+")
 
             
-            if ( str_detect(intervention_start, "^M\\.(.*)(\\s+)?:\\s+") ||
-                 str_detect(intervention_start, "^Mme(.*)(\\s+)?:\\s+") ) {
+            if ( stringr::str_detect(intervention_start, "^M\\.(.*)(\\s+)?:\\s+") ||
+                 stringr::str_detect(intervention_start, "^Mme(.*)(\\s+)?:\\s+") ) {
               # A ce stade on cherche à identifier l'intervenant et savoir
               # si c'est un député ou si c'est un journaliste
               
               # il faut voir si c'est un homme ou une femme
               # et ensuite extirper le prénom et le nom (entre parnethèse)
               
-              if ( str_detect(intervention_start, "^M\\.(.*):") ) gender_femme <- 0
+              if ( stringr::str_detect(intervention_start, "^M\\.(.*):") ) gender_femme <- 0
               else gender_femme <- 1
               
-              last_name <- str_match(intervention_start, "^((M\\.)|(Mme))(.*)?\\s+(.*)\\s+\\((.*)\\)(\\s+)?:")[6]
-              first_name <- str_match(intervention_start, "^((M\\.)|(Mme))(.*)?\\s+(.*)\\s+\\((.*)\\)(\\s+)?:")[7]
+              last_name <- stringr::str_match(intervention_start, "^((M\\.)|(Mme))(.*)?\\s+(.*)\\s+\\((.*)\\)(\\s+)?:")[6]
+              first_name <- stringr::str_match(intervention_start, "^((M\\.)|(Mme))(.*)?\\s+(.*)\\s+\\((.*)\\)(\\s+)?:")[7]
               
               # on cherche s'il est dans la liste de référence des députés
               speaker <- filter(deputes, (tolower(lastName1) == tolower(last_name) | tolower(lastName2) == tolower(last_name)) & isFemale == gender_femme)
@@ -363,13 +365,13 @@ for (filename in filelist) {
                   media <- speaker[1,]$source
                 } 
               } # if (nrow(speaker) > 0)
-            }  # str_detect(intervention_start, "^M\\.(.*):\\s+") || str_detect(intervention_start, "^Mme(.*):\\s+")
+            }  # stringr::str_detect(intervention_start, "^M\\.(.*):\\s+") || stringr::str_detect(intervention_start, "^Mme(.*):\\s+")
 
             
-            if ( str_detect(intervention_start, "^Journaliste(\\s+)?:\\s+") ) { ### Journaliste ###
+            if ( stringr::str_detect(intervention_start, "^Journaliste(\\s+)?:\\s+") ) { ### Journaliste ###
               is_minister <- NA
               type <- "journaliste"
-            } #str_detect(intervention_start, "^Journaliste(\\s+)?:\\s+")
+            } #stringr::str_detect(intervention_start, "^Journaliste(\\s+)?:\\s+")
             
             if ( (!is.na(type) && periode_de_questions && type == "journaliste") ||
                  (is.na(type) && periode_de_questions)
@@ -387,7 +389,7 @@ for (filename in filelist) {
           }
           
           if ( !(language %in% c("en","fr")) ) {
-            language <- textcat(str_replace_all(speech, "[[:punct:]]", ""))
+            language <- textcat::textcat(stringr::str_replace_all(speech, "[[:punct:]]", ""))
             if ( !(language %in% c("english","french")) ) { 
               language <- NA
             }
@@ -395,7 +397,7 @@ for (filename in filelist) {
           }
           
           speech_sentence_count <- clessnverse::countSentences(paste(speech, collapse = ' '))
-          speech_word_count <- length(words(removePunctuation(paste(speech, collapse = ' '))))
+          speech_word_count <- clessnverse::countWords(paste(speech, collapse = ' '))
 
           if (is.na(first_name) && is.na(last_name)) 
             full_name <- NA
@@ -412,7 +414,7 @@ for (filename in filelist) {
                 grepl("^Modérat(.*?):", substr(doc_text[j+1],1,40)) ||
                 grepl("^Une\\svoix(.*?):", substr(doc_text[j+1],1,40)) ||
                 grepl("^Des\\svoix(.*?):", substr(doc_text[j+1],1,40))) &&
-               !grepl(",", str_match(substr(doc_text[j+1],1,40), "^(.*):")) &&
+               !grepl(",", stringr::str_match(substr(doc_text[j+1],1,40), "^(.*):")) &&
                !is.na(doc_text[j]) || 
                (j == length(doc_text)-1 && is.na(doc_text[j+1]))
             ) {
