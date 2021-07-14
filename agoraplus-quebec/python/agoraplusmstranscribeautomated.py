@@ -16,7 +16,7 @@ import logging
 
 def get_video_from_youtube(video_url):
     # Convert video
-    logging.info("Fetching URL" + video_url)
+    logging.info("Fetching URL " + video_url)
     vid = pytube.YouTube(url=video_url)
     aud = vid.streams.filter(only_audio=True, subtype="mp4")
     aud.first().download(filename="youtubeAudio")
@@ -28,7 +28,7 @@ def get_video_from_youtube(video_url):
 
 
 def get_play_list_from_youtube(url):
-    logging.info("Fetching Playlist" + url)
+    logging.info("Fetching Playlist " + url)
     p = pytube.Playlist(url)
     return(p)
 
@@ -102,7 +102,7 @@ def list_folder(dbx, folder, subfolder):
     Return a dict mapping unicode filenames to
     FileMetadata|FolderMetadata entries.
     """
-    logging.info("Listing folder" + folder + subfolder)
+    logging.info("Listing folder " + folder + subfolder)
     if (folder == "" and subfolder == ""):
         path=''
     else:
@@ -221,7 +221,9 @@ def main():
     i = 1
 
     for video in p.videos:
+        logging.info("1")
         logging.info(str(i) + " " + video.title + " " + video.watch_url)
+        logging.info("2")
 
         if (video.publish_date.strftime("%Y-%m-%d") < select_publish_date_start or video.publish_date.strftime("%Y-%m-%d") > select_publish_date_end):
             logging.info("not in wanted date range")
@@ -316,3 +318,7 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+
+
+os.environ['YOUTUBE_EXTRACT_DATE'] = '2021-06-22'
