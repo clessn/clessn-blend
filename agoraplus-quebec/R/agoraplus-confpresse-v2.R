@@ -74,6 +74,7 @@ installPackages <- function() {
 #   logger
 #
 #installPackages()
+library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse-v2.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
@@ -85,7 +86,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
+            dataframe_mode = "refresh", hub_mode = "skip", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -101,33 +102,34 @@ clessnverse::loadAgoraplusHUBDatasets("quebec", opt,
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit("Retreiving interventions from hub with download data = FALSE", logger)
-  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
+  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "press_conference", schema = "v2", 
                                                                location = "CA-QC",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
 } else {
   clessnverse::logit("Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
-  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="parliament_debate", schema = "v2", location = "CA-QC")
+  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2", location = "CA-QC")
 }
 
 # Download v2 Cache
 if (opt$dataframe_mode %in% c("update","refresh")) {
-  dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "parliament_debate", schema = "v2",
+  dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "press_conference", schema = "v2",
                                                 location = "CA-QC",
                                                 download_data = FALSE,
                                                 token = Sys.getenv('HUB_TOKEN'))
 } else {
-  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="parliament_debate", schema = "v2", location = "CA-QC")
+  clessnverse::logit("Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
+  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2", location = "CA-QC")
 }
 
 # Download v2 MPs information
-dfPersons <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
+dfMPs <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
                                                   location = "CA-QC",
                                                   download_data = TRUE,
                                                   token = Sys.getenv('HUB_TOKEN'))
 
 # Download v2 public service personnalities information
-dfPersons <- dfPersons %>% 
+dfMPs <- dfMPs %>% 
   rbind(clessnverse::loadAgoraplusPersonsDf(type = "public_service", schema = "v2",
                                             location = "CA-QC",
                                             download_data = TRUE,
@@ -136,15 +138,14 @@ dfPersons <- dfPersons %>%
   )
 
 # Download v2 journalists information
-dfPersons <- dfPersons %>% 
-  rbind(clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
+dfJournalists <- clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
                                             location = "CA",
                                             download_data = TRUE,
                                             token = Sys.getenv('HUB_TOKEN')
                                             )
-  )
 
-dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
+dfMPs <- dfMPs %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
+dfJournalists <- dfJournalists %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
 
 
 
@@ -172,7 +173,7 @@ urls <- rvest::html_nodes(data, 'li.icoHTML a')
 list_urls <- rvest::html_attr(urls, 'href')
 
 # Hack here to focus only on one press conf :
-#list_urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-70135.html")
+#list_urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-72883.html")
 
 
 
@@ -195,6 +196,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 # press conference content
 #
 for (i in 1:length(list_urls)) {
+#for (i in 1:1) {
   
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
@@ -222,7 +224,7 @@ for (i in 1:length(list_urls)) {
       clessnverse::logit(paste(event_id, "not cached"), logger)
     } else{ 
       # Retrieve the XML structure from dfCache and Parse
-      filter <- clessnhub::create_filter(key = event_id, type = "parliament_debate", schema = "v2", metadata = list("location"="CA-QC"))
+      filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
       doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
       doc_html <- doc_html$data.rawContent
 
@@ -372,10 +374,6 @@ for (i in 1:length(list_urls)) {
 
       ####################################
       # The colums of the detailed dataset
-      oob_rubric <- NA
-      oob_title <- NA
-      sob_title <- NA
-      sob_procedural_text <- NA
       speaker_first_name <- NA
       speaker_last_name <- NA
       speaker_full_name <- NA
@@ -391,6 +389,7 @@ for (i in 1:length(list_urls)) {
       gender_femme <- 0
       speaker <- data.frame()
       periode_de_questions <- FALSE
+      no_questions_asked_yet <- TRUE
       
       ########################################################
       # Go through the vector of paragraphs of the event
@@ -401,6 +400,8 @@ for (i in 1:length(list_urls)) {
       event_sentence_count <- clessnverse::countVecSentences(doc_text) - 1
       speech_paragraph_count <- 0
       
+      cat("\n")
+      
       for (j in 1:length(doc_text)) {
         cat(j, "\r")
         
@@ -408,7 +409,22 @@ for (i in 1:length(list_urls)) {
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
         
         paragraph_start <- substr(doc_text[j],1,55)
+        if ( length(strsplit(paragraph_start, ":")[[1]]) == 1 ) {
+          # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
+          paragraph_start <- paragraph_start
+        } else {
+          # Could be a new intervention => we take the  first token before the first : to see if that is the case
+          paragraph_start <- paste(strsplit(paragraph_start, ":")[[1]][1], ":", sep='')
+        }
+        
         next_paragraph_start <- substr(doc_text[j+1],1,55)
+        if ( length(strsplit(next_paragraph_start, ":")[[1]]) == 1) {
+          # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
+          next_paragraph_start <- next_paragraph_start
+        } else {
+          # Could be a new intervention => we take the  first token before the first : to see if that is the case
+          next_paragraph_start <- paste(strsplit(next_paragraph_start, ":")[[1]][1], ":", sep='')
+        }
         
         if ( TRUE %in% stringr::str_detect(paragraph_start, patterns_intervenants) &&
              !grepl(",", stringr::str_match(paragraph_start, "^(.*):")[1]) &&
@@ -418,9 +434,9 @@ for (i in 1:length(list_urls)) {
 
           # Skip if this intervention already is in the dataset and if we're not refreshing it
           matching_row <- which(dfInterventions$key == paste(event_id, intervention_seqnum, sep="-"))
-          if (length(matching_row) > 0 && opt$dataframe_mode != "refresh") {
+          if ( length(matching_row) > 0 && opt$dataframe_mode != "refresh" ) {
             if ((TRUE %in% stringr::str_detect(next_paragraph_start, patterns_intervenants)) &&
-                 !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1]) &&
+                !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1]) &&
                  stringr::str_detect(next_paragraph_start, "^(.*):") &&
                  !is.na(doc_text[j]) || 
                 (j == length(doc_text) && is.na(doc_text[j+1]))) {
@@ -443,7 +459,6 @@ for (i in 1:length(list_urls)) {
           speaker_media <- NA
           intervention_type <- NA
           intervention_text <- NA
-          sob_procedural_text <- NA
           speaker <- data.frame()
           
           speech_paragraph_count <- 1
@@ -472,47 +487,49 @@ for (i in 1:length(list_urls)) {
             
             if ( stringr::str_detect(paragraph_start, "^M\\.(.*):") ||
                  stringr::str_detect(paragraph_start, "^Mme(.*):") ) {
-              # il faut voir maintenant s'il y a quelque chose entre parenthèses :
-              # c'est soit la circonscription du député, soit le prénom du journaliste
+              
+              # il faut voir si c'est un homme ou une femme qui prend la parole
               if ( !stringr::str_detect(paragraph_start, "^Mme(.*):") ) {
                 gender_femme <- 0
               } else { 
                 gender_femme <- 1
               }
               
-              if ( !is.na(stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]) ) {
+              # il faut voir maintenant s'il y a quelque chose entre parenthèses :
+              # c'est soit la circonscription du député, soit le prénom du journaliste
+              if ( !is.na(stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)(.*)?(\\s+)?:")[3]) ) {
                 # We have a string of type "M. | Mme string1 (string2) :" 
                 # With string2 = first name or circonscription
-                speaker_last_name <- stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[3]
-                speaker_first_name <- stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)\\s+:")[4]
+                speaker_last_name <- stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)(.*)?(\\s+)?:")[3]
+                speaker_first_name <- stringr::str_match(paragraph_start, "^M(.*)\\s+(.*)\\s+\\((.*)\\)(.*)?(\\s+)?:")[4]
                 
                 # Is the first name a first name or the district within round brackets ?
-                if ( nrow(dplyr::filter(dfPersons, data.currentDistrict == speaker_first_name & (type == "mp" | type == "public_service"))) > 0 ) {
+                if ( nrow(dplyr::filter(dfMPs, data.currentDistrict == speaker_first_name & (type == "mp" | type == "public_service"))) > 0 ) {
                   speaker_district <- speaker_first_name
                   speaker_first_name <- NA
-                  speaker <- dplyr::filter(dfPersons, (tolower(data.lastName1) == tolower(speaker_last_name) | 
-                                                       tolower(datalastName2) == tolower(speaker_last_name)) & 
+                  speaker <- dplyr::filter(dfMPs, (tolower(data.lastName1) == tolower(speaker_last_name) | 
+                                                       tolower(data.lastName2) == tolower(speaker_last_name)) & 
                                                       tolower(data.currentDistrict) == tolower(speaker_district) & 
                                                       data.isFemale == gender_femme & 
                                                       (type == "mp" | type == "public_service"))
                 } else {
-                  speaker <- dplyr::filter(dfPersons, (tolower(data.lastName1) == tolower(speaker_last_name) | 
+                  speaker <- dplyr::filter(dfMPs, (tolower(data.lastName1) == tolower(speaker_last_name) | 
                                                        tolower(data.lastName2) == tolower(speaker_last_name)) & 
-                                                      tolower(firstName) == tolower(speaker_first_name) & 
+                                                      tolower(data.firstName) == tolower(speaker_first_name) & 
                                                       (type == "mp" | type == "public_service"))
                 }
                 
               } else {
-                if ( !is.na(stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]) ) {
+                if ( !is.na(stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]) ) {
                   # We have a string of type "M. | Mme string :" with string = last_name
-                  speaker_last_name <- stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))\\s+:")[3]
+                  speaker_last_name <- stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]
                   speaker_first_name <- NA
                   ln1 <- clessnverse::splitWords(speaker_last_name)[1]
                   ln2 <- clessnverse::splitWords(speaker_last_name)[2]
                   if (is.na(ln2)) {
-                    speaker <- dplyr::filter(dfPersons, (tolower(data.lastName1) == tolower(ln1) | tolower(data.lastName2) == tolower(ln1)) & data.isFemale == gender_femme)
+                    speaker <- dplyr::filter(dfMPs, (tolower(data.lastName1) == tolower(ln1) | tolower(data.lastName2) == tolower(ln1)) & data.isFemale == gender_femme)
                   } else {
-                    speaker <- dplyr::filter(dfPersons, (tolower(data.lastName1) == tolower(ln1) & tolower(data.lastName2) == tolower(ln2)) & data.isFemale == gender_femme)
+                    speaker <- dplyr::filter(dfMPs, (tolower(data.lastName1) == tolower(ln1) & tolower(data.lastName2) == tolower(ln2)) & data.isFemale == gender_femme)
                   }
                   ln1 <- NA
                   ln2 <- NA
@@ -527,52 +544,53 @@ for (i in 1:length(list_urls)) {
                   speaker_last_name <- trimws(speaker_last_name, which = c("both"))
                   if (length(speaker_last_name) == 0) speaker_last_name <- NA
                   speaker_first_name <- speaker$data.firstName[1]
-                  speaker_gender <- case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                       is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
                   if ( tolower(speaker$type[1]) == "public_service" ) {
                     speaker_type <- "public_service"
                     speaker_party <- NA
                     speaker_district <- NA
-                  }
-                  else {
+                  } else {
                     speaker_type <- "mp"
-                    peaker_party <- speaker$data.currentParty[1]
+                    speaker_party <- speaker$data.currentParty[1]
                     speaker_district <- speaker$data.currentDistrict[1]
                   }
                   
                   speaker_media <- NA
                   speaker_is_minister <- speaker$data.isMinister[1]
                   
-                  if (j == 1)
+                  if (no_questions_asked_yet) {
                     intervention_type <- "allocution"
-                  else
-                    if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) 
+                  } else {
+                    #if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) {
+                    if (dfInterventions$data.interventionType[intervention_seqnum-1] == "question" ) {
                       intervention_type <- "réponse"
-                  else
+                    }
+                    else {
                       intervention_type <- "commentaire"
+                    }
+                  }
   
             } else { ### JOURNALIST ###
               
-              if ( !is.na(first_name) ){
-                speaker <- filter(dfPersons, tolower(paste(speaker_first_name, last_name, sep = " ")) == tolower(data.fullName) &
-                                             type == "journalist")
+              if ( !is.na(speaker_first_name) ){
+                speaker <- dplyr::filter(dfJournalists, tolower(paste(speaker_first_name, speaker_last_name, sep = " ")) == tolower(data.fullName))
               }
-              else{
-                if (!is.na(last_name))
-                  speaker <- filter(dfPersons, stringr::str_detect(tolower(last_name), tolower(data.fullName)) &
-                                               type == "journalist")
+              else {
+                if (!is.na(speaker_last_name))
+                  speaker <- dplyr::filter(dfJournalists, stringr::str_detect(tolower(speaker_last_name), tolower(data.fullName)))
               }
               
               if ( nrow(speaker) > 0 ) {
                 # we have a JOURNALIST
                 
-                gender <- case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                     is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
                 
                 speaker_type <- "journalist"
                 speaker_party <- NA
                 speaker_district <- NA
-                spraker_media <- speaker$data.currentMedia
+                speaker_media <- speaker$data.currentMedia
               } else {
                 if ( stringr::str_detect(paragraph_start, "Journaliste :(.*)") ){
                   speaker_first_name <- NA
@@ -585,17 +603,25 @@ for (i in 1:length(list_urls)) {
                 } else {
                   # ATTENTION : here we have not been able to identify
                   # Neither the moderator, nor a politician, nor a journalist
-                  if (is.na(speaker_first_name)) speaker_first_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[1]
-                  if (is.na(speaker_last_name)) speaker_last_name <- clessnverse::splitWords(stringr::str_match(intervention_start, "^(.*):"))[2]
+                  if (is.na(speaker_first_name)) speaker_first_name <- clessnverse::splitWords(stringr::str_match(paragraph_start, "^(.*):"))[1]
+                  if (is.na(speaker_last_name)) speaker_last_name <- clessnverse::splitWords(stringr::str_match(paragraph_start, "^(.*):"))[2]
                   
-                  gender <- case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
+                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
                                       is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
                 }
               }
               
-              if ( periode_de_questions ) intervention_type <- "question"
-              else
-              if ( grepl("?",doc_text[j]) ) intervention_type <- "question" else intervention_type <- "commentaire"
+              if ( periode_de_questions ) {
+                intervention_type <- "question"
+                no_questions_asked_yet <- FALSE
+              } else {
+                if ( grepl("\\?",doc_text[j]) ) {
+                  intervention_type <- "question" 
+                  no_questions_asked_yet <- FALSE
+                } else { 
+                    intervention_type <- "commentaire"
+                }
+              }
             }
             
             
@@ -613,34 +639,29 @@ for (i in 1:length(list_urls)) {
           }
         }
         
-        language <- textcat(stringr::str_replace_all(intervention_text, "[[:punct:]]", ""))
+        language <- textcat::textcat(stringr::str_replace_all(intervention_text, "[[:punct:]]", ""))
         if ( !(language %in% c("english","french")) ) { 
-          language <- NA
+          language <- "fr"
+        } else {
+          language <- substr(language,1,2)
         }
-        else language <- substr(language,1,2)
         
         speech_sentence_count <- clessnverse::countSentences(paste(intervention_text, collapse = ' '))
-        speech_word_count <- length(words(removePunctuation(paste(intervention_text, collapse = ' '))))
+        speech_word_count <- clessnverse::countWords(intervention_text)
         speech_paragraph_count <- stringr::str_count(intervention_text, "\\n\\n")+1
         
-        if (is.na(first_name) && is.na(last_name)) 
-          full_name <- NA
-        else 
-          full_name <- trimws(paste(na.omit(first_name), na.omit(last_name), sep = " "),which = "both")
+        if (is.na(speaker_first_name) && is.na(speaker_last_name)) {
+          speaker_full_name <- NA
+        } else {
+          speaker_full_name <- trimws(paste(na.omit(speaker_first_name), na.omit(speaker_last_name), sep = " "),which = "both")
+        }
         
         # If the next speaker is different or if it's the last record, then let's commit this observation into the dataset  
-        if ( ((grepl("^M\\.\\s+(.*?)\\s+:", substr(doc_text[j+1],1,40)) || 
-               grepl("^Mme\\s+(.*?)\\s+:", substr(doc_text[j+1],1,40)) || 
-               grepl("^(Le|La)\\s+(Modérat.*?|Président.*?|Vice-Président.*?)\\s+:", substr(doc_text[j+1],1,40)) ||
-               grepl("^Titre(.*?):", substr(doc_text[j+1],1,40)) ||
-               grepl("^Journaliste(.*?):", substr(doc_text[j+1],1,40)) ||
-               grepl("^Modérat(.*?):", substr(doc_text[j+1],1,40)) ||
-               grepl("^Une\\svoix(.*?):", substr(doc_text[j+1],1,40)) ||
-               grepl("^Des\\svoix(.*?):", substr(doc_text[j+1],1,40))) &&
-              !grepl(",", stringr::str_match(substr(doc_text[j+1],1,40), "^(.*):"))) &&
-              !is.na(doc_text[j]) || 
-              (j == length(doc_text)-1 && is.na(doc_text[j+1])) 
-           ) {
+        if ( ((TRUE %in% stringr::str_detect(next_paragraph_start, patterns_titres)) &&
+              !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1])) &&
+             stringr::str_detect(next_paragraph_start, "^(.*):") &&
+             !is.na(doc_text[j]) || 
+             (j == length(doc_text) && is.na(doc_text[j+1])) ) {
           
           # Update Deep
           row_to_commit <- data.frame(uuid = "",
@@ -648,16 +669,16 @@ for (i in 1:length(list_urls)) {
                                       modified = "",
                                       metadata = "",
                                       eventID = event_id,
-                                      interventionSeqNum = seqnum,
-                                      speakerFirstName = first_name,
-                                      speakerLastName = last_name,
-                                      speakerFullName = full_name,
-                                      speakerGender = gender,
-                                      speakerIsMinister = is_minister,
-                                      speakerType = type,
-                                      speakerParty = party,
+                                      interventionSeqNum = intervention_seqnum,
+                                      speakerFirstName = speaker_first_name,
+                                      speakerLastName = speaker_last_name,
+                                      speakerFullName = speaker_full_name,
+                                      speakerGender = speaker_gender,
+                                      speakerIsMinister = speaker_is_minister,
+                                      speakerType = speaker_type,
+                                      speakerParty = speaker_party,
                                       speakerCirconscription = speaker_district,
-                                      speakerMedia = media,
+                                      speakerMedia = speaker_media,
                                       speakerSpeechType = intervention_type,
                                       speakerSpeechLang = language,
                                       speakerSpeechWordCount = speech_word_count,
@@ -667,22 +688,71 @@ for (i in 1:length(list_urls)) {
                                       speakerTranslatedSpeech = NA,
                                       stringsAsFactors = FALSE)
           
-          dfDeep <- clessnverse::commitDeepRows(row_to_commit, dfDeep, 'agoraplus_warehouse_intervention_items', opt$deep_mode, opt$hub_mode)
+          ###dfDeep <- clessnverse::commitDeepRows(row_to_commit, dfDeep, 'agoraplus_warehouse_intervention_items', opt$deep_mode, opt$hub_mode)
           
-          seqnum <- seqnum + 1
+          # Update intervention in hub v2
+          v2_row_to_commit <- data.frame(eventID = event_id,
+                                         eventDate = event_date,
+                                         eventStartTime = event_start_time,
+                                         eventEndTime = event_end_time,
+                                         eventTitle = event_title,
+                                         eventSubTitle = event_subtitle,
+                                         interventionSeqNum = intervention_seqnum,
+                                         objectOfBusinessID = NA,
+                                         objectOfBusinessRubric = NA,
+                                         objectOfBusinessTitle = NA,
+                                         objectOfBusinessSeqNum = NA,
+                                         subjectOfBusinessID = NA,
+                                         subjectOfBusinessTitle = NA,
+                                         subjectOfBusinessHeader = NA,
+                                         subjectOfBusinessSeqNum = NA,
+                                         subjectOfBusinessProceduralText = NA,
+                                         subjectOfBusinessTabledDocID = NA,
+                                         subjectOfBusinessTabledDocTitle = NA,
+                                         subjectOfBusinessAdoptedDocID = NA,
+                                         subjectOfBusinessAdoptedDocTitle = NA,
+                                         speakerID = NA,
+                                         speakerFirstName = speaker_first_name,
+                                         speakerLastName = speaker_last_name,
+                                         speakerFullName = speaker_full_name,
+                                         speakerGender = speaker_gender,
+                                         speakerType = speaker_type,
+                                         speakerCountry = "CA",
+                                         speakerIsMinister = speaker_is_minister,
+                                         speakerParty = speaker_party,
+                                         speakerPolGroup = NA,
+                                         speakerDistrict = speaker_district,
+                                         speakerMedia = speaker_media,
+                                         interventionID = paste(gsub("cp", "", event_id),intervention_seqnum,sep=''),
+                                         interventionDocID = NA,
+                                         interventionDocTitle = NA,
+                                         interventionType = intervention_type,
+                                         interventionLang = language,
+                                         interventionWordCount = speech_word_count,
+                                         interventionSentenceCount = speech_sentence_count,
+                                         interventionParagraphCount = speech_paragraph_count,
+                                         #interventionText = paste("ä",intervention_text,sep=''),
+                                         interventionText = intervention_text,
+                                         interventionTextFR = NA,
+                                         interventionTextEN = NA,
+                                         stringsAsFactors = FALSE)
+
+          v2_metadata_to_commit <- list("format"="html","url"=event_url,"location"="CA-QC")
           
-          first_name <- NA
-          last_name <- NA
-          full_name <- NA
-          gender <- NA
-          type <- NA
-          party <- NA
-          speaker_district <- NA
-          media <- NA
-          intervention_type <- NA
+          dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
+                                                                       type = "press_conference", schema = "v2",
+                                                                       metadata = v2_metadata_to_commit,
+                                                                       data = v2_row_to_commit,
+                                                                       opt$dataframe_mode, opt$hub_mode)
+
+          intervention_seqnum <- intervention_seqnum + 1
+          matching_row <- NULL
+          
           intervention_text <- NA
+          speech_paragraph_count <- 0
+          speech_sentence_count <- 0
+          speech_word_count <- 0
           
-          speaker <- data.frame()
         } #If the next speaker is different or if it's the last record
       } # for (j in 1:length(doc_text)) : loop back to the next intervention
       
@@ -693,38 +763,47 @@ for (i in 1:length(list_urls)) {
       collapsed_doc_text <- stringr::str_replace_all(
         string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
       
-      
       # Update the cache
-      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html, stringsAsFactors = FALSE)
-      dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
+      row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html.original, stringsAsFactors = FALSE)
+      ###dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
  
+      # Update cache dans hub v2
+      v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html.original, stringsAsFactors = FALSE)
+      v2_metadata_to_commit <- list("format"="html", "url"=event_url, "location"="CA-QC")
+      
+      dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "press_conference", schema = "v2",
+                                                    metadata = v2_metadata_to_commit,
+                                                    data = v2_row_to_commit,
+                                                    opt$dataframe_mode, opt$hub_mode)
+      
       # Update Simple
       row_to_commit <- data.frame(uuid = "",
                                   created = "",
                                   modified = "",
                                   metadata = "",
                                   eventID = event_id,
-                                  eventSourceType = current_source,
+                                  eventSourceType = event_source_type,
                                   eventURL = event_url,
-                                  eventDate = as.character(date), 
-                                  eventStartTime = as.character(time), 
-                                  eventEndTime = as.character(end_time), 
-                                  eventTitle = title, 
-                                  eventSubtitle = subtitle, 
+                                  eventDate = as.character(event_date), 
+                                  eventStartTime = as.character(event_start_time), 
+                                  eventEndTime = as.character(event_end_time), 
+                                  eventTitle = event_title, 
+                                  eventSubtitle = event_subtitle, 
                                   eventSentenceCount = event_sentence_count,
                                   eventParagraphCount = event_paragraph_count,
                                   eventContent = collapsed_doc_text,
                                   eventTranslatedContent = NA,
                                   stringsAsFactors = FALSE)
 
-      dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
+      ###dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
+      
+      clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
     } # version finale
     
   } #if (grepl("actualites-salle-presse", event_url))
   
 } #for (i in 1:nrow(result))
-
 
 clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
