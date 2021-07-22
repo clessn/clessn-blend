@@ -43,7 +43,11 @@ installPackages <- function() {
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
     } else {
       install.packages(new_packages[p])
     }  
@@ -73,7 +77,7 @@ installPackages <- function() {
 #   scriptname
 #   logger
 #
-#installPackages()
+installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-debats-v2.R"
@@ -86,7 +90,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "update", hub_mode = "refresh", download_data = FALSE)
+            dataframe_mode = "refresh", hub_mode = "refresh", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -107,6 +111,28 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                                token = Sys.getenv('HUB_TOKEN'))
   
   if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                                          "metadata.parliament_number", "metadata.parliament_session", 
+                                          "data.eventID", "data.eventDate", "data.eventStartTime", "data.eventEndTime", 
+                                          "data.eventTitle", "data.eventSubTitle", "data.interventionSeqNum", "data.objectOfBusinessID", 
+                                          "data.objectOfBusinessRubric", "data.objectOfBusinessTitle", "data.objectOfBusinessSeqNum", 
+                                          "data.subjectOfBusinessID", "data.subjectOfBusinessTitle", "data.subjectOfBusinessHeader", 
+                                          "data.subjectOfBusinessSeqNum", "data.subjectOfBusinessProceduralText", 
+                                          "data.subjectOfBusinessTabledDocID", "data.subjectOfBusinessTabledDocTitle", 
+                                          "data.subjectOfBusinessAdoptedDocID", "data.subjectOfBusinessAdoptedDocTitle", 
+                                          "data.speakerID", "data.speakerFirstName", "data.speakerLastName", "data.speakerFullName", 
+                                          "data.speakerGender", "data.speakerType", "data.speakerCountry", "data.speakerIsMinister", 
+                                          "data.speakerParty", "data.speakerPolGroup", "data.speakerDistrict", "data.interventionID", 
+                                          "data.interventionDocID", "data.interventionDocTitle", "data.interventionType", 
+                                          "data.interventionLang", "data.interventionWordCount", "data.interventionSentenceCount", 
+                                          "data.interventionParagraphCount", "data.interventionText", "data.interventionTextFR", 
+                                          "data.interventionTextEN")]
+  } else {
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                                          "metadata.parliament_number", "metadata.parliament_session")]
+  }
 
 } else {
   clessnverse::logit("Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
@@ -121,6 +147,13 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                 token = Sys.getenv('HUB_TOKEN'))
   
   if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                            "data.eventID", "data.rawContent")]
+  } else {
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
+  }
   
 } else {
   dfCache2 <- clessnverse::createAgoraplusCacheDf(type="parliament_debate", schema = "v2", location = "CA-QC")
@@ -165,14 +198,14 @@ content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-doc_html <- RCurl::getURL("file:///Users/patrick/Dropbox/clessn-blend/_SharedFolder_clessn-blend/data/JournalDebatsHistorique2020-2021-2.html")
+#doc_html <- RCurl::getURL("file:///Users/patrick/Dropbox/clessn-blend/_SharedFolder_clessn-blend/data/JournalDebatsHistorique2020-2021-2.html")
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
 list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 
 # Hack here to scrape only one debate
-#list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20200204/262667.html")
+#list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20200205/262809.html")
 
 
 ###############################################################################
@@ -326,14 +359,14 @@ for (i in 1:length(list_urls)) {
       doc_text <- sub("^\\s+", "", doc_text)
       doc_text <- sub("\\s+$", "", doc_text)
 
-      start.index <- grep(patterns_start_time_debate_fr, tolower(doc_text))
+      start.index <- grep(patterns_time_digits_or_text_fr, tolower(doc_text))
       
       for (x in 0:(start.index-1)) doc_text[x] <- NA
       
       doc_text <- na.omit(doc_text)  
 
       # Extract start time of the conference
-      if (stringr::str_detect(doc_text[1], "heures")) {
+      if (stringr::str_detect(tolower(doc_text[1]), patterns_time_text_fr)) {
         doc_text[1] <- gsub("\\(|\\)", "", doc_text[1])
         doc_text[1] <- gsub("\\s\\s+", " ", doc_text[1])
         hour <- strsplit(doc_text[1], " ")[[1]][1]
@@ -350,6 +383,22 @@ for (i in 1:length(list_urls)) {
           minute <- "00"
         }
         event_start_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
+      } 
+      
+      if (stringr::str_detect(tolower(doc_text[1]), patterns_time_digits)) {
+        event_start_time <- doc_text[1]
+        event_start_time <- gsub("\\(",'', event_start_time)
+        event_start_time <- gsub("\\)",'', event_start_time)
+        event_start_time <- clessnverse::splitWords(event_start_time)
+        
+        if ( event_start_time[length(event_start_time)] == "heures" || event_start_time[length(event_start_time)] == "h" ) {
+          event_start_time[length(event_start_time)] <- ":"
+          event_start_time[length(event_start_time)+1] <- "00"
+        }
+        
+        event_start_time <- paste(event_start_time[length(event_start_time)-2],":",event_start_time[length(event_start_time)])
+        event_start_time <- gsub(" ", "", event_start_time)
+        event_start_time <- strptime(paste(event_date,event_start_time), "%Y-%m-%d %H:%M")
       }
 
       # Get rid of the first line which contained the start time
@@ -416,7 +465,22 @@ for (i in 1:length(list_urls)) {
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
         
         paragraph_start <- substr(doc_text[j],1,55)
+        if ( length(strsplit(paragraph_start, ":")[[1]]) == 1 ) {
+          # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
+          paragraph_start <- paragraph_start
+        } else {
+          # Could be a new intervention => we take the  first token before the first : to see if that is the case
+          paragraph_start <- paste(strsplit(paragraph_start, ":")[[1]][1], ":", sep='')
+        }
+        
         next_paragraph_start <- substr(doc_text[j+1],1,55)
+        if ( length(strsplit(next_paragraph_start, ":")[[1]]) == 1) {
+          # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
+          next_paragraph_start <- next_paragraph_start
+        } else {
+          # Could be a new intervention => we take the  first token before the first : to see if that is the case
+          next_paragraph_start <- paste(strsplit(next_paragraph_start, ":")[[1]][1], ":", sep='')
+        }
         
         if ( grepl("(^\\•\\s\\()|(^\\()", paragraph_start) ) {
           sob_procedural_text <- doc_text[j]
@@ -568,9 +632,8 @@ for (i in 1:length(list_urls)) {
                 speaker_type <- "fonctionnaire"
                 speaker_party <- NA
                 speaker_district <- NA
-              }
-              else {
-                speaker_type <- "élu(e)"
+              } else {
+                if (is.na(speaker_type) || speaker_type == "" || length(speaker_type) == 0) speaker_type <- "élu(e)"
                 speaker_party <- speaker[1,]$data.currentParty
                 speaker_district <- speaker[1,]$data.currentDistrict
               }
@@ -818,7 +881,9 @@ for (i in 1:length(list_urls)) {
                                          interventionTextEN = NA,
                                          stringsAsFactors = FALSE)
           
-          v2_metadata_to_commit <- list("format"="html","url"=event_url,"location"="CA-QC",
+          if (opt$download_data == TRUE) v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+          
+          v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC",
                                      "parliament_number"=parliament_number, "parliament_session"=parliament_session)
 
           dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
@@ -852,7 +917,7 @@ for (i in 1:length(list_urls)) {
 
       # Update cache dans hub v2
       v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html.original, stringsAsFactors = FALSE)
-      v2_metadata_to_commit <- list("format"="html", "url"=event_url, "location"="CA-QC")
+      v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC")
       
       dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "parliament_debate", schema = "v2",
                                                     metadata = v2_metadata_to_commit,
