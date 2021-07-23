@@ -198,14 +198,14 @@ content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-#doc_html <- RCurl::getURL("file:///Users/patrick/Dropbox/clessn-blend/_SharedFolder_clessn-blend/data/JournalDebatsHistorique2020-2021-2.html")
+#doc_html <- RCurl::getURL("file:///Users/patrick/Dropbox/clessn-blend/_SharedFolder_clessn-blend/data/JournalDebatsHistorique2020-2021.html")
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
 list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 
 # Hack here to scrape only one debate
-#list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20200205/262809.html")
+#list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20210330/294413.html")
 
 
 ###############################################################################
@@ -222,7 +222,6 @@ for (i in 1:length(list_urls)) {
   
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
-  
   
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- paste("dp", 
@@ -527,11 +526,11 @@ for (i in 1:length(list_urls)) {
             next
           }
           
-          if ((TRUE %in% stringr::str_detect(next_paragraph_start, patterns_intervenants)) &&
-              !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1]) &&
-              stringr::str_detect(next_paragraph_start, "^(.*):") &&
-              !is.na(doc_text[j]) || 
-              (j == length(doc_text) && is.na(doc_text[j+1]))) {
+          #if ((TRUE %in% stringr::str_detect(next_paragraph_start, patterns_intervenants)) &&
+          #    !grepl(",", stringr::str_match(next_paragraph_start, "^(.*):")[1]) &&
+          #    stringr::str_detect(next_paragraph_start, "^(.*):") &&
+          #    !is.na(doc_text[j]) || 
+          #    (j == length(doc_text) && is.na(doc_text[j+1]))) {
             speaker_first_name <- NA
             speaker_last_name <- NA
             speaker_full_name <- NA
@@ -549,7 +548,7 @@ for (i in 1:length(list_urls)) {
             speech_paragraph_count <- 1
             speech_sentence_count <- 0
             speech_word_count <- 0
-          }
+          #}
           
           # let's rule out the president first
           if ( grepl("^(le|la)(\\s+)?(vice(\\s|\\-))?président(.*):", tolower(paragraph_start)) ||
@@ -653,7 +652,7 @@ for (i in 1:length(list_urls)) {
                  grepl("M\\.", stringr::str_match(paragraph_start, "(.+)\\s+:")[1]) ) {
               
               if ( grepl("\\(", stringr::str_match(paragraph_start, "(.+)\\s+:")[1]) ) {
-                
+                # Is the last name or speaker district in parenthesis
                 district_or_lastname <- clessnverse::removeSpeakerTitle(stringr::str_match(paragraph_start, "\\((.*)\\)")[2])
                 
                 # Check if it is a real district or if it is his last name that was between ()
@@ -677,12 +676,10 @@ for (i in 1:length(list_urls)) {
                 if ( grepl("Mme", stringr::str_match(paragraph_start, "(.+)\\s+:"))[1] ) {
                   speaker_last_name <- stringr::str_match(paragraph_start, "Mme\\s+(.*?)\\s+:")[2]
                   gender_femme <- 1
-                }
-                else {
+                } else {
                   speaker_last_name <- stringr::str_match(paragraph_start, "M\\.\\s+(.*?)\\s+:")[2]
                   gender_femme <- 0
                 }
-                
               }
               speaker_last_name <- sub("^\\s+", "", speaker_last_name)
               speaker_last_name <- sub("\\s+$", "", speaker_last_name)
@@ -725,8 +722,7 @@ for (i in 1:length(list_urls)) {
                     speaker_type <- "fonctionnaire"
                     speaker_party <- NA
                     speaker_district <- NA
-                  }
-                  else {
+                  } else {
                     speaker_type <- "élu(e)"
                     speaker_party <- speaker[1,]$data.currentParty
                     speaker_district <- speaker[1,]$data.currentDistrict
@@ -741,13 +737,15 @@ for (i in 1:length(list_urls)) {
             } # ( nrow(speaker) > 0 ) 
 
                         
-            if (j == 1)
+            if (j == 1) {
               intervention_type <- "allocution"
-            else
-              if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) 
+            } else {
+              if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) {
                 intervention_type <- "réponse"
-              else
+              } else {
                 intervention_type <- "allocution"
+              }
+            }
           }
 
             
@@ -881,7 +879,7 @@ for (i in 1:length(list_urls)) {
                                          interventionTextEN = NA,
                                          stringsAsFactors = FALSE)
           
-          if (opt$download_data == TRUE) v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+          v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
           
           v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC",
                                      "parliament_number"=parliament_number, "parliament_session"=parliament_session)
