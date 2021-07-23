@@ -90,7 +90,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "refresh", hub_mode = "refresh", download_data = FALSE)
+            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -114,8 +114,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "press_conference", schema = "v2", location = "CA-QC")
   
   if (opt$download_data) { 
-    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
-                                          "metadata.parliament_number", "metadata.parliament_session", 
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location",
                                           "data.eventID", "data.eventDate", "data.eventStartTime", "data.eventEndTime", 
                                           "data.eventTitle", "data.eventSubTitle", "data.interventionSeqNum", "data.objectOfBusinessID", 
                                           "data.objectOfBusinessRubric", "data.objectOfBusinessTitle", "data.objectOfBusinessSeqNum", 
@@ -211,7 +210,7 @@ urls <- rvest::html_nodes(data, 'li.icoHTML a')
 list_urls <- rvest::html_attr(urls, 'href')
 
 # Hack here to focus only on one press conf :
-#list_urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-72883.html")
+#list_urls <-c("/fr/actualites-salle-presse/conferences-points-presse/ConferencePointPresse-74207.html")
 
 
 
@@ -236,7 +235,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 for (i in 1:length(list_urls)) {
 #for (i in 1:1) {
   
-  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
+  #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
   event_url <- paste(base_url,list_urls[i],sep="")
@@ -265,7 +264,7 @@ for (i in 1:length(list_urls)) {
       filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
       doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
       doc_html <- doc_html$data.rawContent
-
+      doc_html.original <- doc_html
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- TRUE
       clessnverse::logit(paste(event_id, "cached"), logger)
@@ -360,8 +359,14 @@ for (i in 1:length(list_urls)) {
       doc_text[2] <- NA
       doc_text[3] <- NA
       doc_text[4] <- NA
-      #doc_text[5] <- NA
       doc_text <- na.omit(doc_text)  
+      
+      if (grepl("cette transcription est une version préliminaire", tolower(doc_text[2]))) {
+        doc_text[1] <- NA
+        doc_text[2] <- NA
+        doc_text[3] <- NA
+        doc_text <- na.omit(doc_text) 
+      }
 
       # Extract start time of the conference
       if (stringr::str_detect(tolower(doc_text[1]), "heures")) {
@@ -559,9 +564,9 @@ for (i in 1:length(list_urls)) {
                 }
                 
               } else {
-                if ( !is.na(stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]) ) {
+                if ( !is.na(stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\s\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]) ) {
                   # We have a string of type "M. | Mme string :" with string = last_name
-                  speaker_last_name <- stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]
+                  speaker_last_name <- stringr::str_match(paragraph_start, "^M(me|\\.)\\s+((\\w+)|(\\w+-\\w+)|(\\w+\\s\\w+)|(\\w+\\'\\w+))(\\s+)?:")[3]
                   speaker_first_name <- NA
                   ln1 <- clessnverse::splitWords(speaker_last_name)[1]
                   ln2 <- clessnverse::splitWords(speaker_last_name)[2]
