@@ -43,7 +43,11 @@ installPackages <- function() {
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", quiet =FALSE, build = FALSE)
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
     } else {
       install.packages(new_packages[p])
     }  
@@ -73,7 +77,7 @@ installPackages <- function() {
 #   scriptname
 #   logger
 #
-#installPackages()
+installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse-v2.R"
@@ -86,17 +90,17 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "refresh", hub_mode = "skip", download_data = FALSE)
+            dataframe_mode = "refresh", hub_mode = "refresh", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
 # Download HUB v1 data 
-clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-                                      Sys.getenv('HUB_USERNAME'), 
-                                      Sys.getenv('HUB_PASSWORD'), 
-                                      Sys.getenv('HUB_URL'))
+#clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+#                                      Sys.getenv('HUB_USERNAME'), 
+#                                      Sys.getenv('HUB_PASSWORD'), 
+#                                      Sys.getenv('HUB_URL'))
 
 
 # Download HUB v2 data
@@ -106,6 +110,30 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                                location = "CA-QC",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
+  
+  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "press_conference", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                                          "metadata.parliament_number", "metadata.parliament_session", 
+                                          "data.eventID", "data.eventDate", "data.eventStartTime", "data.eventEndTime", 
+                                          "data.eventTitle", "data.eventSubTitle", "data.interventionSeqNum", "data.objectOfBusinessID", 
+                                          "data.objectOfBusinessRubric", "data.objectOfBusinessTitle", "data.objectOfBusinessSeqNum", 
+                                          "data.subjectOfBusinessID", "data.subjectOfBusinessTitle", "data.subjectOfBusinessHeader", 
+                                          "data.subjectOfBusinessSeqNum", "data.subjectOfBusinessProceduralText", 
+                                          "data.subjectOfBusinessTabledDocID", "data.subjectOfBusinessTabledDocTitle", 
+                                          "data.subjectOfBusinessAdoptedDocID", "data.subjectOfBusinessAdoptedDocTitle", 
+                                          "data.speakerID", "data.speakerFirstName", "data.speakerLastName", "data.speakerFullName", 
+                                          "data.speakerGender", "data.speakerType", "data.speakerCountry", "data.speakerIsMinister", 
+                                          "data.speakerParty", "data.speakerPolGroup", "data.speakerDistrict", "data.speakerMedia", 
+                                          "data.interventionID", "data.interventionDocID", "data.interventionDocTitle", 
+                                          "data.interventionType", "data.interventionLang", "data.interventionWordCount", 
+                                          "data.interventionSentenceCount", "data.interventionParagraphCount", "data.interventionText", 
+                                          "data.interventionTextFR", "data.interventionTextEN")]
+  } else {
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
+  }
+
 } else {
   clessnverse::logit("Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
   dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2", location = "CA-QC")
@@ -117,6 +145,16 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                 location = "CA-QC",
                                                 download_data = FALSE,
                                                 token = Sys.getenv('HUB_TOKEN'))
+  
+  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                            "data.eventID", "data.rawContent")]
+  } else {
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
+  }
+  
 } else {
   clessnverse::logit("Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
   dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2", location = "CA-QC")
@@ -326,7 +364,7 @@ for (i in 1:length(list_urls)) {
       doc_text <- na.omit(doc_text)  
 
       # Extract start time of the conference
-      if (stringr::str_detect(doc_text[1], "heures")) {
+      if (stringr::str_detect(tolower(doc_text[1]), "heures")) {
         doc_text[1] <- gsub("\\(|\\)", "", doc_text[1])
         doc_text[1] <- gsub("\\s\\s+", " ", doc_text[1])
         hour <- strsplit(doc_text[1], " ")[[1]][1]
@@ -384,6 +422,7 @@ for (i in 1:length(list_urls)) {
       speaker_is_minister <- NA
       speaker_media <- NA
       intervention_type <- NA
+      last_intervention_type <- NA
       intervention_text <- NA
       
       gender_femme <- 0
@@ -472,7 +511,7 @@ for (i in 1:length(list_urls)) {
             speaker_first_name <- "Modérateur"
             speaker_last_name <- "Modérateur"
             speaker_gender <- NA
-            speaker_type <- "modérateur"
+            speaker_type <- "moderator"
             speaker_party <- NA
             speaker_district <- NA
             speaker_media <- NA
@@ -563,7 +602,7 @@ for (i in 1:length(list_urls)) {
                     intervention_type <- "allocution"
                   } else {
                     #if ( periode_de_questions || substr(doc_text[j-1], nchar(doc_text[j-1]), nchar(doc_text[j-1])) == "?" ) {
-                    if (dfInterventions$data.interventionType[intervention_seqnum-1] == "question" ) {
+                    if (last_intervention_type == "question" ) {
                       intervention_type <- "réponse"
                     }
                     else {
@@ -596,7 +635,7 @@ for (i in 1:length(list_urls)) {
                   speaker_first_name <- NA
                   speaker_last_name <- NA
                   speaker_gender <- NA
-                  speaker_type <- "journaliste"
+                  speaker_type <- "journalist"
                   speaker_party <- NA
                   speaker_district <- NA
                   speaker_media <- NA
@@ -731,13 +770,14 @@ for (i in 1:length(list_urls)) {
                                          interventionWordCount = speech_word_count,
                                          interventionSentenceCount = speech_sentence_count,
                                          interventionParagraphCount = speech_paragraph_count,
-                                         #interventionText = paste("ä",intervention_text,sep=''),
                                          interventionText = intervention_text,
                                          interventionTextFR = NA,
                                          interventionTextEN = NA,
                                          stringsAsFactors = FALSE)
 
-          v2_metadata_to_commit <- list("format"="html","url"=event_url,"location"="CA-QC")
+          v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+          
+          v2_metadata_to_commit <- list("url"=event_url,"format"="html","location"="CA-QC")
           
           dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
                                                                        type = "press_conference", schema = "v2",
@@ -748,6 +788,7 @@ for (i in 1:length(list_urls)) {
           intervention_seqnum <- intervention_seqnum + 1
           matching_row <- NULL
           
+          last_intervention_type <- intervention_type
           intervention_text <- NA
           speech_paragraph_count <- 0
           speech_sentence_count <- 0
@@ -769,7 +810,7 @@ for (i in 1:length(list_urls)) {
  
       # Update cache dans hub v2
       v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html.original, stringsAsFactors = FALSE)
-      v2_metadata_to_commit <- list("format"="html", "url"=event_url, "location"="CA-QC")
+      v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC")
       
       dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "press_conference", schema = "v2",
                                                     metadata = v2_metadata_to_commit,
