@@ -90,7 +90,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "refresh", hub_mode = "refresh", download_data = FALSE)
+            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -220,7 +220,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
 #
 for (i in 1:length(list_urls)) {
   
-  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
+  #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
   event_url <- paste(base_url,list_urls[i],sep="")
@@ -587,7 +587,7 @@ for (i in 1:length(list_urls)) {
             
             if ( grepl("^le(\\s+)?président(.*):", tolower(paragraph_start)) ||
                  grepl("^la(\\s+)?présidente(.*):", tolower(paragraph_start)) ) {
-              speaker_type <- "président(e)"
+              speaker_type <- "president"
               speaker_last_name <- "Paradis"
               speaker_first_name <- "François"
               speaker_gender <- "M"
@@ -598,7 +598,7 @@ for (i in 1:length(list_urls)) {
             } else {
               if ( grepl("^le(\\s+)?vice-président(.*):", tolower(paragraph_start)) ||
                    grepl("^la(\\s+)?vice-présidente(.*):", tolower(paragraph_start)) ) {
-                speaker_type <- "vice-président(e)"
+                speaker_type <- "vice-president"
                 
                 if ( grepl("mme(.*):", tolower(paragraph_start)) ) gender_femme <- 1 else gender_femme <- 0
                     
@@ -625,14 +625,14 @@ for (i in 1:length(list_urls)) {
               speaker_last_name <- paste(na.omit(speaker[1,]$data.lastName1), na.omit(speaker[1,]$data.lastName2), sep = " ")
               speaker_last_name <- trimws(speaker_last_name, which = c("both"))
               if (length(speaker_last_name) == 0) speaker_last_name <- NA
-              speaker_first_name <- speaker[1,]$data.firstName
-              speaker_gender <- if ( speaker[1,]$data.isFemale == 1) "F" else "M"
-              if ( tolower(speaker[1,]$data.currentParty) == "Service public" ) {
-                speaker_type <- "fonctionnaire"
+              speaker_first_name <- speaker$data.firstName[1]
+              speaker_gender <- if ( speaker$data.isFemale[1] == 1) "F" else "M"
+              if ( tolower(speaker$type[1]) == "public_service" ) {
+                speaker_type <- "public_service"
                 speaker_party <- NA
                 speaker_district <- NA
               } else {
-                if (is.na(speaker_type) || speaker_type == "" || length(speaker_type) == 0) speaker_type <- "élu(e)"
+                if (is.na(speaker_type) || speaker_type == "" || length(speaker_type) == 0) speaker_type <- "mp"
                 speaker_party <- speaker[1,]$data.currentParty
                 speaker_district <- speaker[1,]$data.currentDistrict
               }
@@ -718,12 +718,12 @@ for (i in 1:length(list_urls)) {
                   if (length(speaker_last_name) == 0) speaker_last_name <- NA
                   speaker_first_name <- speaker[1,]$data.firstName
                   speaker_gender <- if ( speaker[1,]$data.isFemale == 1 ) "F" else "M"
-                  if ( tolower(speaker[1,]$data.currentParty) == "fonctionnaire" ) {
-                    speaker_type <- "fonctionnaire"
+                  if ( tolower(speaker[1,]$type) == "public_service" ) {
+                    speaker_type <- "public_service"
                     speaker_party <- NA
                     speaker_district <- NA
                   } else {
-                    speaker_type <- "élu(e)"
+                    speaker_type <- "mp"
                     speaker_party <- speaker[1,]$data.currentParty
                     speaker_district <- speaker[1,]$data.currentDistrict
                   }
@@ -753,7 +753,7 @@ for (i in 1:length(list_urls)) {
             speaker_first_name <- NA
             speaker_last_name <- NA
             speaker_gender <- NA
-            speaker_type <- "secrétaire ou secrétaire adjoint(e)"
+            speaker_type <- "secretary or vice-secretary"
             speaker_party <- NA
             speaker_district <- NA
             speaker <- data.frame()
