@@ -204,8 +204,11 @@ content_url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html
 
 # Pour rouler le script sur une base quotidienne et aller chercher les débats récents Utiliser le ligne ci-dessous
 data <- xml2::read_html(paste(base_url,content_url,sep=""))
-urls <- rvest::html_nodes(data, 'li.icoHTML a')
 
+# Pour rouler le script sur les conf de presse choisies (ex: celles de 2020) utiliser la ligne ci-dessous
+#data <- xml2::read_html("/Users/patrick/Dropbox/clessn-blend/_SharedFolder_clessn-blend/data/ConférencesEtPointsDePresse-AssembléeNationaleDuQuébec-2020.html")
+
+urls <- rvest::html_nodes(data, 'li.icoHTML a')
 # To obtain the list of conferences available in the FIRST search results page (default page)
 list_urls <- rvest::html_attr(urls, 'href')
 
@@ -377,10 +380,10 @@ for (i in 1:length(list_urls)) {
         if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
         if (clessnverse::countWords(doc_text[1]) > 2) {
           minute <- strsplit(doc_text[1], " ")[[1]][3]
-          if (strsplit(doc_text[1], " ")[[1]][4] == "et") {
+          if (length(strsplit(doc_text[1], " ")[[1]]) > 3 && strsplit(doc_text[1], " ")[[1]][4] == "et") {
             minute <- paste(minute, "et", strsplit(doc_text[1], " ")[[1]][5], sep = ' ')
           }
-          minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
+          if (!is.na(minute)) minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1] else minute <- "00"
           if (nchar(minute) == 1) minute <- paste("0",minute,sep='')
         } else {
           minute <- "00"
@@ -843,7 +846,7 @@ for (i in 1:length(list_urls)) {
 
       ###dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
       
-      clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
+      #clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
     } # version finale
     
