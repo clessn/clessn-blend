@@ -951,5 +951,5 @@ for (i in 1:length(list_urls)) {
   
 } #for (i in 1:nrow(result))
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+iclessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
