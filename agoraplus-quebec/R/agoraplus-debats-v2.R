@@ -943,7 +943,7 @@ for (i in 1:length(list_urls)) {
       
       ###dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
       
-      clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
+      #clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
     } # version finale
     
