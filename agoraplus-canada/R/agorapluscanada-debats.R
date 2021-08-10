@@ -93,7 +93,7 @@ clessnverse::loadAgoraplusHUBDatasets("canada", opt,
                                       Sys.getenv('HUB_USERNAME'), 
                                       Sys.getenv('HUB_PASSWORD'), 
                                       Sys.getenv('HUB_URL'))
-}
+
 
 # Load all objects used for ETL
 clessnverse::loadETLRefData()
