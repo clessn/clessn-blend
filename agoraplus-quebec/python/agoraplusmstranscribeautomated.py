@@ -36,7 +36,13 @@ def get_play_list_from_youtube(url):
 
 def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection):
     # <speech_continuous_recognition_with_file>
-    speech_config = speechsdk.SpeechConfig(subscription="b5421646c3b449a0856a089a67d84b2a", region="canadacentral")
+    azure_key = os.environ.get('AZURE_SPEECH2TEXT_KEY')
+
+    if (azure_key is None):
+        logging.info('no azure subscription found in env var')
+        sys.exit('no azure subscription found in env var') 
+
+    speech_config = speechsdk.SpeechConfig(subscription=azure_key, region="canadacentral")
     
     audio_input = speechsdk.AudioConfig(filename=fileToTranscribe)
 
@@ -317,8 +323,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-os.environ['YOUTUBE_EXTRACT_DATE'] = '2021-06-22'
