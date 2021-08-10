@@ -34,7 +34,11 @@ installPackages <- function() {
   if (length(new_packages) >0) {
     for (p in 1:length(new_packages)) {
       if ( grepl("\\/", new_packages[p]) ) {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = TRUE, build = FALSE)
+        if (grepl("clessnverse", new_packages[p])) {
+          devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+        } else {
+          devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+        }
       } else {
         install.packages(new_packages[p])
       }  
@@ -63,7 +67,8 @@ installPackages <- function() {
 ###############################################################################
 #   Globals
 #
-script_list <- c("agoraplus-confpresse.R", "agoraplus-debats.R", "agoraplus-youtube.R")
+#script_list <- c("agoraplus-confpresse.R", "agoraplus-debats.R", "agoraplus-youtube.R")
+script_list <- c("agoraplus-confpresse-v2.R", "agoraplus-debats-v2.R")
 
 
 ###############################################################################
@@ -99,8 +104,8 @@ for (scriptname in script_list) {
   tryCatch( 
     {
       logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
-      opt <- list(cache_mode = "update",simple_mode = "update",deep_mode = "update",
-                  dataframe_mode = "update", hub_mode = "update")
+      opt <- list(cache_mode = "rebuild",simple_mode = "rebuild",deep_mode = "rebuild",
+                  dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
       
       clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
       
