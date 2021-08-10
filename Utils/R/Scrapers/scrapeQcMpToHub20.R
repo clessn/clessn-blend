@@ -65,15 +65,17 @@ for ( i_url in 1:length(list_urls)) {
   
   row_to_commit <- list(firstName = mp_first_name, lastName = mp_last_name,
                         fullName = mp_full_name, isFemale = mp_is_female,
-                        currentFunctionsList = mp_functions_list, currentParty = mp_party,
-                        previousPartiesList = NA, previousPartiesDatesList = NA,
-                        currentDistrict = mp_district, previousDistrictsList = NA,
-                        previousDistrictsDatesList = NA, isMinister = mp_is_minister, 
-                        currentMinister = NA, previousMinistersList = NA, 
-                        previousMinistersDatesList = NA, twitterHandle = NA, 
-                        twitterID = NA, twitterAccountProtected = NA)
+                        currentFunctionsList = mp_functions_list, 
+                        currentParty = mp_party,
+                        currentDistrict = mp_district, 
+                        currentProvinceOrState = "QC",
+                        isMinister = mp_is_minister, 
+                        currentMinister = NA,
+                        twitterHandle = NA, 
+                        twitterID = NA, 
+                        twitterAccountProtected = NA)
   
-  metadata_to_commit <- list(source = "http://www.assnat.qc.ca/fr/deputes/index.html#listeDeputes", location = "CA-QC")
+  metadata_to_commit <- list(source = "http://www.assnat.qc.ca/fr/deputes/index.html#listeDeputes", country = "CA", province_or_state = "QC")
   
   row <- cbind(data.frame(key=mp_id, type="mp", schema="v2"),
                as.data.frame(metadata_to_commit),
