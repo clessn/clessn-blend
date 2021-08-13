@@ -45,12 +45,12 @@ safe_httr_GET <- purrr::safely(httr::GET)
 #
 #
 #
-plc
-pcc
-blq
-grn
-npd
-ppc
+#plc
+#pcc
+#blq
+#grn
+#npd
+#ppc
 
 plc_url <- "https://liberal.ca/fr/category/communiques/"
 pcc_url <- "https://www.conservateur.ca/nouvelles/"
@@ -119,21 +119,31 @@ if (plc_r$result$status_code == 200) {
   stop("Erreur pour accéder à la page des communiqués du PLC")
 }
 
+
+
 if (pcc_r$result$status_code == 200) {
   
 }
+
+
 
 if (blq_r$result$status_code == 200) {
   
 }
 
+
+
 if (grn_r$result$status_code == 200) {
   
 }
 
+
+
 if (npd_r$result$status_code == 200) {
   
 }
+
+
 
 if (ppc_r$result$status_code == 200) {
   
