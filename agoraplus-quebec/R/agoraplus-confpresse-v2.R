@@ -161,9 +161,9 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 
 # Download v2 MPs information
 dfMPs <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
-                                                  location = "CA-QC",
-                                                  download_data = TRUE,
-                                                  token = Sys.getenv('HUB_TOKEN'))
+                                              location = "CA-QC",
+                                              download_data = TRUE,
+                                              token = Sys.getenv('HUB_TOKEN'))
 
 # Download v2 public service personnalities information
 dfMPs <- dfMPs %>% 
