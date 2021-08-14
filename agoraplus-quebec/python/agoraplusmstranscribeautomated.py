@@ -19,7 +19,7 @@ def get_video_from_youtube(video_url):
     logging.info("Fetching URL " + video_url)
     vid = pytube.YouTube(url=video_url)
     aud = vid.streams.filter(only_audio=True, subtype="mp4")
-    aud.first().download(filename="youtubeAudio")
+    aud.first().download(filename="youtubeAudio.mp4")
     mp4_audio = pydub.AudioSegment.from_file("youtubeAudio.mp4", format="mp4")
     #mp4_audio.export("youtubeAudio.wav", format = "wav",parameters=["-ar", "16000", "-filter:a", "atempo=0.75"])
     mp4_audio.export("youtubeAudio.wav", format = "wav",parameters=["-ar", "16000"])
@@ -196,6 +196,8 @@ def main():
     if (extract_date == "0"):
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
+   
+    extract_date = "2021-08-11"
 
     select_publish_date_start = extract_date
     select_publish_date_end = extract_date
