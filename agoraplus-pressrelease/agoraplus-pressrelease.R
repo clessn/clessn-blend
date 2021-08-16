@@ -405,7 +405,7 @@ if (grn_r$result$status_code == 200) {
       }
       
     } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", pcc_url_list[[i_pcc_url_list]], sep=": "))
+      stop(paste("Erreur pour accéder à la page du communiqué", grn_url_list[[i_grn_url_list]], sep=": "))
     }
   }
 }
@@ -414,7 +414,79 @@ if (grn_r$result$status_code == 200) {
 npd_r <- safe_httr_GET(npd_url)
 
 if (npd_r$result$status_code == 200) {
+  # On extrait les sections qui contiennent les liens vers chaque communiqué
+  npd_index <- httr::content(npd_r$result, as="text")
   
+  npd_index_xml <- XML::htmlTreeParse(npd_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
+  npd_xml_root <- XML::xmlRoot(npd_index_xml)
+  
+  npd_links_list <- XML::getNodeSet(npd_xml_root, ".//article/a")
+  
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  npd_url_list <- list()
+  
+  for (i_npd_links_list in 1:length(npd_links_list)) {
+    npd_url_list <- c(npd_url_list, XML::xmlGetAttr(npd_links_list[[i_npd_links_list]], "href"))
+  }
+  
+  # On loop à travers toutes les URL de ls liste des communiqués
+  # On les scrape et stocke sur le hub 2.0
+  for (i_npd_url_list in 1:length(npd_url_list)) {
+    r <- safe_httr_GET(npd_url_list[[i_npd_url_list]])
+    
+    if (r$result$status_code == 200) {
+      npd_comm <- httr::content(r$result, as="text")
+      npd_comm_xml <- XML::htmlTreeParse(npd_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
+      npd_comm_root <- XML::xmlRoot(npd_comm_xml)
+      
+      # Récupère le titre
+      npd_comm_title <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-body article-text']")
+      npd_comm_title <- XML::xpathApply(npd_comm_title[[1]], ".//h1")
+      npd_comm_title <- XML::xmlValue(npd_comm_title)
+      
+      # Récupère le contenu
+      npd_comm_text <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-body article-text']")
+      npd_comm_text <- XML::xpathApply(npd_comm_text[[1]], ".//p")
+      npd_comm_text <- XML::xmlValue(npd_comm_text)
+      npd_comm_text <- paste(npd_comm_text, collapse = '\n\n')
+      
+      # Récupère la date
+      npd_comm_date <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-date article-text']")[[1]]
+      npd_comm_date <- trimws(XML::xmlValue(npd_comm_date))
+      
+      # Récupère le texte
+      
+      npd_comm_location <- substr(npd_comm_text, 1, stringr::str_locate(npd_comm_text, "-|—|–")[1,1][[1]]-1)
+      npd_comm_location <- trimws(npd_comm_location)
+      npd_comm_location <- stringr::str_to_title(npd_comm_location)
+      
+      
+      # Construit le data pour le hub
+      key <- digest::digest(npd_url_list[[i_npd_url_list]])
+      type <- "npd"
+      schema <- "v1"
+      
+      metadata <- list("date"=Sys.time(), "url"=npd_url_list[[i_npd_url_list]])
+      data <- list("date"=npd_comm_date, "place"=npd_comm_location, "content"=npd_comm_text)
+      
+      hub_items <- NULL
+      filter <- clessnhub::create_filter(key = key)
+      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
+      
+      if (is.null(hub_items)) {
+        # ce communiqué (avec cette key) n'existe pas dans le hub
+        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
+      } else {
+        # ce communiqué (avec cette key) existe dans le hub 
+        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
+        print("ce communiqué existe déjà")
+      }
+      
+    } else {
+      stop(paste("Erreur pour accéder à la page du communiqué", npd_url_list[[i_npd_url_list]], sep=": "))
+    }
+  }
 }
 
 
