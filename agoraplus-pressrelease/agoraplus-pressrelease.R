@@ -460,6 +460,7 @@ if (npd_r$result$status_code == 200) {
       npd_comm_location <- substr(npd_comm_text, 1, stringr::str_locate(npd_comm_text, "-|—|–")[1,1][[1]]-1)
       npd_comm_location <- trimws(npd_comm_location)
       npd_comm_location <- stringr::str_to_title(npd_comm_location)
+      if (nchar(npd_comm_location) > 25) npd_comm_location <- NA
       
       
       # Construit le data pour le hub
