@@ -160,26 +160,31 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 }
 
 # Download v2 MPs information
-dfMPs <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
-                                              location = "CA-QC",
-                                              download_data = TRUE,
-                                              token = Sys.getenv('HUB_TOKEN'))
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+metadata_filter <- list(country="CA", province_or_state="QC")
+filter <- clessnhub::create_filter(type="mp", schema="v2", metadata=metadata_filter)  
+dfMPs <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
 # Download v2 public service personnalities information
-dfMPs <- dfMPs %>% 
-  rbind(clessnverse::loadAgoraplusPersonsDf(type = "public_service", schema = "v2",
-                                            location = "CA-QC",
-                                            download_data = TRUE,
-                                            token = Sys.getenv('HUB_TOKEN')
-                                            )
-  )
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+metadata_filter <- list(country="CA", province_or_state="QC")
+filter <- clessnhub::create_filter(type="public_service", schema="v2", metadata=metadata_filter)  
+dfPublicService <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
+
+dfMPs <- dfMPs %>% full_join(dfPublicService)
+
 
 # Download v2 journalists information
-dfJournalists <- clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
-                                            location = "CA",
-                                            download_data = TRUE,
-                                            token = Sys.getenv('HUB_TOKEN')
-                                            )
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+metadata_filter <- list(country="CA", province_or_state="QC")
+filter <- clessnhub::create_filter(type="journalist", schema="v2", metadata=metadata_filter)  
+dfJournalists <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
+
+#dfJournalists <- clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
+#                                            location = "CA",
+#                                            download_data = TRUE,
+#                                            token = Sys.getenv('HUB_TOKEN')
+#                                            )
 
 dfMPs <- dfMPs %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
 dfJournalists <- dfJournalists %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
