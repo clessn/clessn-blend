@@ -169,8 +169,8 @@ for (i in 1:length(mps_xml_nodes_list)) {
   
   # Get info from party web site
   if (party == "Conservative") {
+    party <- "CPC"
     
-    ######  TODO : enlever les accents pour construire l'URL
     r <- safe_httr_GET(paste(conserv_base_url, tolower(gsub("\\'","",rm_accent(first_name))), "-", tolower(gsub("\\'","",rm_accent(last_name))), "/", sep = ''))
     
     if (r$result$status_code == 200) {
@@ -190,6 +190,8 @@ for (i in 1:length(mps_xml_nodes_list)) {
   }
   
   if (party == "Liberal") {
+    party <- "LPC"
+    
     r <- safe_httr_GET(liberal_url)
     
     if (r$result$status_code == 200) {
@@ -246,6 +248,8 @@ for (i in 1:length(mps_xml_nodes_list)) {
   }
   
   if (party == "Bloc Québécois") {
+    
+    party <- "BQ"
     
     page_num <- 1
     r <- safe_httr_GET(paste(bloc_url, page_num, sep='/'))
