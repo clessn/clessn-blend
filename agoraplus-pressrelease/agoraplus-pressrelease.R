@@ -32,7 +32,6 @@
 #
 #
 #
-safe_RCurl_getURL <- purrr::safely(RCurl::getURL)
 safe_httr_GET <- purrr::safely(httr::GET)
 
 
@@ -45,7 +44,7 @@ safe_httr_GET <- purrr::safely(httr::GET)
 
 
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
-clessnhub::connect()
+#clessnhub::connect()
 
 plc_url <- "https://liberal.ca/fr/category/communiques/"
 pcc_url <- "https://www.conservateur.ca/nouvelles/"
@@ -120,7 +119,7 @@ if (plc_r$result$status_code == 200) {
       
       # Construit le data pour le hub
       key <- digest::digest(plc_url_list[[i_plc_url_list]])
-      type <- "plc"
+      type <- "LPC"
       schema <- "v1"
       
       metadata <- list("date"=Sys.time(), "url"=plc_url_list[[i_plc_url_list]])
@@ -224,7 +223,7 @@ if (pcc_r$result$status_code == 200) {
       
       # Construit le data pour le hub
       key <- digest::digest(pcc_url_list[[i_pcc_url_list]])
-      type <- "pcc"
+      type <- "CPC"
       schema <- "v1"
       
       metadata <- list("date"=Sys.time(), "url"=pcc_url_list[[i_pcc_url_list]])
@@ -310,7 +309,7 @@ if (blq_r$result$status_code == 200) {
       
       # Construit le data pour le hub
       key <- digest::digest(blq_url_list[[i_blq_url_list]])
-      type <- "blq"
+      type <- "BQ"
       schema <- "v1"
       
       metadata <- list("date"=Sys.time(), "url"=blq_url_list[[i_blq_url_list]])
@@ -395,7 +394,7 @@ if (grn_r$result$status_code == 200) {
       
       # Construit le data pour le hub
       key <- digest::digest(grn_url_list[[i_grn_url_list]])
-      type <- "grn"
+      type <- "GPC"
       schema <- "v1"
       
       metadata <- list("date"=Sys.time(), "url"=grn_url_list[[i_grn_url_list]])
@@ -483,7 +482,7 @@ if (npd_r$result$status_code == 200) {
       
       # Construit le data pour le hub
       key <- digest::digest(npd_url_list[[i_npd_url_list]])
-      type <- "npd"
+      type <- "NPD"
       schema <- "v1"
       
       metadata <- list("date"=Sys.time(), "url"=npd_url_list[[i_npd_url_list]])
