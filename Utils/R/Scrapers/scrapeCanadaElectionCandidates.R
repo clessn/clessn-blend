@@ -112,7 +112,7 @@ scrape_plc_candidates <- function(url, xml_root, df_existing_persons) {
     if (length(is_female) == 0) is_female <- NA
     
     # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
     
     if (length(matching_existing_persons_row) == 0) {
       # no match found - we can add the candidate to the hub
@@ -206,7 +206,7 @@ scrape_pcc_candidates <- function(url, xml_root, df_existing_persons) {
     if (first_name == "Erin" && last_name == "O'Toole") is_female <- 0
     
     # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
     
     if (length(matching_existing_persons_row) == 0) {
       # no match found - we can add the candidate to the hub
@@ -313,7 +313,7 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_existing_persons
           if (length(is_female) == 0) is_female <- NA
           
           # find out if already in hub as candidate OR ALSO as MP
-          matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+          matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
           
           if (length(matching_existing_persons_row) == 0) {
             # no match found - we can add the candidate to the hub
@@ -411,7 +411,7 @@ scrape_npd_candidates <- function(url, xml_root, df_existing_persons) {
     if (length(is_female) == 0) is_female <- NA
     
     # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
     
     if (length(matching_existing_persons_row) == 0) {
       # no match found - we can add the candidate to the hub
@@ -511,7 +511,7 @@ scrape_grn_candidates <- function(url, xml_root, df_existing_persons) {
     if (length(is_female) == 0) is_female <- NA
     
     # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
     
     if (length(matching_existing_persons_row) == 0) {
       # no match found - we can add the candidate to the hub
@@ -612,7 +612,7 @@ scrape_ppc_candidates <- function(url, xml_root, df_existing_persons) {
       
       
       # find out if already in hub as candidate OR ALSO as MP
-      matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name & df_existing_persons$type == "mp")
+      matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
       
       if (length(matching_existing_persons_row) == 0) {
         # no match found - we can add the candidate to the hub
