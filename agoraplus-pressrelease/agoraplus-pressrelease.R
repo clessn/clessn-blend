@@ -472,9 +472,11 @@ if (npd_r$result$status_code == 200) {
       
       # Récupère l'endroit
       npd_comm_location <- substr(npd_comm_text, 1, stringr::str_locate(npd_comm_text, "-|—|–")[1,1][[1]]-1)
-      npd_comm_location <- trimws(npd_comm_location)
-      npd_comm_location <- stringr::str_to_title(npd_comm_location)
-      if (nchar(npd_comm_location) > 25) npd_comm_location <- NA
+      if (!is.na(npd_comm_location)) {
+        npd_comm_location <- trimws(npd_comm_location)
+        npd_comm_location <- stringr::str_to_title(npd_comm_location)
+        if (nchar(npd_comm_location) > 25) npd_comm_location <- NA
+      }
       
       # Récupère la date
       npd_comm_date <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-date article-text']")[[1]]
