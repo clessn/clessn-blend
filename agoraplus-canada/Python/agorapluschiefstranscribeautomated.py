@@ -181,7 +181,7 @@ def main():
   logger = logging.getLogger()
 
 if (not logging.getLogger().hasHandlers()):
-  scriptname = 'agoraplusmstranscribeautomated.py'
+  scriptname = 'agorapluschiefstranscribeautomated.py'
 filename = os.environ.get('LOG_PATH') + '/' + scriptname + '.log'
 print('logging to ' + filename)
 logging.basicConfig(level=logging.INFO, filename=filename, filemode='w+', \
@@ -197,7 +197,7 @@ if (extract_date == "0"):
   todays_date = datetime.date.today()
 extract_date = todays_date.strftime("%Y-%m-%d")
 
-extract_date = "2021-08-11"
+extract_date = "2021-08-15"
 
 select_publish_date_start = extract_date
 select_publish_date_end = extract_date
@@ -216,7 +216,7 @@ to_hub_file_path = 'to_hub/'
 ready_to_hub_file_path = 'to_hub/ready/'
 done_file_path = 'to_hub/done/'
 
-p = get_play_list_from_youtube('https://www.youtube.com/user/cpac/videos?view=0&sort=dd&shelf_id=0')
+p = get_play_list_from_youtube('https://www.youtube.com/playlist?list=PLdgoQ6C3ckQuaoaJzKO95KQjmmwRhGiGj')
 
 file_list_from_azure = list_folder(dbx,base_path,from_azure_file_path)
 file_list_parkinglot = list_folder(dbx,base_path,parkinglot_file_path)
