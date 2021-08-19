@@ -724,7 +724,7 @@ dfMPs <- clessnhub::get_items('persons', filter = filter)
 filter <- clessnhub::create_filter(type="candidate", schema="v2")
 dfCandidates <- clessnhub::get_items('persons', filter = filter)
 
-dfExistingPersons <- dfMPs #%>% dplyr::full_join(dfCandidates)
+dfExistingPersons <- dfMPs %>% dplyr::full_join(dfCandidates)
 
 
 # Loop through the list of URLs
