@@ -64,7 +64,7 @@ safe_httr_GET <- purrr::safely(httr::GET)
 
 
 #######################################
-scrape_plc_candidates <- function(url, xml_root, df_existing_persons) {
+scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
   candidates_nodes <- XML::getNodeSet(xml_root, ".//article[@class = 'person__item-container']")
   
   cnt <- 0
@@ -111,44 +111,78 @@ scrape_plc_candidates <- function(url, xml_root, df_existing_persons) {
     is_female <- gender::gender(rm_accent(first_name))$gender == "female"
     if (length(is_female) == 0) is_female <- NA
     
-    # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+    # find out if already in hub as MP
+    matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
     
-    if (length(matching_existing_persons_row) == 0) {
-      # no match found - we can add the candidate to the hub
-      key <- digest::digest(full_name)
-      type <- "candidate"
-      schema <- "v2"
-      
-      metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-      data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                             currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
-                             twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-      
-      # commit tu hub
-      clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-      cnt <- cnt+1
-      cat('\n',cnt,'\n')
-      cat('=================================================================================\n')
-      cat(paste(metadata_to_commit, collapse=' * '), '\n')
-      cat(paste(data_to_commit, collapse=' * '), '\n')
-      
+    if (length(matching_mps_row) == 0) {
+      # no match found - we can add the candidate to the hub or update it if it already exists
+      matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+      if (length(matching_candidate_row) == 0) {
+        # candidate does not exist => create it
+        key <- digest::digest(full_name)
+        type <- "candidate"
+        schema <- "v2"
+        
+        metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+        data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+        
+        # commit tu hub
+        clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+        cnt <- cnt+1
+        cat('\n',cnt,'\n')
+        cat('=================================================================================\n')
+        cat(paste(metadata_to_commit, collapse=' * '), '\n')
+        cat(paste(data_to_commit, collapse=' * '), '\n')
+      } else {
+        # candidate exists => update it
+        df_candidates$data.fullName[matching_candidate_row] <- full_name
+        df_candidates$data.firstName[matching_candidate_row] <- first_name
+        df_candidates$data.lastName[matching_candidate_row] <- last_name
+        df_candidates$data.currentDistrict[matching_candidate_row] <- district
+        df_candidates$data.currentParty[matching_candidate_row] <- party
+        df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+        df_candidates$data.isFemale[matching_candidate_row] <- is_female
+        df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+        df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+        df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+
+        df_candidates$metadata.source[matching_candidate_row] <- source
+        df_candidates$metadata.country[matching_candidate_row] <- country
+        df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+
+        key <- df_candidates$key[matching_candidate_row]
+        type <- df_candidates$type[matching_candidate_row]
+        schema <- df_candidates$schema[matching_candidate_row]
+
+        data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
+        metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
+        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+      }# if (length(matching_candidate_row) == 0)
     } else {
-      # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+      # MP match found - update the MP twitter handle.
       cnt <- cnt+1
       cat('\n',cnt,'\n')
       cat('=================================================================================\n')
       cat('This person',full_name, 'is already in the hub', '\n')
 
-      if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+      if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
-        df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-        key <- df_existing_persons$key[matching_existing_persons_row]
-        type <- df_existing_persons$type[matching_existing_persons_row]
-        schema <- df_existing_persons$schema[matching_existing_persons_row]
-        data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        key <- df_mps$key[matching_mps_row]
+        type <- df_mps$type[matching_mps_row]
+        schema <- df_mps$schema[matching_mps_row]
+        data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
         names(data) <- gsub("^data.", "", names(data))
-        metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+        metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
         names(metadata) <- gsub("^metadata.", "", names(metadata))
         cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
         cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -157,13 +191,13 @@ scrape_plc_candidates <- function(url, xml_root, df_existing_persons) {
         cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
-    }
+    }#if (length(matching_mps_row) == 0)
   }
 }
 
 
 #######################################
-scrape_pcc_candidates <- function(url, xml_root, df_existing_persons) {
+scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
   candidates_nodes <- XML::getNodeSet(xml_root, ".//div[@class = 'candidate-card']")
   
   cnt <- 0
@@ -211,44 +245,78 @@ scrape_pcc_candidates <- function(url, xml_root, df_existing_persons) {
     if (length(is_female) == 0) is_female <- NA
     if (first_name == "Erin" && last_name == "O'Toole") is_female <- 0
     
-    # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+    # find out if already in hub as MP
+    matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
     
-    if (length(matching_existing_persons_row) == 0) {
-      # no match found - we can add the candidate to the hub
-      key <- digest::digest(full_name)
-      type <- "candidate"
-      schema <- "v2"
-      
-      metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-      data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                             currentParty="CPC", currentProvinceOrState=province, isFemale=is_female,
-                             twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-      
-      # commit tu hub
-      clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-      cnt <- cnt+1
-      cat('\n',cnt,'\n')
-      cat('=================================================================================\n')
-      cat(paste(metadata_to_commit, collapse=' * '), '\n')
-      cat(paste(data_to_commit, collapse=' * '), '\n')
-      
+    if (length(matching_mps_row) == 0) {
+      # no match found - we can add the candidate to the hub or update it if it already exists
+      matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+      if (length(matching_candidate_row) == 0) {
+        # candidate does not exist => create it
+        key <- digest::digest(full_name)
+        type <- "candidate"
+        schema <- "v2"
+        
+        metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+        data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+        
+        # commit tu hub
+        clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+        cnt <- cnt+1
+        cat('\n',cnt,'\n')
+        cat('=================================================================================\n')
+        cat(paste(metadata_to_commit, collapse=' * '), '\n')
+        cat(paste(data_to_commit, collapse=' * '), '\n')
+      } else {
+        # candidate exists => update it
+        df_candidates$data.fullName[matching_candidate_row] <- full_name
+        df_candidates$data.firstName[matching_candidate_row] <- first_name
+        df_candidates$data.lastName[matching_candidate_row] <- last_name
+        df_candidates$data.currentDistrict[matching_candidate_row] <- district
+        df_candidates$data.currentParty[matching_candidate_row] <- party
+        df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+        df_candidates$data.isFemale[matching_candidate_row] <- is_female
+        df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+        df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+        df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+        
+        df_candidates$metadata.source[matching_candidate_row] <- source
+        df_candidates$metadata.country[matching_candidate_row] <- country
+        df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+        
+        key <- df_candidates$key[matching_candidate_row]
+        type <- df_candidates$type[matching_candidate_row]
+        schema <- df_candidates$schema[matching_candidate_row]
+        
+        data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
+        metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
+        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+      }
     } else {
-      # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+      # match found - update the MP twitter handle.
       cnt <- cnt+1
       cat('\n',cnt,'\n')
       cat('=================================================================================\n')
       cat('This person',full_name, 'is already in the hub', '\n')
 
-      if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+      if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
-        df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-        key <- df_existing_persons$key[matching_existing_persons_row]
-        type <- df_existing_persons$type[matching_existing_persons_row]
-        schema <- df_existing_persons$schema[matching_existing_persons_row]
-        data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        key <- df_mps$key[matching_mps_row]
+        type <- df_mps$type[matching_mps_row]
+        schema <- df_mps$schema[matching_mps_row]
+        data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
         names(data) <- gsub("^data.", "", names(data))
-        metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+        metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
         names(metadata) <- gsub("^metadata.", "", names(metadata))
         cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
         cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -257,13 +325,13 @@ scrape_pcc_candidates <- function(url, xml_root, df_existing_persons) {
         cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
-    }#if (length(matching_existing_persons_row) == 0) 
+    }#if (length(matching_mps_row) == 0) 
   }#for (j in 1:length(candidates_nodes))
 }
 
 
 #######################################
-scrape_blq_candidates <- function(url, url_suffix, xml_root, df_existing_persons) {
+scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidates) {
   
   base_url <- url
   cnt <- 0
@@ -324,44 +392,78 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_existing_persons
           is_female <- gender::gender(rm_accent(first_name))$gender == "female"
           if (length(is_female) == 0) is_female <- NA
           
-          # find out if already in hub as candidate OR ALSO as MP
-          matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+          # find out if already in hub as MP
+          matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
           
-          if (length(matching_existing_persons_row) == 0) {
-            # no match found - we can add the candidate to the hub
-            key <- digest::digest(full_name)
-            type <- "candidate"
-            schema <- "v2"
-            
-            metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-            data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                                   currentParty="BQ", currentProvinceOrState=province, isFemale=is_female,
-                                   twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-            
-            # commit tu hub
-            clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-            cnt <- cnt+1
-            cat('\n',cnt,'\n')
-            cat('=================================================================================\n')
-            cat(paste(metadata_to_commit, collapse=' * '), '\n')
-            cat(paste(data_to_commit, collapse=' * '), '\n')
-            
+          if (length(matching_mps_row) == 0) {
+            # no match found - we can add the candidate to the hub or update it if it already exists
+            matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+            if (length(matching_candidate_row) == 0) {
+              # candidate does not exist => create it
+              key <- digest::digest(full_name)
+              type <- "candidate"
+              schema <- "v2"
+              
+              metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+              data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                                     currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                                     twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+              
+              # commit tu hub
+              clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+              cnt <- cnt+1
+              cat('\n',cnt,'\n')
+              cat('=================================================================================\n')
+              cat(paste(metadata_to_commit, collapse=' * '), '\n')
+              cat(paste(data_to_commit, collapse=' * '), '\n')
+            } else {
+              # candidate exists => update it
+              df_candidates$data.fullName[matching_candidate_row] <- full_name
+              df_candidates$data.firstName[matching_candidate_row] <- first_name
+              df_candidates$data.lastName[matching_candidate_row] <- last_name
+              df_candidates$data.currentDistrict[matching_candidate_row] <- district
+              df_candidates$data.currentParty[matching_candidate_row] <- party
+              df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+              df_candidates$data.isFemale[matching_candidate_row] <- is_female
+              df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+              df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+              df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+              
+              df_candidates$metadata.source[matching_candidate_row] <- source
+              df_candidates$metadata.country[matching_candidate_row] <- country
+              df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+              
+              key <- df_candidates$key[matching_candidate_row]
+              type <- df_candidates$type[matching_candidate_row]
+              schema <- df_candidates$schema[matching_candidate_row]
+              
+              data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+              names(data) <- gsub("^data.", "", names(data))
+              metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+              names(metadata) <- gsub("^metadata.", "", names(metadata))
+              cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+              cat(paste(names(metadata), collapse = ' * '), '\n')
+              cat(paste(metadata, collapse = ' * '), '\n')
+              cat(paste(names(data), collapse = ' * '), '\n')
+              cat(paste(data, collapse = ' * '),'\n')
+              clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+            }
           } else {
-            # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+            # match found - update the MP twitter handle.
             cnt <- cnt+1
             cat('\n',cnt,'\n')
             cat('=================================================================================\n')
             cat('This person',full_name, 'is already in the hub', '\n')
 
-            if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+            if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
               # no twitter handle for this MP - add it and update item in hub
-              df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-              key <- df_existing_persons$key[matching_existing_persons_row]
-              type <- df_existing_persons$type[matching_existing_persons_row]
-              schema <- df_existing_persons$schema[matching_existing_persons_row]
-              data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+              df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+              key <- df_mps$key[matching_mps_row]
+              type <- df_mps$type[matching_mps_row]
+              schema <- df_mps$schema[matching_mps_row]
+              data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
               names(data) <- gsub("^data.", "", names(data))
-              metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+              metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
               names(metadata) <- gsub("^metadata.", "", names(metadata))
               cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
               cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -381,7 +483,7 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_existing_persons
 
 
 #######################################
-scrape_npd_candidates <- function(url, xml_root, df_existing_persons) {
+scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
   candidates_nodes <- XML::getNodeSet(xml_root, ".//div[@class = 'campaign-civics-list-inner']")
   
   cnt <- 0
@@ -428,44 +530,78 @@ scrape_npd_candidates <- function(url, xml_root, df_existing_persons) {
     is_female <- gender::gender(rm_accent(first_name))$gender == "female"     
     if (length(is_female) == 0) is_female <- NA
     
-    # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+    # find out if already in hub as MP
+    matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
     
-    if (length(matching_existing_persons_row) == 0) {
-      # no match found - we can add the candidate to the hub
-      key <- digest::digest(full_name)
-      type <- "candidate"
-      schema <- "v2"
-      
-      metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-      data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                             currentParty="NPD", currentProvinceOrState=province, isFemale=is_female,
-                             twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-      
-      # commit tu hub
-      clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-      cnt <- cnt+1
-      cat('\n',cnt,'\n')
-      cat('=================================================================================\n')
-      cat(paste(metadata_to_commit, collapse=' * '), '\n')
-      cat(paste(data_to_commit, collapse=' * '), '\n')
-      
+    if (length(matching_mps_row) == 0) {
+      # no match found - we can add the candidate to the hub or update it if it already exists
+      matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+      if (length(matching_candidate_row) == 0) {
+        # candidate does not exist => create it
+        key <- digest::digest(full_name)
+        type <- "candidate"
+        schema <- "v2"
+        
+        metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+        data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+        
+        # commit tu hub
+        clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+        cnt <- cnt+1
+        cat('\n',cnt,'\n')
+        cat('=================================================================================\n')
+        cat(paste(metadata_to_commit, collapse=' * '), '\n')
+        cat(paste(data_to_commit, collapse=' * '), '\n')
+      } else {
+        # candidate exists => update it
+        df_candidates$data.fullName[matching_candidate_row] <- full_name
+        df_candidates$data.firstName[matching_candidate_row] <- first_name
+        df_candidates$data.lastName[matching_candidate_row] <- last_name
+        df_candidates$data.currentDistrict[matching_candidate_row] <- district
+        df_candidates$data.currentParty[matching_candidate_row] <- party
+        df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+        df_candidates$data.isFemale[matching_candidate_row] <- is_female
+        df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+        df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+        df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+        
+        df_candidates$metadata.source[matching_candidate_row] <- source
+        df_candidates$metadata.country[matching_candidate_row] <- country
+        df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+        
+        key <- df_candidates$key[matching_candidate_row]
+        type <- df_candidates$type[matching_candidate_row]
+        schema <- df_candidates$schema[matching_candidate_row]
+        
+        data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
+        metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
+        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+      }
     } else {
-      # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+      # match found - update the MP twitter handle.
       cnt <- cnt+1
       cat('\n',cnt,'\n')
       cat('=================================================================================\n')
       cat('This person',full_name, 'is already in the hub', '\n')
 
-      if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+      if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
-        df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-        key <- df_existing_persons$key[matching_existing_persons_row]
-        type <- df_existing_persons$type[matching_existing_persons_row]
-        schema <- df_existing_persons$schema[matching_existing_persons_row]
-        data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        key <- df_mps$key[matching_mps_row]
+        type <- df_mps$type[matching_mps_row]
+        schema <- df_mps$schema[matching_mps_row]
+        data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
         names(data) <- gsub("^data.", "", names(data))
-        metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+        metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
         names(metadata) <- gsub("^metadata.", "", names(metadata))
         cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
         cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -480,7 +616,7 @@ scrape_npd_candidates <- function(url, xml_root, df_existing_persons) {
 
 
 #######################################
-scrape_grn_candidates <- function(url, xml_root, df_existing_persons) {
+scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
   candidates_nodes <- XML::getNodeSet(xml_root, ".//div[@class = 'candidate-modal hidden']")
   
   cnt <- 0
@@ -534,44 +670,78 @@ scrape_grn_candidates <- function(url, xml_root, df_existing_persons) {
     is_female <- gender::gender(rm_accent(first_name))$gender == "female"     
     if (length(is_female) == 0) is_female <- NA
     
-    # find out if already in hub as candidate OR ALSO as MP
-    matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+    # find out if already in hub as MP
+    matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
     
-    if (length(matching_existing_persons_row) == 0) {
-      # no match found - we can add the candidate to the hub
-      key <- digest::digest(full_name)
-      type <- "candidate"
-      schema <- "v2"
-      
-      metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-      data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                             currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
-                             twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-      
-      # commit tu hub
-      clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-      cnt <- cnt+1
-      cat('\n',cnt,'\n')
-      cat('=================================================================================\n')
-      cat(paste(metadata_to_commit, collapse=' * '), '\n')
-      cat(paste(data_to_commit, collapse=' * '), '\n')
-      
+    if (length(matching_mps_row) == 0) {
+      # no match found - we can add the candidate to the hub or update it if it already exists
+      matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+      if (length(matching_candidate_row) == 0) {
+        # candidate does not exist => create it
+        key <- digest::digest(full_name)
+        type <- "candidate"
+        schema <- "v2"
+        
+        metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+        data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+        
+        # commit tu hub
+        clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+        cnt <- cnt+1
+        cat('\n',cnt,'\n')
+        cat('=================================================================================\n')
+        cat(paste(metadata_to_commit, collapse=' * '), '\n')
+        cat(paste(data_to_commit, collapse=' * '), '\n')
+      } else {
+        # candidate exists => update it
+        df_candidates$data.fullName[matching_candidate_row] <- full_name
+        df_candidates$data.firstName[matching_candidate_row] <- first_name
+        df_candidates$data.lastName[matching_candidate_row] <- last_name
+        df_candidates$data.currentDistrict[matching_candidate_row] <- district
+        df_candidates$data.currentParty[matching_candidate_row] <- party
+        df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+        df_candidates$data.isFemale[matching_candidate_row] <- is_female
+        df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+        df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+        df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+        
+        df_candidates$metadata.source[matching_candidate_row] <- source
+        df_candidates$metadata.country[matching_candidate_row] <- country
+        df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+        
+        key <- df_candidates$key[matching_candidate_row]
+        type <- df_candidates$type[matching_candidate_row]
+        schema <- df_candidates$schema[matching_candidate_row]
+        
+        data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
+        metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
+        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+      }
     } else {
-      # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+      # match found - update the MP twitter handle.
       cnt <- cnt+1
       cat('\n',cnt,'\n')
       cat('=================================================================================\n')
       cat('This person',full_name, 'is already in the hub', '\n')
 
-      if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+      if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
-        df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-        key <- df_existing_persons$key[matching_existing_persons_row]
-        type <- df_existing_persons$type[matching_existing_persons_row]
-        schema <- df_existing_persons$schema[matching_existing_persons_row]
-        data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        key <- df_mps$key[matching_mps_row]
+        type <- df_mps$type[matching_mps_row]
+        schema <- df_mps$schema[matching_mps_row]
+        data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
         names(data) <- gsub("^data.", "", names(data))
-        metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+        metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
         names(metadata) <- gsub("^metadata.", "", names(metadata))
         cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
         cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -586,7 +756,7 @@ scrape_grn_candidates <- function(url, xml_root, df_existing_persons) {
 
 
 #######################################
-scrape_ppc_candidates <- function(url, xml_root, df_existing_persons) {
+scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
   candidates_nodes <- XML::getNodeSet(xml_root, ".//div[@class = 'row']")
   
   cnt <- 0
@@ -641,44 +811,78 @@ scrape_ppc_candidates <- function(url, xml_root, df_existing_persons) {
       if (length(is_female) == 0) is_female <- NA
       
       
-      # find out if already in hub as candidate OR ALSO as MP
-      matching_existing_persons_row <- which(df_existing_persons$data.firstName == first_name & df_existing_persons$data.lastName == last_name)
+      # find out if already in hub as MP
+      matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
       
-      if (length(matching_existing_persons_row) == 0) {
-        # no match found - we can add the candidate to the hub
-        key <- digest::digest(full_name)
-        type <- "candidate"
-        schema <- "v2"
-        
-        metadata_to_commit <- list(source=url, country=country, province_or_state=province)
-        data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                               currentParty="PPC", currentProvinceOrState=province, isFemale=is_female,
-                               twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
-        
-        # commit tu hub
-        clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
-        cnt <- cnt+1
-        cat('\n',cnt,'\n')
-        cat('=================================================================================\n')
-        cat(paste(metadata_to_commit, collapse=' * '), '\n')
-        cat(paste(data_to_commit, collapse=' * '), '\n')
-        
+      if (length(matching_mps_row) == 0) {
+        # no match found - we can add the candidate to the hub or update it if it already exists
+        matching_candidate_row <- which(df_candidates$data.firstName == first_name & df_candidates$data.lastName == last_name)
+        if (length(matching_candidate_row) == 0) {
+          # candidate does not exist => create it
+          key <- digest::digest(full_name)
+          type <- "candidate"
+          schema <- "v2"
+          
+          metadata_to_commit <- list(source=url, country=country, province_or_state=province)
+          data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
+                                 currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                                 twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
+          
+          # commit tu hub
+          clessnhub::create_item('persons', key, type, schema, metadata_to_commit, data_to_commit)
+          cnt <- cnt+1
+          cat('\n',cnt,'\n')
+          cat('=================================================================================\n')
+          cat(paste(metadata_to_commit, collapse=' * '), '\n')
+          cat(paste(data_to_commit, collapse=' * '), '\n')
+        } else {
+          # candidate exists => update it
+          df_candidates$data.fullName[matching_candidate_row] <- full_name
+          df_candidates$data.firstName[matching_candidate_row] <- first_name
+          df_candidates$data.lastName[matching_candidate_row] <- last_name
+          df_candidates$data.currentDistrict[matching_candidate_row] <- district
+          df_candidates$data.currentParty[matching_candidate_row] <- party
+          df_candidates$data.currentProvinceOrState[matching_candidate_row] <- province
+          df_candidates$data.isFemale[matching_candidate_row] <- is_female
+          df_candidates$data.twitterID[matching_candidate_row] <- twitter_id
+          df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
+          df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
+          
+          df_candidates$metadata.source[matching_candidate_row] <- source
+          df_candidates$metadata.country[matching_candidate_row] <- country
+          df_candidates$metadata.province_or_state[matching_candidate_row] <- province
+          
+          key <- df_candidates$key[matching_candidate_row]
+          type <- df_candidates$type[matching_candidate_row]
+          schema <- df_candidates$schema[matching_candidate_row]
+          
+          data <- as.list(df_candidates[matching_candidate_row,which(grepl("^data.",names(df_candidates[matching_candidate_row,])))])
+          names(data) <- gsub("^data.", "", names(data))
+          metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
+          names(metadata) <- gsub("^metadata.", "", names(metadata))
+          cat('updating', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+          cat(paste(names(metadata), collapse = ' * '), '\n')
+          cat(paste(metadata, collapse = ' * '), '\n')
+          cat(paste(names(data), collapse = ' * '), '\n')
+          cat(paste(data, collapse = ' * '),'\n')
+          clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
+        }
       } else {
-        # match found - no touching anything OR overwrite existing CANDIDATE but no touching MP?
+        # match found - update the MP twitter handle.
         cnt <- cnt+1
         cat('\n',cnt,'\n')
         cat('=================================================================================\n')
         cat('This person',full_name, 'is already in the hub', '\n')
         
-        if (is.na(df_existing_persons$data.twitterHandle[matching_existing_persons_row]) && !is.na(twitter_handle)) {
+        if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
           # no twitter handle for this MP - add it and update item in hub
-          df_existing_persons$data.twitterHandle[matching_existing_persons_row] <- twitter_handle
-          key <- df_existing_persons$key[matching_existing_persons_row]
-          type <- df_existing_persons$type[matching_existing_persons_row]
-          schema <- df_existing_persons$schema[matching_existing_persons_row]
-          data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+          df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+          key <- df_mps$key[matching_mps_row]
+          type <- df_mps$type[matching_mps_row]
+          schema <- df_mps$schema[matching_mps_row]
+          data <- as.list(df_mps[matching_mps_row,which(grepl("^data.",names(df_mps[matching_mps_row,])))])
           names(data) <- gsub("^data.", "", names(data))
-          metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
+          metadata <- as.list(df_mps[matching_mps_row,which(grepl("^metadata.",names(df_mps[matching_mps_row,])))])
           names(metadata) <- gsub("^metadata.", "", names(metadata))
           cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
           cat(paste(names(metadata), collapse = ' * '), '\n')
@@ -687,7 +891,7 @@ scrape_ppc_candidates <- function(url, xml_root, df_existing_persons) {
           cat(paste(data, collapse = ' * '),'\n')
           clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
         }
-      } #if (length(matching_existing_persons_row) == 0)
+      } #if (length(matching_mps_row) == 0)
     } #if (length(XML::xmlChildren(candidates_nodes[[i]])) == 11)
   }#for (j in 1:length(candidates_nodes))
 }
@@ -724,8 +928,6 @@ dfMPs <- clessnhub::get_items('persons', filter = filter)
 filter <- clessnhub::create_filter(type="candidate", schema="v2")
 dfCandidates <- clessnhub::get_items('persons', filter = filter)
 
-dfExistingPersons <- dfMPs %>% dplyr::full_join(dfCandidates)
-
 
 # Loop through the list of URLs
 for (i in 1:length(urls_list)) {
@@ -736,27 +938,27 @@ for (i in 1:length(urls_list)) {
       xml_root <- XML::xmlRoot(parsed_html)
       
       if (grepl("plc", names(urls_list)[[i]])) {
-        scrape_plc_candidates(as.character(urls_list[[i]]), xml_root, dfExistingPersons)
+        scrape_plc_candidates(as.character(urls_list[[i]]), xml_root, dfMPs, dfCandidates)
       } 
       
       if (grepl("pcc", names(urls_list)[[i]])) {
-        scrape_pcc_candidates(as.character(urls_list[[i]]), xml_root, dfExistingPersons)
+        scrape_pcc_candidates(as.character(urls_list[[i]]), xml_root, dfMPs, dfCandidates)
       } 
       
       if (grepl("blq", names(urls_list)[[i]])) {
-        scrape_blq_candidates(as.character(urls_list[[i]]), as.character(urls_list[[i+1]]), xml_root, dfExistingPersons)
+        scrape_blq_candidates(as.character(urls_list[[i]]), as.character(urls_list[[i+1]]), xml_root, dfMPs, dfCandidates)
       }
       
       if (grepl("npd", names(urls_list)[[i]])) {
-        scrape_npd_candidates(as.character(urls_list[[i]]), xml_root, dfExistingPersons)
+        scrape_npd_candidates(as.character(urls_list[[i]]), xml_root, dfMPs, dfCandidates)
       }
       
       if (grepl("grn", names(urls_list)[[i]])) {
-        scrape_grn_candidates(as.character(urls_list[[i]]), xml_root, dfExistingPersons)
+        scrape_grn_candidates(as.character(urls_list[[i]]), xml_root, dfMPs, dfCandidates)
       }
       
       if (grepl("ppc", names(urls_list)[[i]])) {
-        scrape_ppc_candidates(as.character(urls_list[[i]]), xml_root, dfExistingPersons)
+        scrape_ppc_candidates(as.character(urls_list[[i]]), xml_root, dfMPs, dfCandidates)
       } 
       
     } else {
