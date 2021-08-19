@@ -298,7 +298,60 @@ for (i in 1:length(mps_xml_nodes_list)) {
   }
   
   # normalize data
-  
+  if (province == "Ontario") {
+    province <- "ON"
+  }
+
+  if (province == "Alberta") {
+    province <- "AB"
+  }
+
+  if (province == "British Columbia") {
+    province <- "BC"
+  }
+
+  if (province == "Manitoba") {
+    province <- "MB"
+  }
+
+  if (province == "New Brunswick") {
+    province <- "NB"
+  }
+
+  if (province == "Newfoundland and Labrador") {
+    province <- "NL"
+  }
+
+  if (province == "Northwest Territories") {
+    province <- "NT"
+  }
+
+  if (province == "Nova Scotia") {
+    province <- "NS"
+
+  }
+
+  if (province == "Nunavut") {
+    province <- "NU"
+  }
+
+  if (province == "Prince Edward Island") {
+    province <- "PE"
+
+  }
+
+  if (province == "Quebec") {
+    province <- "QC"
+  }
+
+  if (province == "Saskatchewan") {
+    province <- "SK"
+    province <- "SK"
+  }
+
+  if (province == "Yukon") {
+    province <- "YT"
+  }
   
   
   
@@ -308,7 +361,7 @@ for (i in 1:length(mps_xml_nodes_list)) {
   # insert or update the info in the hub 2.0
   data_to_commit <- list(firstName = first_name, 
                          lastName = last_name,
-                         fullName = full_name, 
+                         fullName = paste(last_name, first_name, sep=', '), 
                          isFemale = is_female,
                          currentFunctionsList = functions, 
                          currentParty = party,
@@ -319,7 +372,7 @@ for (i in 1:length(mps_xml_nodes_list)) {
                          twitterID = NA, 
                          twitterAccountProtected = NA)
   
-  metadata_to_commit <- list(source = "scrapeCanadaMPs.R", country = "CA", province_or_state = province)
+  metadata_to_commit <- list(source = "https://www.ourcommons.ca/members/en/search#", country = "CA", province_or_state = province, institution = "House of Commons of Canada")
   
   key <- id
   type <- "mp"
@@ -330,10 +383,18 @@ for (i in 1:length(mps_xml_nodes_list)) {
   
   if (!is.null(test) > 0) {
     clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit) 
-    print(paste("updating existing item in hub with twitter handle", twitter_handle, "and key", key, "for", full_name))
+    cat('\n\n\n')
+    cat('===========================================================================\n')
+    cat(paste("updating existing item in hub with twitter handle", twitter_handle, "and key", key, "for", full_name), '\n')
+    cat(paste(metadata_to_commit, collapse = ' * '),'\n')
+    cat(paste(data_to_commit, collapse = ' * '),'\n')
   } else {
     clessnhub::create_item('persons', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
-    print(paste("creating new items in hub with twitter handle", twitter_handle, "and key", key, "for", full_name))
+    cat('\n\n\n')
+    cat('===========================================================================\n')
+    cat(paste("creating new items in hub with twitter handle", twitter_handle, "and key", key, "for", full_name), '\n')
+    cat(paste(metadata_to_commit, collapse = ' * '),'\n')
+    cat(paste(data_to_commit, collapse = ' * '),'\n')
   }
 
 }
