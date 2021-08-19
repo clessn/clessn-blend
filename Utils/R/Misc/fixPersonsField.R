@@ -1,8 +1,10 @@
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
 myfilter <- clessnhub::create_filter(type="candidate", schema="v2")
-dfPersons <- clessnhub::get_items('persons', myfilter)
-
+dfC <- clessnhub::get_items('persons', myfilter)
+myfilter <- clessnhub::create_filter(type="mp", schema="v2", metadata = list("institution"="House of Commons of Canada"))
+dfM <- clessnhub::get_items('persons', myfilter)
+df <- dfM %>% full_join(dfC)
 
 cnt <- 0
 
@@ -12,14 +14,16 @@ for (i in 1:nrow(dfPersons)) {
   type <- dfPersons$type[i]
   schema <- dfPersons$schema[i]
   
-  if (!is.na(dfPersons$data.isFemale[i])) {
-    if (dfPersons$data.isFemale[i] == "True" || dfPersons$data.isFemale[i] == "False" || dfPersons$data.isFemale[i] == TRUE || dfPersons$data.isFemale[i] == FALSE) {
+  if (dfPersons$data.currentParty[i] == "Liberal") {
+  #if (!is.na(dfPersons$data.isFemale[i])) {
+  #  if (dfPersons$data.isFemale[i] == "True" || dfPersons$data.isFemale[i] == "False" || dfPersons$data.isFemale[i] == TRUE || dfPersons$data.isFemale[i] == FALSE) {
       cnt <- cnt + 1
       
-      if (dfPersons$data.isFemale[i] == TRUE) dfPersons$data.isFemale[i] <- 1
-      if (dfPersons$data.isFemale[i] == FALSE) dfPersons$data.isFemale[i] <- 0
-      if (dfPersons$data.isFemale[i] == "True") dfPersons$data.isFemale[i] <- 1
-      if (dfPersons$data.isFemale[i] == "False") dfPersons$data.isFemale[i] <- 0
+  #    if (dfPersons$data.isFemale[i] == TRUE) dfPersons$data.isFemale[i] <- 1
+  #    if (dfPersons$data.isFemale[i] == FALSE) dfPersons$data.isFemale[i] <- 0
+  #    if (dfPersons$data.isFemale[i] == "True") dfPersons$data.isFemale[i] <- 1
+  #    if (dfPersons$data.isFemale[i] == "False") dfPersons$data.isFemale[i] <- 0
+      dfPersons$data.currentParty[i] <- "LPC"
       
       data <- as.list(dfPersons[i,which(grepl("^data.",names(dfPersons[i,])))])
       names(data) <- gsub("^data.", "", names(data))
@@ -34,6 +38,6 @@ for (i in 1:nrow(dfPersons)) {
       cat(paste(names(data), collapse = ' * '), '\n')
       cat(paste(data, collapse = ' * '),'\n')
       #clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
-    }
+  #  }
   }
 }

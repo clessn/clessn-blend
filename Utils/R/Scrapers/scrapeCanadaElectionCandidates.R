@@ -75,14 +75,14 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- NA
     last_name <- NA
     district <- NA 
-    party <- NA
+    party <- "LPC"
     is_female <- NA
     twitter_id <- NA
     twitter_handle <- NA
     twitter_url <- NA
     twitter_account_protected <- NA
-    source <- NA
-    country <- NA
+    source <- url
+    country <- "CA"
     province <- NA
     key <- NA
     type <- NA
@@ -96,6 +96,11 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- strsplit(full_name, " ")[[1]][1]
     last_name <- paste(strsplit(full_name, " ")[[1]][2:length(strsplit(full_name, " ")[[1]])], collapse=" ")
     full_name <- paste(last_name, first_name, sep=', ')
+    
+    full_name <- trimws(full_name)
+    first_name <- trimws(first_name)
+    last_name <- trimws(last_name)
+    
     district <- XML::xmlValue(XML::xpathApply(current_node, ".//h3[@class='person__riding-name']"))
     country <- "CA"
     province <- as.character(stringr::str_match( XML::xmlGetAttr(current_node, "data-groups"), "[A-Z][A-Z]"))
@@ -125,7 +130,7 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         
         metadata_to_commit <- list(source=url, country=country, province_or_state=province)
         data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
         
         # commit tu hub
@@ -208,14 +213,14 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- NA
     last_name <- NA
     district <- NA 
-    party <- NA
+    party <- "CPC"
     is_female <- NA
     twitter_id <- NA
     twitter_handle <- NA
     twitter_url <- NA
     twitter_account_protected <- NA
-    source <- NA
-    country <- NA
+    source <- url
+    country <- "CA"
     province <- NA
     key <- NA
     type <- NA
@@ -228,6 +233,10 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- XML::xmlValue(XML::xpathApply(current_node, ".//h3"))[1]
     last_name <- XML::xmlValue(XML::xpathApply(current_node, ".//h3"))[2]
     full_name <- paste(last_name, first_name, sep=', ')
+    
+    full_name <- trimws(full_name)
+    first_name <- trimws(first_name)
+    last_name <- trimws(last_name)
     
     district <- XML::xmlValue(XML::xpathApply(current_node, ".//p[@class='riding-title']"))
     country <- "CA"
@@ -259,7 +268,7 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         
         metadata_to_commit <- list(source=url, country=country, province_or_state=province)
         data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
         
         # commit tu hub
@@ -353,14 +362,14 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
           first_name <- NA
           last_name <- NA
           district <- NA 
-          party <- NA
+          party <- "BQ"
           is_female <- NA
           twitter_id <- NA
           twitter_handle <- NA
           twitter_url <- NA
           twitter_account_protected <- NA
-          source <- NA
-          country <- NA
+          source <- url
+          country <- "CA"
           province <- NA
           key <- NA
           type <- NA
@@ -374,6 +383,11 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
           first_name <- strsplit(full_name, " ")[[1]][1]
           last_name <- paste(strsplit(full_name, " ")[[1]][2:length(strsplit(full_name, " ")[[1]])], collapse=" ")
           full_name <- paste(last_name, first_name, sep=', ')
+          
+          full_name <- trimws(full_name)
+          first_name <- trimws(first_name)
+          last_name <- trimws(last_name)
+          
           district <- XML::xmlValue(XML::xpathApply(current_node, ".//h2"))
           country <- "CA"
           province <- NA
@@ -406,7 +420,7 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
               
               metadata_to_commit <- list(source=url, country=country, province_or_state=province)
               data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                                     currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                                     currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                      twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
               
               # commit tu hub
@@ -494,14 +508,14 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- NA
     last_name <- NA
     district <- NA 
-    party <- NA
+    party <- "NDP"
     is_female <- NA
     twitter_id <- NA
     twitter_handle <- NA
     twitter_url <- NA
     twitter_account_protected <- NA
-    source <- NA
-    country <- NA
+    source <- url
+    country <- "CA"
     province <- NA
     key <- NA
     type <- NA
@@ -514,6 +528,11 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- XML::xmlGetAttr(XML::xpathApply(current_node, ".//div[@class='civic-data']")[[1]], "data-firstname")
     last_name <- XML::xmlGetAttr(XML::xpathApply(current_node, ".//div[@class='civic-data']")[[1]], "data-lastname")
     full_name <- paste(last_name, first_name, sep=', ')
+    
+    full_name <- trimws(full_name)
+    first_name <- trimws(first_name)
+    last_name <- trimws(last_name)
+    
     district <- XML::xmlGetAttr(XML::xpathApply(current_node, ".//div[@class='civic-data']")[[1]], "data-riding-name")
     country <- "CA"
     province <- NA
@@ -544,7 +563,7 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
         
         metadata_to_commit <- list(source=url, country=country, province_or_state=province)
         data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
         
         # commit tu hub
@@ -627,14 +646,14 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- NA
     last_name <- NA
     district <- NA 
-    party <- NA
+    party <- "GPC"
     is_female <- NA
     twitter_id <- NA
     twitter_handle <- NA
     twitter_url <- NA
     twitter_account_protected <- NA
-    source <- NA
-    country <- NA
+    source <- url
+    country <- "CA"
     province <- NA
     key <- NA
     type <- NA
@@ -651,12 +670,14 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- strsplit(full_name, " ")[[1]][1]
     last_name <- paste(strsplit(full_name, " ")[[1]][2:length(strsplit(full_name, " ")[[1]])], collapse=" ")
     full_name <- paste(last_name, first_name, sep=', ')
-
+    
+    full_name <- trimws(full_name)
+    first_name <- trimws(first_name)
+    last_name <- trimws(last_name)
+    
     district <- XML::xmlValue(XML::xpathApply(current_node, ".//h4[@class='modal-title']"))
     district <- substr(district, sapply(regexpr("[a-z]\\sin\\s[a-z|A-Z]", district, perl=TRUE),tail,1)+5, nchar(district))
-    
-    country <- "CA"
-    province <- NA
+    district <- trimws(district)
 
     social_node <- XML::xpathApply(current_node, ".//div[@class='candidate-social-media']")
     if (length(social_node) > 0) social_urls <- XML::xpathApply(social_node[[1]], ".//a")
@@ -684,7 +705,7 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
         
         metadata_to_commit <- list(source=url, country=country, province_or_state=province)
         data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                               currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                               currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
         
         # commit tu hub
@@ -707,7 +728,7 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
         df_candidates$data.twitterHandle[matching_candidate_row] <- twitter_handle
         df_candidates$data.twitterAccountProtected[matching_candidate_row] <- twitter_account_protected
         
-        df_candidates$metadata.source[matching_candidate_row] <- source
+        df_candidates$metadata.source[matching_candidate_row] <- unlist(source)
         df_candidates$metadata.country[matching_candidate_row] <- country
         df_candidates$metadata.province_or_state[matching_candidate_row] <- province
         
@@ -767,14 +788,14 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- NA
     last_name <- NA
     district <- NA 
-    party <- NA
+    party <- "PPC"
     is_female <- NA
     twitter_id <- NA
     twitter_handle <- NA
     twitter_url <- NA
     twitter_account_protected <- NA
-    source <- NA
-    country <- NA
+    source <- url
+    country <- "CA"
     province <- NA
     key <- NA
     type <- NA
@@ -791,6 +812,11 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       first_name <- strsplit(full_name, " ")[[1]][1]
       last_name <- paste(strsplit(full_name, " ")[[1]][2:length(strsplit(full_name, " ")[[1]])], collapse=" ")
       full_name <- paste(last_name, first_name, sep=', ')
+      full_name <- paste(last_name, first_name, sep=', ')
+      
+      full_name <- trimws(full_name)
+      first_name <- trimws(first_name)
+      last_name <- trimws(last_name)
       
       district <- XML::xmlValue(XML::xpathApply(current_node, ".//h4"))
       country <- "CA"
@@ -825,7 +851,7 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
           
           metadata_to_commit <- list(source=url, country=country, province_or_state=province)
           data_to_commit <- list(fullName=full_name, firstName=first_name, lastName=last_name, currentDistrict=district, 
-                                 currentParty="Liberal", currentProvinceOrState=province, isFemale=is_female,
+                                 currentParty=party, currentProvinceOrState=province, isFemale=is_female,
                                  twitterID=NA, twitterHandle=twitter_handle, twitterAccountProtected=NA)
           
           # commit tu hub
