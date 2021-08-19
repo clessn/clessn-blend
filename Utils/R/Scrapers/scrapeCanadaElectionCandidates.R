@@ -186,7 +186,6 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -329,7 +328,6 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -487,7 +485,6 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
             if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
               # no twitter handle for this MP - add it and update item in hub
               df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-              df_mps$data.currentParty[matching_mps_row] <- party
               key <- df_mps$key[matching_mps_row]
               type <- df_mps$type[matching_mps_row]
               schema <- df_mps$schema[matching_mps_row]
@@ -644,7 +641,6 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -791,7 +787,6 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -941,7 +936,6 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
           # no twitter handle for this MP - add it and update item in hub
           df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
-          df_mps$data.currentParty[matching_mps_row] <- party
           key <- df_mps$key[matching_mps_row]
           type <- df_mps$type[matching_mps_row]
           schema <- df_mps$schema[matching_mps_row]
