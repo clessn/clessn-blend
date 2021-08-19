@@ -147,8 +147,14 @@ scrape_plc_candidates <- function(url, xml_root, df_existing_persons) {
         type <- df_existing_persons$type[matching_existing_persons_row]
         schema <- df_existing_persons$schema[matching_existing_persons_row]
         data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
         metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
     }
@@ -241,8 +247,14 @@ scrape_pcc_candidates <- function(url, xml_root, df_existing_persons) {
         type <- df_existing_persons$type[matching_existing_persons_row]
         schema <- df_existing_persons$schema[matching_existing_persons_row]
         data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
         metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
     }#if (length(matching_existing_persons_row) == 0) 
@@ -348,8 +360,14 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_existing_persons
               type <- df_existing_persons$type[matching_existing_persons_row]
               schema <- df_existing_persons$schema[matching_existing_persons_row]
               data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+              names(data) <- gsub("^data.", "", names(data))
               metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-              cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+              names(metadata) <- gsub("^metadata.", "", names(metadata))
+              cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+              cat(paste(names(metadata), collapse = ' * '), '\n')
+              cat(paste(metadata, collapse = ' * '), '\n')
+              cat(paste(names(data), collapse = ' * '), '\n')
+              cat(paste(data, collapse = ' * '),'\n')
               clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
             }
           }
@@ -446,8 +464,14 @@ scrape_npd_candidates <- function(url, xml_root, df_existing_persons) {
         type <- df_existing_persons$type[matching_existing_persons_row]
         schema <- df_existing_persons$schema[matching_existing_persons_row]
         data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
         metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
     }
@@ -546,8 +570,14 @@ scrape_grn_candidates <- function(url, xml_root, df_existing_persons) {
         type <- df_existing_persons$type[matching_existing_persons_row]
         schema <- df_existing_persons$schema[matching_existing_persons_row]
         data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+        names(data) <- gsub("^data.", "", names(data))
         metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+        names(metadata) <- gsub("^metadata.", "", names(metadata))
+        cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+        cat(paste(names(metadata), collapse = ' * '), '\n')
+        cat(paste(metadata, collapse = ' * '), '\n')
+        cat(paste(names(data), collapse = ' * '), '\n')
+        cat(paste(data, collapse = ' * '),'\n')
         clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
       }
     }
@@ -647,8 +677,14 @@ scrape_ppc_candidates <- function(url, xml_root, df_existing_persons) {
           type <- df_existing_persons$type[matching_existing_persons_row]
           schema <- df_existing_persons$schema[matching_existing_persons_row]
           data <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^data.",names(df_existing_persons[matching_existing_persons_row,])))])
+          names(data) <- gsub("^data.", "", names(data))
           metadata <- as.list(df_existing_persons[matching_existing_persons_row,which(grepl("^metadata.",names(df_existing_persons[matching_existing_persons_row,])))])
-          cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, sep=' ')
+          names(metadata) <- gsub("^metadata.", "", names(metadata))
+          cat('updating mp twitter handle for', full_name, "key", key, "handle", twitter_handle, '\n', sep=' ')
+          cat(paste(names(metadata), collapse = ' * '), '\n')
+          cat(paste(metadata, collapse = ' * '), '\n')
+          cat(paste(names(data), collapse = ' * '), '\n')
+          cat(paste(data, collapse = ' * '),'\n')
           clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = metadata, data = data)
         }
       } #if (length(matching_existing_persons_row) == 0)
@@ -688,7 +724,7 @@ dfMPs <- clessnhub::get_items('persons', filter = filter)
 filter <- clessnhub::create_filter(type="candidate", schema="v2")
 dfCandidates <- clessnhub::get_items('persons', filter = filter)
 
-dfExistingPersons <- if (!is.null(dfCandidates)) dfMPs %>% dplyr::full_join(dfCandidates) else dfMPs
+dfExistingPersons <- dfMPs #%>% dplyr::full_join(dfCandidates)
 
 
 # Loop through the list of URLs
