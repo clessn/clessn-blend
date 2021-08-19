@@ -114,7 +114,11 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     if (!is.na(twitter_handle)) twitter_handle <- gsub("\\/", "", twitter_handle)
     
     is_female <- gender::gender(rm_accent(first_name))$gender == "female"
-    if (length(is_female) == 0) is_female <- NA
+    if (length(is_female) == 0) {
+      is_female <- NA
+    } else {
+      if (is_female) is_female <- 1 else is_female <- 0
+    }
     
     # find out if already in hub as MP
     matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
@@ -182,6 +186,7 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -251,7 +256,11 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
     }
     
     is_female <- gender::gender(rm_accent(first_name))$gender == "female"
-    if (length(is_female) == 0) is_female <- NA
+    if (length(is_female) == 0) {
+      is_female <- NA
+    } else {
+      if (is_female) is_female <- 1 else is_female <- 0
+    }
     if (first_name == "Erin" && last_name == "O'Toole") is_female <- 0
     
     # find out if already in hub as MP
@@ -320,6 +329,7 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -403,8 +413,13 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
           else {
             twitter_handle <- NA
           }
+          
           is_female <- gender::gender(rm_accent(first_name))$gender == "female"
-          if (length(is_female) == 0) is_female <- NA
+          if (length(is_female) == 0) {
+            is_female <- NA
+          } else {
+            if (is_female) is_female <- 1 else is_female <- 0
+          }
           
           # find out if already in hub as MP
           matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
@@ -472,6 +487,7 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
             if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
               # no twitter handle for this MP - add it and update item in hub
               df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+              df_mps$data.currentParty[matching_mps_row] <- party
               key <- df_mps$key[matching_mps_row]
               type <- df_mps$type[matching_mps_row]
               schema <- df_mps$schema[matching_mps_row]
@@ -533,6 +549,15 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
     first_name <- trimws(first_name)
     last_name <- trimws(last_name)
     
+    if (last_name == "") {
+      #bug in NPD's website data
+      full_name <- first_name
+      first_name <- strsplit(full_name, " ")[[1]][1]
+      last_name <- paste(strsplit(full_name, " ")[[1]][2:length(strsplit(full_name, " ")[[1]])], collapse=" ")
+      full_name <- paste(last_name, first_name, sep=', ')
+    }
+    
+    
     district <- XML::xmlGetAttr(XML::xpathApply(current_node, ".//div[@class='civic-data']")[[1]], "data-riding-name")
     country <- "CA"
     province <- NA
@@ -546,8 +571,12 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
       twitter_handle <- NA
     }
     
-    is_female <- gender::gender(rm_accent(first_name))$gender == "female"     
-    if (length(is_female) == 0) is_female <- NA
+    is_female <- gender::gender(rm_accent(first_name))$gender == "female"
+    if (length(is_female) == 0) {
+      is_female <- NA
+    } else {
+      if (is_female) is_female <- 1 else is_female <- 0
+    }
     
     # find out if already in hub as MP
     matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
@@ -615,6 +644,7 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -688,8 +718,12 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
       twitter_handle <- substr(twitter_handle, 1, sapply(regexpr("[a-z]\\?[a-z|A-Z]", twitter_handle, perl=TRUE), tail, 1))
     }
     
-    is_female <- gender::gender(rm_accent(first_name))$gender == "female"     
-    if (length(is_female) == 0) is_female <- NA
+    is_female <- gender::gender(rm_accent(first_name))$gender == "female"
+    if (length(is_female) == 0) {
+      is_female <- NA
+    } else {
+      if (is_female) is_female <- 1 else is_female <- 0
+    }
     
     # find out if already in hub as MP
     matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
@@ -757,6 +791,7 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
       if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
         # no twitter handle for this MP - add it and update item in hub
         df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+        df_mps$data.currentParty[matching_mps_row] <- party
         key <- df_mps$key[matching_mps_row]
         type <- df_mps$type[matching_mps_row]
         schema <- df_mps$schema[matching_mps_row]
@@ -834,8 +869,11 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
       }
       
       is_female <- gender::gender(rm_accent(first_name))$gender == "female"
-      if (length(is_female) == 0) is_female <- NA
-      
+      if (length(is_female) == 0) {
+        is_female <- NA
+      } else {
+        if (is_female) is_female <- 1 else is_female <- 0
+      }     
       
       # find out if already in hub as MP
       matching_mps_row <- which(df_mps$data.firstName == first_name & df_mps$data.lastName == last_name)
@@ -903,6 +941,7 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         if (is.na(df_mps$data.twitterHandle[matching_mps_row]) && !is.na(twitter_handle)) {
           # no twitter handle for this MP - add it and update item in hub
           df_mps$data.twitterHandle[matching_mps_row] <- twitter_handle
+          df_mps$data.currentParty[matching_mps_row] <- party
           key <- df_mps$key[matching_mps_row]
           type <- df_mps$type[matching_mps_row]
           schema <- df_mps$schema[matching_mps_row]
