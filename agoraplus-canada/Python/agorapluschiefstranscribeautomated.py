@@ -48,19 +48,18 @@ audio_input = speechsdk.AudioConfig(filename=fileToTranscribe)
 
 if (languageDetection == "bi"):
   auto_detect_source_language_config = \
-speechsdk.languageconfig.AutoDetectSourceLanguageConfig(languages=["fr-CA", "en-CA"])
-
-speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                               auto_detect_source_language_config=auto_detect_source_language_config)
+    speechsdk.languageconfig.AutoDetectSourceLanguageConfig(languages=["fr-CA", "en-CA"])
+  speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input,\
+    auto_detect_source_language_config=auto_detect_source_language_config)
 elif (languageDetection == "fr"):
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="fr-CA")
+    language="fr-CA")
 elif (languageDetection == "en"):
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="en-CA")
+    language="en-CA")
 else:
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="fr-CA")
+    language="fr-CA")
 
 done = False
 
