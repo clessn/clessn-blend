@@ -48,19 +48,18 @@ audio_input = speechsdk.AudioConfig(filename=fileToTranscribe)
 
 if (languageDetection == "bi"):
   auto_detect_source_language_config = \
-speechsdk.languageconfig.AutoDetectSourceLanguageConfig(languages=["fr-CA", "en-CA"])
-
-speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                               auto_detect_source_language_config=auto_detect_source_language_config)
+    speechsdk.languageconfig.AutoDetectSourceLanguageConfig(languages=["fr-CA", "en-CA"])
+  speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input,\
+    auto_detect_source_language_config=auto_detect_source_language_config)
 elif (languageDetection == "fr"):
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="fr-CA")
+    language="fr-CA")
 elif (languageDetection == "en"):
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="en-CA")
+    language="en-CA")
 else:
   speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input, \
-                                                 language="fr-CA")
+    language="fr-CA")
 
 done = False
 
@@ -181,7 +180,7 @@ def main():
   logger = logging.getLogger()
 
 if (not logging.getLogger().hasHandlers()):
-  scriptname = 'agoraplusmstranscribeautomated.py'
+  scriptname = 'agorapluschiefstranscribeautomated.py'
 filename = os.environ.get('LOG_PATH') + '/' + scriptname + '.log'
 print('logging to ' + filename)
 logging.basicConfig(level=logging.INFO, filename=filename, filemode='w+', \
@@ -197,7 +196,7 @@ if (extract_date == "0"):
   todays_date = datetime.date.today()
 extract_date = todays_date.strftime("%Y-%m-%d")
 
-extract_date = "2021-08-11"
+extract_date = "2021-08-15"
 
 select_publish_date_start = extract_date
 select_publish_date_end = extract_date
@@ -216,7 +215,7 @@ to_hub_file_path = 'to_hub/'
 ready_to_hub_file_path = 'to_hub/ready/'
 done_file_path = 'to_hub/done/'
 
-p = get_play_list_from_youtube('https://www.youtube.com/user/cpac/videos?view=0&sort=dd&shelf_id=0')
+p = get_play_list_from_youtube('https://www.youtube.com/playlist?list=PLdgoQ6C3ckQuaoaJzKO95KQjmmwRhGiGj')
 
 file_list_from_azure = list_folder(dbx,base_path,from_azure_file_path)
 file_list_parkinglot = list_folder(dbx,base_path,parkinglot_file_path)
