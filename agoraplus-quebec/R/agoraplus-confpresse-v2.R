@@ -81,7 +81,7 @@ installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse-v2.R"
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, c("file"), Sys.getenv("LOG_PATH"))
 
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
@@ -105,7 +105,7 @@ if (!exists("opt")) {
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
-  clessnverse::logit("Retreiving interventions from hub with download data = FALSE", logger)
+  clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
   dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "press_conference", schema = "v2", 
                                                                location = "CA-QC",
                                                                download_data = opt$download_data,
@@ -134,7 +134,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   }
 
 } else {
-  clessnverse::logit("Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
+  clessnverse::logit(scriptname, scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
   dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2", location = "CA-QC")
 }
 
@@ -155,13 +155,13 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   }
   
 } else {
-  clessnverse::logit("Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
+  clessnverse::logit(scriptname, "Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
   dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2", location = "CA-QC")
 }
 
 # Download v2 MPs information
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
-metadata_filter <- list(country="CA", province_or_state="QC")
+metadata_filter <- list(country="CA", province_or_state="QC", institution="National Assembly of Quebec")
 filter <- clessnhub::create_filter(type="mp", schema="v2", metadata=metadata_filter)  
 dfMPs <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
@@ -249,7 +249,7 @@ for (i in 1:length(list_urls)) {
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- paste("cp", stringr::str_sub(event_url,100,104), sep='')
   
-  clessnverse::logit(paste("Conf", i, "de", length(list_urls),sep = " "), logger)
+  clessnverse::logit(scriptname, paste("Conf", i, "de", length(list_urls),sep = " "), logger)
   cat("\nConf", i, "de", length(list_urls),"\n")
   
 
@@ -266,7 +266,7 @@ for (i in 1:length(list_urls)) {
       doc_html.original <- doc_html
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
-      clessnverse::logit(paste(event_id, "not cached"), logger)
+      clessnverse::logit(scriptname, paste(event_id, "not cached"), logger)
     } else{ 
       # Retrieve the XML structure from dfCache and Parse
       filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
@@ -275,7 +275,7 @@ for (i in 1:length(list_urls)) {
       doc_html.original <- doc_html
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- TRUE
-      clessnverse::logit(paste(event_id, "cached"), logger)
+      clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
     }
       
     # Dissect the text based on html tags
@@ -288,11 +288,11 @@ for (i in 1:length(list_urls)) {
     # Valide la version : préliminaire ou finale
     if ( length(grep("version finale", tolower(doc_h2))) > 0 ) {
       version_finale <- TRUE
-      clessnverse::logit("version finale", logger)
+      clessnverse::logit(scriptname, "version finale", logger)
       cat("version finale")
     } else {
       version_finale <- FALSE
-      clessnverse::logit("version préliminaire", logger)
+      clessnverse::logit(scriptname, "version préliminaire", logger)
       cat("version préliminaire")
     }
   
@@ -851,7 +851,7 @@ for (i in 1:length(list_urls)) {
 
       ###dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
       
-      #clessnverse::logit(paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
+      #clessnverse::logit(scriptname, paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
     } # version finale
     
@@ -859,5 +859,5 @@ for (i in 1:length(list_urls)) {
   
 } #for (i in 1:nrow(result))
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
