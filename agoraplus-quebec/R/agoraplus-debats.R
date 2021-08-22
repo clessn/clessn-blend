@@ -140,7 +140,7 @@ for (i in 1:length(list_urls)) {
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- stringr::str_replace_all(list_urls[i], "[[:punct:]]", "")
   
-  clessnverse::logit(paste("Debate", i, "of", length(list_urls),sep = " "), logger)
+  clessnverse::logit(scriptname, paste("Debate", i, "of", length(list_urls),sep = " "), logger)
   cat("\nDebat", i, "de", length(list_urls),"\n")
   
   
@@ -161,7 +161,7 @@ for (i in 1:length(list_urls)) {
                                   "<a name=\"Page\\1\"></a>Titre : \\2")
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
-      clessnverse::logit(paste(current_id, "not cached"), logger)
+      clessnverse::logit(scriptname, paste(current_id, "not cached"), logger)
     } else{ 
       # Retrieve the XML structure from dfCache and Parse
       doc_html <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
@@ -172,7 +172,7 @@ for (i in 1:length(list_urls)) {
                                   "<a name=\"Page\\1\"></a>Titre : \\2")
       parsed_html <- htmlParse(doc_html, asText = TRUE)
       cached_html <- TRUE
-      clessnverse::logit(paste(current_id, "cached"), logger)
+      clessnverse::logit(scriptname, paste(current_id, "cached"), logger)
     }
     
     # Dissect the text based on html tags
@@ -185,12 +185,12 @@ for (i in 1:length(list_urls)) {
     # Valide la version : préliminaire ou finale
     if ( length(grep("version finale", tolower(doc_h2))) > 0 ) {
       version_finale <- TRUE
-      clessnverse::logit("version finale", logger)
+      clessnverse::logit(scriptname, "version finale", logger)
       cat("version finale")
     }
     else {
       version_finale <- FALSE
-      clessnverse::logit("version préliminaire", logger)
+      clessnverse::logit(scriptname, "version préliminaire", logger)
       cat("version préliminaire")
     }
   
@@ -701,5 +701,5 @@ for (i in 1:length(list_urls)) {
 } #for (i in 1:nrow(result))
 
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)

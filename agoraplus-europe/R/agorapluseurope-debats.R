@@ -167,11 +167,10 @@ if (scraping_method == "DateRange") {
 # debates content
 #
 for (i in 1:length(urls_list)) {
-  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- urls_list[[i]]
   current_id <- str_replace_all(urls_list[i], "[[:punct:]]", "")
   
-  clessnverse::logit(paste("Debate", i, "of", length(urls_list),sep = " "), logger)
+  clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list),sep = " "), logger)
   cat("\nDebat", i, "de", length(urls_list),"\n")
   
 
@@ -473,5 +472,5 @@ for (i in 1:length(urls_list)) {
 } #for (i in 1:length(urls_list))
 
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)

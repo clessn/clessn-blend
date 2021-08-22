@@ -180,7 +180,7 @@ for (i_url in 1:length(urls_list_fr)) {
   current_url_fr <- urls_list_fr[[i_url]]
   current_id <- stringr::str_replace_all(urls_list_fr[i_url], "[[:punct:]]", "")
   
-  clessnverse::logit(paste("Debate", i_url, "of", length(urls_list_fr),sep = " "), logger)
+  clessnverse::logit(scriptname, paste("Debate", i_url, "of", length(urls_list_fr),sep = " "), logger)
   cat("\nDebat", i_url, "de", length(urls_list_fr),"\n")
   
   
@@ -871,6 +871,6 @@ for (i_url in 1:length(urls_list_fr)) {
 } #for (i_url in 1:length(urls_list))
 
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
 
