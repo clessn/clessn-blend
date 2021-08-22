@@ -80,7 +80,7 @@ installPackages <- function() {
 installPackages()
 library(dplyr)
 
-if (!exists("scriptname")) scriptname <- "all-persons-tweets-collector.R"
+if (!exists("scriptname")) scriptname <- "tweets-and-friends.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, c("file","hub"), Sys.getenv("LOG_PATH"))
 
 # login to the hub
