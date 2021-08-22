@@ -43,14 +43,17 @@ installPackages <- function() {
   
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", quiet =FALSE, build = FALSE)
-      
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
     } else {
       install.packages(new_packages[p])
     }  
   }
-
-    # load the packages
+  
+  # load the packages
   # We will not invoque the CLESSN packages with 'library'. The functions 
   # in the package will have to be called explicitely with the package name
   # in the prefix : example clessnverse::evaluateRelevanceIndex
@@ -75,6 +78,7 @@ installPackages <- function() {
 #   logger
 #
 installPackages()
+library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-confpresse.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
@@ -92,9 +96,20 @@ clessnverse::loadAgoraplusHUBDatasets("quebec", opt,
                                       Sys.getenv('HUB_PASSWORD'), 
                                       Sys.getenv('HUB_URL'))
 
+clessnhub::v1_login(username = Sys.getenv('HUB_USERNAME'), password = Sys.getenv('HUB_PASSWORD'), url = Sys.getenv('HUB_URL'))
 
-# Load all objects used for ETL
-clessnverse::loadETLRefData()
+clessnverse::logit("getting deputes from HUB", logger)
+deputes <- clessnhub::v1_download_table('warehouse_quebec_mnas')
+deputes <- deputes %>% tidyr::separate(lastName, c("lastName1", "lastName2"), " ")
+
+clessnverse::logit("getting journalists from HUB", logger)
+journalists <- clessnhub::v1_download_table('warehouse_journalists')
+#journalists <- journalists %>% tidyr::separate(lastName, c("lastName1", "lastName2"), " ", extra = "merge")
+
+# Load all objects used for ETL including V1 HUB MPs
+clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
+                            password = Sys.getenv('HUB_PASSWORD'), 
+                            url = Sys.getenv('HUB_URL'))
 
 
 ###############################################################################
@@ -139,7 +154,9 @@ list_urls <- rvest::html_attr(urls, 'href')
 
 
 
-for (i in 1:30) {
+#for (i in 1:30) {
+for (i in 1:length(list_urls)) {
+  
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url <- paste(base_url,list_urls[i],sep="")
   current_id <- stringr::str_replace_all(list_urls[i], "[[:punct:]]", "")
