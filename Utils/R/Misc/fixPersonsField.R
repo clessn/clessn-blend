@@ -4,35 +4,38 @@ myfilter <- clessnhub::create_filter(type="candidate", schema="v2")
 dfC <- clessnhub::get_items('persons', myfilter)
 myfilter <- clessnhub::create_filter(type="mp", schema="v2", metadata = list("institution"="House of Commons of Canada"))
 dfM <- clessnhub::get_items('persons', myfilter)
-df <- dfM %>% full_join(dfC)
+myfilter <- clessnhub::create_filter(type="mp", schema="v2", metadata = list("institution"="National Assembly of Quebec"))
+dfQM <- clessnhub::get_items('persons', myfilter)
 
+
+df <- dfM
 cnt <- 0
 
-for (i in 1:nrow(dfPersons)) {
+for (i in 1:nrow(df)) {
   
-  key <- dfPersons$key[i]
-  type <- dfPersons$type[i]
-  schema <- dfPersons$schema[i]
+  key <- df$key[i]
+  type <- df$type[i]
+  schema <- df$schema[i]
   
-  if (dfPersons$data.currentParty[i] == "Liberal") {
-  #if (!is.na(dfPersons$data.isFemale[i])) {
-  #  if (dfPersons$data.isFemale[i] == "True" || dfPersons$data.isFemale[i] == "False" || dfPersons$data.isFemale[i] == TRUE || dfPersons$data.isFemale[i] == FALSE) {
+  if (grepl("Minister of", df$data.currentFunctionsList[i])) {
+  #if (!is.na(df$data.isFemale[i])) {
+  #  if (df$data.isFemale[i] == "True" || df$data.isFemale[i] == "False" || df$data.isFemale[i] == TRUE || df$data.isFemale[i] == FALSE) {
       cnt <- cnt + 1
       
-  #    if (dfPersons$data.isFemale[i] == TRUE) dfPersons$data.isFemale[i] <- 1
-  #    if (dfPersons$data.isFemale[i] == FALSE) dfPersons$data.isFemale[i] <- 0
-  #    if (dfPersons$data.isFemale[i] == "True") dfPersons$data.isFemale[i] <- 1
-  #    if (dfPersons$data.isFemale[i] == "False") dfPersons$data.isFemale[i] <- 0
-      dfPersons$data.currentParty[i] <- "LPC"
+  #    if (df$data.isFemale[i] == TRUE) df$data.isFemale[i] <- 1
+  #    if (df$data.isFemale[i] == FALSE) df$data.isFemale[i] <- 0
+  #    if (df$data.isFemale[i] == "True") df$data.isFemale[i] <- 1
+  #    if (df$data.isFemale[i] == "False") df$data.isFemale[i] <- 0
+      df$data.currentMinister <- 
       
-      data <- as.list(dfPersons[i,which(grepl("^data.",names(dfPersons[i,])))])
+      data <- as.list(df[i,which(grepl("^data.",names(df[i,])))])
       names(data) <- gsub("^data.", "", names(data))
-      metadata <- as.list(dfPersons[i,which(grepl("^metadata.",names(dfPersons[i,])))])
+      metadata <- as.list(df[i,which(grepl("^metadata.",names(df[i,])))])
       names(metadata) <- gsub("^metadata.", "", names(metadata))
     
       cat('\n\n\n',i," *** ",cnt,'\n')
       cat('=================================================================================\n')
-      cat(dfPersons$key[i], dfPersons$type[i], dfPersons$schema[i],'\n')
+      cat(df$key[i], df$type[i], df$schema[i],'\n')
       cat(paste(names(metadata), collapse = ' * '), '\n')
       cat(paste(metadata, collapse = ' * '), '\n')
       cat(paste(names(data), collapse = ' * '), '\n')
