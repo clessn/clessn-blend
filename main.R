@@ -82,8 +82,8 @@ tryCatch(
     
     main_logger <- clessnverse::loginit("main.R", "file", Sys.getenv("LOG_PATH"))
 
-    clessnverse::logit("======================================", main_logger)
-    clessnverse::logit(paste("Starting init program in main.R", 
+    clessnverse::logit("main.R", "======================================", main_logger)
+    clessnverse::logit("main.R", paste("Starting init program in main.R", 
                              "with parms", 
                              paste(commandArgs(), collapse=' ')), main_logger)
     
@@ -91,12 +91,12 @@ tryCatch(
   },
 
   error = function(e) {
-    clessnverse::logit(paste(e, collapse=''), main_logger)
+    clessnverse::logit("main.R", paste(e, collapse=''), main_logger)
     print(e)
   },
   
   finally={
-    clessnverse::logit("Execution of init program terminated", main_logger)
+    clessnverse::logit("main.R", "Execution of init program terminated", main_logger)
   }
 )
 
@@ -107,23 +107,23 @@ for (scriptname in script_list) {
       opt <- list(cache_mode = "rebuild",simple_mode = "rebuild",deep_mode = "rebuild",
                   dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
       
-      clessnverse::logit(paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
+      clessnverse::logit("main.R", paste("launching", scriptname, "with options:", paste(names(opt), opt, collapse = ' ')), main_logger)
       
       source(paste("./agoraplus-quebec/R/", scriptname, sep=""))
     },
     
     error = function(e) {
       print(e)
-      clessnverse::logit(paste(scriptname, ":", paste(e, collapse=' ')), main_logger)
+      clessnverse::logit("main.R", paste(scriptname, ":", paste(e, collapse=' ')), main_logger)
     },
     
     finally={
-      clessnverse::logit(paste("Execution of", scriptname, "terminated"), main_logger)
+      clessnverse::logit("main.R", paste("Execution of", scriptname, "terminated"), main_logger)
       logger <- clessnverse::logclose(logger)
     }
   )
 }
 
-clessnverse::logit(paste("Exitting main.R normally"), main_logger)
+clessnverse::logit("main.R", paste("Exitting main.R normally"), main_logger)
 main_logger <- clessnverse::logclose(main_logger)
 
