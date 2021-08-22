@@ -32,6 +32,58 @@
 #
 #
 #
+installPackages <- function() {
+  # Define the required packages if they are not installed
+  required_packages <- c("stringr", 
+                         "tidyr",
+                         "optparse",
+                         "RCurl", 
+                         "httr",
+                         "jsonlite",
+                         "dplyr", 
+                         "XML", 
+                         "tm",
+                         "textcat",
+                         "tidytext", 
+                         "tibble",
+                         "devtools",
+                         "purrr",
+                         "clessn/clessnverse",
+                         "clessn/clessn-hub-r")
+  
+  # Install missing packages
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  
+  for (p in 1:length(new_packages)) {
+    if ( grepl("\\/", new_packages[p]) ) {
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
+    } else {
+      install.packages(new_packages[p])
+    }  
+  }
+  
+  # load the packages
+  # We will not invoque the CLESSN packages with 'library'. The functions 
+  # in the package will have to be called explicitely with the package name
+  # in the prefix : example clessnverse::evaluateRelevanceIndex
+  for (p in 1:length(required_packages)) {
+    if ( !grepl("\\/", required_packages[p]) ) {
+      library(required_packages[p], character.only = TRUE)
+    } else {
+      if (grepl("clessn-hub-r", required_packages[p])) {
+        packagename <- "clessnhub"
+      } else {
+        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
+      }
+    }
+  }
+} # </function installPackages>
+
+
 safe_httr_GET <- purrr::safely(httr::GET)
 
 
@@ -115,7 +167,7 @@ if (plc_r$result$status_code == 200) {
       plc_comm_location <- substr(plc_comm_text, 1, stringr::str_locate(plc_comm_text, "-|—|–")[1,1][[1]]-1)
       plc_comm_location <- trimws(plc_comm_location)
       plc_comm_location <- stringr::str_to_title(plc_comm_location)
-      if (nchar(plc_comm_location) > 25) plc_comm_location <- NA
+      if (!is.na(plc_comm_location) && nchar(plc_comm_location) > 25) plc_comm_location <- NA
       
       # Construit le data pour le hub
       key <- digest::digest(plc_url_list[[i_plc_url_list]])
