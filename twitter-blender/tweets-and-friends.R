@@ -87,6 +87,10 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 clessnverse::logit(scriptname, "connecting to hub", logger)
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
+# load twitter token rds file
+if (file.exists(".rtweet_token.rds")) token <- readRDS(".rtweet_token.rds")
+if (file.exists("~/.rtweet_token.rds")) token <- readRDS("~/.rtweet_token.rds")
+
 # get all mps and journalists
 clessnverse::logit(scriptname, "getting journalists", logger)
 filter <- clessnhub::create_filter(type="mp", schema="v2")
@@ -106,6 +110,7 @@ dfPersons <- dfMPs %>% full_join(dfCandidates) %>% full_join(dfJournalists) %>%
 
 clessnverse::logit(scriptname, "getting tweets", logger)
 dfTweets <- clessnhub::get_items('tweets', download_data = FALSE)
+
 if (is.null(dfTweets)) {
   dfTweets <- data.frame(key = character(),
                          type = character(),
@@ -148,11 +153,11 @@ for (i_person in person_index:person_index) {
   if (dfPersons$data.twitterHandle[i_person] %in% dfTweets$metadata.twitterHandle) {
     # we already scraped the tweets of this person => let's get only the last few tweets
     clessnverse::logit(scriptname, paste("getting tweets from",dfPersons$data.fullName[i_person],"(",dfPersons$data.twitterHandle[i_person],")"), logger)
-    this_pass_tweets <- search_tweets(q = paste("from:",dfPersons$data.twitterHandle[i_person],sep=''), retryonratelimit=T)
+    this_pass_tweets <- search_tweets(q = paste("from:",dfPersons$data.twitterHandle[i_person],sep=''), retryonratelimit=T, token = token)
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
     clessnverse::logit(scriptname, paste("getting full twitter timeline from",dfPersons$data.fullName[i_person],"(",dfPersons$data.twitterHandle,")"), logger)
-    this_pass_tweets <- rtweet::get_timeline(dfPersons$data.twitterHandle[i_person],n=3200)
+    this_pass_tweets <- rtweet::get_timeline(dfPersons$data.twitterHandle[i_person],n=3200, token = token)
   }
   
   if (nrow(this_pass_tweets) > 0) {
