@@ -86,7 +86,8 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
   clessnverse::logit(scriptname, paste("checking if there are already tweets in the hub for", dfPerson$data.fullName, "(", handle, ")"), logger)
   myfilter <- clessnhub::create_filter(metadata = list("twitterHandle"=handle))
   dfTweets <- clessnhub::get_items('tweets', filter = myfilter, download_data = FALSE)
-  if (nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found", nrow(dfTweets), "tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
+
+  if (!is.null(dfTweets) && nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found", nrow(dfTweets), "tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
     
   if ((handle %in% dfTweets$metadata.twitterHandle)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
@@ -353,8 +354,8 @@ tryCatch(
     installPackages()
     library(dplyr)
     
-    #log_output <- c("file","hub")
-    log_output <- "file"
+    log_output <- c("file","hub")
+    #log_output <- "file"
     
     if (!exists("scriptname")) scriptname <<- "tweets-and-friends.R"
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, log_output, Sys.getenv("LOG_PATH"))
