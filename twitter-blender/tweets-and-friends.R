@@ -128,7 +128,8 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
                                data.quoteCount = this_pass_tweets$quote_count,
                                
                                data.hashtags = sapply(this_pass_tweets$hashtags[!!length(this_pass_tweets$hashtags)], toString),
-                               data.urls = sapply(this_pass_tweets$status_url[!!length(this_pass_tweets$status_url)], toString),
+                               data.urls = sapply(this_pass_tweets$urls_expanded_url[!!length(this_pass_tweets$urls_expanded_url)], toString),
+                               data.mediaUrls = sapply(this_pass_tweets$media_expanded_url[!!length(this_pass_tweets$media_expanded_url)], toString),
                                data.mentions = sapply(this_pass_tweets$mentions_screen_name[!!length(this_pass_tweets$mentions_screen_name)], toString),
                                
                                data.retweetID = this_pass_tweets$retweet_status_id,
@@ -282,6 +283,10 @@ main <- function(scriptname, logger) {
   clessnverse::logit(scriptname, "getting political parties", logger)
   filter <- clessnhub::create_filter(type="political_party", schema="v1")
   dfParties <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
+
+  clessnverse::logit(scriptname, "getting medias", logger)
+  filter <- clessnhub::create_filter(type="media", schema="v1")
+  dfMedias <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
   
   dfPersons <- dfMPs %>% full_join(dfCandidates) %>% full_join(dfJournalists) %>%
     dplyr::select(key, type, data.fullName, data.twitterHandle) %>% 
@@ -329,6 +334,14 @@ main <- function(scriptname, logger) {
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
   
+  # Loop through the entire table of medias twitter accounts
+  clessnverse::logit(scriptname, paste("start looping through",nrow(dfMedias),"medias' accounts"), logger)
+  
+  for (i_media in 1:nrow(dfMedias)) {
+    getTweets(handle = dfMedias$data.twitterHandleFR[i_media], dfPerson = dfMedias[i_media,],
+              token = token, scriptname = scriptname, logger = logger)
+  } #for (i_party in 1:nrow(dfParties))
+
 } #</main>
 
 
