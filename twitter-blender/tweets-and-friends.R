@@ -118,7 +118,7 @@ main <- function(scriptname, logger) {
                            metadata.tweetUrl = character(),
                            metadata.tweetLang = character(),
                            metadata.tweetType = character(),
-                           metadata.scrapeDate = character()
+                           metadata.lastUpdatedOn = character()
     )
   }
   ###############################################################################
@@ -191,15 +191,17 @@ main <- function(scriptname, logger) {
                                  metadata.tweetUrl = sapply(this_pass_tweets$status_url[!!length(this_pass_tweets$status_url)], toString),
                                  metadata.tweetLang = this_pass_tweets$lang,
                                  metadata.tweetType = df$data.type,
-                                 metadata.scrapeDate = rep(Sys.time(), nrow(this_pass_tweets)),
+                                 metadata.lastUpdatedOn = rep(Sys.time(), nrow(this_pass_tweets)),
                                  metadata.twitterHandle = dfPersons$data.twitterHandle[i_person]
                                  )
       
-      clessnverse::logit(scriptname, paste("constructed dataframe of",nrow(df_to_commit),"tweets to commit"), logger)
       clessnverse::logit(scriptname, paste("about to commit",nrow(df_to_commit),"tweets to HUB"), logger)
       
       # write the constructed df to the hub 
       for (i in 1:nrow(df_to_commit)) {
+        
+        if (i %% 50 == 0) clessnverse::logit(scriptname, "written", i, "over", nrow(df_to_commit), "items to the hub")
+          
         key    <- paste("t", df_to_commit$key[i], sep='') %>% gsub("tt","t",.)
         type   <- df_to_commit$type[i]
         schema <- df_to_commit$schema[i]
