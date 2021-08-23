@@ -77,10 +77,6 @@ installPackages <- function() {
 
 main <- function(scriptname, logger) {
   
-  # login to the hub
-  clessnverse::logit(scriptname, "connecting to hub", logger)
-  clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
-  
   # load twitter token rds file
   if (file.exists(".rtweet_token.rds")) token <- readRDS(".rtweet_token.rds")
   if (file.exists("~/.rtweet_token.rds")) token <- readRDS("~/.rtweet_token.rds")
@@ -136,8 +132,8 @@ main <- function(scriptname, logger) {
   # Loop through the entire table
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfPersons),"persons"), logger)
 
-  person_index <- which(dfPersons$key == "72773")
-  for (i_person in person_index:person_index) {
+  persons_index <- which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" | dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" | dfPersons$key == "104669")
+  for (i_person in persons_index) {
   #for (i_person in 1:nrow(dfPersons)) {
     
     if (dfPersons$data.twitterHandle[i_person] %in% dfTweets$metadata.twitterHandle) {
@@ -312,6 +308,10 @@ tryCatch(
     
     if (!exists("scriptname")) scriptname <<- "tweets-and-friends.R"
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","hub"), Sys.getenv("LOG_PATH"))
+
+    # login to the hub
+    clessnverse::logit(scriptname, "connecting to hub", logger)
+    clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
     
