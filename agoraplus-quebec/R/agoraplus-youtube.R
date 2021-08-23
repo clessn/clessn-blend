@@ -40,10 +40,14 @@ installPackages <- function() {
   
   # Install missing packages
   new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-
+  
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
     } else {
       install.packages(new_packages[p])
     }  
@@ -92,9 +96,18 @@ clessnverse::loadAgoraplusHUBDatasets("quebec", opt,
                                       Sys.getenv('HUB_URL'))
 
 # Load all objects used for ETL
-clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-                            password = Sys.getenv('HUB_PASSWORD'), 
-                            url = Sys.getenv('HUB_URL'))
+clessnverse::loadETLRefData()
+
+# Connect to the HUB
+clessnverse::logit(scriptname, paste("login to the HUB", Sys.getenv('HUB_URL')), logger)
+clessnhub::v1_login(username = Sys.getenv('HUB_USERNAME'), password = Sys.getenv('HUB_PASSWORD'), url = Sys.getenv('HUB_URL'))
+
+clessnverse::logit(scriptname, "getting deputes from HUB", logger)
+deputes <<- clessnhub::v1_download_table('warehouse_quebec_mnas')
+deputes <<- deputes %>% tidyr::separate(lastName, c("lastName1", "lastName2"), " ")
+
+clessnverse::logit(scriptname, "getting journalists from HUB", logger)
+journalists <<- clessnhub::v1_download_table('warehouse_journalists')
 
 
 ###############################################################################
@@ -111,13 +124,13 @@ data_output_folder <- paste(data_root_folder, "/to_hub/done", sep = "")
 #filelist <- list.files(data_input_folder)
 
 #For dropbox API
-clessnverse::logit("reading drop box token", logger)
+clessnverse::logit(scriptname, "reading drop box token", logger)
 token <- Sys.getenv("DROPBOX_TOKEN")
 filelist_df <- clessnverse::dbxListDir(dir=paste("/",data_input_folder, sep=""), token=token)
 
 
 if (nrow(filelist_df) == 0) {
-  clessnverse::logit(paste("no file to process in ",data_root_folder,'/',data_input_folder,sep=''), logger)
+  clessnverse::logit(scriptname, paste("no file to process in ",data_root_folder,'/',data_input_folder,sep=''), logger)
   logger <- clessnverse::logclose(logger)
   #stop("This not an error - this is normal behaviour - program stopped because no youtube transcription to process in to_hub/ready folder in dropbox", call. = FALSE)
   invokeRestart("abort")
@@ -146,20 +159,20 @@ for (filename in filelist) {
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_id <- stringr::str_match(filename, "^.{10}(.*).txt")[2]
   
-  clessnverse::logit(paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
+  clessnverse::logit(scriptname, paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
   cat("\nConf", i, "de", length(filelist), filename, "\n", sep = " ")
   
   if ( !(current_id %in% dfCache$id) ) {
     # Read and parse HTML from the URL directly
-    clessnverse::logit(paste("downloading", paste(data_input_folder, filename, sep='/'), "from dropbox"), logger)
+    clessnverse::logit(scriptname, paste("downloading", paste(data_input_folder, filename, sep='/'), "from dropbox"), logger)
     clessnverse::dbxDownloadFile(paste('/', data_input_folder, '/', filename, sep=''), getwd(),token)
-    clessnverse::logit(paste("reading", filename, "from cwd"), logger)
+    clessnverse::logit(scriptname, paste("reading", filename, "from cwd"), logger)
     doc_youtube <- readLines(filename)
     doc_youtube.original <- paste(paste(doc_youtube, "\n\n", sep=""), collapse = ' ')
     doc_youtube <- doc_youtube[doc_youtube!=""]
     cached_html <- FALSE
     current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
-    clessnverse::logit(paste(current_id, "not cached"), logger)
+    clessnverse::logit(scriptname, paste(current_id, "not cached"), logger)
   } else{ 
     # Retrieve the XML structure from dfCache and Parse
     doc_youtube.original <- dfCache$html[which(dfCache$eventID==current_id)]
@@ -167,7 +180,7 @@ for (filename in filelist) {
     doc_youtube <- doc_youtube[doc_youtube!=""]
     cached_html <- TRUE
     current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
-    clessnverse::logit(paste(current_id, "cached"), logger)
+    clessnverse::logit(scriptname, paste(current_id, "cached"), logger)
   }
     
   version.finale <- TRUE
@@ -499,10 +512,10 @@ for (filename in filelist) {
   i <- i + 1
   
   
-  clessnverse::logit(paste("removing", filename, "from cwd"), logger)
+  clessnverse::logit(scriptname, paste("removing", filename, "from cwd"), logger)
   file.remove(filename)
   
-  clessnverse::logit(paste("moving", filename, "from", data_input_folder, "to", data_output_folder, "in dropbox"), logger)
+  clessnverse::logit(scriptname, paste("moving", filename, "from", data_input_folder, "to", data_output_folder, "in dropbox"), logger)
   clessnverse::dbxMoveFile(source = paste(data_input_folder, filename, sep='/'), 
                            destination = paste(data_output_folder, filename, sep='/'), 
                            token = token, 
@@ -511,6 +524,6 @@ for (filename in filelist) {
   
 } #for (filename in filelist)
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
 
