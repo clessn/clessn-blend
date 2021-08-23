@@ -339,7 +339,7 @@ main <- function(scriptname, logger) {
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfMedias),"medias' accounts"), logger)
   
   for (i_media in 1:nrow(dfMedias)) {
-    getTweets(handle = dfMedias$data.twitterHandleFR[i_media], dfPerson = dfMedias[i_media,],
+    getTweets(handle = dfMedias$data.twitterHandle[i_media], dfPerson = dfMedias[i_media,],
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
 
