@@ -6,9 +6,12 @@ myfilter <- clessnhub::create_filter(type="mp", schema="v2", metadata = list("in
 dfM <- clessnhub::get_items('persons', myfilter)
 myfilter <- clessnhub::create_filter(type="mp", schema="v2", metadata = list("institution"="National Assembly of Quebec"))
 dfQM <- clessnhub::get_items('persons', myfilter)
+myfilter <- clessnhub::create_filter(type="political_party", schema="v1")
+dfP <- clessnhub::get_items('persons', myfilter)
+myfilter <- clessnhub::create_filter(type="journalist", schema="v2")
+dfJ <- clessnhub::get_items('persons', myfilter)
 
-
-df <- dfM
+df <- dfC %>% dplyr::full_join(dfM) %>% dplyr::full_join(dfQM) %>% dplyr::full_join(dfP)  %>% dplyr::full_join(dfJ)
 cnt <- 0
 
 for (i in 1:nrow(df)) {
