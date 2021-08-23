@@ -197,7 +197,7 @@ def main():
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
    
-    extract_date = "2021-08-11"
+    extract_date = "2021-08-17"
 
     select_publish_date_start = extract_date
     select_publish_date_end = extract_date
@@ -229,9 +229,7 @@ def main():
     i = 1
 
     for video in p.videos:
-        logging.info("1")
         logging.info(str(i) + " " + video.title + " " + video.watch_url)
-        logging.info("2")
 
         if (video.publish_date.strftime("%Y-%m-%d") < select_publish_date_start or video.publish_date.strftime("%Y-%m-%d") > select_publish_date_end):
             logging.info("not in wanted date range")
