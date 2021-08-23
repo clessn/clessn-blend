@@ -1,21 +1,35 @@
 ###############################################################################
-# This script scrapes the canadian political parties press releases
-# from their respective web sites
-# and populates the agoraplus_press_preleases table in the CLESSN HUB 2.0
-#
+################         Script Definitions and Specs        ##################
+###############################################################################
+#                                                                             #
+#                                                                             #
+#                        all-persons-tweets-collector                         #
+#                                                                             #
+#                                                                             #
+#                                                                             #
+###############################################################################
+# This script scrapes the canadian political parties press releases           #
+# from their respective web sites                                             #
+# and populates the agoraplus_press_preleases table in the CLESSN HUB 2.0     #
+###############################################################################
+# Data Structure                                                              #
+# key = générée à partir de l'URL                                             #
+# type = parti politique                                                      #
+# schema = v1                                                                 #
+#                                                                             #
+# metadata.url = URL du communiqué                                            #
+# metadata.date_scraping = date du moment où on l'a scrapé                    #
+#                                                                             #
+# data.date = date du communiqué                                              #
+# data.location = lieu du communiqué                                          #
+# data.content = contenu du communiqué                                        #
+###############################################################################
 
-# Data Structure
-# key = générée à partir de l'URL
-# type = parti politique
-# schema = v1
-# 
-# metadata.url = URL du communiqué
-# metadata.date_scraping = date du moment où on l'a scrapé
-#
-# data.date = date du communiqué
-# data.location = lieu du communiqué
-# data.content = contenu du communiqué
-#
+###############################################################################
+########################      Functions and Globals      ######################
+###############################################################################
+
+
 
 
 ###############################################################################
@@ -29,9 +43,15 @@
 
 ###############################################################################
 # Functions
-#
-#
-#
+###############################################################################
+
+safe_httr_GET <- purrr::safely(httr::GET)
+
+
+
+###############################################################################
+# installPackages
+###############################################################################
 installPackages <- function() {
   # Define the required packages if they are not installed
   required_packages <- c("stringr", 
@@ -84,7 +104,467 @@ installPackages <- function() {
 } # </function installPackages>
 
 
-safe_httr_GET <- purrr::safely(httr::GET)
+###############################################################################
+# LPC
+###############################################################################
+extractLPCUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//a[@class = 'post-listing-item__link']")
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 1:length(link_nodes)) {
+    urls_list <- c(urls_list, XML::xmlGetAttr(link_nodes[[i]], "href"))
+  }
+  
+  return(urls_list)
+}
+
+extractLPCInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//title")
+  title <- XML::xmlValue(title)
+  
+  # Récupère la date
+  date <- XML::getNodeSet(comm_root, ".//p[@class='single__date']")
+  date <- XML::xmlValue(date)
+  date <- gsub("\t|\n", "", date)
+  
+  # Récupère le contenu
+  text_node <- XML::getNodeSet(comm_root, ".//div[@class='post-content-container']")
+  text_node <- XML::getNodeSet(text_node[[1]], ".//p")
+  
+  content <- ""
+  
+  for (i in 2:length(text_node)) {
+    content <- paste(content, XML::xmlValue(text_node[[i]]), sep="\n\n")
+  }
+  
+  content <- trimws(content)
+  content <- gsub("\u00a0", "", content)
+  
+  
+  # Récupère le lieu
+  location <- substr(content, 1, stringr::str_locate(content, "\\s-|—|–\\s")[1,1][[1]]-1)
+  location <- trimws(location)
+  location <- stringr::str_to_title(location)
+  if (!is.na(location) && nchar(location) > 32) location <- NA
+  
+  hub_object <- list()
+  
+  hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+}
+
+
+###############################################################################
+# CPC
+###############################################################################
+extractCPCUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//div[@class = 'grid-container grid-narrow']/a")
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 1:length(link_nodes)) {
+    urls_list <- c(urls_list, XML::xmlGetAttr(link_nodes[[i]], "href"))
+  }
+  
+  return(urls_list)
+}
+
+extractCPCInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//h1[@class='title-header']")
+  title <- XML::xmlValue(title)
+  
+  # Récupère le contenu
+  text_node <- XML::getNodeSet(comm_root, ".//div[@class='post-content']")
+  text_node <- XML::getNodeSet(text_node[[1]], ".//p")
+  
+  # First figure out if first line is a date or the press release itself
+  first_line <- XML::xmlValue(text_node[[1]])
+  if (grepl("janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre", tolower(substr(first_line, 1, 20)))) {
+    start_index <- 2
+  } else {
+    start_index <- 1
+  }
+  
+  location_sep <- stringr::str_locate(XML::xmlValue(text_node[[start_index]]), "–")
+  location <- substr(XML::xmlValue(text_node[[start_index]]), 1, location_sep[1,1][[1]]-2)
+  
+  content <- ""
+  
+  for (i in start_index:length(text_node)) {
+    content <- paste(content, XML::xmlValue(text_node[[i]]), sep = "\n\n")
+  }
+  
+  content <- trimws(content)
+  content <- gsub("\u00a0", "", content)
+  
+  hub_object <- list()
+  
+  #hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+  
+}
+
+
+###############################################################################
+# NDP
+###############################################################################
+extractNDPUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//article/a")
+  
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 1:length(link_nodes)) {
+    urls_list <- c(urls_list, XML::xmlGetAttr(link_nodes[[i]], "href"))
+  }
+  
+  return(urls_list)
+}
+
+extractNDPInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//div[@class='news2-holder news2-body article-text']")
+  title <- XML::xpathApply(title[[1]], ".//h1")
+  title <- XML::xmlValue(title)
+  
+  # Récupère le contenu
+  text_node <- XML::getNodeSet(comm_root, ".//div[@class='news2-holder news2-body article-text']")
+  
+  text_node <- XML::xpathApply(text_node[[1]], ".//p")
+  
+  if (length(text_node) > 2) {
+    content <- paste(XML::xmlValue(text_node), collapse = '\n\n')
+  } else {
+    text_node <- XML::getNodeSet(comm_root, ".//div[@class='news2-holder news2-body article-text']")
+    content <- XML::xmlValue(text_node)
+    content <- trimws(content)
+    content <- gsub("\t\t\t\t", "\n\n",content)
+    content <- gsub("\n\n\t", "\n\n",content)
+    content <- gsub("\n\t\t", "\n\n",content)
+  }
+  
+  # Récupère l'endroit
+  location <- substr(content, 1, stringr::str_locate(content, "-|—|–")[1,1][[1]]-1)
+  if (!is.na(location)) {
+    location <- trimws(location)
+    location <- stringr::str_to_title(location)
+    if (nchar(location) > 25) location <- NA
+  }
+  
+  # Récupère la date
+  date <- XML::getNodeSet(comm_root, ".//div[@class='news2-holder news2-date article-text']")[[1]]
+  date <- trimws(XML::xmlValue(date))
+  
+  hub_object <- list()
+  
+  hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+}
+
+
+###############################################################################
+# GPC
+###############################################################################
+extractGPCUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//h3[@class='media-heading']")
+  
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 1:length(link_nodes)) {
+    urls_list <- c(urls_list, XML::xmlAttrs(XML::getNodeSet(link_nodes[[i]], ".//a")[[1]])[[1]])
+  }
+  
+  urls_list <- paste("https://www.greenparty.ca", urls_list, sep='')
+  
+  return(urls_list)
+}
+
+extractGPCInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//h1[@class='page-header title-container text-left visible']")
+  title <- XML::xmlValue(title[[1]])
+  
+  # Récupère le contenu
+  text <- XML::getNodeSet(comm_root, ".//div[@class='field-body']")
+  
+  # Récupère la date
+  date <- XML::getNodeSet(comm_root, ".//div[@class='pane-content']")[[1]]
+  date <- trimws(XML::xmlValue(date))
+  
+  # Récupère le texte
+  text_node <- XML::getNodeSet(text[[1]], ".//p")
+  content <- paste(XML::xmlValue(text_node), collapse = '\n\n')
+  content <- trimws(content)
+  #text <- gsub("\u00a0", "", text)
+  
+  
+  location <- substr(content, 1, stringr::str_locate(content, "-|—")[1,1][[1]]-1)
+  location <- trimws(location)
+  location <- stringr::str_to_title(location)
+  
+  hub_object <- list()
+  
+  hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+}
+
+
+###############################################################################
+# BQ
+###############################################################################
+extractBQUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//article")
+  
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 1:length(link_nodes)) {
+    urls_list <- c(urls_list, XML::xmlGetAttr(XML::getNodeSet(link_nodes[[i]], ".//a[@class='more']")[[1]], "href"))
+  }
+  
+  return(urls_list)
+}
+
+extractBQInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//header/h1")
+  title <- XML::xmlValue(title[[1]])
+  
+  # Récupère le contenu
+  text_node <- XML::getNodeSet(comm_root, ".//div[@class='content']")
+  
+  # Récupère la date
+  date <- XML::xmlValue(text_node[[1]])
+  date <- substr(date, 1, stringr::str_locate(date, "–")[1,1][[1]]-1)
+  date <- trimws(date, which = "both")
+  date <- gsub("lundi |mardi |mercredi |jeudi |vendredi |samedi |dimanche", "", date)
+  
+  location <- substr(date, 1, stringr::str_locate(date, ",")[1,1][[1]]-1)
+  location <- gsub("\u00a0", "", location)
+  if (grepl(", le", tolower(date))) kick <- 5 else kick <- 2
+  date <- substr(date, stringr::str_locate(date, ",")[1,1][[1]]+kick, nchar(date))
+  
+  # Récupère le texte
+  text_node <- XML::getNodeSet(text_node[[1]], ".//p")
+  content <- paste(XML::xmlValue(text_node), collapse = '\n\n')
+  content <- trimws(content)
+  content <- gsub("\u00a0", "", content)
+  
+  hub_object <- list()
+  
+  hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+}
+
+
+###############################################################################
+# PPC
+###############################################################################
+extractPPCUrlsList <- function(xml_root, scriptname, logger) {
+  link_nodes <- XML::getNodeSet(xml_root, ".//div[@class='col-md-12']")
+  
+  
+  # On construit une liste avec les URL des communiqués de presse de la page principale
+  urls_list <- list()
+  
+  for (i in 3:length(link_nodes)-2) {
+    print(i)
+    h3_node <- XML::getNodeSet(link_nodes[[i]], ".//h3")
+    if (length(h3_node) > 0) {
+      h3_node <- XML::getNodeSet(link_nodes[[i]], ".//h3")[[1]]
+      urls_list <- c(urls_list, XML::xmlGetAttr(XML::getNodeSet(h3_node, ".//a")[[1]], "href"))
+    }
+  }
+  
+  return(urls_list)
+}
+
+extractPPCInfo <- function(comm_root, scriptname, logger) {
+  # Récupère le titre
+  title <- XML::getNodeSet(comm_root, ".//title")
+  title <- XML::xmlValue(title[[1]])
+  
+  # Récupère le contenu
+  text_node <- XML::getNodeSet(comm_root, ".//div[@class='col-md-8 platform news']")
+  if (length(text_node) > 0) {
+    content <- XML::xmlValue(text_node[[1]])
+    content <- trimws(content)
+  } else {
+    content <- NA
+  }
+  
+  # Récupère la date
+  date_node <- XML::getNodeSet(comm_root, ".//strong")
+  if (length(date_node) > 0) date_node <- date_node[[1]]
+  date <- trimws(XML::xmlValue(date_node))
+  if (length(date) > 0) {
+    date <- gsub(" –","",date)
+    date <- strsplit(date, ",")[[1]][3]
+    date <- trimws(date)
+  } else {
+    date <- NA
+  }
+    
+  
+  # Récupère le lieu
+  location_node <- XML::getNodeSet(comm_root, ".//strong")
+  if (length(location_node) > 0) location_node <- location_node[[1]]
+  location <- trimws(XML::xmlValue(location_node))
+  if (length(location) > 0) {
+    location <- gsub(" –","",location)
+    location <- strsplit(location, ",")[[1]][2]
+    location <- trimws(location)
+  }
+  
+  
+  hub_object <- list()
+  
+  hub_object$data$date <- date
+  hub_object$data$title <- title
+  hub_object$data$content <- content
+  hub_object$data$location <- location
+  
+  return(hub_object)
+}
+
+
+
+
+###############################################################################
+# scrapePartyPressRelease
+###############################################################################
+scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
+  
+  clessnverse::logit(scriptname, paste("scraping", party, "press release page", party_url), logger)
+  r <- safe_httr_GET(party_url)
+  
+  if (r$result$status_code == 200) {
+    # On extrait les section <a> qui contiennent les liens vers chaque communiqué
+    clessnverse::logit(scriptname, paste("successful GET of", party, "main press release page", party_url), logger)
+    
+    index_html <- httr::content(r$result, as="text")
+    
+    index_xml <- XML::htmlTreeParse(index_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
+    xml_root <- XML::xmlRoot(index_xml)
+    
+    clessnverse::logit(scriptname, paste("Trying to extract", party,"press releases URLs from main press release page"), logger)
+    
+    if (party == "LPC") urls_list <- extractLPCUrlsList(xml_root, scriptname, logger)
+    
+    if (party == "CPC") {
+      date_list_node <- XML::getNodeSet(xml_root, ".//p[@class = 'post-date']")
+      
+      cpc_date_list <- list()
+      
+      for (i in 1:length(date_list_node)) {
+        cpc_date_list <- c(cpc_date_list, XML::xmlValue(date_list_node[[i]]))
+      }
+      
+      urls_list <- extractCPCUrlsList(xml_root, scriptname, logger)
+    }
+    
+    if (party == "NDP") urls_list <- extractNDPUrlsList(xml_root, scriptname, logger)
+    if (party == "GPC") urls_list <- extractGPCUrlsList(xml_root, scriptname, logger)
+    if (party == "BQ")  urls_list <- extractBQUrlsList(xml_root, scriptname, logger)
+    if (party == "PPC") urls_list <- extractPPCUrlsList(xml_root, scriptname, logger)
+    
+    if (length(urls_list) > 0) clessnverse::logit(scriptname, paste("found", length(urls_list), "press releases URLs from",party, "main press release page: looping through them"), logger) else clessnverse::logit(scriptname, paste("No URL found in", party, "main press releases page"), logger)
+    
+    # On loop à travers toutes les URL de ls liste des communiqués
+    # On les scrape et stocke sur le hub 2.0
+    if (length(urls_list) > 0) {
+      for (i in 1:length(urls_list)) {
+        r <- safe_httr_GET(urls_list[[i]])
+        
+        if (r$result$status_code == 200) {
+          clessnverse::logit(scriptname, paste ("successful GET on", party, "press release at URL", urls_list[[i]]), logger)
+          comm_html <- httr::content(r$result, as="text")
+          
+          comm_xml <- XML::htmlTreeParse(comm_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
+          comm_root <- XML::xmlRoot(comm_xml)
+          
+          hub_object <- NULL
+          
+          if (party == "LPC") hub_object <- extractLPCInfo(comm_root, scriptname, logger)
+          
+          if (party == "CPC") {
+            hub_object <- extractCPCInfo(comm_root, scriptname, logger)
+            hub_object$data$date <- cpc_date_list[[i]]
+          }
+          
+          if (party == "NDP") hub_object <- extractNDPInfo(comm_root, scriptname, logger)
+          if (party == "GPC") hub_object <- extractGPCInfo(comm_root, scriptname, logger)
+          if (party == "BQ")  hub_object <- extractBQInfo(comm_root, scriptname, logger)
+          if (party == "PPC") hub_object <- extractPPCInfo(comm_root, scriptname, logger)
+          
+          if (!is.null(hub_object)) {
+  
+            # Construit le data pour le hub
+            key <- digest::digest(urls_list[[i]])
+            type <- party
+            schema <- "v1"
+            
+            hub_object$metadata$url <- urls_list[[i]]
+            hub_object$metadata$lastUpdatedOn <- Sys.time()
+            
+            hub_items <- NULL
+            filter <- clessnhub::create_filter(key = key)
+            hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
+            
+            if (is.null(hub_items)) {
+              # ce communiqué (avec cette key) n'existe pas dans le hub
+              clessnverse::logit(scriptname, paste("creating new item", key, "in table agoraplus_press_releases"), logger)
+              clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = hub_object$metadata, data = hub_object$data)
+            } else {
+              # ce communiqué (avec cette key) existe dans le hub 
+              clessnverse::logit(scriptname, paste("updating existing item", key, "in table agoraplus_press_releases"), logger)
+              clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema,metadata = hub_object$metadata, data = hub_object$data)
+            }
+          } else {
+            clessnverse::logit(scriptname, paste("no press release from", party, "at", urls_list[[i]]), logger)
+          } #if (!is.null(hub_object)) 
+          
+        } else {
+          clessnverse::logit(scriptname, paste("error accessing", party, "press release page", urls_list[[i]]), logger)
+        }
+      } #for (i in 1:length(urls_list))
+      clessnverse::logit(scriptname, paste(i, "press releases were scraped from the", party, "web site"), logger)
+    }#if (length(urls_list) > 0)
+  } else {
+    clessnverse::logit(scriptname, "Error getting", party, "main press release page", logger)
+  }
+} #</function scrapePartyPressRelease>
+
+
 
 
 
@@ -93,477 +573,53 @@ safe_httr_GET <- purrr::safely(httr::GET)
 #
 #
 #
-
-
-clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
-#clessnhub::connect()
-
-plc_url <- "https://liberal.ca/fr/category/communiques/"
-pcc_url <- "https://www.conservateur.ca/nouvelles/"
-#blq_url <- "https://www.blocquebecois.org/tous-les-communiques/"
-blq_url <- "https://www.blocquebecois.org/nouvelles/" 
-grn_url <- "https://www.greenparty.ca/fr/nouvelles/communiqués-de-presse"
-npd_url <- "https://www.npd.ca/nouvelles"
-ppc_url <- "https://www.partipopulaireducanada.ca/nouvelles_archives"
-
-
-
-
-###############################################################################
-# PLC
-plc_r <- safe_httr_GET(plc_url)
-
-if (plc_r$result$status_code == 200) {
-  # On extrait les section <a> qui contiennent les liens vers chaque communiqué
-  plc_index <- httr::content(plc_r$result, as="text")
+main <- function(scriptname, logger) {
   
-  plc_index_xml <- XML::htmlTreeParse(plc_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-  plc_xml_root <- XML::xmlRoot(plc_index_xml)
+  urls_list <- list(c("LPC","https://liberal.ca/fr/category/communiques/"),
+                    c("CPC","https://www.conservateur.ca/nouvelles/"),
+                    c("BQ","https://www.blocquebecois.org/nouvelles/"),
+                    c("GPC","https://www.greenparty.ca/fr/nouvelles/communiqués-de-presse"),
+                    c("NDP","https://www.npd.ca/nouvelles"),
+                    c("PPC","https://www.partipopulaireducanada.ca/nouvelles_archives"))
   
-  plc_links_list <- XML::getNodeSet(plc_xml_root, ".//a[@class = 'post-listing-item__link']")
+  clessnverse::logit(scriptname, paste("Scraping the following political parties press releases", paste(urls_list, collapse = ' ')), logger)
   
-  # On construit une liste avec les URL des communiqués de presse de la page principale
-  plc_url_list <- list()
-  
-  for (i_plc_links_list in 1:length(plc_links_list)) {
-    plc_url_list <- c(plc_url_list, XML::xmlGetAttr(plc_links_list[[i_plc_links_list]], "href"))
+  for (i in 1:length(urls_list)) {
+    cat(urls_list[[i]][1], urls_list[[i]][2], "\n")
+    scrapePartyPressRelease(urls_list[[i]][1], urls_list[[i]][2], scriptname, logger)
   }
   
-  # On loop à travers toutes les URL de ls liste des communiqués
-  # On les scrape et stocke sur le hub 2.0
-  for (i_plc_url_list in 1:length(plc_url_list)) {
-    r <- safe_httr_GET(plc_url_list[[i_plc_url_list]])
+}
+
+
+
+tryCatch( 
+  {
+    installPackages()
+    library(dplyr)
     
-    if (r$result$status_code == 200) {
-      plc_comm <- httr::content(r$result, as="text")
-      
-      plc_comm_xml <- XML::htmlTreeParse(plc_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-      plc_comm_root <- XML::xmlRoot(plc_comm_xml)
-      
-      # Récupère le titre
-      plc_comm_title <- XML::getNodeSet(plc_comm_root, ".//title")
-      plc_comm_title <- XML::xmlValue(plc_comm_title)
-      
-      # Récupère la date
-      plc_comm_date <- XML::getNodeSet(plc_comm_root, ".//p[@class='single__date']")
-      plc_comm_date <- XML::xmlValue(plc_comm_date)
-      plc_comm_date <- gsub("\t|\n", "", plc_comm_date)
-      
-      # Récupère le contenu
-      plc_comm_text <- XML::getNodeSet(plc_comm_root, ".//div[@class='post-content-container']")
-      plc_comm_text <- XML::getNodeSet(plc_comm_text[[1]], ".//p")
-      
-      text <- ""
-      
-      for (i_plc_comm_text in 2:length(plc_comm_text)) {
-        text <- paste(text, XML::xmlValue(plc_comm_text[[i_plc_comm_text]]), sep="\n\n")
-      }
-      
-      plc_comm_text <- trimws(text)
-      plc_comm_text <- gsub("\u00a0", "", plc_comm_text)
-      
-      
-      # Récupère le lieu
-      plc_comm_location <- substr(plc_comm_text, 1, stringr::str_locate(plc_comm_text, "-|—|–")[1,1][[1]]-1)
-      plc_comm_location <- trimws(plc_comm_location)
-      plc_comm_location <- stringr::str_to_title(plc_comm_location)
-      if (!is.na(plc_comm_location) && nchar(plc_comm_location) > 25) plc_comm_location <- NA
-      
-      # Construit le data pour le hub
-      key <- digest::digest(plc_url_list[[i_plc_url_list]])
-      type <- "LPC"
-      schema <- "v1"
-      
-      metadata <- list("date"=Sys.time(), "url"=plc_url_list[[i_plc_url_list]])
-      data <- list("date"=plc_comm_date, "location"=plc_comm_location, "title"=plc_comm_title, "content"=plc_comm_text)
-      
-      hub_items <- NULL
-      filter <- clessnhub::create_filter(key = key)
-      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
-      
-      if (is.null(hub_items)) {
-        # ce communiqué (avec cette key) n'existe pas dans le hub
-        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-      } else {
-        # ce communiqué (avec cette key) existe dans le hub 
-        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-        print("ce communiqué existe déjà")
-      }
-      
-    } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", plc_url_list[[i_plc_url_list]], sep=": "))
-    }
-  } #for (i in 1:length(plc_url_list))
-  
-} else {
-  stop("Erreur pour accéder à la page des communiqués du PLC")
-}
-
-###############################################################################
-# PCC
-pcc_r <- safe_httr_GET(pcc_url)
-
-if (pcc_r$result$status_code == 200) {
-  # On extrait les sections qui contiennent les liens vers chaque communiqué
-  pcc_index <- httr::content(pcc_r$result, as="text")
-  
-  pcc_index_xml <- XML::htmlTreeParse(pcc_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-  pcc_xml_root <- XML::xmlRoot(pcc_index_xml)
-  
-  pcc_links_list <- XML::getNodeSet(pcc_xml_root, ".//div[@class = 'grid-container grid-narrow']/a")
-
-  # On construit une liste avec les URL des communiqués de presse de la page principale
-  pcc_url_list <- list()
-  
-  for (i_pcc_links_list in 1:length(pcc_links_list)) {
-    pcc_url_list <- c(pcc_url_list, XML::xmlGetAttr(pcc_links_list[[i_pcc_links_list]], "href"))
-  }
-  
-  pcc_date_list <- XML::getNodeSet(pcc_xml_root, ".//p[@class = 'post-date']")
-  
-  date_list <- list()
-  
-  for (i_pcc_date_list in 1:length(pcc_date_list)) {
-    date_list <- c(date_list, XML::xmlValue(pcc_date_list[[i_pcc_date_list]]))
-  }
-  
-  pcc_date_list <- date_list
-  
-  
-  # On loop à travers toutes les URL de ls liste des communiqués
-  # On les scrape et stocke sur le hub 2.0
-  for (i_pcc_url_list in 1:length(pcc_url_list)) {
-    r <- safe_httr_GET(pcc_url_list[[i_pcc_url_list]])
-
-    if (r$result$status_code == 200) {
-      pcc_comm <- httr::content(r$result, as="text")
-      
-      pcc_comm_xml <- XML::htmlTreeParse(pcc_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-      pcc_comm_root <- XML::xmlRoot(pcc_comm_xml)
-
-      # Récupère le titre
-      pcc_comm_title <- XML::getNodeSet(pcc_comm_root, ".//h1[@class='title-header']")
-      pcc_comm_title <- XML::xmlValue(pcc_comm_title)
-      
-      # Récupère la date
-      pcc_comm_date <- pcc_date_list[[i_pcc_url_list]]
-
-      # Récupère le contenu
-      pcc_comm_text <- XML::getNodeSet(pcc_comm_root, ".//div[@class='post-content']")
-      pcc_comm_text <- XML::getNodeSet(pcc_comm_text[[1]], ".//p")
-      
-      # First figure out if first line is a date or the press release itself
-      first_line <- XML::xmlValue(pcc_comm_text[[1]])
-      if (grepl("janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre", tolower(substr(first_line, 1, 20)))) {
-        start_index <- 2
-      } else {
-        start_index <- 1
-      }
-      
-      location_sep <- stringr::str_locate(XML::xmlValue(pcc_comm_text[[start_index]]), "–")
-      pcc_comm_location <- substr(XML::xmlValue(pcc_comm_text[[start_index]]), 1, location_sep[1,1][[1]]-2)
-
-      text <- ""
-      
-      for (i_pcc_comm_text in start_index:length(pcc_comm_text)) {
-        text <- paste(text, XML::xmlValue(pcc_comm_text[[i_pcc_comm_text]]), sep = "\n\n")
-      }
-      
-      pcc_comm_text <- trimws(text)
-      pcc_comm_text <- gsub("\u00a0", "", pcc_comm_text)
-      
-      
-      # Construit le data pour le hub
-      key <- digest::digest(pcc_url_list[[i_pcc_url_list]])
-      type <- "CPC"
-      schema <- "v1"
-      
-      metadata <- list("date"=Sys.time(), "url"=pcc_url_list[[i_pcc_url_list]])
-      data <- list("date"=pcc_comm_date, "Location"=pcc_comm_location, "title"=pcc_comm_title, "content"=pcc_comm_text)
-      
-      hub_items <- NULL
-      filter <- clessnhub::create_filter(key = key)
-      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
-      
-      if (is.null(hub_items)) {
-        # ce communiqué (avec cette key) n'existe pas dans le hub
-        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-      } else {
-        # ce communiqué (avec cette key) existe dans le hub 
-        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-        print("ce communiqué existe déjà")
-      }
-      
-    } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", pcc_url_list[[i_pcc_url_list]], sep=": "))
-    }
-  } #for (i in 1:length(plc_url_list))
-  
-} else {
-  stop("Erreur pour accéder à la page des communiqués du PLC")
-}     
-  
-  
-###############################################################################
-# BLOC
-blq_r <- safe_httr_GET(blq_url)
-
-if (blq_r$result$status_code == 200) {
-  # On extrait les sections qui contiennent les liens vers chaque communiqué
-  blq_index <- httr::content(blq_r$result, as="text")
-  
-  blq_index_xml <- XML::htmlTreeParse(blq_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-  blq_xml_root <- XML::xmlRoot(blq_index_xml)
-  
-  blq_links_list <- XML::getNodeSet(blq_xml_root, ".//article")
-  
-  
-  # On construit une liste avec les URL des communiqués de presse de la page principale
-  blq_url_list <- list()
-  
-  for (i_blq_links_list in 1:length(blq_links_list)) {
-    blq_url_list <- c(blq_url_list, XML::xmlGetAttr(XML::getNodeSet(blq_links_list[[i_blq_links_list]], ".//a[@class='more']")[[1]], "href"))
-  }
-  # On loop à travers toutes les URL de ls liste des communiqués
-  # On les scrape et stocke sur le hub 2.0
-  for (i_blq_url_list in 1:length(blq_url_list)) {
-    r <- safe_httr_GET(blq_url_list[[i_blq_url_list]])
+    if (!exists("scriptname")) scriptname <<- "agoraplus-pressrelease.R"
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","hub"), Sys.getenv("LOG_PATH"))
     
-    if (r$result$status_code == 200) {
-      blq_comm <- httr::content(r$result, as="text")
-      blq_comm_xml <- XML::htmlTreeParse(blq_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-      blq_comm_root <- XML::xmlRoot(blq_comm_xml)
-      
-      # Récupère le titre
-      blq_comm_title <- XML::getNodeSet(blq_comm_root, ".//header/h1")
-      blq_comm_title <- XML::xmlValue(blq_comm_title[[1]])
-      
-     # Récupère le contenu
-      blq_comm_text <- XML::getNodeSet(blq_comm_root, ".//div[@class='content']")
-
-      # Récupère la date
-      blq_comm_date <- XML::xmlValue(blq_comm_text[[1]])
-      blq_comm_date <- substr(blq_comm_date, 1, stringr::str_locate(blq_comm_date, "–")[1,1][[1]]-1)
-      blq_comm_date <- trimws(blq_comm_date, which = "both")
-      blq_comm_date <- gsub("lundi |mardi |mercredi |jeudi |vendredi |samedi |dimanche", "", blq_comm_date)
-      
-      blq_comm_location <- substr(blq_comm_date, 1, stringr::str_locate(blq_comm_date, ",")[1,1][[1]]-1)
-      blq_comm_location <- gsub("\u00a0", "", blq_comm_location)
-      if (grepl(", le", tolower(blq_comm_date))) kick <- 5 else kick <- 3
-      blq_comm_date <- substr(blq_comm_date, stringr::str_locate(blq_comm_date, ",")[1,1][[1]]+kick, nchar(blq_comm_date))
-      
-      # Récupère le texte
-      blq_comm_text <- XML::getNodeSet(blq_comm_text[[1]], ".//p")
-      blq_comm_text <- paste(XML::xmlValue(blq_comm_text), collapse = '\n\n')
-      blq_comm_text <- trimws(blq_comm_text)
-      blq_comm_text <- gsub("\u00a0", "", blq_comm_text)
-      
-      
-      # Construit le data pour le hub
-      key <- digest::digest(blq_url_list[[i_blq_url_list]])
-      type <- "BQ"
-      schema <- "v1"
-      
-      metadata <- list("date"=Sys.time(), "url"=blq_url_list[[i_blq_url_list]])
-      data <- list("date"=blq_comm_date, "location"=blq_comm_location, "title"=blq_comm_title, "content"=blq_comm_text)
-      
-      hub_items <- NULL
-      filter <- clessnhub::create_filter(key = key)
-      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
-      
-      if (is.null(hub_items)) {
-        # ce communiqué (avec cette key) n'existe pas dans le hub
-        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-      } else {
-        # ce communiqué (avec cette key) existe dans le hub 
-        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-        print("ce communiqué existe déjà")
-      }
-      
-    } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", blq_url_list[[i_blq_url_list]], sep=": "))
-    }
-  }
-}
-
-
-
-###############################################################################
-# GREEN
-grn_r <- safe_httr_GET(grn_url)
-
-if (grn_r$result$status_code == 200) {
-  # On extrait les sections qui contiennent les liens vers chaque communiqué
-  grn_index <- httr::content(grn_r$result, as="text")
-  
-  grn_index_xml <- XML::htmlTreeParse(grn_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-  grn_xml_root <- XML::xmlRoot(grn_index_xml)
-  
-  grn_links_list <- XML::getNodeSet(grn_xml_root, ".//h3[@class='media-heading']")
-  
-  
-  # On construit une liste avec les URL des communiqués de presse de la page principale
-  grn_url_list <- list()
-  
-  for (i_grn_links_list in 1:length(grn_links_list)) {
-    grn_url_list <- c(grn_url_list, XML::xmlAttrs(XML::getNodeSet(grn_links_list[[i_grn_links_list]], ".//a")[[1]])[[1]])
-  }
-  
-  grn_url_list <- paste("https://www.greenparty.ca", grn_url_list, sep='')
-  
-  # On loop à travers toutes les URL de ls liste des communiqués
-  # On les scrape et stocke sur le hub 2.0
-  for (i_grn_url_list in 1:length(grn_url_list)) {
-    r <- safe_httr_GET(grn_url_list[[i_grn_url_list]])
+    # login to the hub
+    clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
+    clessnverse::logit(scriptname, "connecting to hub", logger)
     
-    if (r$result$status_code == 200) {
-      grn_comm <- httr::content(r$result, as="text")
-      grn_comm_xml <- XML::htmlTreeParse(grn_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-      grn_comm_root <- XML::xmlRoot(grn_comm_xml)
-      
-      # Récupère le titre
-      grn_comm_title <- XML::getNodeSet(grn_comm_root, ".//h1[@class='page-header title-container text-left visible']")
-      grn_comm_title <- XML::xmlValue(grn_comm_title[[1]])
-      
-      # Récupère le contenu
-      grn_comm_text <- XML::getNodeSet(grn_comm_root, ".//div[@class='field-body']")
-      
-      # Récupère la date
-      grn_comm_date <- XML::getNodeSet(grn_comm_root, ".//div[@class='pane-content']")[[1]]
-      grn_comm_date <- trimws(XML::xmlValue(grn_comm_date))
-      
-      # Récupère le texte
-      grn_comm_text <- XML::getNodeSet(grn_comm_text[[1]], ".//p")
-      grn_comm_text <- paste(XML::xmlValue(grn_comm_text), collapse = '\n\n')
-      grn_comm_text <- trimws(grn_comm_text)
-      #grn_comm_text <- gsub("\u00a0", "", grn_comm_text)
-      
-      
-      grn_comm_location <- substr(grn_comm_text, 1, stringr::str_locate(grn_comm_text, "-|—")[1,1][[1]]-1)
-      grn_comm_location <- trimws(grn_comm_location)
-      grn_comm_location <- stringr::str_to_title(grn_comm_location)
-      
-      
-      # Construit le data pour le hub
-      key <- digest::digest(grn_url_list[[i_grn_url_list]])
-      type <- "GPC"
-      schema <- "v1"
-      
-      metadata <- list("date"=Sys.time(), "url"=grn_url_list[[i_grn_url_list]])
-      data <- list("date"=grn_comm_date, "location"=grn_comm_location, "title"= grn_comm_title, "content"=grn_comm_text)
-      
-      hub_items <- NULL
-      filter <- clessnhub::create_filter(key = key)
-      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
-      
-      if (is.null(hub_items)) {
-        # ce communiqué (avec cette key) n'existe pas dans le hub
-        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-      } else {
-        # ce communiqué (avec cette key) existe dans le hub 
-        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-        print("ce communiqué existe déjà")
-      }
-      
-    } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", grn_url_list[[i_grn_url_list]], sep=": "))
-    }
-  }
-}
-
-
-npd_r <- safe_httr_GET(npd_url)
-
-if (npd_r$result$status_code == 200) {
-  # On extrait les sections qui contiennent les liens vers chaque communiqué
-  npd_index <- httr::content(npd_r$result, as="text")
-  
-  npd_index_xml <- XML::htmlTreeParse(npd_index, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-  npd_xml_root <- XML::xmlRoot(npd_index_xml)
-  
-  npd_links_list <- XML::getNodeSet(npd_xml_root, ".//article/a")
-  
-  
-  # On construit une liste avec les URL des communiqués de presse de la page principale
-  npd_url_list <- list()
-  
-  for (i_npd_links_list in 1:length(npd_links_list)) {
-    npd_url_list <- c(npd_url_list, XML::xmlGetAttr(npd_links_list[[i_npd_links_list]], "href"))
-  }
-  
-  # On loop à travers toutes les URL de ls liste des communiqués
-  # On les scrape et stocke sur le hub 2.0
-  for (i_npd_url_list in 1:length(npd_url_list)) {
-    r <- safe_httr_GET(npd_url_list[[i_npd_url_list]])
     
-    if (r$result$status_code == 200) {
-      npd_comm <- httr::content(r$result, as="text")
-      npd_comm_xml <- XML::htmlTreeParse(npd_comm, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
-      npd_comm_root <- XML::xmlRoot(npd_comm_xml)
-      
-      # Récupère le titre
-      npd_comm_title <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-body article-text']")
-      npd_comm_title <- XML::xpathApply(npd_comm_title[[1]], ".//h1")
-      npd_comm_title <- XML::xmlValue(npd_comm_title)
-      
-      # Récupère le contenu
-      npd_comm_text <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-body article-text']")
-
-      npd_comm_text <- XML::xpathApply(npd_comm_text[[1]], ".//p")
-      
-      if (length(npd_comm_text) > 2) {
-        npd_comm_text <- paste(XML::xmlValue(npd_comm_text), collapse = '\n\n')
-      } else {
-        npd_comm_text <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-body article-text']")
-        npd_comm_text <- XML::xmlValue(npd_comm_text)
-        npd_comm_text <- trimws(npd_comm_text)
-        npd_comm_text <- gsub("\t\t\t\t", "\n\n",npd_comm_text)
-        npd_comm_text <- gsub("\n\n\t", "\n\n",npd_comm_text)
-        npd_comm_text <- gsub("\n\t\t", "\n\n",npd_comm_text)
-      }
-      
-      # Récupère l'endroit
-      npd_comm_location <- substr(npd_comm_text, 1, stringr::str_locate(npd_comm_text, "-|—|–")[1,1][[1]]-1)
-      if (!is.na(npd_comm_location)) {
-        npd_comm_location <- trimws(npd_comm_location)
-        npd_comm_location <- stringr::str_to_title(npd_comm_location)
-        if (nchar(npd_comm_location) > 25) npd_comm_location <- NA
-      }
-      
-      # Récupère la date
-      npd_comm_date <- XML::getNodeSet(npd_comm_root, ".//div[@class='news2-holder news2-date article-text']")[[1]]
-      npd_comm_date <- trimws(XML::xmlValue(npd_comm_date))
-      
-      # Construit le data pour le hub
-      key <- digest::digest(npd_url_list[[i_npd_url_list]])
-      type <- "NPD"
-      schema <- "v1"
-      
-      metadata <- list("date"=Sys.time(), "url"=npd_url_list[[i_npd_url_list]])
-      data <- list("date"=npd_comm_date, "location"=npd_comm_location, "title"=npd_comm_title, "content"=npd_comm_text)
-      
-      hub_items <- NULL
-      filter <- clessnhub::create_filter(key = key)
-      hub_items <- clessnhub::get_items('agoraplus_press_releases', filter = filter)
-      
-      if (is.null(hub_items)) {
-        # ce communiqué (avec cette key) n'existe pas dans le hub
-        clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-      } else {
-        # ce communiqué (avec cette key) existe dans le hub 
-        clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = metadata, data = data)
-        print("ce communiqué existe déjà")
-      }
-      
-    } else {
-      stop(paste("Erreur pour accéder à la page du communiqué", npd_url_list[[i_npd_url_list]], sep=": "))
-    }
-  }
-}
-
-
-ppc_r <- safe_httr_GET(ppc_url)
-
-if (ppc_r$result$status_code == 200) {
+    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+    
+    main(scriptname, logger)
+  },
   
-}
+  error = function(e) {
+    clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
+    print(e)
+  },
+  
+  finally={
+    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
+    clessnverse::logclose(logger)
+    rm(logger)
+  }
+)
+
