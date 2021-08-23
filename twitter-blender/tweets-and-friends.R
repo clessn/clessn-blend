@@ -244,10 +244,10 @@ main <- function(scriptname, logger) {
     twitter_id <- this_pass_tweets$user_id[i]
     twitter_location <- this_pass_tweets$location[i]
     twitter_desc <- this_pass_tweets$description[i]
-    twitter_account_protected <- if (this_pass_tweets$protected[i]) 0 else 1
+    twitter_account_protected <- if (this_pass_tweets$protected[i]) 1 else 0
     twitter_account_lang <- this_pass_tweets$account_lang[i]
     twitter_account_created_on <- this_pass_tweets$account_created_at[i]
-    twitter_account_verified <- if (this_pass_tweets$verified[i]) 0 else 1
+    twitter_account_verified <- if (this_pass_tweets$verified[i]) 1 else 0
     twitter_followers_count <- this_pass_tweets$followers_count[i]
     twitter_friends_count <- this_pass_tweets$friends_count[i]
     twitter_listed_count <- this_pass_tweets$listed_count[i]
