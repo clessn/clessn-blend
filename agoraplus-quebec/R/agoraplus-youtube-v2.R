@@ -43,7 +43,11 @@ installPackages <- function() {
 
   for (p in 1:length(new_packages)) {
     if ( grepl("\\/", new_packages[p]) ) {
-      devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      if (grepl("clessnverse", new_packages[p])) {
+        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+      } else {
+        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
+      }
     } else {
       install.packages(new_packages[p])
     }  
@@ -74,24 +78,115 @@ installPackages <- function() {
 #   logger
 #
 installPackages()
+library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-youtube-v2.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "skip",simple_mode = "update",deep_mode = "update", 
-            dataframe_update = "update", hub_mode = "update")
-
+# Script command line options:
+# Possible values : update, refresh, rebuild or skip
+# - update : updates the dataframe by adding only new observations to it
+# - refresh : refreshes existing observations and adds new observations to the dataframe
+# - rebuild : wipes out completely the dataframe and rebuilds it from scratch
+# - skip : does not make any change to the dataframe
+opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
+            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-                                      Sys.getenv('HUB_USERNAME'), 
-                                      Sys.getenv('HUB_PASSWORD'), 
-                                      Sys.getenv('HUB_URL'))
+# Download HUB v1 data 
+#clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
+#                                      Sys.getenv('HUB_USERNAME'), 
+#                                      Sys.getenv('HUB_PASSWORD'), 
+#                                      Sys.getenv('HUB_URL'))
 
-# Load all objects used for ETL
+
+# Download HUB v2 data
+if (opt$dataframe_mode %in% c("update","refresh")) {
+  clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
+  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "press_conference", schema = "v2", 
+                                                               location = "CA-QC",
+                                                               download_data = opt$download_data,
+                                                               token = Sys.getenv('HUB_TOKEN'))
+  
+  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "press_conference", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location",
+                                          "data.eventID", "data.eventDate", "data.eventStartTime", "data.eventEndTime", 
+                                          "data.eventTitle", "data.eventSubTitle", "data.interventionSeqNum", "data.objectOfBusinessID", 
+                                          "data.objectOfBusinessRubric", "data.objectOfBusinessTitle", "data.objectOfBusinessSeqNum", 
+                                          "data.subjectOfBusinessID", "data.subjectOfBusinessTitle", "data.subjectOfBusinessHeader", 
+                                          "data.subjectOfBusinessSeqNum", "data.subjectOfBusinessProceduralText", 
+                                          "data.subjectOfBusinessTabledDocID", "data.subjectOfBusinessTabledDocTitle", 
+                                          "data.subjectOfBusinessAdoptedDocID", "data.subjectOfBusinessAdoptedDocTitle", 
+                                          "data.speakerID", "data.speakerFirstName", "data.speakerLastName", "data.speakerFullName", 
+                                          "data.speakerGender", "data.speakerType", "data.speakerCountry", "data.speakerIsMinister", 
+                                          "data.speakerParty", "data.speakerPolGroup", "data.speakerDistrict", "data.speakerMedia", 
+                                          "data.interventionID", "data.interventionDocID", "data.interventionDocTitle", 
+                                          "data.interventionType", "data.interventionLang", "data.interventionWordCount", 
+                                          "data.interventionSentenceCount", "data.interventionParagraphCount", "data.interventionText", 
+                                          "data.interventionTextFR", "data.interventionTextEN")]
+  } else {
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
+  }
+  
+} else {
+  clessnverse::logit(scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
+  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2", location = "CA-QC")
+}
+
+# Download v2 Cache
+if (opt$dataframe_mode %in% c("update","refresh")) {
+  dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "press_conference", schema = "v2",
+                                                location = "CA-QC",
+                                                download_data = FALSE,
+                                                token = Sys.getenv('HUB_TOKEN'))
+  
+  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  
+  if (opt$download_data) { 
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                            "data.eventID", "data.rawContent")]
+  } else {
+    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
+  }
+  
+} else {
+  clessnverse::logit(scriptname, "Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
+  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2", location = "CA-QC")
+}
+
+# Download v2 MPs information
+dfMPs <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
+                                              location = "CA-QC",
+                                              download_data = TRUE,
+                                              token = Sys.getenv('HUB_TOKEN'))
+
+# Download v2 public service personnalities information
+dfMPs <- dfMPs %>% 
+  rbind(clessnverse::loadAgoraplusPersonsDf(type = "public_service", schema = "v2",
+                                            location = "CA-QC",
+                                            download_data = TRUE,
+                                            token = Sys.getenv('HUB_TOKEN')
+  )
+  )
+
+# Download v2 journalists information
+dfJournalists <- clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
+                                                     location = "CA",
+                                                     download_data = TRUE,
+                                                     token = Sys.getenv('HUB_TOKEN')
+)
+
+dfMPs <- dfMPs %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
+dfJournalists <- dfJournalists %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
+
+
+
+# Load all objects used for ETL including V1 HUB MPs
 clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
                             password = Sys.getenv('HUB_PASSWORD'), 
                             url = Sys.getenv('HUB_URL'))
@@ -111,19 +206,23 @@ data_output_folder <- paste(data_root_folder, "/to_hub/done", sep = "")
 #filelist <- list.files(data_input_folder)
 
 #For dropbox API
-clessnverse::logit("reading drop box token", logger)
+clessnverse::logit(scriptname, "reading drop box token", logger)
 token <- Sys.getenv("DROPBOX_TOKEN")
 filelist_df <- clessnverse::dbxListDir(dir=paste("/",data_input_folder, sep=""), token=token)
 
 
 if (nrow(filelist_df) == 0) {
-  clessnverse::logit(paste("no file to process in ",data_root_folder,'/',data_input_folder,sep=''), logger)
+  clessnverse::logit(scriptname, paste("no file to process in ",data_root_folder,'/',data_input_folder,sep=''), logger)
   logger <- clessnverse::logclose(logger)
   #stop("This not an error - this is normal behaviour - program stopped because no youtube transcription to process in to_hub/ready folder in dropbox", call. = FALSE)
   invokeRestart("abort")
 } else {
   filelist <- filelist_df$objectName
 }
+
+
+
+
 
 
 ###############################################################################
@@ -146,28 +245,31 @@ for (filename in filelist) {
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_id <- stringr::str_match(filename, "^.{10}(.*).txt")[2]
   
-  clessnverse::logit(paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
+  clessnverse::logit(scriptname, paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
   cat("\nConf", i, "de", length(filelist), filename, "\n", sep = " ")
   
-  if ( !(current_id %in% dfCache$id) ) {
+  if ( !(current_id %in% dfCache2$key) ) {
     # Read and parse HTML from the URL directly
-    clessnverse::logit(paste("downloading", paste(data_input_folder, filename, sep='/'), "from dropbox"), logger)
+    clessnverse::logit(scriptname, paste("downloading", paste(data_input_folder, filename, sep='/'), "from dropbox"), logger)
     clessnverse::dbxDownloadFile(paste('/', data_input_folder, '/', filename, sep=''), getwd(),token)
-    clessnverse::logit(paste("reading", filename, "from cwd"), logger)
+    clessnverse::logit(scriptname, paste("reading", filename, "from cwd"), logger)
     doc_youtube <- readLines(filename)
     doc_youtube.original <- paste(paste(doc_youtube, "\n\n", sep=""), collapse = ' ')
     doc_youtube <- doc_youtube[doc_youtube!=""]
     cached_html <- FALSE
     current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
-    clessnverse::logit(paste(current_id, "not cached"), logger)
+    clessnverse::logit(scriptname, paste(current_id, "not cached"), logger)
   } else{ 
     # Retrieve the XML structure from dfCache and Parse
-    doc_youtube.original <- dfCache$html[which(dfCache$eventID==current_id)]
-    doc_youtube <- stringr::str_split(doc_youtube.original, '\n\n')[[1]]
+    filter <- clessnhub::create_filter(key = event_id, type = "youtube_press_conference", schema = "v2", metadata = list("location"="CA-QC"))
+    doc_youtube <- clessnhub::get_items('agoraplus_cache', filter = filter)
+    doc_youtube <- doc_youtube$data.rawContent
+    doc_youtube <- stringr::str_split(doc_youtube, '\n\n')[[1]]
     doc_youtube <- doc_youtube[doc_youtube!=""]
+    doc_youtube.original <- doc_youtube
     cached_html <- TRUE
     current_url <- stringr::str_match(doc_youtube[3], "^URL   : (.*)")[2]
-    clessnverse::logit(paste(current_id, "cached"), logger)
+    clessnverse::logit(scriptname, paste(current_id, "cached"), logger)
   }
     
   version.finale <- TRUE
@@ -499,10 +601,10 @@ for (filename in filelist) {
   i <- i + 1
   
   
-  clessnverse::logit(paste("removing", filename, "from cwd"), logger)
+  clessnverse::logit(scriptname, paste("removing", filename, "from cwd"), logger)
   file.remove(filename)
   
-  clessnverse::logit(paste("moving", filename, "from", data_input_folder, "to", data_output_folder, "in dropbox"), logger)
+  clessnverse::logit(scriptname, paste("moving", filename, "from", data_input_folder, "to", data_output_folder, "in dropbox"), logger)
   clessnverse::dbxMoveFile(source = paste(data_input_folder, filename, sep='/'), 
                            destination = paste(data_output_folder, filename, sep='/'), 
                            token = token, 
@@ -512,6 +614,6 @@ for (filename in filelist) {
 } #for (filename in filelist)
 
 
-clessnverse::logit(paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
 
