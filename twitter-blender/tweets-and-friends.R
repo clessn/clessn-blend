@@ -173,7 +173,7 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
       metadata_to_commit <- as.list(df_to_commit[i,which(grepl("^metadata.",names(df_to_commit[i,])))])
       names(metadata_to_commit) <- gsub("^metadata.", "", names(metadata_to_commit))
       
-      myfilter <- clessnhub::create_filter(key_contains = df_to_commit$key[i])
+      myfilter <- clessnhub::create_filter(key = paste("t", df_to_commit$key[i], sep='') %>% gsub("tt","t",.))
       dfTestIfTweetExist <- clessnhub::get_items('tweets', myfilter, max_pages = 1)
       
       if (is.null(dfTestIfTweetExist)) {
@@ -209,7 +209,8 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
   twitter_desc <- this_pass_tweets$description[i]
   twitter_account_protected <- if (this_pass_tweets$protected[i]) 1 else 0
   twitter_account_lang <- this_pass_tweets$account_lang[i]
-  twitter_account_created_on <- this_pass_tweets$account_created_at[i]
+  twitter_account_created_on <- format(this_pass_tweets$account_created_at[i],"%Y-%m-%d")
+  twitter_account_created_at <- format(this_pass_tweets$account_created_at[i],"%H:%M %z")
   twitter_account_verified <- if (this_pass_tweets$verified[i]) 1 else 0
   twitter_followers_count <- this_pass_tweets$followers_count[i]
   twitter_friends_count <- this_pass_tweets$friends_count[i]
@@ -232,25 +233,27 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
     person$data$twitterAccountProtected <- twitter_account_protected
     person$data$twitterLang <- twitter_account_lang
     person$data$twitterAccountCreatedOn <- twitter_account_created_on
+    person$data$twitterAccountCreatedAt <- twitter_account_created_at
     person$data$twitterAccountVerified <- twitter_account_verified
     person$data$twitterProfileURL <- twitter_profile_url
     person$data$twitterProfileBannerURL <- twitter_profile_banner_url
     person$data$twitterProfileImageURL <- twitter_profile_image_url
     
-    if (!is.null(person$data$twitterUpdateTimeStamps) && nchar(person$data$twitterUpdateTimeStamps) > 0) {
-      twitter_update_list <- as.list(strsplit(person$data$twitterUpdateTimeStamps, ',')[[1]])
+    if (!is.null(person$data$twitterUpdateDateStamps) && nchar(person$data$twitterUpdateDateStamps) > 0) {
+      twitter_update_list <- as.list(strsplit(person$data$twitterUpdateDateStamps, ',')[[1]])
       latest_twitter_update <- twitter_update_list[length(twitter_update_list)][[1]]
     } else {
       latest_twitter_update <- "2000-01-01 00:00:00 EDT"
     }
     
-    if (is.null(person$data$twitterUpdateTimeStamps) || nchar(person$data$twitterUpdateTimeStamps) == 0 || difftime(Sys.time(),latest_twitter_update,units = "hours") >= 24) {    
+    if (is.null(person$data$twitterUpdateDateStamps) || nchar(person$data$twitterUpdateDateStamps) == 0 || difftime(Sys.time(),latest_twitter_update,units = "hours") >= 24) {    
       clessnverse::logit(scriptname, paste("updating new twitter data for", person$data$fullName,"(",handle,")"), logger)
       person$data$twitterFollowersCount <- if (is.null(person$data$twitterFollowersCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_followers_count else paste(person$data$twitterFollowersCount,twitter_followers_count,sep=',')
       person$data$twitterFriendsCount <- if (is.null(person$data$twitterFriendsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_friends_count else paste(person$data$twitterFriendsCount,twitter_friends_count,sep=',')
       person$data$twitterListedCount <- if (is.null(person$data$twitterListedCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_listed_count else paste(person$data$twitterListedCount,twitter_listed_count,sep=',')
       person$data$twitterPostsCount <- if (is.null(person$data$twitterPostsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_posts_count else paste(person$data$twitterPostsCount,twitter_posts_count,sep=',')
-      person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamp) || nchar(person$data$twitterUpdateTimeStamps) == 0) Sys.time() else paste(person$data$twitterUpdateTimeStamp,Sys.time(),sep=',')
+      person$data$twitterUpdateDateStamps <- if (is.null(person$data$twitterUpdateDateStamp) || nchar(person$data$twitterUpdateDateStamps) == 0) format(Sys.time(),"%Y-%m-%d") else paste(person$data$twitterUpdateDateStamp,format(Sys.time(),"%Y-%m-%d"),sep=',')
+      person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamp) || nchar(person$data$twitterUpdateTimeStamps) == 0) format(Sys.time(),"%H:%M %z") else paste(person$data$twitterUpdateTimeStamp,format(Sys.time(),"%H:%M %z"),sep=',')
     }
     
     log_data <- paste("updating", person$data$fullName, "with key", person$key, "\n")
