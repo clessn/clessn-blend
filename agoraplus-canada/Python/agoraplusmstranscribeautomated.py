@@ -236,7 +236,7 @@ def main():
         if (video.publish_date.strftime("%Y-%m-%d") < select_publish_date_start or video.publish_date.strftime("%Y-%m-%d") > select_publish_date_end):
             logging.info("not in wanted date range")
             i=i+1
-            if (i==60):
+            if (i==100):
                 break
             continue
         # </if video not within wanted date range>
@@ -249,9 +249,9 @@ def main():
         video_uuid = video.watch_url.split("?v=")[1]
         logging.info(video_uuid)
 
-        #language_list = ['fr','en']
-        language_list = ['bi']
-        
+        language_list = ['fr','en']
+        #language_list = ['bi']
+
         for lang in language_list:
             transctipt_file_path = from_azure_file_path
             #transcript_file_name = video.publish_date.strftime("%Y-%m-%d")+video_uuid+"---"+video.title+'.txt'
@@ -315,7 +315,7 @@ def main():
 
         #</for lang in language_list>
 
-        if (i==10):
+        if (i==25):
             break
 
         i = i + 1
