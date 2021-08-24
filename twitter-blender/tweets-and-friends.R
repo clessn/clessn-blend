@@ -100,6 +100,7 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
   }
   
   if (nrow(this_pass_tweets) > 0) {
+    clessnverse::logit(scriptname, "Merging tweet types", logger)
     data.type <- dplyr::case_when(this_pass_tweets$is_retweet == TRUE ~ rep("retweet", nrow(this_pass_tweets)), TRUE ~ NA_character_)
     data.type1 <- data.frame(index=row.names(as.data.frame(data.type)),as.data.frame(data.type))
     
@@ -111,12 +112,15 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
     df <- left_join(data.type1, data.type2, by="index") %>% mutate(column=ifelse(!is.na(data.type1$data.type), data.type1$data.type, data.type2$data.type))
     df <- left_join(df, data.type3, by="index") %>% mutate(data.type=ifelse(!is.na(df$column), df$column, data.type3$data.type)) %>% select(data.type)
     
+    
     # construct a datafra,e corresponding to the datastructure we want to write to the hub
+    clessnverse::logit(scriptname, "Building dataframe to commit", logger)
     df_to_commit <- data.frame(key = paste("t", this_pass_tweets$status_id, sep='') %>% gsub("tt","t",.),
                                type = rep(dfPerson$type, nrow(this_pass_tweets)),
                                schema = rep("v1",nrow(this_pass_tweets)),
                                data.tweetID = this_pass_tweets$status_id,
-                               data.creationDate = this_pass_tweets$created_at,
+                               data.creationDate = format(this_pass_tweets$created_at, "%Y-%m-%d"),
+                               data.creationTime = format(this_pass_tweets$created_at, "%H:%M %z"),
                                data.screenName = this_pass_tweets$screen_name,
                                data.personKey = rep(dfPerson$key, nrow(this_pass_tweets)),
                                
@@ -134,18 +138,22 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
                                data.mentions = sapply(this_pass_tweets$mentions_screen_name[!!length(this_pass_tweets$mentions_screen_name)], toString),
                                
                                data.retweetID = this_pass_tweets$retweet_status_id,
+                               data.retweetCreationDate = format(this_pass_tweets$retweet_created_at, "%Y-%m-%d"),
+                               data.retweetCreationTime = format(this_pass_tweets$retweet_created_at, "%H:%M %z"),
                                data.retweetText = this_pass_tweets$retweet_text,
                                data.retweetFrom = this_pass_tweets$retweet_screen_name,
                                
                                data.quotedTweetID = this_pass_tweets$quoted_status_id,
-                               data.quotedTweetCreationDate = this_pass_tweets$quoted_created_at,
+                               data.quotedTweetCreationDate = format(this_pass_tweets$quoted_created_at, "%Y-%m-%d"),
+                               data.quotedTweetCreationTime = format(this_pass_tweets$quoted_created_at, "%H:%M %z"),
                                data.quotedTweetText = this_pass_tweets$quoted_text,
-                               data.quotedTweetAuthor = this_pass_tweets$quoted_screen_name,
+                               data.quotedTweetFrom = this_pass_tweets$quoted_screen_name,
                                
                                metadata.tweetUrl = sapply(this_pass_tweets$status_url[!!length(this_pass_tweets$status_url)], toString),
                                metadata.tweetLang = this_pass_tweets$lang,
                                metadata.tweetType = df$data.type,
-                               metadata.lastUpdatedOn = rep(Sys.time(), nrow(this_pass_tweets)),
+                               metadata.lastUpdatedOn = format(rep(Sys.time(), nrow(this_pass_tweets)),"%Y-%m-%d"),
+                               metadata.lastUpdatedAt = format(rep(Sys.time(), nrow(this_pass_tweets)),"%H:%M %z"),
                                metadata.twitterHandle = handle
     )
     
