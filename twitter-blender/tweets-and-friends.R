@@ -85,7 +85,7 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
   
   clessnverse::logit(scriptname, paste("checking if there are already tweets in the hub for", dfPerson$data.fullName, "(", handle, ")"), logger)
   myfilter <- clessnhub::create_filter(metadata = list("twitterHandle"=handle))
-  dfTweets <- clessnhub::get_items('tweets', filter = myfilter, download_data = FALSE)
+  dfTweets <- clessnhub::get_items('tweets', filter = myfilter, max_pages = 1, download_data = FALSE)
 
   if (!is.null(dfTweets) && nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found", nrow(dfTweets), "tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
     
@@ -173,7 +173,10 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
       metadata_to_commit <- as.list(df_to_commit[i,which(grepl("^metadata.",names(df_to_commit[i,])))])
       names(metadata_to_commit) <- gsub("^metadata.", "", names(metadata_to_commit))
       
-      if (!df_to_commit$key[i] %in% dfTweets$key) {
+      myfilter <- clessnhub::create_filter(key_contains = df_to_commit$key[i])
+      dfTestIfTweetExist <- clessnhub::get_items('tweets', myfilter, max_pages = 1)
+      
+      if (is.null(dfTestIfTweetExist)) {
         #cat("\n\n\n")
         #cat("creating", i, "\n")
         #cat("===============================================================\n")
