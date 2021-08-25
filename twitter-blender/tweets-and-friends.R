@@ -87,9 +87,10 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
   myfilter <- clessnhub::create_filter(metadata = list("twitterHandle"=handle))
   dfTweets <- clessnhub::get_items('tweets', filter = myfilter, max_pages = 1, download_data = FALSE)
 
-  if (!is.null(dfTweets) && nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found", nrow(dfTweets), "tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
+  if (!is.null(dfTweets) && nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
     
-  if ((handle %in% dfTweets$metadata.twitterHandle)) {
+  #if (handle %in% dfTweets$metadata.twitterHandle) {
+  if (!is.null(dfTweets)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
     clessnverse::logit(scriptname, paste("getting tweets from",dfPerson$data.fullName,"(",handle,")"), logger)
     this_pass_tweets <- search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token)
@@ -157,12 +158,23 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
                                metadata.twitterHandle = handle
     )
     
+    
+    #if (nrow(df_to_commit) >= 100) {
+    #  #download all tweets from the hub for this user
+    #  clessnverse::logit(scriptname, paste("More than 100 tweets in hub for",handle,": downloading them all"), logger)
+    #  myfilter <- clessnhub::create_filter(metadata = list("twitterHandle" = handle))
+    #  dfTweets <- clessnhub::get_items('tweets', myfilter)
+    #  clessnverse::logit(scriptname, paste("downloaded",nrow(dfTweets),"tweets from HUB"), logger)
+    #} else {
+    #  clessnverse::logit(scriptname, paste("Less than 100 tweets in hub for",handle,": doing spot check in hub to see if each twweet to scrape exists"), logger)
+    #}
+    
     clessnverse::logit(scriptname, paste("about to commit",nrow(df_to_commit),"tweets to HUB"), logger)
     
     # write the constructed df to the hub 
     for (i in 1:nrow(df_to_commit)) {
       
-      if (i %% 50 == 0) clessnverse::logit(scriptname, paste("written", i, "over", nrow(df_to_commit), "items to the hub"), logger)
+      if (i %% 50 == 0) clessnverse::logit(scriptname, paste("written", i, "of", nrow(df_to_commit), "items to the hub"), logger)
       
       key    <- paste("t", df_to_commit$key[i], sep='') %>% gsub("tt","t",.)
       type   <- df_to_commit$type[i]
@@ -173,100 +185,123 @@ getTweets <- function(handle, dfPerson, token, scriptname, logger) {
       metadata_to_commit <- as.list(df_to_commit[i,which(grepl("^metadata.",names(df_to_commit[i,])))])
       names(metadata_to_commit) <- gsub("^metadata.", "", names(metadata_to_commit))
       
-      myfilter <- clessnhub::create_filter(key = paste("t", df_to_commit$key[i], sep='') %>% gsub("tt","t",.))
-      dfTestIfTweetExist <- clessnhub::get_items('tweets', myfilter, max_pages = 1)
+      #tweet_exists <- FALSE
       
-      if (is.null(dfTestIfTweetExist)) {
-        #cat("\n\n\n")
-        #cat("creating", i, "\n")
-        #cat("===============================================================\n")
-        #cat(key, type, schema,"\n")
-        #cat(paste(names(metadata_to_commit), collapse = " * "),"\n")
-        #cat(paste(metadata_to_commit, collapse = " * "), "\n")
-        #cat(paste(names(data_to_commit), collapse = " * "),"\n")
-        #cat(paste(data_to_commit, collapse = " * "), "\n")
-        clessnhub::create_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
-      } else {
-        #cat("\n\n\n")
-        #cat("updating", i, "\n")
-        #cat("===============================================================\n")
-        #cat(key, type, schema,"\n")
-        #cat(paste(names(metadata_to_commit), collapse = " * "),"\n")
-        #cat(paste(metadata_to_commit, collapse = " * "), "\n")
-        #cat(paste(names(data_to_commit), collapse = " * "),"\n")
-        #cat(paste(data_to_commit, collapse = " * "), "\n")
-        clessnhub::edit_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
-      }#if (!df_to_commit$key[i] %in% dfTweets$key)
+      #if (nrow(df_to_commit) >= 100) {
+      #  tweet_exists <- df_to_commit$key[i] %in% dfTweets$key
+      #} else {
+      #  myfilter <- clessnhub::create_filter(key = df_to_commit$key[i])
+      #  dfTweets <- clessnhub::get_items('tweets', myfilter, max_pages = 1)
+      #  tweet_exists <- !is.null(dfTweets)
+      #}
+      
+      # if (!tweet_exists) {
+      #   #cat("\n\n\n")
+      #   #cat("creating", i, "\n")
+      #   #cat("===============================================================\n")
+      #   #cat(key, type, schema,"\n")
+      #   #cat(paste(names(metadata_to_commit), collapse = " * "),"\n")
+      #   #cat(paste(metadata_to_commit, collapse = " * "), "\n")
+      #   #cat(paste(names(data_to_commit), collapse = " * "),"\n")
+      #   #cat(paste(data_to_commit, collapse = " * "), "\n")
+      #   clessnhub::create_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+      # } else {
+      #   #cat("\n\n\n")
+      #   #cat("updating", i, "\n")
+      #   #cat("===============================================================\n")
+      #   #cat(key, type, schema,"\n")
+      #   #cat(paste(names(metadata_to_commit), collapse = " * "),"\n")
+      #   #cat(paste(metadata_to_commit, collapse = " * "), "\n")
+      #   #cat(paste(names(data_to_commit), collapse = " * "),"\n")
+      #   #cat(paste(data_to_commit, collapse = " * "), "\n")
+      #   clessnhub::edit_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+      # }#if (!tweet_exists)
+      
+      tryCatch(
+        {
+          clessnhub::edit_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+        },
+        
+        error = function(e) {
+          clessnhub::create_item('tweets', key = key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+        },
+        
+        finally={
+        }
+      )
+      
     }#for (i in 1:nrow(df_to_commit))
+  
+  
+    # update the person's twitter info in the hub from the last tweet collected
+    i <- nrow(this_pass_tweets)
+    twitter_name <- this_pass_tweets$name[i]
+    twitter_id <- this_pass_tweets$user_id[i]
+    twitter_location <- this_pass_tweets$location[i]
+    twitter_desc <- this_pass_tweets$description[i]
+    twitter_account_protected <- if (this_pass_tweets$protected[i]) 1 else 0
+    twitter_account_lang <- this_pass_tweets$account_lang[i]
+    twitter_account_created_on <- format(this_pass_tweets$account_created_at[i],"%Y-%m-%d")
+    twitter_account_created_at <- format(this_pass_tweets$account_created_at[i],"%H:%M %z")
+    twitter_account_verified <- if (this_pass_tweets$verified[i]) 1 else 0
+    twitter_followers_count <- this_pass_tweets$followers_count[i]
+    twitter_friends_count <- this_pass_tweets$friends_count[i]
+    twitter_listed_count <- this_pass_tweets$listed_count[i]
+    twitter_posts_count <- this_pass_tweets$statuses_count[i]
+    twitter_profile_url <-  paste("https://www.twitter.com/", handle, sep='')
+    twitter_profile_banner_url <- this_pass_tweets$profile_banner_url[i]
+    twitter_profile_image_url <- this_pass_tweets$profile_image_url[i]
+    
+    # get person from the hub
+    person <- clessnhub::get_item('persons', dfPerson$key)
+    if (!is.null(person) && (handle != "@LesVertsCanada" && handle != "@pcc_hq" && handle != "@NPD_QG" && handle != "@parti_liberal" && handle != "@ppopulaireca") ) {
+      person_data <- person$data
+      person_metadata <- person$metadata
+      
+      person$data$twitterName <- twitter_name
+      person$data$twitterID <- twitter_id
+      person$data$twitterLocation <- twitter_location
+      person$data$twitterDesc <- twitter_desc
+      person$data$twitterAccountProtected <- twitter_account_protected
+      person$data$twitterLang <- twitter_account_lang
+      person$data$twitterAccountCreatedOn <- twitter_account_created_on
+      person$data$twitterAccountCreatedAt <- twitter_account_created_at
+      person$data$twitterAccountVerified <- twitter_account_verified
+      person$data$twitterProfileURL <- twitter_profile_url
+      person$data$twitterProfileBannerURL <- twitter_profile_banner_url
+      person$data$twitterProfileImageURL <- twitter_profile_image_url
+      
+      if (!is.null(person$data$twitterUpdateDateStamps) && nchar(person$data$twitterUpdateDateStamps) > 0) {
+        twitter_update_list <- as.list(strsplit(person$data$twitterUpdateDateStamps, ',')[[1]])
+        latest_twitter_update <- twitter_update_list[length(twitter_update_list)][[1]]
+      } else {
+        latest_twitter_update <- "2000-01-01 00:00:00 EDT"
+      }
+      
+      if (is.null(person$data$twitterUpdateDateStamps) || nchar(person$data$twitterUpdateDateStamps) == 0 || difftime(Sys.time(),latest_twitter_update,units = "hours") >= 24) {    
+        clessnverse::logit(scriptname, paste("updating new twitter data for", person$data$fullName,"(",handle,")"), logger)
+        person$data$twitterFollowersCount <- if (is.null(person$data$twitterFollowersCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_followers_count else paste(person$data$twitterFollowersCount,twitter_followers_count,sep=',')
+        person$data$twitterFriendsCount <- if (is.null(person$data$twitterFriendsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_friends_count else paste(person$data$twitterFriendsCount,twitter_friends_count,sep=',')
+        person$data$twitterListedCount <- if (is.null(person$data$twitterListedCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_listed_count else paste(person$data$twitterListedCount,twitter_listed_count,sep=',')
+        person$data$twitterPostsCount <- if (is.null(person$data$twitterPostsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_posts_count else paste(person$data$twitterPostsCount,twitter_posts_count,sep=',')
+        person$data$twitterUpdateDateStamps <- if (is.null(person$data$twitterUpdateDateStamp) || nchar(person$data$twitterUpdateDateStamps) == 0) format(Sys.time(),"%Y-%m-%d") else paste(person$data$twitterUpdateDateStamp,format(Sys.time(),"%Y-%m-%d"),sep=',')
+        person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamp) || nchar(person$data$twitterUpdateTimeStamps) == 0) format(Sys.time(),"%H:%M %z") else paste(person$data$twitterUpdateTimeStamp,format(Sys.time(),"%H:%M %z"),sep=',')
+      }
+      
+      log_data <- paste("updating", person$data$fullName, "with key", person$key, "\n")
+      log_data <- paste(log_data, "===============================================================\n")
+      log_data <- paste(log_data, person$key, person$type, person$schema,"\n")
+      log_data <- paste(log_data, paste(names(person$metadata), collapse = " * "),"\n")
+      log_data <- paste(log_data, paste(person$metadata, collapse = " * "), "\n")
+      log_data <- paste(log_data, paste(names(person$data), collapse = " * "),"\n")
+      log_data <- paste(log_data, paste(person$data, collapse = " * "))
+      log_metadata <- paste("Local time", Sys.time())
+      clessnverse::logit(scriptname, paste("pushing twitter data for", person$data$fullName,"(",handle,") to hub"), logger)
+      clessnhub::edit_item('persons', key = person$key, type = person$type, schema = person$schema, metadata = person$metadata, data = person$data)
+    } #if (!is.null(person) && (handle != "@LesVertsCanada" && handle != "@pcc_hq" && handle != "@NPD_QG" && handle != "@parti_liberal" && handle != "@ppopulaireca") )
+    
   }#if (nrow(this_pass_tweets) > 0)
   
-  
-  # update the person's twitter info in the hub from the last tweet collected
-  i <- nrow(this_pass_tweets)
-  twitter_name <- this_pass_tweets$name[i]
-  twitter_id <- this_pass_tweets$user_id[i]
-  twitter_location <- this_pass_tweets$location[i]
-  twitter_desc <- this_pass_tweets$description[i]
-  twitter_account_protected <- if (this_pass_tweets$protected[i]) 1 else 0
-  twitter_account_lang <- this_pass_tweets$account_lang[i]
-  twitter_account_created_on <- format(this_pass_tweets$account_created_at[i],"%Y-%m-%d")
-  twitter_account_created_at <- format(this_pass_tweets$account_created_at[i],"%H:%M %z")
-  twitter_account_verified <- if (this_pass_tweets$verified[i]) 1 else 0
-  twitter_followers_count <- this_pass_tweets$followers_count[i]
-  twitter_friends_count <- this_pass_tweets$friends_count[i]
-  twitter_listed_count <- this_pass_tweets$listed_count[i]
-  twitter_posts_count <- this_pass_tweets$statuses_count[i]
-  twitter_profile_url <-  paste("https://www.twitter.com/", handle, sep='')
-  twitter_profile_banner_url <- this_pass_tweets$profile_banner_url[i]
-  twitter_profile_image_url <- this_pass_tweets$profile_image_url[i]
-  
-  # get person from the hub
-  person <- clessnhub::get_item('persons', dfPerson$key)
-  if (!is.null(person) && (handle != "@LesVertsCanada" && handle != "@pcc_hq" && handle != "@NPD_QG" && handle != "@parti_liberal" && handle != "@ppopulaireca") ) {
-    person_data <- person$data
-    person_metadata <- person$metadata
-    
-    person$data$twitterName <- twitter_name
-    person$data$twitterID <- twitter_id
-    person$data$twitterLocation <- twitter_location
-    person$data$twitterDesc <- twitter_desc
-    person$data$twitterAccountProtected <- twitter_account_protected
-    person$data$twitterLang <- twitter_account_lang
-    person$data$twitterAccountCreatedOn <- twitter_account_created_on
-    person$data$twitterAccountCreatedAt <- twitter_account_created_at
-    person$data$twitterAccountVerified <- twitter_account_verified
-    person$data$twitterProfileURL <- twitter_profile_url
-    person$data$twitterProfileBannerURL <- twitter_profile_banner_url
-    person$data$twitterProfileImageURL <- twitter_profile_image_url
-    
-    if (!is.null(person$data$twitterUpdateDateStamps) && nchar(person$data$twitterUpdateDateStamps) > 0) {
-      twitter_update_list <- as.list(strsplit(person$data$twitterUpdateDateStamps, ',')[[1]])
-      latest_twitter_update <- twitter_update_list[length(twitter_update_list)][[1]]
-    } else {
-      latest_twitter_update <- "2000-01-01 00:00:00 EDT"
-    }
-    
-    if (is.null(person$data$twitterUpdateDateStamps) || nchar(person$data$twitterUpdateDateStamps) == 0 || difftime(Sys.time(),latest_twitter_update,units = "hours") >= 24) {    
-      clessnverse::logit(scriptname, paste("updating new twitter data for", person$data$fullName,"(",handle,")"), logger)
-      person$data$twitterFollowersCount <- if (is.null(person$data$twitterFollowersCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_followers_count else paste(person$data$twitterFollowersCount,twitter_followers_count,sep=',')
-      person$data$twitterFriendsCount <- if (is.null(person$data$twitterFriendsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_friends_count else paste(person$data$twitterFriendsCount,twitter_friends_count,sep=',')
-      person$data$twitterListedCount <- if (is.null(person$data$twitterListedCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_listed_count else paste(person$data$twitterListedCount,twitter_listed_count,sep=',')
-      person$data$twitterPostsCount <- if (is.null(person$data$twitterPostsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) twitter_posts_count else paste(person$data$twitterPostsCount,twitter_posts_count,sep=',')
-      person$data$twitterUpdateDateStamps <- if (is.null(person$data$twitterUpdateDateStamp) || nchar(person$data$twitterUpdateDateStamps) == 0) format(Sys.time(),"%Y-%m-%d") else paste(person$data$twitterUpdateDateStamp,format(Sys.time(),"%Y-%m-%d"),sep=',')
-      person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamp) || nchar(person$data$twitterUpdateTimeStamps) == 0) format(Sys.time(),"%H:%M %z") else paste(person$data$twitterUpdateTimeStamp,format(Sys.time(),"%H:%M %z"),sep=',')
-    }
-    
-    log_data <- paste("updating", person$data$fullName, "with key", person$key, "\n")
-    log_data <- paste(log_data, "===============================================================\n")
-    log_data <- paste(log_data, person$key, person$type, person$schema,"\n")
-    log_data <- paste(log_data, paste(names(person$metadata), collapse = " * "),"\n")
-    log_data <- paste(log_data, paste(person$metadata, collapse = " * "), "\n")
-    log_data <- paste(log_data, paste(names(person$data), collapse = " * "),"\n")
-    log_data <- paste(log_data, paste(person$data, collapse = " * "))
-    log_metadata <- paste("Local time", Sys.time())
-    clessnverse::logit(scriptname, paste("pushing twitter data for", person$data$fullName,"(",handle,") to hub"), logger)
-    clessnhub::edit_item('persons', key = person$key, type = person$type, schema = person$schema, metadata = person$metadata, data = person$data)
-  } #if (!is.null(person))
 } #</getTweets>
 
 
