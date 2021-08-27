@@ -102,7 +102,7 @@ getTweets <- function(handle, key, token, scriptname, logger) {
   #if (handle %in% dfTweets$metadata.twitterHandle) {
   if (!is.null(dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && person$metadata$twitterAccountHasBeenScraped == 1) {
     # we already scraped the tweets of this person => let's get only the last few tweets
-    clessnverse::logit(scriptname, paste("getting tweets from",person$data$fullName,"(",handle,")"), logger)
+    clessnverse::logit(scriptname, paste("getting new tweets from",person$data$fullName,"(",handle,")"), logger)
     this_pass_tweets <- search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token)
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
@@ -111,7 +111,6 @@ getTweets <- function(handle, key, token, scriptname, logger) {
   }
   
   if (nrow(this_pass_tweets) > 0) {
-    clessnverse::logit(scriptname, "Merging tweet types", logger)
     data.type <- dplyr::case_when(this_pass_tweets$is_retweet == TRUE ~ rep("retweet", nrow(this_pass_tweets)), TRUE ~ NA_character_)
     data.type1 <- data.frame(index=row.names(as.data.frame(data.type)),as.data.frame(data.type))
     
@@ -125,7 +124,6 @@ getTweets <- function(handle, key, token, scriptname, logger) {
     
     
     # construct a datafra,e corresponding to the datastructure we want to write to the hub
-    clessnverse::logit(scriptname, "Building dataframe to commit", logger)
     df_to_commit <- data.frame(key = paste("t", this_pass_tweets$status_id, sep='') %>% gsub("tt","t",.),
                                type = rep(person$type , nrow(this_pass_tweets)),
                                schema = rep("v1",nrow(this_pass_tweets)),
@@ -168,15 +166,13 @@ getTweets <- function(handle, key, token, scriptname, logger) {
                                metadata.twitterHandle = handle
     ) %>% filter(data.creationDate >= latest_twitter_update)
     
-    clessnverse::logit(scriptname, paste("about to commit",nrow(df_to_commit),"tweets to HUB"), logger)
+    clessnverse::logit(scriptname, paste("committing",nrow(df_to_commit),"tweets to HUB"), logger)
     
     if (nrow(df_to_commit) == 0) return()
     
     # write the constructed df to the hub 
     for (i in 1:nrow(df_to_commit)) {
-      
-      if (i %% 50 == 0) clessnverse::logit(scriptname, paste("written", i, "of", nrow(df_to_commit), "items to the hub"), logger)
-      
+     
       t_key  <- paste("t", df_to_commit$key[i], sep='') %>% gsub("tt","t",.)
       type   <- df_to_commit$type[i]
       schema <- df_to_commit$schema[i]
@@ -191,15 +187,19 @@ getTweets <- function(handle, key, token, scriptname, logger) {
         {
           clessnhub::edit_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
         },
-        
+
         error = function(e) {
-          clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+          tryCatch(
+            {clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)},
+            error = function(e) {clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)},
+            finally = {}
+          )
         },
-        
+
         finally={
         }
       )
-      
+     
     }#for (i in 1:nrow(df_to_commit))
   
     # update the person's twitter info in the hub from the last tweet collected
@@ -236,7 +236,10 @@ getTweets <- function(handle, key, token, scriptname, logger) {
       clessnhub::edit_item('persons', key = key, type = person$type, schema = person$schema, metadata = person$metadata, data = person$data)
     } #if (handle != "@LesVertsCanada" && handle != "@pcc_hq" && handle != "@NPD_QG" && handle != "@parti_liberal" && handle != "@ppopulaireca") 
     
-  }#if (nrow(this_pass_tweets) > 0)
+  } else {
+    clessnverse::logit(scriptname, paste("no tweet found on Twitter for", person$data$fullName,"(",handle,") to hub"), logger)
+  }
+  #if (nrow(this_pass_tweets) > 0)
   
 } #</getTweets>
 
@@ -294,13 +297,14 @@ main <- function(scriptname, logger) {
                          dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" | 
                          dfPersons$key == "104669" | dfPersons$key == "376927648")
   
-  candidates_index <- which(dfPersons$key %in% dfCandidates$key[1:100])
+  candidates_index <- which(dfCandidates$key %in% dfPersons$key)
   
   index <- c(persons_index, candidates_index)
   #index <- persons_index
   
   for (i_person in index) {
   #for (i_person in 1:nrow(dfPersons)) {
+    clessnverse::logit(scriptname, paste("scraping count:", which(index == i_person), "of", length(index)), logger)
     getTweets(handle = dfPersons$data.twitterHandle[i_person], key = dfPersons$key[i_person],
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_person in 1:nrow(dfPersons))
@@ -310,6 +314,7 @@ main <- function(scriptname, logger) {
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfParties),"english parties' accounts"), logger)
   
   for (i_party in 1:nrow(dfParties)) {
+    clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
     getTweets(handle = dfParties$data.twitterHandleEN[i_party], key = dfParties$key[i_party],
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
@@ -318,6 +323,7 @@ main <- function(scriptname, logger) {
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfParties),"french parties' accounts"), logger)
   
   for (i_party in 1:nrow(dfParties)) {
+    clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
     getTweets(handle = dfParties$data.twitterHandleFR[i_party], key = dfParties$key[i_party],
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
@@ -326,6 +332,7 @@ main <- function(scriptname, logger) {
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfMedias),"medias' accounts"), logger)
   
   for (i_media in 1:nrow(dfMedias)) {
+    clessnverse::logit(scriptname, paste("scraping count:", i_media, "of", nrow(dfMedias)), logger)
     getTweets(handle = dfMedias$data.twitterHandle[i_media], key = dfMedias$key[i_media],
               token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
@@ -341,6 +348,7 @@ tryCatch(
     installPackages()
     library(dplyr)
     
+    #log_output <- c("file","hub","console")
     log_output <- c("file","hub")
     #log_output <- "file"
     
