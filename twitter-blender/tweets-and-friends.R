@@ -146,7 +146,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                schema = rep("v1",nrow(this_pass_tweets)),
                                data.tweetID = this_pass_tweets$status_id,
                                data.creationDate = format(this_pass_tweets$created_at, "%Y-%m-%d"),
-                               data.creationTime = format(this_pass_tweets$created_at, "%H:%M %Z"),
+                               data.creationTime = format(this_pass_tweets$created_at, "%H:%M %z"),
                                data.screenName = this_pass_tweets$screen_name,
                                data.personKey = rep(person$key, nrow(this_pass_tweets)),
                                
@@ -165,13 +165,13 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                
                                data.retweetID = this_pass_tweets$retweet_status_id,
                                data.retweetCreationDate = format(this_pass_tweets$retweet_created_at, "%Y-%m-%d"),
-                               data.retweetCreationTime = format(this_pass_tweets$retweet_created_at, "%H:%M %Z"),
+                               data.retweetCreationTime = format(this_pass_tweets$retweet_created_at, "%H:%M %z"),
                                data.retweetText = this_pass_tweets$retweet_text,
                                data.retweetFrom = this_pass_tweets$retweet_screen_name,
                                
                                data.quotedTweetID = this_pass_tweets$quoted_status_id,
                                data.quotedTweetCreationDate = format(this_pass_tweets$quoted_created_at, "%Y-%m-%d"),
-                               data.quotedTweetCreationTime = format(this_pass_tweets$quoted_created_at, "%H:%M %Z"),
+                               data.quotedTweetCreationTime = format(this_pass_tweets$quoted_created_at, "%H:%M %z"),
                                data.quotedTweetText = this_pass_tweets$quoted_text,
                                data.quotedTweetFrom = this_pass_tweets$quoted_screen_name,
                                
@@ -179,7 +179,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                metadata.tweetLang = this_pass_tweets$lang,
                                metadata.tweetType = df$data.type,
                                metadata.lastUpdatedOn = format(rep(Sys.time(), nrow(this_pass_tweets)),"%Y-%m-%d"),
-                               metadata.lastUpdatedAt = format(rep(Sys.time(), nrow(this_pass_tweets)),"%H:%M %Z"),
+                               metadata.lastUpdatedAt = format(rep(Sys.time(), nrow(this_pass_tweets)),"%H:%M %z"),
                                metadata.twitterHandle = handle
     ) %>% filter(data.creationDate >= latest_twitter_update)
     
@@ -233,7 +233,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       person$data$twitterAccountProtected <- if (this_pass_tweets$protected[i]) 1 else 0
       person$data$twitterLang <- this_pass_tweets$account_lang[i]
       person$data$twitterAccountCreatedOn <- format(this_pass_tweets$account_created_at[i],"%Y-%m-%d")
-      person$data$twitterAccountCreatedAt <- format(this_pass_tweets$account_created_at[i],"%H:%M %Z")
+      person$data$twitterAccountCreatedAt <- format(this_pass_tweets$account_created_at[i],"%H:%M %z")
       person$data$twitterAccountVerified <- if (this_pass_tweets$verified[i]) 1 else 0
       person$data$twitterProfileURL <- paste("https://www.twitter.com/", handle, sep='')
       person$data$twitterProfileBannerURL <- this_pass_tweets$profile_banner_url[i]
@@ -246,7 +246,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
         person$data$twitterListedCount <- if (is.null(person$data$twitterListedCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) this_pass_tweets$listed_count[i] else paste(person$data$twitterListedCount,this_pass_tweets$listed_count[i],sep=',')
         person$data$twitterPostsCount <- if (is.null(person$data$twitterPostsCount) || nchar(person$data$twitterUpdateTimeStamps) == 0) this_pass_tweets$statuses_count[i] else paste(person$data$twitterPostsCount,this_pass_tweets$statuses_count[i],sep=',')
         person$data$twitterUpdateDateStamps <- if (is.null(person$data$twitterUpdateDateStamps) || nchar(person$data$twitterUpdateDateStamps) == 0) format(Sys.time(),"%Y-%m-%d") else paste(person$data$twitterUpdateDateStamps,format(Sys.time(),"%Y-%m-%d"),sep=',')
-        person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamps) || nchar(person$data$twitterUpdateTimeStamps) == 0) format(Sys.time(),"%H:%M %Z") else paste(person$data$twitterUpdateTimeStamps,format(Sys.time(),"%H:%M %Z"),sep=',')
+        person$data$twitterUpdateTimeStamps <- if (is.null(person$data$twitterUpdateTimeStamps) || nchar(person$data$twitterUpdateTimeStamps) == 0) format(Sys.time(),"%H:%M %z") else paste(person$data$twitterUpdateTimeStamps,format(Sys.time(),"%H:%M %z"),sep=',')
       }
       
       clessnverse::logit(scriptname, paste("pushing twitter data for", person$data$fullName,"(",handle,") to hub"), logger)
