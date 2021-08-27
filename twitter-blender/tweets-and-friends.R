@@ -73,10 +73,27 @@ installPackages <- function() {
 
 
 
+processCommandLineOptions <- function(scriptname, logger) {
+
+  option_list = list(
+    optparse::make_option(c("-o", "--log_output"), type="character", default="file",
+                          help="where to output the logs [default= %default]", metavar="character"),
+    optparse::make_option(c("-t", "--max_timeline"), type="numeric", default=100,
+                          help="max number of tweets to get in a user timeline [default= %default]", metavar="numeric")
+    )
+  
+  opt_parser = optparse::OptionParser(option_list=option_list)
+  opt = optparse::parse_args(opt_parser)
+  
+  clessnverse::logit(paste("command line options: ",
+                           paste(c(rbind(paste(" ",names(opt),"=",sep=''),opt)), collapse='')), logger)
+  
+  return(opt)
+}
+  
 
 
-
-getTweets <- function(handle, key, token, scriptname, logger) {
+getTweets <- function(handle, key, opt, token, scriptname, logger) {
   
   if (is.na(handle) || is.null(handle) || nchar(handle) == 0) {
     clessnverse::logit(scriptname, paste("twitter handle is NA exiting..."), logger)
@@ -100,14 +117,14 @@ getTweets <- function(handle, key, token, scriptname, logger) {
   }
 
   #if (handle %in% dfTweets$metadata.twitterHandle) {
-  if (!is.null(dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && person$metadata$twitterAccountHasBeenScraped == 1) {
+  if (!is.null(dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
     clessnverse::logit(scriptname, paste("getting new tweets from",person$data$fullName,"(",handle,")"), logger)
     this_pass_tweets <- search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token)
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
-    clessnverse::logit(scriptname, paste("getting full twitter timeline from",person$data$fullName,"(",handle,")"), logger)
-    this_pass_tweets <- rtweet::get_timeline(handle,n=3200, token = token)
+    clessnverse::logit(scriptname, paste("getting full twitter timeline from",person$data$fullName,"(",handle,") witn n =", opt$max_timeline), logger)
+    this_pass_tweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token)
   }
   
   if (nrow(this_pass_tweets) > 0) {
@@ -207,7 +224,7 @@ getTweets <- function(handle, key, token, scriptname, logger) {
 
     if ( handle != "@LesVertsCanada" && handle != "@pcc_hq" && handle != "@NPD_QG" && handle != "@parti_liberal" && handle != "@ppopulaireca" ) {
       
-      person$metadata$twitterAccountHasBeenScraped <- 1
+      person$metadata$twitterAccountHasBeenScraped <- "1"
       
       person$data$twitterName <- this_pass_tweets$name[i]
       person$data$twitterID <- this_pass_tweets$user_id[i]
@@ -250,7 +267,7 @@ getTweets <- function(handle, key, token, scriptname, logger) {
 ########################               MAIN              ######################
 ###############################################################################
 
-main <- function(scriptname, logger) {
+main <- function(opt, scriptname, logger) {
   
   # load twitter token rds file
   if (file.exists(".rtweet_token.rds")) token <- readRDS(".rtweet_token.rds")
@@ -293,20 +310,20 @@ main <- function(scriptname, logger) {
   # Loop through the entire table of persons
   clessnverse::logit(scriptname, paste("start looping through",nrow(dfPersons),"persons"), logger)
 
-  persons_index <- which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" | 
-                         dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" | 
-                         dfPersons$key == "104669" | dfPersons$key == "376927648")
+  persons_index <- which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
+                        dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" |
+                        dfPersons$key == "104669" | dfPersons$key == "376927648")
   
   candidates_index <- which(dfCandidates$key %in% dfPersons$key)
   
   index <- c(persons_index, candidates_index)
-  #index <- persons_index
+  
+  #index <- which(dfPersons$key == "203207356" | dfPersons$key == "1031618")
   
   for (i_person in index) {
-  #for (i_person in 1:nrow(dfPersons)) {
     clessnverse::logit(scriptname, paste("scraping count:", which(index == i_person), "of", length(index)), logger)
     getTweets(handle = dfPersons$data.twitterHandle[i_person], key = dfPersons$key[i_person],
-              token = token, scriptname = scriptname, logger = logger)
+              opt = opt, token = token, scriptname = scriptname, logger = logger)
   } #for (i_person in 1:nrow(dfPersons))
   
   
@@ -316,7 +333,7 @@ main <- function(scriptname, logger) {
   for (i_party in 1:nrow(dfParties)) {
     clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
     getTweets(handle = dfParties$data.twitterHandleEN[i_party], key = dfParties$key[i_party],
-              token = token, scriptname = scriptname, logger = logger)
+              opt = opt, token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
   
   # Loop through the entire table of parties FR twitter accounts
@@ -325,7 +342,7 @@ main <- function(scriptname, logger) {
   for (i_party in 1:nrow(dfParties)) {
     clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
     getTweets(handle = dfParties$data.twitterHandleFR[i_party], key = dfParties$key[i_party],
-              token = token, scriptname = scriptname, logger = logger)
+              opt = opt, token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
   
   # Loop through the entire table of medias twitter accounts
@@ -334,7 +351,7 @@ main <- function(scriptname, logger) {
   for (i_media in 1:nrow(dfMedias)) {
     clessnverse::logit(scriptname, paste("scraping count:", i_media, "of", nrow(dfMedias)), logger)
     getTweets(handle = dfMedias$data.twitterHandle[i_media], key = dfMedias$key[i_media],
-              token = token, scriptname = scriptname, logger = logger)
+              opt = opt, token = token, scriptname = scriptname, logger = logger)
   } #for (i_party in 1:nrow(dfParties))
 
 } #</main>
@@ -348,20 +365,23 @@ tryCatch(
     installPackages()
     library(dplyr)
     
-    #log_output <- c("file","hub","console")
-    log_output <- c("file","hub")
-    #log_output <- "file"
+    if (exists("logger")) rm(logger)
     
     if (!exists("scriptname")) scriptname <<- "tweets-and-friends.R"
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, log_output, Sys.getenv("LOG_PATH"))
-
+    
+    if (!exists("opt")) {
+      opt <- processCommandLineOptions(scriptname, "console")
+    }
+    
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+   
     # login to the hub
     clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
     clessnverse::logit(scriptname, "connecting to hub", logger)
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
     
-    main(scriptname, logger)
+    main(opt, scriptname, logger)
   },
   
   error = function(e) {
