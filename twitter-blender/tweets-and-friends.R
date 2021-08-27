@@ -179,7 +179,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                metadata.tweetLang = this_pass_tweets$lang,
                                metadata.tweetType = df$data.type,
                                metadata.lastUpdatedOn = format(rep(Sys.time(), nrow(this_pass_tweets)),"%Y-%m-%d"),
-                               metadata.lastUpdatedAt = format(rep(Sys.time(), nrow(this_pass_tweets)),"%H:%M %z"),
+                               metadata.lastUpdatedAt = format(rep(Sys.time(), nrow(this_pass_tweets)),"%H:%M"),
                                metadata.twitterHandle = handle
     ) %>% filter(data.creationDate >= latest_twitter_update)
     
