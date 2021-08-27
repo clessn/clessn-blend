@@ -1,16 +1,25 @@
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
 tictoc::tic()
-myfilter <- clessnhub::create_filter(metadata = list("twitterHandle"="BoissonDarryl"))
-dfTweets <- clessnhub::get_items('persons', download_data = F)
+myfilter <- clessnhub::create_filter(metadata = list(twitterAccountHasBeenScraped = "1"))
+dfPersons <- clessnhub::get_items('persons', myfilter,  download_data = F)
 tictoc::toc()
 
-for (i in 1:nrow(dfTweets)) {
-  #clessnhub::delete_item('tweets', dfTweets$key[i])
-}
+tictoc::tic()
+myfilter <- clessnhub::create_filter(data = list(twitterPostsCount__gte=1))
+dfPersons <- clessnhub::get_items('persons', myfilter, download_data = T)
+tictoc::toc()
 
-myfilter <- clessnhub::create_filter(data = list("twitterAccountVerified"=1))
-dfTweets <- clessnhub::get_items('persons', myfilter, download_data = T)
+tictoc::tic()
+myfilter <- clessnhub::create_filter(data = list(creationDate__gte="2021-08-26"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(metadata = list(tweetType = "retweet", twitterHandle="yfblanchet"), data = list(creationDate__gte="2021-08-01"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
 
 
 # get all mps and journalists
