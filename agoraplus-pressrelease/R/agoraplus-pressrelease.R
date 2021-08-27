@@ -464,19 +464,19 @@ extractPPCInfo <- function(comm_root, scriptname, logger) {
 ###############################################################################
 scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
   
-  clessnverse::logit(scriptname, paste("scraping", party, "press release page", party_url), logger)
+  clessnverse::logit(scriptname, paste("scraping", party, "main press release page", party_url), logger)
   r <- safe_httr_GET(party_url)
   
   if (r$result$status_code == 200) {
     # On extrait les section <a> qui contiennent les liens vers chaque communiqué
-    clessnverse::logit(scriptname, paste("successful GET of", party, "main press release page", party_url), logger)
+    #clessnverse::logit(scriptname, paste("successful GET of", party, "main press release page", party_url), logger)
     
     index_html <- httr::content(r$result, as="text")
     
     index_xml <- XML::htmlTreeParse(index_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
     xml_root <- XML::xmlRoot(index_xml)
     
-    clessnverse::logit(scriptname, paste("Trying to extract", party,"press releases URLs from main press release page"), logger)
+    #clessnverse::logit(scriptname, paste("Trying to extract", party,"press releases URLs from main press release page"), logger)
     
     if (party == "LPC") urls_list <- extractLPCUrlsList(xml_root, scriptname, logger)
     
@@ -497,16 +497,18 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
     if (party == "BQ")  urls_list <- extractBQUrlsList(xml_root, scriptname, logger)
     if (party == "PPC") urls_list <- extractPPCUrlsList(xml_root, scriptname, logger)
     
-    if (length(urls_list) > 0) clessnverse::logit(scriptname, paste("found", length(urls_list), "press releases URLs from",party, "main press release page: looping through them"), logger) else clessnverse::logit(scriptname, paste("No URL found in", party, "main press releases page"), logger)
+    if (length(urls_list) > 0) clessnverse::logit(scriptname, paste("found", length(urls_list), "press releases URLs from",party, "main press release page"), logger) else clessnverse::logit(scriptname, paste("No URL found in", party, "main press releases page"), logger)
     
     # On loop à travers toutes les URL de ls liste des communiqués
     # On les scrape et stocke sur le hub 2.0
     if (length(urls_list) > 0) {
       for (i in 1:length(urls_list)) {
+        clessnverse::logit(scriptname, paste("scraping", party, "press release page", party_url), logger)
+        
         r <- safe_httr_GET(urls_list[[i]])
         
         if (r$result$status_code == 200) {
-          clessnverse::logit(scriptname, paste ("successful GET on", party, "press release at URL", urls_list[[i]]), logger)
+          #clessnverse::logit(scriptname, paste ("successful GET on", party, "press release at URL", urls_list[[i]]), logger)
           comm_html <- httr::content(r$result, as="text")
           
           comm_xml <- XML::htmlTreeParse(comm_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
@@ -542,11 +544,11 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
             
             if (is.null(hub_items)) {
               # ce communiqué (avec cette key) n'existe pas dans le hub
-              clessnverse::logit(scriptname, paste("creating new item", key, "in table agoraplus_press_releases"), logger)
+              #clessnverse::logit(scriptname, paste("creating new item", key, "in table agoraplus_press_releases"), logger)
               clessnhub::create_item('agoraplus_press_releases', key = key, type = type, schema = schema, metadata = hub_object$metadata, data = hub_object$data)
             } else {
               # ce communiqué (avec cette key) existe dans le hub 
-              clessnverse::logit(scriptname, paste("updating existing item", key, "in table agoraplus_press_releases"), logger)
+              #clessnverse::logit(scriptname, paste("updating existing item", key, "in table agoraplus_press_releases"), logger)
               clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema,metadata = hub_object$metadata, data = hub_object$data)
             }
           } else {
@@ -582,10 +584,10 @@ main <- function(scriptname, logger) {
                     c("NDP","https://www.npd.ca/nouvelles"),
                     c("PPC","https://www.partipopulaireducanada.ca/nouvelles_archives"))
   
-  clessnverse::logit(scriptname, paste("Scraping the following political parties press releases", paste(urls_list, collapse = ' ')), logger)
+  #clessnverse::logit(scriptname, paste("Scraping the following political parties press releases", paste(urls_list, collapse = ' ')), logger)
   
   for (i in 1:length(urls_list)) {
-    cat(urls_list[[i]][1], urls_list[[i]][2], "\n")
+    #cat(urls_list[[i]][1], urls_list[[i]][2], "\n")
     scrapePartyPressRelease(urls_list[[i]][1], urls_list[[i]][2], scriptname, logger)
   }
   
