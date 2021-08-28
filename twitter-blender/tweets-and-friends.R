@@ -131,7 +131,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
   if (!is.null(person$data$twitterUpdateDateStamps) && !is.na(person$data$twitterUpdateDateStamps) && nchar(person$data$twitterUpdateDateStamps) > 0) {
     twitter_update_date_list <- as.list(strsplit(person$data$twitterUpdateDateStamps, ',')[[1]])
     twitter_update_time_list <- as.list(strsplit(person$data$twitterUpdateTimeStamps, ',')[[1]])
-    latest_twitter_update <- paste(twitter_update_date_list[length(twitter_update_list)][[1]], twitter_update_time_list[length(twitter_update_time_list)][[1]]) 
+    latest_twitter_update <- paste(twitter_update_date_list[length(twitter_update_date_list)][[1]], twitter_update_time_list[length(twitter_update_time_list)][[1]]) 
   } else {
     latest_twitter_update <- "2000-01-01 00:00 UTC"
   }
