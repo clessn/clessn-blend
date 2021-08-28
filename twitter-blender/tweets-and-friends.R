@@ -374,9 +374,9 @@ main <- function(opt, scriptname, logger) {
   
   candidates_index <- which(dfCandidates$key %in% dfPersons$key)
   
-  index <- c(persons_index, candidates_index)
-  
   #index <- which(dfPersons$key == "203207356" | dfPersons$key == "1031618")
+  #index <- persons_index
+  index <- c(persons_index, candidates_index)
   
   for (i_person in index) {
     #i_person <- index[2]
