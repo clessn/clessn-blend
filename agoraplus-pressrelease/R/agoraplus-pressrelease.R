@@ -503,7 +503,7 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
     # On les scrape et stocke sur le hub 2.0
     if (length(urls_list) > 0) {
       for (i in 1:length(urls_list)) {
-        clessnverse::logit(scriptname, paste("scraping", party, "press release page", party_url), logger)
+        clessnverse::logit(scriptname, paste("scraping", party, "press release page", urls_list[[i]]), logger)
         
         r <- safe_httr_GET(urls_list[[i]])
         
