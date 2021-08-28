@@ -11,7 +11,7 @@ is.na.char <- function(x) {
 myfilter <- clessnhub::create_filter(data = list(twitterAccountCreatedOn__gte = "2000-01-01"))
 dfPersons <- clessnhub::get_items('persons', myfilter)
 
-for (p in 3:nrow(dfPersons)) {
+for (p in 42:nrow(dfPersons)) {
 #for (p in 1:2) {
   cat(dfPersons$data.fullName[p], dfPersons$data.twitterHandle[p],"\n")
   
