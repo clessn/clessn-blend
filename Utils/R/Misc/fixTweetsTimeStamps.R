@@ -52,7 +52,7 @@ for (p in 3:nrow(dfPersons)) {
   }
   
   
-  myfilter <- clessnhub::create_filter(metadata = list(twitterHandle=dfPersons$data.twitterHandle[p]))
+  myfilter <- clessnhub::create_filter(schema = "v1", metadata = list(twitterHandle=dfPersons$data.twitterHandle[p]))
   dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
   
   if (!is.null(dfTweets)) {
