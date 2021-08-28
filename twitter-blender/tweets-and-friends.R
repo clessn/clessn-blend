@@ -239,7 +239,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       data_to_commit[sapply(data_to_commit,is.na.char)] <- NA_character_ 
       metadata_to_commit[sapply(metadata_to_commit,is.na.char)] <- NA_character_
       
-      clessnverse::logit(scriptname, t_key, logger)
+      #clessnverse::logit(scriptname, t_key, logger)
  
       tryCatch(
         {
