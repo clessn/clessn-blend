@@ -600,7 +600,7 @@ tryCatch(
     installPackages()
     library(dplyr)
     
-    if (!exists("scriptname")) scriptname <<- "agoraplus-pressrelease.R"
+    if (!exists("scriptname")) scriptname <<- "agoraplus-pressrelease"
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","hub"), Sys.getenv("LOG_PATH"))
     
     # login to the hub
