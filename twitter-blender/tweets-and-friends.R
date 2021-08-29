@@ -92,20 +92,19 @@ is.na.char <- function(x) {
   return (x=="NA")
 }
 
-processCommandLineOptions <- function(scriptname, logger) {
+processCommandLineOptions <- function() {
 
   option_list = list(
-    optparse::make_option(c("-o", "--log_output"), type="character", default="file",
+    optparse::make_option(c("-o", "--log_output"), type="character", default="file,console",
                           help="where to output the logs [default= %default]", metavar="character"),
     optparse::make_option(c("-t", "--max_timeline"), type="numeric", default=100,
-                          help="max number of tweets to get in a user timeline [default= %default]", metavar="numeric")
-    )
+                          help="max number of tweets to get in a user timeline [default= %default]", metavar="numeric"),
+    optparse::make_option(c("-p", "--population"), type="character", default="small_sample",
+                          help="population to scrape [default= %default]", metavar="character")
+  )
   
   opt_parser = optparse::OptionParser(option_list=option_list)
   opt = optparse::parse_args(opt_parser)
-  
-  clessnverse::logit(paste("command line options: ",
-                           paste(c(rbind(paste(" ",names(opt),"=",sep=''),opt)), collapse='')), logger)
   
   return(opt)
 }
@@ -248,14 +247,21 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
 
         error = function(e) {
           tryCatch(
-            {clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)},
-            error = function(e) {clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)},
+            {
+              clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+            },
+            
+            error = function(e) {
+              clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)
+              clessnverse::logit(scriptname, "trying again", logger)
+              clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+            },
+            
             finally = {}
           )
         },
 
-        finally={
-        }
+        finally={}
       )
      
     }#for (i in 1:nrow(df_to_commit))
@@ -331,7 +337,7 @@ main <- function(opt, scriptname, logger) {
   if (file.exists(".rtweet_token.rds")) token <- readRDS(".rtweet_token.rds")
   if (file.exists("~/.rtweet_token.rds")) token <- readRDS("~/.rtweet_token.rds")
   
-  # get all mps and journalists
+  # get all persons dataframes
   clessnverse::logit(scriptname, "getting MPs", logger)
   filter <- clessnhub::create_filter(type="mp", schema="v2")
   dfMPs <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
@@ -352,67 +358,63 @@ main <- function(opt, scriptname, logger) {
   filter <- clessnhub::create_filter(type="media", schema="v1")
   dfMedias <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
   
-  dfPersons <- dfMPs %>% full_join(dfCandidates) %>% full_join(dfJournalists) %>%
-    dplyr::select(key, type, data.fullName, data.twitterHandle) %>% 
-    na.omit()
-  
-  
-  ###############################################################################
-  # Let's get serious!!!
-  # Run through the persons list, get the tweets content 
-  # and store them in the hub
-  # Take the opportunity to add attributes to the persons
-  # such as url of the photo etc
-  #
-  
-  # Loop through the entire table of persons
-  clessnverse::logit(scriptname, paste("start looping through",nrow(dfPersons),"persons"), logger)
+  dfPersons <- dfMPs %>% bind_rows(dfCandidates) %>% bind_rows(dfJournalists) %>% bind_rows(dfMedias) %>%  
+    filter(!is.na(data.twitterHandle)) %>%
+    bind_rows(dfParties) %>%
+    dplyr::select(key, type, data.fullName, data.twitterHandle, data.twitterHandleFR, data.twitterHandleEN)
 
-  persons_index <- which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
-                        dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" |
-                        dfPersons$key == "104669" | dfPersons$key == "376927648")
+  # Define population subset
+  all_index <- rep(1:nrow(dfPersons))
+  candidates_index <- which(dfPersons$key %in% dfCandidates$key)
+  mps_index <- which(dfPersons$key %in% dfMPs$key)
+  journalists_index <- which(dfPersons$key %in% dfJournalists$key)
+  medias_index <- which(dfPersons$key %in% dfMedias$key)
+  parties_index <- which(dfPersons$key %in% dfParties$key)
   
-  candidates_index <- which(dfCandidates$key %in% dfPersons$key)
+  leaders_index <-  which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
+                            dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" |
+                            dfPersons$key == "104669")
   
-  #index <- which(dfPersons$key == "203207356" | dfPersons$key == "1031618")
-  #index <- persons_index
-  index <- c(persons_index, candidates_index)
+  politicians_index <- c(mps_index,candidates_index)
+  
+  sample_index <- which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
+                          dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" |
+                          dfPersons$key == "104669" | dfPersons$key == "376927648" | dfPersons$key == "4131" | dfPersons$key == "12223" |
+                          dfPersons$key == "999945387" | dfPersons$key == "999956328" | dfPersons$key == "99998856744")
+  
+  index <- if (opt$population == "all") all_index else 
+           if (opt$population == "medias") medias_index else
+           if (opt$population == "mps") mps_index else
+           if (opt$population == "candidates") candidates_index else
+           if (opt$population == "leaders") leaders_index else 
+           if (opt$population == "politicians") politicians_index else
+           if (opt$population == "journalists") journalists_index else
+           if (opt$population == "parties") parties_index else
+           if (opt$population == "small_sample") sample_index
+  
+  clessnverse::logit(scriptname, paste("start looping through",length(index),"persons"), logger)
   
   for (i_person in index) {
-    #i_person <- index[2]
     clessnverse::logit(scriptname, paste("scraping count:", which(index == i_person), "of", length(index)), logger)
-    getTweets(handle = dfPersons$data.twitterHandle[i_person], key = dfPersons$key[i_person],
-              opt = opt, token = token, scriptname = scriptname, logger = logger)
+    
+    if (dfPersons$type[i_person] != "political_party") {
+      #clessnverse::logit(scriptname, paste("getting tweets from", dfPersons$data.twitterHandle[i_person]), logger)
+      getTweets(handle = dfPersons$data.twitterHandle[i_person], key = dfPersons$key[i_person],
+                opt = opt, token = token, scriptname = scriptname, logger = logger)
+    } else {
+      if (!is.na(dfPersons$data.twitterHandleEN[i_person])) {
+        #clessnverse::logit(scriptname, paste("getting tweets from", dfPersons$data.twitterHandleEN[i_person]), logger)
+        getTweets(handle = dfPersons$data.twitterHandleEN[i_person], key = dfPersons$key[i_person],
+                  opt = opt, token = token, scriptname = scriptname, logger = logger)
+      }
+      
+      if (!is.na(dfPersons$data.twitterHandleFR[i_person])) {
+        #clessnverse::logit(scriptname, paste("getting tweets from", dfPersons$data.twitterHandleFR[i_person]), logger)
+        getTweets(handle = dfPersons$data.twitterHandleFR[i_person], key = dfPersons$key[i_person],
+                  opt = opt, token = token, scriptname = scriptname, logger = logger)
+      }
+    }
   } #for (i_person in 1:nrow(dfPersons))
-  
-  
-  # Loop through the entire table of parties EN twitter accounts
-  clessnverse::logit(scriptname, paste("start looping through",nrow(dfParties),"english parties' accounts"), logger)
-
-  for (i_party in 1:nrow(dfParties)) {
-    clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
-    getTweets(handle = dfParties$data.twitterHandleEN[i_party], key = dfParties$key[i_party],
-              opt = opt, token = token, scriptname = scriptname, logger = logger)
-  } #for (i_party in 1:nrow(dfParties))
-
-  # Loop through the entire table of parties FR twitter accounts
-  clessnverse::logit(scriptname, paste("start looping through",nrow(dfParties),"french parties' accounts"), logger)
-
-  for (i_party in 1:nrow(dfParties)) {
-    clessnverse::logit(scriptname, paste("scraping count:", i_party, "of", nrow(dfParties)), logger)
-    getTweets(handle = dfParties$data.twitterHandleFR[i_party], key = dfParties$key[i_party],
-              opt = opt, token = token, scriptname = scriptname, logger = logger)
-  } #for (i_party in 1:nrow(dfParties))
-
-  # Loop through the entire table of medias twitter accounts
-  clessnverse::logit(scriptname, paste("start looping through",nrow(dfMedias),"medias' accounts"), logger)
-
-  for (i_media in 1:nrow(dfMedias)) {
-    clessnverse::logit(scriptname, paste("scraping count:", i_media, "of", nrow(dfMedias)), logger)
-    getTweets(handle = dfMedias$data.twitterHandle[i_media], key = dfMedias$key[i_media],
-              opt = opt, token = token, scriptname = scriptname, logger = logger)
-  } #for (i_party in 1:nrow(dfParties))
-
 } #</main>
 
 
@@ -423,24 +425,30 @@ tryCatch(
   {
     installPackages()
     library(dplyr)
-    
-    if (exists("logger")) rm(logger)
-    
-    if (!exists("scriptname")) scriptname <<- "tweets-and-friends.R"
-    
-    #opt <- opt <- list(max_timeline = 3200, log_output = "file, console")
+
+    #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "all")
+    #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "politicians")
+    #opt <- opt <- list(max_timeline = 200, log_output = "file,console", population = "medias")
+    #opt <- opt <- list(max_timeline = 100, log_output = "console", population = "small_sample")
     
     if (!exists("opt")) {
-      opt <- processCommandLineOptions(scriptname, "console")
+      opt <- processCommandLineOptions()
     }
     
+    if (exists("logger")) rm(logger)
+    if (!exists("scriptname")) scriptname <<- paste("tweets-and-friends-",opt$population,sep='')
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    
+    clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(opt, collapse = " ")), logger)
+    
+    valid_population <- c("all", "medias", "mps", "candidates", "leaders", "politicians", "parties", "journalists", "small_sample")
+    
+    if (!opt$population %in% valid_population) stop (paste("invalid population, possible values are", paste(valid_population, collapse = " | ")))
+    
    
     # login to the hub
     clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
     clessnverse::logit(scriptname, "connecting to hub", logger)
-    
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
     
     main(opt, scriptname, logger)
   },
