@@ -253,6 +253,8 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
             
             error = function(e) {
               clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)
+              clessnverse::logit(scriptname, "waiting 20 seconds", logger)
+              Sys.sleep(20)
               clessnverse::logit(scriptname, "trying again", logger)
               clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
             },
