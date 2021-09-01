@@ -120,10 +120,20 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
 
   # get person from the hub (to keep schema intact) and harvest the last twitter scraping we did for him/her
   person <- clessnhub::get_item('persons', key)
+  dfTweets <- data.frame()
  
   clessnverse::logit(scriptname, paste("checking if there are already tweets in the hub for", person$data$fullName, "(", handle, ")"), logger)
   myfilter <- clessnhub::create_filter(metadata = list("twitterHandle"=handle))
-  dfTweets <- clessnhub::get_items('tweets', filter = myfilter, max_pages = 1, download_data = FALSE)
+  tryCatch(
+    {dfTweets <- clessnhub::get_items('tweets', filter = myfilter, max_pages = 1, download_data = FALSE)},
+    error= function(e) {
+      clessnverse::logit(scriptname, paste("Something wrong occured when talking to the HUB.  Waiting 120 seconds.", e), logger)
+      Sys.sleep(120)
+      clessnverse::logit(scriptname, paste("Trying again", e), logger)
+      dfTweets <- clessnhub::get_items('tweets', filter = myfilter, max_pages = 1, download_data = FALSE)
+    },
+    finally={}
+  )
 
   if ( !is.null(dfTweets) && nrow(dfTweets) > 0 ) clessnverse::logit(scriptname, paste("found tweets in the hub for", handle), logger) else clessnverse::logit(scriptname, paste("no tweets found in the hub for", handle), logger)
 
@@ -138,17 +148,53 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
   latest_twitter_update <- as.POSIXct(latest_twitter_update, tz="UTC")
 
   #if (handle %in% dfTweets$metadata.twitterHandle) {
+  this_pass_tweets <- data.frame()
+    
   if (!is.null(dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
     clessnverse::logit(scriptname, paste("getting new tweets from",person$data$fullName,"(",handle,")"), logger)
-    this_pass_tweets <- rtweet::search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token)
+    tryCatch(
+      { this_pass_tweets <- rtweet::search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token) },
+      error = function(e) {
+        clessnverse::logit(scriptname, paste("Error getting new tweets using search_tweets function from package rtweet.  Sleeping 120 seconds.",e), logger)
+        Sys.sleep(120)
+        clessnverse::logit(scriptname, "Trying again", logger)
+        tryCatch (
+          { this_pass_tweets <- rtweet::search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token) },
+          error = function(e) {
+            clessnverse::logit(scriptname, paste("Error getting new tweets using search_tweets function from package rtweet.  Skipping this user",e), logger)
+            this_pass_tweets <- data.frame()
+          },
+          finally = {}
+        )
+      },
+      finally = {}
+    )
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
     clessnverse::logit(scriptname, paste("getting full twitter timeline from",person$data$fullName,"(",handle,") witn n =", opt$max_timeline), logger)
-    this_pass_tweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token)
+    tryCatch (
+      { this_pass_tweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token) },
+      error = function(e) {
+        clessnverse::logit(scriptname, paste("Error getting full timeline using get_timeline function from package rtweet.  Sleeping 120 seconds.",e), logger)
+        Sys.sleep(120)
+        clessnverse::logit(scriptname, "Trying again", logger)
+        tryCatch (
+          { this_pass_tweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token) },
+          error = function(e) {
+            clessnverse::logit(scriptname, paste("Error getting full timeline using get_timeline function from package rtweet.  Skipping this user",e), logger)
+            this_pass_tweets <- data.frame()
+          },
+          finally = {}
+        )
+      },
+      
+      finally = {}
+    )
   }
   
   if (nrow(this_pass_tweets) > 0) {
+    clessnverse::logit(scriptname, "building tweets types vectors", logger)
     data.type <- dplyr::case_when(this_pass_tweets$is_retweet == TRUE ~ rep("retweet", nrow(this_pass_tweets)), TRUE ~ NA_character_)
     data.type1 <- data.frame(index=row.names(as.data.frame(data.type)),as.data.frame(data.type))
     
@@ -166,6 +212,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
     time_diff <- difftime(current_time, latest_twitter_update)
     
     # construct a datafra,e corresponding to the datastructure we want to write to the hub
+    clessnverse::logit(scriptname, "building tweets data frame to commit 1", logger)
     df_to_commit <- data.frame(key = paste("t", this_pass_tweets$status_id, sep='') %>% gsub("tt","t",.),
                                type = df$data.type,
                                schema = rep("v2",nrow(this_pass_tweets)),
@@ -200,6 +247,8 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                metadata.lastUpdatedAt = format(rep(current_time, nrow(this_pass_tweets)),"%H:%M %Z"),
                                metadata.twitterHandle = rep(handle, nrow(this_pass_tweets))
     ) 
+    
+    clessnverse::logit(scriptname, "building tweets data frame to commit 2", logger)
     
     df_to_commit$data.originalTweetID[which(this_pass_tweets$is_quote==TRUE)] <- this_pass_tweets$quoted_status_id[this_pass_tweets$is_quote==TRUE]
     df_to_commit$data.originalTweetCreationDate[which(this_pass_tweets$is_quote==TRUE)] <- format(this_pass_tweets$quoted_created_at[this_pass_tweets$is_quote==TRUE], "%Y-%m-%d")
@@ -252,11 +301,11 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
             },
             
             error = function(e) {
-              clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)
-              clessnverse::logit(scriptname, "waiting 20 seconds", logger)
-              Sys.sleep(20)
-              clessnverse::logit(scriptname, "trying again", logger)
-              clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+              # clessnverse::logit(scriptname, paste("Something went wrong when adding a new item to the hub:", e), logger)
+              # clessnverse::logit(scriptname, "waiting 20 seconds", logger)
+              # Sys.sleep(20)
+              # clessnverse::logit(scriptname, "trying again", logger)
+              # clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
             },
             
             finally = {}
