@@ -16,7 +16,7 @@ dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
 tictoc::tic()
-myfilter <- clessnhub::create_filter(metadata = list(personType__regex="^media$"), data = list(creationDate__gte="2021-08-31"))
+myfilter <- clessnhub::create_filter(metadata = list(personType__regex="^political_party$"), data = list(creationDate__gte="2021-08-31"))
 dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
@@ -32,6 +32,25 @@ tictoc::toc()
 
 tictoc::tic()
 myfilter <- clessnhub::create_filter( data = list(creationDate__gte="2021-09-02"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(
+  metadata = list(twitterHandle__regex="JustinTrudeau|MaximeBernier|yfblanchet|theJagmeetSingh|annamiepaul|erinotoole"),
+                         data = list(creationDate__gte="2021-08-13")
+                       )
+
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(
+  metadata = list(personType="political_party"), 
+  data = list(creationDate__gte="2021-08-13")
+)
+
 dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
