@@ -194,7 +194,6 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
   }
   
   if (nrow(this_pass_tweets) > 0) {
-    clessnverse::logit(scriptname, "building tweets types vectors", logger)
     data.type <- dplyr::case_when(this_pass_tweets$is_retweet == TRUE ~ rep("retweet", nrow(this_pass_tweets)), TRUE ~ NA_character_)
     data.type1 <- data.frame(index=row.names(as.data.frame(data.type)),as.data.frame(data.type))
     
@@ -212,7 +211,6 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
     time_diff <- difftime(current_time, latest_twitter_update)
     
     # construct a datafra,e corresponding to the datastructure we want to write to the hub
-    clessnverse::logit(scriptname, "building tweets data frame to commit 1", logger)
     df_to_commit <- data.frame(key = paste("t", this_pass_tweets$status_id, sep='') %>% gsub("tt","t",.),
                                type = df$data.type,
                                schema = rep("v2",nrow(this_pass_tweets)),
@@ -247,8 +245,6 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
                                metadata.lastUpdatedAt = format(rep(current_time, nrow(this_pass_tweets)),"%H:%M %Z"),
                                metadata.twitterHandle = rep(handle, nrow(this_pass_tweets))
     ) 
-    
-    clessnverse::logit(scriptname, "building tweets data frame to commit 2", logger)
     
     df_to_commit$data.originalTweetID[which(this_pass_tweets$is_quote==TRUE)] <- this_pass_tweets$quoted_status_id[this_pass_tweets$is_quote==TRUE]
     df_to_commit$data.originalTweetCreationDate[which(this_pass_tweets$is_quote==TRUE)] <- format(this_pass_tweets$quoted_created_at[this_pass_tweets$is_quote==TRUE], "%Y-%m-%d")
