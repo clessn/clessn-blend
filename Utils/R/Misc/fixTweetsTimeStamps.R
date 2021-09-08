@@ -8,12 +8,11 @@ is.na.char <- function(x) {
   return (x=="NA")
 }
 
-myfilter <- clessnhub::create_filter(data = list(twitterAccountCreatedOn__gte = "2000-01-01"))
+myfilter <- clessnhub::create_filter(type="political_party")
 dfPersons <- clessnhub::get_items('persons', myfilter)
 
-for (p in 42:nrow(dfPersons)) {
-#for (p in 1:2) {
-  cat(dfPersons$data.fullName[p], dfPersons$data.twitterHandle[p],"\n")
+for (p in 1:6) {
+  cat(dfPersons$data.fullName[p], dfPersons$data.twitterHandleEN[p],"\n")
   
   person <- clessnhub::get_item('persons', dfPersons$key[p])
   
@@ -52,7 +51,7 @@ for (p in 42:nrow(dfPersons)) {
   }
   
   
-  myfilter <- clessnhub::create_filter(schema = "v1", metadata = list(twitterHandle=dfPersons$data.twitterHandle[p]))
+  myfilter <- clessnhub::create_filter(schema = "v1", metadata = list(twitterHandle=dfPersons$data.twitterHandleEN[p]))
   dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
   
   if (!is.null(dfTweets)) {

@@ -154,28 +154,28 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # cat(paste(data_to_commit, collapse=' * '), '\n')
       } else {
         # candidate exists => update it
-        person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-        person$data.fullName <- full_name
-        person$data.firstName <- first_name
-        person$data.lastName <- last_name
-        person$data.currentDistrict <- district
-        person$data.currentParty <- party
-        person$data.currentProvinceOrState <- province
-        person$data.isFemale <- is_female
-        person$data.twitterID <- twitter_id
-        person$data.twitterHandle <- twitter_handle
-        person$data.twitterAccountProtected <- twitter_account_protected
-        
-        person$metadata$source <- source
-        person$metadata$country <- country
-        person$metadata$province_or_state <- province
-        
-        key <- person$key
-        type <- person$type
-        schema <- person$schema
-        
-        person$data[sapply(person$data,is.null)] <- NA_character_
-        person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+        # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+        # person$data.fullName <- full_name
+        # person$data.firstName <- first_name
+        # person$data.lastName <- last_name
+        # person$data.currentDistrict <- district
+        # person$data.currentParty <- party
+        # person$data.currentProvinceOrState <- province
+        # person$data.isFemale <- is_female
+        # person$data.twitterID <- twitter_id
+        # person$data.twitterHandle <- twitter_handle
+        # person$data.twitterAccountProtected <- twitter_account_protected
+        # 
+        # person$metadata$source <- source
+        # person$metadata$country <- country
+        # person$metadata$province_or_state <- province
+        # 
+        # key <- person$key
+        # type <- person$type
+        # schema <- person$schema
+        # 
+        # person$data[sapply(person$data,is.null)] <- NA_character_
+        # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
         # df_candidates$data.fullName[matching_candidate_row] <- full_name
         # df_candidates$data.firstName[matching_candidate_row] <- first_name
         # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -199,14 +199,14 @@ scrape_plc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # names(data) <- gsub("^data.", "", names(data))
         # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
         # names(metadata) <- gsub("^metadata.", "", names(metadata))
-        cnt <- cnt+1
-        cat('=================================================================================\n')
-        cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+        # cnt <- cnt+1
+        # cat('=================================================================================\n')
+        # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
         #cat(paste(names(metadata), collapse = ' * '), '\n')
         #cat(paste(metadata, collapse = ' * '), '\n')
         #cat(paste(names(data), collapse = ' * '), '\n')
         #cat(paste(data, collapse = ' * '),'\n')
-        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+        # clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
       }# if (length(matching_candidate_row) == 0)
     } else {
       # MP match found - update the MP twitter handle.
@@ -329,27 +329,27 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # cat(paste(data_to_commit, collapse=' * '), '\n')
       } else {
         # candidate exists => update it
-        person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-        person$data.fullName <- full_name
-        person$data.firstName <- first_name
-        person$data.lastName <- last_name
-        person$data.currentDistrict <- district
-        person$data.currentParty <- party
-        person$data.currentProvinceOrState <- province
-        person$data.isFemale <- is_female
-        person$data.twitterID <- twitter_id
-        person$data.twitterHandle <- twitter_handle
-        person$data.twitterAccountProtected <- twitter_account_protected
-        
-        person$metadata$source <- source
-        person$metadata$country <- country
-        person$metadata$province_or_state <- province
-        
-        key <- person$key
-        type <- person$type
-        schema <- person$schema
-        person$data[sapply(person$data,is.null)] <- NA_character_
-        person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+        # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+        # person$data.fullName <- full_name
+        # person$data.firstName <- first_name
+        # person$data.lastName <- last_name
+        # person$data.currentDistrict <- district
+        # person$data.currentParty <- party
+        # person$data.currentProvinceOrState <- province
+        # person$data.isFemale <- is_female
+        # person$data.twitterID <- twitter_id
+        # person$data.twitterHandle <- twitter_handle
+        # person$data.twitterAccountProtected <- twitter_account_protected
+        # 
+        # person$metadata$source <- source
+        # person$metadata$country <- country
+        # person$metadata$province_or_state <- province
+        # 
+        # key <- person$key
+        # type <- person$type
+        # schema <- person$schema
+        # person$data[sapply(person$data,is.null)] <- NA_character_
+        # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
         # df_candidates$data.fullName[matching_candidate_row] <- full_name
         # df_candidates$data.firstName[matching_candidate_row] <- first_name
         # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -373,14 +373,14 @@ scrape_pcc_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # names(data) <- gsub("^data.", "", names(data))
         # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
         # names(metadata) <- gsub("^metadata.", "", names(metadata))
-        cnt <- cnt+1
-        cat('=================================================================================\n')
-        cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+        # cnt <- cnt+1
+        # cat('=================================================================================\n')
+        # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
         #cat(paste(names(metadata), collapse = ' * '), '\n')
         #cat(paste(metadata, collapse = ' * '), '\n')
         #cat(paste(names(data), collapse = ' * '), '\n')
         #cat(paste(data, collapse = ' * '),'\n')
-        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+        # clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
       }
     } else {
       # match found - update the MP twitter handle.
@@ -518,27 +518,27 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
               # cat(paste(data_to_commit, collapse=' * '), '\n')
             } else {
               # candidate exists => update it
-              person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-              person$data.fullName <- full_name
-              person$data.firstName <- first_name
-              person$data.lastName <- last_name
-              person$data.currentDistrict <- district
-              person$data.currentParty <- party
-              person$data.currentProvinceOrState <- province
-              person$data.isFemale <- is_female
-              person$data.twitterID <- twitter_id
-              person$data.twitterHandle <- twitter_handle
-              person$data.twitterAccountProtected <- twitter_account_protected
-              
-              person$metadata$source <- source
-              person$metadata$country <- country
-              person$metadata$province_or_state <- province
-              
-              key <- person$key
-              type <- person$type
-              schema <- person$schema
-              person$data[sapply(person$data,is.null)] <- NA_character_
-              person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+              # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+              # person$data.fullName <- full_name
+              # person$data.firstName <- first_name
+              # person$data.lastName <- last_name
+              # person$data.currentDistrict <- district
+              # person$data.currentParty <- party
+              # person$data.currentProvinceOrState <- province
+              # person$data.isFemale <- is_female
+              # person$data.twitterID <- twitter_id
+              # person$data.twitterHandle <- twitter_handle
+              # person$data.twitterAccountProtected <- twitter_account_protected
+              # 
+              # person$metadata$source <- source
+              # person$metadata$country <- country
+              # person$metadata$province_or_state <- province
+              # 
+              # key <- person$key
+              # type <- person$type
+              # schema <- person$schema
+              # person$data[sapply(person$data,is.null)] <- NA_character_
+              # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
               # df_candidates$data.fullName[matching_candidate_row] <- full_name
               # df_candidates$data.firstName[matching_candidate_row] <- first_name
               # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -562,14 +562,14 @@ scrape_blq_candidates <- function(url, url_suffix, xml_root, df_mps, df_candidat
               # names(data) <- gsub("^data.", "", names(data))
               # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
               # names(metadata) <- gsub("^metadata.", "", names(metadata))
-              cnt <- cnt+1
-              cat('=================================================================================\n')
-              cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+              # cnt <- cnt+1
+              # cat('=================================================================================\n')
+              # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
               #cat(paste(names(metadata), collapse = ' * '), '\n')
               #cat(paste(metadata, collapse = ' * '), '\n')
               #cat(paste(names(data), collapse = ' * '), '\n')
               #cat(paste(data, collapse = ' * '),'\n')
-              clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+              # clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
             }
           } else {
             # match found - update the MP twitter handle.
@@ -707,27 +707,27 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # cat(paste(data_to_commit, collapse=' * '), '\n')
       } else {
         # candidate exists => update it
-        person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-        person$data.fullName <- full_name
-        person$data.firstName <- first_name
-        person$data.lastName <- last_name
-        person$data.currentDistrict <- district
-        person$data.currentParty <- party
-        person$data.currentProvinceOrState <- province
-        person$data.isFemale <- is_female
-        person$data.twitterID <- twitter_id
-        person$data.twitterHandle <- twitter_handle
-        person$data.twitterAccountProtected <- twitter_account_protected
-        
-        person$metadata$source <- source
-        person$metadata$country <- country
-        person$metadata$province_or_state <- province
-        
-        key <- person$key
-        type <- person$type
-        schema <- person$schema
-        person$data[sapply(person$data,is.null)] <- NA_character_
-        person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+        # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+        # person$data.fullName <- full_name
+        # person$data.firstName <- first_name
+        # person$data.lastName <- last_name
+        # person$data.currentDistrict <- district
+        # person$data.currentParty <- party
+        # person$data.currentProvinceOrState <- province
+        # person$data.isFemale <- is_female
+        # person$data.twitterID <- twitter_id
+        # person$data.twitterHandle <- twitter_handle
+        # person$data.twitterAccountProtected <- twitter_account_protected
+        # 
+        # person$metadata$source <- source
+        # person$metadata$country <- country
+        # person$metadata$province_or_state <- province
+        # 
+        # key <- person$key
+        # type <- person$type
+        # schema <- person$schema
+        # person$data[sapply(person$data,is.null)] <- NA_character_
+        # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
         # df_candidates$data.fullName[matching_candidate_row] <- full_name
         # df_candidates$data.firstName[matching_candidate_row] <- first_name
         # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -751,14 +751,14 @@ scrape_npd_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # names(data) <- gsub("^data.", "", names(data))
         # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
         # names(metadata) <- gsub("^metadata.", "", names(metadata))
-        cnt <- cnt+1
-        cat('=================================================================================\n')
-        cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+        # cnt <- cnt+1
+        # cat('=================================================================================\n')
+        # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
         #cat(paste(names(metadata), collapse = ' * '), '\n')
         #cat(paste(metadata, collapse = ' * '), '\n')
         #cat(paste(names(data), collapse = ' * '), '\n')
         #cat(paste(data, collapse = ' * '),'\n')
-        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+        # clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
       }
     } else {
       # match found - update the MP twitter handle.
@@ -884,27 +884,27 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # cat(paste(data_to_commit, collapse=' * '), '\n')
       } else {
         # candidate exists => update it
-        person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-        person$data.fullName <- full_name
-        person$data.firstName <- first_name
-        person$data.lastName <- last_name
-        person$data.currentDistrict <- district
-        person$data.currentParty <- party
-        person$data.currentProvinceOrState <- province
-        person$data.isFemale <- is_female
-        person$data.twitterID <- twitter_id
-        person$data.twitterHandle <- twitter_handle
-        person$data.twitterAccountProtected <- twitter_account_protected
-        
-        person$metadata$source <- source
-        person$metadata$country <- country
-        person$metadata$province_or_state <- province
-        
-        key <- person$key
-        type <- person$type
-        schema <- person$schema
-        person$data[sapply(person$data,is.null)] <- NA_character_
-        person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+        # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+        # person$data.fullName <- full_name
+        # person$data.firstName <- first_name
+        # person$data.lastName <- last_name
+        # person$data.currentDistrict <- district
+        # person$data.currentParty <- party
+        # person$data.currentProvinceOrState <- province
+        # person$data.isFemale <- is_female
+        # person$data.twitterID <- twitter_id
+        # person$data.twitterHandle <- twitter_handle
+        # person$data.twitterAccountProtected <- twitter_account_protected
+        # 
+        # person$metadata$source <- source
+        # person$metadata$country <- country
+        # person$metadata$province_or_state <- province
+        # 
+        # key <- person$key
+        # type <- person$type
+        # schema <- person$schema
+        # person$data[sapply(person$data,is.null)] <- NA_character_
+        # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
         # df_candidates$data.fullName[matching_candidate_row] <- full_name
         # df_candidates$data.firstName[matching_candidate_row] <- first_name
         # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -928,14 +928,14 @@ scrape_grn_candidates <- function(url, xml_root, df_mps, df_candidates) {
         # names(data) <- gsub("^data.", "", names(data))
         # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
         # names(metadata) <- gsub("^metadata.", "", names(metadata))
-        cnt <- cnt+1
-        cat('=================================================================================\n')
-        cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+        # cnt <- cnt+1
+        # cat('=================================================================================\n')
+        # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
         #cat(paste(names(metadata), collapse = ' * '), '\n')
         #cat(paste(metadata, collapse = ' * '), '\n')
         #cat(paste(names(data), collapse = ' * '), '\n')
         #cat(paste(data, collapse = ' * '),'\n')
-        clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+        # clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
       }
     } else {
       # match found - update the MP twitter handle.
@@ -1066,27 +1066,27 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
           #cat(paste(data_to_commit, collapse=' * '), '\n')
         } else {
           # candidate exists => update it
-          person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
-          person$data.fullName <- full_name
-          person$data.firstName <- first_name
-          person$data.lastName <- last_name
-          person$data.currentDistrict <- district
-          person$data.currentParty <- party
-          person$data.currentProvinceOrState <- province
-          person$data.isFemale <- is_female
-          person$data.twitterID <- twitter_id
-          person$data.twitterHandle <- twitter_handle
-          person$data.twitterAccountProtected <- twitter_account_protected
-
-          person$metadata$source <- source
-          person$metadata$country <- country
-          person$metadata$province_or_state <- province
-
-          key <- person$key
-          type <- person$type
-          schema <- person$schema
-          person$data[sapply(person$data,is.null)] <- NA_character_
-          person$metadata[sapply(person$metadata,is.null)] <- NA_character_
+          # person <- clessnhub::get_item('persons', df_candidates$key[matching_candidate_row])
+          # person$data.fullName <- full_name
+          # person$data.firstName <- first_name
+          # person$data.lastName <- last_name
+          # person$data.currentDistrict <- district
+          # person$data.currentParty <- party
+          # person$data.currentProvinceOrState <- province
+          # person$data.isFemale <- is_female
+          # person$data.twitterID <- twitter_id
+          # person$data.twitterHandle <- twitter_handle
+          # person$data.twitterAccountProtected <- twitter_account_protected
+          # 
+          # person$metadata$source <- source
+          # person$metadata$country <- country
+          # person$metadata$province_or_state <- province
+          # 
+          # key <- person$key
+          # type <- person$type
+          # schema <- person$schema
+          # person$data[sapply(person$data,is.null)] <- NA_character_
+          # person$metadata[sapply(person$metadata,is.null)] <- NA_character_
           # df_candidates$data.fullName[matching_candidate_row] <- full_name
           # df_candidates$data.firstName[matching_candidate_row] <- first_name
           # df_candidates$data.lastName[matching_candidate_row] <- last_name
@@ -1110,14 +1110,14 @@ scrape_ppc_candidates <- function(url, xml_root, df_mps, df_candidates) {
           # names(data) <- gsub("^data.", "", names(data))
           # metadata <- as.list(df_candidates[matching_candidate_row,which(grepl("^metadata.",names(df_candidates[matching_candidate_row,])))])
           # names(metadata) <- gsub("^metadata.", "", names(metadata))
-          cnt <- cnt+1
-          cat('=================================================================================\n')
-          cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
+          # cnt <- cnt+1
+          # cat('=================================================================================\n')
+          # cat('updating', person$data$fullName, person$data$twitterHandle, person$data$currentParty, '\n', sep=' ')
           #cat(paste(names(metadata), collapse = ' * '), '\n')
           #cat(paste(metadata, collapse = ' * '), '\n')
           #cat(paste(names(data), collapse = ' * '), '\n')
           #cat(paste(data, collapse = ' * '),'\n')
-          clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
+          #clessnhub::edit_item('persons', key = key, type = type, schema = schema, metadata = person$metadata, data = person$data)
         }
       } else {
         # # match found - update the MP twitter handle.

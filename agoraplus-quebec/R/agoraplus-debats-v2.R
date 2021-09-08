@@ -110,7 +110,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   
-  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2")
   
   if (opt$download_data) { 
     dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
@@ -136,7 +136,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 
 } else {
   clessnverse::logit(scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
-  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="parliament_debate", schema = "v2", location = "CA-QC")
+  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="parliament_debate", schema = "v2")
 }
 
 # Download v2 Cache
@@ -146,7 +146,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                 download_data = FALSE,
                                                 token = Sys.getenv('HUB_TOKEN'))
   
-  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2")
   
   if (opt$download_data) { 
     dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
@@ -156,7 +156,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   }
   
 } else {
-  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="parliament_debate", schema = "v2", location = "CA-QC")
+  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="parliament_debate", schema = "v2")
 }
 
 # Download v2 MPs information
@@ -193,9 +193,10 @@ dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "
 
 
 # Load all objects used for ETL including V1 HUB MPs
-clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-                            password = Sys.getenv('HUB_PASSWORD'), 
-                            url = Sys.getenv('HUB_URL'))
+# clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
+#                             password = Sys.getenv('HUB_PASSWORD'), 
+#                             url = Sys.getenv('HUB_URL'))
+clessnverse::loadETLRefData()
 
 
 ###############################################################################
@@ -557,6 +558,7 @@ for (i in 1:length(list_urls)) {
             
             intervention_type <- NA
             intervention_text <- NA
+            language <- NA
             sob_procedural_text <- NA
             speaker <- data.frame()
             
@@ -641,7 +643,7 @@ for (i in 1:length(list_urls)) {
               speaker_last_name <- trimws(speaker_last_name, which = c("both"))
               if (length(speaker_last_name) == 0) speaker_last_name <- NA
               speaker_first_name <- speaker$data.firstName[1]
-              speaker_gender <- if ( speaker$data.isFemale[1] == 1) "F" else "M"
+              speaker_gender <- if ( speaker$data.isFemale[1] == 1 || speaker$data.isFemale[1] == "1") "F" else "M"
               if ( tolower(speaker$type[1]) == "public_service" ) {
                 speaker_type <- "public_service"
                 speaker_party <- NA

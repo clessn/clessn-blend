@@ -11,13 +11,46 @@ dfPersons <- clessnhub::get_items('persons', myfilter, download_data = T)
 tictoc::toc()
 
 tictoc::tic()
-myfilter <- clessnhub::create_filter(data = list(creationDate__gte="2021-08-27"))
+myfilter <- clessnhub::create_filter(metadata = list(personType="media"), data = list(creationDate__gte="2021-08-08"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(metadata = list(personType__regex="^political_party$"), data = list(creationDate__gte="2021-08-31"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(metadata = list(personType__regex=".*(?<!journalist)$"), data = list(creationDate__gte="2021-08-31"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(metadata = list(personType__regex="mp|candidate|media|political_party|public_service"), data = list(creationDate__gte="2021-08-31"))
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter( data = list(creationDate__gte="2021-09-02"))
 dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
 
 tictoc::tic()
-myfilter <- clessnhub::create_filter(metadata = list(tweetType = "retweet", twitterHandle="yfblanchet"), data = list(creationDate__gte="2021-08-01"))
+myfilter <- clessnhub::create_filter(
+  metadata = list(twitterHandle__regex="JustinTrudeau|MaximeBernier|yfblanchet|theJagmeetSingh|annamiepaul|erinotoole"),
+                         data = list(creationDate__gte="2021-08-13")
+                       )
+
+dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
+tictoc::toc()
+
+tictoc::tic()
+myfilter <- clessnhub::create_filter(
+  metadata = list(personType="political_party"), 
+  data = list(creationDate__gte="2021-08-13")
+)
+
 dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
