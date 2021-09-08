@@ -111,7 +111,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   
-  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "press_conference", schema = "v2", location = "CA-QC")
+  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "press_conference", schema = "v2")
   
   if (opt$download_data) { 
     dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location",
@@ -134,8 +134,8 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   }
 
 } else {
-  clessnverse::logit(scriptname, scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
-  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2", location = "CA-QC")
+  clessnverse::logit(scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
+  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="press_conference", schema = "v2")
 }
 
 # Download v2 Cache
@@ -145,7 +145,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                 download_data = FALSE,
                                                 token = Sys.getenv('HUB_TOKEN'))
   
-  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2", location = "CA-QC")
+  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2")
   
   if (opt$download_data) { 
     dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
@@ -156,7 +156,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   
 } else {
   clessnverse::logit(scriptname, "Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
-  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2", location = "CA-QC")
+  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="press_conference", schema = "v2")
 }
 
 # Download v2 MPs information
@@ -192,9 +192,10 @@ dfJournalists <- dfJournalists %>% tidyr::separate(data.lastName, c("data.lastNa
 
 
 # Load all objects used for ETL including V1 HUB MPs
-clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-                            password = Sys.getenv('HUB_PASSWORD'), 
-                            url = Sys.getenv('HUB_URL'))
+# clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
+#                             password = Sys.getenv('HUB_PASSWORD'), 
+#                             url = Sys.getenv('HUB_URL'))
+clessnverse::loadETLRefData()
 
 ###############################################################################
 # Data source
@@ -242,9 +243,6 @@ list_urls <- rvest::html_attr(urls, 'href')
 #
 for (i in 1:length(list_urls)) {
 #for (i in 1:1) {
-  
-  #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
-  if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- paste("cp", stringr::str_sub(event_url,100,104), sep='')
@@ -470,7 +468,7 @@ for (i in 1:length(list_urls)) {
         }
         
         next_paragraph_start <- substr(doc_text[j+1],1,55)
-        if ( length(strsplit(next_paragraph_start, ":")[[1]]) == 1) {
+        if ( length(strsplit(next_paragraph_start, ":")[[1]]) == 1 ) {
           # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
           next_paragraph_start <- next_paragraph_start
         } else {
@@ -511,6 +509,7 @@ for (i in 1:length(list_urls)) {
           speaker_media <- NA
           intervention_type <- NA
           intervention_text <- NA
+          language <- NA
           speaker <- data.frame()
           
           speech_paragraph_count <- 1
@@ -595,9 +594,10 @@ for (i in 1:length(list_urls)) {
                   speaker_last_name <- paste(na.omit(speaker$data.lastName1[1]), na.omit(speaker$data.lastName2[1]), sep = " ")
                   speaker_last_name <- trimws(speaker_last_name, which = c("both"))
                   if (length(speaker_last_name) == 0) speaker_last_name <- NA
+                  
                   speaker_first_name <- speaker$data.firstName[1]
-                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                      is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
+                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && (speaker$data.isFemale[1] == 1 || speaker$data.isFemale[1] == "1")  || gender_femme == 1 ~ "F",
+                                      is.na(speaker_gender) && !(speaker$data.isFemale[1] == 0 || speaker$data.isFemale[1] == "0") || gender_femme == 0 ~ "M")
                   if ( tolower(speaker$type[1]) == "public_service" ) {
                     speaker_type <- "public_service"
                     speaker_party <- NA
@@ -636,8 +636,8 @@ for (i in 1:length(list_urls)) {
               if ( nrow(speaker) > 0 ) {
                 # we have a JOURNALIST
                 
-                speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                    is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
+                speaker_gender <- dplyr::case_when(is.na(speaker_gender) && (speaker$data.isFemale[1] == 1 || speaker$data.isFemale[1] == "1")  || gender_femme == 1 ~ "F",
+                                    is.na(speaker_gender) && !(speaker$data.isFemale[1] == 0 || speaker$data.isFemale[1] == "0") || gender_femme == 0 ~ "M")
                 
                 speaker_type <- "journalist"
                 speaker_party <- NA
@@ -658,8 +658,8 @@ for (i in 1:length(list_urls)) {
                   if (is.na(speaker_first_name)) speaker_first_name <- clessnverse::splitWords(stringr::str_match(paragraph_start, "^(.*):"))[1]
                   if (is.na(speaker_last_name)) speaker_last_name <- clessnverse::splitWords(stringr::str_match(paragraph_start, "^(.*):"))[2]
                   
-                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && speaker$data.isFemale[1] == 1  || gender_femme == 1 ~ "F",
-                                      is.na(speaker_gender) && !speaker$data.isFemale[1] == 0 || gender_femme == 0 ~ "M")
+                  speaker_gender <- dplyr::case_when(is.na(speaker_gender) && (speaker$data.isFemale[1] == 1 || speaker$data.isFemale[1] == "1")  || gender_femme == 1 ~ "F",
+                                      is.na(speaker_gender) && !(speaker$data.isFemale[1] == 0 || speaker$data.isFemale[1] == "0") || gender_femme == 0 ~ "M")
                 }
               }
               
@@ -667,7 +667,7 @@ for (i in 1:length(list_urls)) {
                 intervention_type <- "question"
                 no_questions_asked_yet <- FALSE
               } else {
-                if ( grepl("\\?",doc_text[j]) ) {
+                if ( grepl("\\?$",doc_text[j]) ) {
                   intervention_type <- "question" 
                   no_questions_asked_yet <- FALSE
                 } else { 
