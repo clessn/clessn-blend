@@ -107,9 +107,7 @@ journalists <- clessnhub::v1_download_table('warehouse_journalists')
 #journalists <- journalists %>% tidyr::separate(lastName, c("lastName1", "lastName2"), " ", extra = "merge")
 
 # Load all objects used for ETL including V1 HUB MPs
-clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-                            password = Sys.getenv('HUB_PASSWORD'), 
-                            url = Sys.getenv('HUB_URL'))
+clessnverse::loadETLRefData()
 
 
 ###############################################################################
