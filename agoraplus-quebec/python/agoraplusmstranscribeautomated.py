@@ -12,8 +12,6 @@ import os
 import unicodedata
 import logging
 
-
-
 def get_video_from_youtube(video_url):
     # Convert video
     logging.info("Fetching URL " + video_url)
@@ -26,13 +24,10 @@ def get_video_from_youtube(video_url):
     os.remove('youtubeAudio.mp4')
     return(vid)
 
-
 def get_play_list_from_youtube(url):
     logging.info("Fetching Playlist " + url)
     p = pytube.Playlist(url)
     return(p)
-
-
 
 def speech_continuous_recognition_with_file(fileToTranscribe, languageDetection):
     # <speech_continuous_recognition_with_file>
@@ -157,7 +152,6 @@ def upload(dbx, fullname, folder, subfolder, name, overwrite=False):
     #print('uploaded as', res.name.encode('utf8'))
     return res
 
-
 def download(dbx, folder, subfolder, name):
     """Download a file.
     Return the bytes of the file, or None if it doesn't exist.
@@ -175,7 +169,6 @@ def download(dbx, folder, subfolder, name):
     data = res.content
     #print(len(data), 'bytes; md:', md)
     return data
-
 
 def main():
     logger = logging.getLogger()
@@ -318,8 +311,6 @@ def main():
         i = i + 1
     #</for video in p.videos:>
     logging.shutdown()
-#</main>
-
 
 if __name__ == "__main__":
     main()
