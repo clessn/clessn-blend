@@ -90,7 +90,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
+            dataframe_mode = "update", hub_mode = "update", download_data = TRUE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -397,7 +397,7 @@ for (i in 1:length(list_urls)) {
       event_start_time <- strptime(event_start_time, "%Y-%m-%d %H:%M")
       
       # Figure out the end time of the conference
-      event_end_time <- doc_text[length(doc_text)]
+      if (doc_text[length(doc_text)] != "") event_end_time <- doc_text[length(doc_text)] else event_end_time <- doc_text[length(doc_text)-1]
       event_end_time <- gsub("\\(",'', event_end_time)
       event_end_time <- gsub("\\)",'', event_end_time)
       event_end_time <- clessnverse::splitWords(event_end_time) 

@@ -279,7 +279,7 @@ for (i in 1:length(list_urls)) {
       doc_text <- na.omit(doc_text)  
       
       # Figure out the end time of the conference
-      end_time <- doc_text[length(doc_text)]
+      if (doc_text[length(doc_text)] != "") end_time <- doc_text[length(doc_text)] else end_time <- doc_text[length(doc_text)-1]
       end_time <- gsub("\\(",'', end_time)
       end_time <- gsub("\\)",'', end_time)
       end_time <- clessnverse::splitWords(end_time)
