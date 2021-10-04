@@ -330,7 +330,7 @@ for (i in 1:length(list_urls)) {
       event_date <- gsub(",", "", event_date_time_text)
       day_of_week <- days_fr[which(days_fr %in% event_date_time_text)]
       days_of_week_position <- grep(day_of_week, event_date_time_text)
-      datestr <- paste(event_date[days_of_week_position+1],months_en[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
+      datestr <- paste(event_date[days_of_week_position+1],months_fr[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
       event_date <- as.Date(datestr, format = "%d %B %Y")
       
       
@@ -397,7 +397,7 @@ for (i in 1:length(list_urls)) {
       event_start_time <- strptime(event_start_time, "%Y-%m-%d %H:%M")
       
       # Figure out the end time of the conference
-      event_end_time <- doc_text[length(doc_text)]
+      event_end_time <- if (doc_text[length(doc_text)] == "") doc_text[length(doc_text)-1] else doc_text[length(doc_text)]
       event_end_time <- gsub("\\(",'', event_end_time)
       event_end_time <- gsub("\\)",'', event_end_time)
       event_end_time <- clessnverse::splitWords(event_end_time) 
