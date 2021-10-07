@@ -334,11 +334,12 @@ for (filename in filelist) {
       ) {      
       ###############################
       # Columns of the simple dataset
-      date <- NA
-      time <- NA
-      title <- NA
-      subtitle <- NA
-      end_time <- NA
+      event_date <- NA
+      event_start_time <- NA
+      event_end_time <- NA
+      event_title <- NA
+      event_subtitle <- NA
+
       doc_text <- NA
       
       # Extract SourceType
