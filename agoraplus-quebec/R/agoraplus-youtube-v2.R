@@ -134,7 +134,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "rebuild", hub_mode = "skip", download_data = FALSE)
+            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -289,7 +289,7 @@ if (nrow(filelist_df) == 0) {
 i=1
 
 for (filename in filelist) {
-  event_id <- stringr::str_match(filename, "^.{11}(.*).txt")[2]
+  event_id <- paste("yt", stringr::str_match(filename, "^.{11}(.*).txt")[2], sep="")
   
   clessnverse::logit(scriptname, paste("Conf", i, "de", length(filelist), filename, sep = " "), logger) 
   cat("\nConf", i, "de", length(filelist), filename, "\n", sep = " ")
@@ -481,7 +481,7 @@ for (filename in filelist) {
           speech_word_count <- 0
           
           # let's rule out the moderator first
-          if ( stringr::str_detect(paragraph_start, "^Modérateur\\s?:") ) { 
+          if ( stringr::str_detect(paragraph_start, "^Modérateur\\s?:") ) {
             ### MODERATEUR ###
             
             speaker_first_name <- "Modérateur"
@@ -590,9 +590,12 @@ for (filename in filelist) {
           }  # stringr::str_detect(paragraph_start, "^M\\.(.*):\\s+") || stringr::str_detect(paragraph_start, "^Mme(.*):\\s+")
 
           
-          if ( stringr::str_detect(paragraph_start, "^Journaliste(\\s+)?:") ) { ### Journaliste ###
+          if ( stringr::str_detect(tolower(paragraph_start), "^journaliste(\\s+)?(.*):") ) { ### Journaliste ###
             speaker_is_minister <- NA
             speaker_type <- "journalist"
+            if (stringr::str_detect(tolower(paragraph_start), "^journaliste(\\s+)?\\((.*)\\)(\\s+)?:")) {
+              speaker_media <- stringr::str_to_title(stringr::str_match(tolower(paragraph_start), "^journaliste(\\s+)?\\((.*)\\)(\\s+)?:")[3])
+            }
           } #stringr::str_detect(paragraph_start, "^Journaliste(\\s+)?:\\s+")
           
           
