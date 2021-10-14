@@ -186,7 +186,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 if (opt$dataframe_mode %in% c("update","refresh")) {
   dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "press_conference", schema = "v2",
                                                 location = "CA-QC",
-                                                download_data = FALSE,
+                                                download_data = opt$download_data,
                                                 token = Sys.getenv('HUB_TOKEN'))
   
   if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "press_conference", schema = "v2")

@@ -90,7 +90,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "update", hub_mode = "update", download_data = TRUE)
+            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -142,7 +142,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 if (opt$dataframe_mode %in% c("update","refresh")) {
   dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "press_conference", schema = "v2",
                                                 location = "CA-QC",
-                                                download_data = FALSE,
+                                                download_data = opt$download_data,
                                                 token = Sys.getenv('HUB_TOKEN'))
   
   if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2")
@@ -397,11 +397,8 @@ for (i in 1:length(list_urls)) {
       event_start_time <- strptime(event_start_time, "%Y-%m-%d %H:%M")
       
       # Figure out the end time of the conference
-<<<<<<< HEAD
       if (doc_text[length(doc_text)] != "") event_end_time <- doc_text[length(doc_text)] else event_end_time <- doc_text[length(doc_text)-1]
-=======
       event_end_time <- if (doc_text[length(doc_text)] == "") doc_text[length(doc_text)-1] else doc_text[length(doc_text)]
->>>>>>> f9a1815e52673d3422f614bc080bac7928debdbe
       event_end_time <- gsub("\\(",'', event_end_time)
       event_end_time <- gsub("\\)",'', event_end_time)
       event_end_time <- clessnverse::splitWords(event_end_time) 
