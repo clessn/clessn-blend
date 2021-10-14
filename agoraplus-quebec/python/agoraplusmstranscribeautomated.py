@@ -190,7 +190,11 @@ def main():
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
    
+<<<<<<< HEAD
     extract_date = "2021-09-07"
+=======
+    extract_date = "2021-08-31"
+>>>>>>> f9a1815e52673d3422f614bc080bac7928debdbe
 
     select_publish_date_start = extract_date
     select_publish_date_end = extract_date
