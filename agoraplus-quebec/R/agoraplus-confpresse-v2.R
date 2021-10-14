@@ -330,7 +330,7 @@ for (i in 1:length(list_urls)) {
       event_date <- gsub(",", "", event_date_time_text)
       day_of_week <- days_fr[which(days_fr %in% event_date_time_text)]
       days_of_week_position <- grep(day_of_week, event_date_time_text)
-      datestr <- paste(event_date[days_of_week_position+1],months_en[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
+      datestr <- paste(event_date[days_of_week_position+1],months_fr[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
       event_date <- as.Date(datestr, format = "%d %B %Y")
       
       
@@ -397,7 +397,11 @@ for (i in 1:length(list_urls)) {
       event_start_time <- strptime(event_start_time, "%Y-%m-%d %H:%M")
       
       # Figure out the end time of the conference
+<<<<<<< HEAD
       if (doc_text[length(doc_text)] != "") event_end_time <- doc_text[length(doc_text)] else event_end_time <- doc_text[length(doc_text)-1]
+=======
+      event_end_time <- if (doc_text[length(doc_text)] == "") doc_text[length(doc_text)-1] else doc_text[length(doc_text)]
+>>>>>>> f9a1815e52673d3422f614bc080bac7928debdbe
       event_end_time <- gsub("\\(",'', event_end_time)
       event_end_time <- gsub("\\)",'', event_end_time)
       event_end_time <- clessnverse::splitWords(event_end_time) 
@@ -432,6 +436,7 @@ for (i in 1:length(list_urls)) {
       speaker_district <- NA
       speaker_is_minister <- NA
       speaker_media <- NA
+      language <- NA
       intervention_type <- NA
       last_intervention_type <- NA
       intervention_text <- NA
@@ -457,8 +462,8 @@ for (i in 1:length(list_urls)) {
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
-        
         paragraph_start <- substr(doc_text[j],1,55)
+        
         if ( length(strsplit(paragraph_start, ":")[[1]]) == 1 ) {
           # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
           paragraph_start <- paragraph_start
@@ -468,6 +473,7 @@ for (i in 1:length(list_urls)) {
         }
         
         next_paragraph_start <- substr(doc_text[j+1],1,55)
+        
         if ( length(strsplit(next_paragraph_start, ":")[[1]]) == 1 ) {
           # There is no : in the beginning of the paragraph => it is probably a continuity of the same intervention
           next_paragraph_start <- next_paragraph_start
@@ -508,8 +514,9 @@ for (i in 1:length(list_urls)) {
           speaker_is_minister <- NA
           speaker_media <- NA
           intervention_type <- NA
-          intervention_text <- NA
           language <- NA
+          intervention_text <- NA
+          gender_femme <- 0
           speaker <- data.frame()
           
           speech_paragraph_count <- 1
@@ -523,16 +530,14 @@ for (i in 1:length(list_urls)) {
             speaker_first_name <- "Modérateur"
             speaker_last_name <- "Modérateur"
             speaker_gender <- NA
+            speaker_is_minister <- 0
             speaker_type <- "moderator"
             speaker_party <- NA
             speaker_district <- NA
             speaker_media <- NA
             intervention_type <- "modération"
-            intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
-            intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             
-            if (  1 %in% match(patterns_periode_de_questions, tolower(c(paragraph_start)),FALSE) )
-              periode_de_questions <- TRUE
+            if (  1 %in% match(patterns_periode_de_questions, tolower(c(paragraph_start)),FALSE) ) periode_de_questions <- TRUE
             
           } else {  ### DÉPUTÉ or JOURNALIST ###
             
@@ -675,12 +680,10 @@ for (i in 1:length(list_urls)) {
                 }
               }
             }
-            
-            
-            intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
-            intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
-            
           } # fin  ### DÉPUTÉ or JOURNALIST ###
+          
+          intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
+          intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
           
         } else {
           # It's the same person as in the previous paragraph speaking
