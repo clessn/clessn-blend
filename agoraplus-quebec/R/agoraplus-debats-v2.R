@@ -673,7 +673,7 @@ for (i in 1:length(list_urls)) {
                 district_or_lastname <- clessnverse::removeSpeakerTitle(stringr::str_match(paragraph_start, "\\((.*)\\)")[2])
                 
                 # Check if it is a real district or if it is his last name that was between ()
-                if (district_or_lastname %in% deputes$currentDistrict) {
+                if (district_or_lastname %in% dfPersons$data.currentDistrict) {
                   speaker_district <- district_or_lastname
                 } else {
                   speaker_first_name <- district_or_lastname
