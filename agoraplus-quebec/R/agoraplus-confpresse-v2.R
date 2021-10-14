@@ -107,7 +107,7 @@ if (!exists("opt")) {
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
   dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "press_conference", schema = "v2", 
-                                                               location = "CA-QC",
+                                                               location = "CA-QC", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   

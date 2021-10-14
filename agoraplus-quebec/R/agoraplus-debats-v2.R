@@ -106,7 +106,7 @@ if (!exists("opt")) {
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
   dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
-                                                               location = "CA-QC",
+                                                               location = "CA-QC", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   
@@ -968,5 +968,5 @@ for (i in 1:length(list_urls)) {
   
 } #for (i in 1:nrow(result))
 
-iclessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
