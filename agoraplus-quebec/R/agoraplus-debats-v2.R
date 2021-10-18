@@ -81,7 +81,7 @@ installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-debats-v2.R"
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper.log", "file", Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper.log", c("file", "hub"), Sys.getenv("LOG_PATH"))
 
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
