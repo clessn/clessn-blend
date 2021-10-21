@@ -241,8 +241,8 @@ list_urls <- rvest::html_attr(urls, 'href')
 # in it, or from the assnat website and start parsing it o extract the
 # press conference content
 #
-#for (i in 1:length(list_urls)) {
-for (i in 1:22) {
+for (i in 1:length(list_urls)) {
+#for (i in 5:17) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- paste("cp", stringr::str_sub(event_url,100,104), sep='')
