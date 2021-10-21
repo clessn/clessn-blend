@@ -241,8 +241,8 @@ list_urls <- rvest::html_attr(urls, 'href')
 # in it, or from the assnat website and start parsing it o extract the
 # press conference content
 #
-for (i in 1:length(list_urls)) {
-#for (i in 1:1) {
+#for (i in 1:length(list_urls)) {
+for (i in 1:22) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
   event_id <- paste("cp", stringr::str_sub(event_url,100,104), sep='')
@@ -330,7 +330,7 @@ for (i in 1:length(list_urls)) {
       event_date <- gsub(",", "", event_date_time_text)
       day_of_week <- days_fr[which(days_fr %in% event_date_time_text)]
       days_of_week_position <- grep(day_of_week, event_date_time_text)
-      datestr <- paste(event_date[days_of_week_position+1],months_fr[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
+      datestr <- paste(event_date[days_of_week_position+1],months_en[match(tolower(event_date[days_of_week_position+2]),months_fr)],event_date[days_of_week_position+3])
       event_date <- as.Date(datestr, format = "%d %B %Y")
       
       
