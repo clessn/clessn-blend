@@ -96,11 +96,6 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-# Download HUB v1 data 
-#clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
-#                                      Sys.getenv('HUB_USERNAME'), 
-#                                      Sys.getenv('HUB_PASSWORD'), 
-#                                      Sys.getenv('HUB_URL'))
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
