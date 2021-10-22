@@ -180,21 +180,11 @@ metadata_filter <- list(country="CA", province_or_state="QC")
 filter <- clessnhub::create_filter(type="journalist", schema="v2", metadata=metadata_filter)  
 dfJournalists <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
-#dfJournalists <- clessnverse::loadAgoraplusPersonsDf(type = "journalist", schema = "v2",
-#                                            location = "CA",
-#                                            download_data = TRUE,
-#                                            token = Sys.getenv('HUB_TOKEN')
-#                                            )
 
 dfMPs <- dfMPs %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
 dfJournalists <- dfJournalists %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ", extra = "merge")
 
 
-
-# Load all objects used for ETL including V1 HUB MPs
-# clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-#                             password = Sys.getenv('HUB_PASSWORD'), 
-#                             url = Sys.getenv('HUB_URL'))
 clessnverse::loadETLRefData()
 
 ###############################################################################
@@ -242,9 +232,10 @@ list_urls <- rvest::html_attr(urls, 'href')
 # press conference content
 #
 for (i in 1:length(list_urls)) {
-#for (i in 5:17) {
+#for (i in 67:67) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
+  #event_url <- list_urls[i]
   event_id <- paste("cp", stringr::str_sub(event_url,100,104), sep='')
   
   clessnverse::logit(scriptname, paste("Conf", i, "de", length(list_urls),sep = " "), logger)
@@ -258,23 +249,23 @@ for (i in 1:length(list_urls)) {
     # if it is cached (we scarped it before), we prefer not to bombard
     # the website with HTTP_GET requests and ise the cached version
     ###
-    if ( !(event_id %in% dfCache2$key) ) {
+    #if ( !(event_id %in% dfCache2$key) ) {
       # Read and parse HTML from the URL directly
       doc_html <- RCurl::getURL(event_url)
       doc_html.original <- doc_html
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
       clessnverse::logit(scriptname, paste(event_id, "not cached"), logger)
-    } else{ 
-      # Retrieve the XML structure from dfCache and Parse
-      filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
-      doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
-      doc_html <- doc_html$data.rawContent
-      doc_html.original <- doc_html
-      parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
-      cached_html <- TRUE
-      clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
-    }
+    #} else{ 
+    #  # Retrieve the XML structure from dfCache and Parse
+    #  filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
+    #  doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
+    #  doc_html <- doc_html$data.rawContent
+    #  doc_html.original <- doc_html
+    #  parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
+    #  cached_html <- TRUE
+    #  clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
+    #}
       
     # Dissect the text based on html tags
     doc_h1 <- XML::xpathApply(parsed_html, '//h1', XML::xmlValue)
@@ -455,7 +446,7 @@ for (i in 1:length(list_urls)) {
       cat("\n")
       
       for (j in 1:length(doc_text)) {
-        cat(j, "\r")
+        cat(j, "\n")
         
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
@@ -791,6 +782,8 @@ for (i in 1:length(list_urls)) {
           v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
           
           v2_metadata_to_commit <- list("url"=event_url,"format"="html","location"="CA-QC")
+          
+          cat(intervention_seqnum, "\n")
           
           dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
                                                                        type = "press_conference", schema = "v2",
