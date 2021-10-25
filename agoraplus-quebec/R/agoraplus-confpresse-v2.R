@@ -249,23 +249,23 @@ for (i in 1:length(list_urls)) {
     # if it is cached (we scarped it before), we prefer not to bombard
     # the website with HTTP_GET requests and ise the cached version
     ###
-    #if ( !(event_id %in% dfCache2$key) ) {
+    if ( !(event_id %in% dfCache2$key) ) {
       # Read and parse HTML from the URL directly
       doc_html <- RCurl::getURL(event_url)
       doc_html.original <- doc_html
       parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
       cached_html <- FALSE
       clessnverse::logit(scriptname, paste(event_id, "not cached"), logger)
-    #} else{ 
-    #  # Retrieve the XML structure from dfCache and Parse
-    #  filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
-    #  doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
-    #  doc_html <- doc_html$data.rawContent
-    #  doc_html.original <- doc_html
-    #  parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
-    #  cached_html <- TRUE
-    #  clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
-    #}
+    } else{
+     # Retrieve the XML structure from dfCache and Parse
+     filter <- clessnhub::create_filter(key = event_id, type = "press_conference", schema = "v2", metadata = list("location"="CA-QC"))
+     doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
+     doc_html <- doc_html$data.rawContent
+     doc_html.original <- doc_html
+     parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
+     cached_html <- TRUE
+     clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
+    }
       
     # Dissect the text based on html tags
     doc_h1 <- XML::xpathApply(parsed_html, '//h1', XML::xmlValue)
