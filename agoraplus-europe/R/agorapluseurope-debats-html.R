@@ -73,6 +73,51 @@ installPackages <- function() {
 } # </function installPackages>
 
 
+
+###############################################################################
+# Function : rm_accenty
+# Removes accents from a string
+#
+rm_accent <- function(str,pattern="all") {
+  if(!is.character(str))
+    str <- as.character(str)
+  
+  pattern <- unique(pattern)
+  
+  if(any(pattern=="Ç"))
+    pattern[pattern=="Ç"] <- "ç"
+  
+  symbols <- c(
+    acute = "áéíóúÁÉÍÓÚýÝ",
+    grave = "àèìòùÀÈÌÒÙ",
+    circunflex = "âêîôûÂÊÎÔÛ",
+    tilde = "ãõÃÕñÑ",
+    umlaut = "äëïöüÄËÏÖÜÿ",
+    cedil = "çÇ"
+  )
+  
+  nudeSymbols <- c(
+    acute = "aeiouAEIOUyY",
+    grave = "aeiouAEIOU",
+    circunflex = "aeiouAEIOU",
+    tilde = "aoAOnN",
+    umlaut = "aeiouAEIOUy",
+    cedil = "cC"
+  )
+  
+  accentTypes <- c("´","`","^","~","¨","ç")
+  
+  if(any(c("all","al","a","todos","t","to","tod","todo")%in%pattern)) 
+    return(chartr(paste(symbols, collapse=""), paste(nudeSymbols, collapse=""), str))
+  
+  for(i in which(accentTypes%in%pattern))
+    str <- chartr(symbols[i],nudeSymbols[i], str) 
+  
+  return(str)
+} # </function rm_accent>
+
+
+
 ###############################################################################
 #   Globals
 #
@@ -309,9 +354,27 @@ for (i in 1:length(urls_list)) {
   #event_source_type <- xpathApply(source_page_html, '//title', xmlValue)[[1]]
   event_source_type <- "Débats et vidéos | Plénière | Parlement européen"
   event_url <- event_url
-  event_date <- substr(xmlGetAttr(core_xml[[2]][["TL-CHAP"]], "VOD-START"),1,10)
-  event_start_time <- substr(xmlGetAttr(core_xml[[2]][["TL-CHAP"]], "VOD-START"),12,19)
-  event_end_time <- substr(xmlGetAttr(core_xml[[core_xml_nbchapters]][["TL-CHAP"]], "VOD-END"),12,19)
+  event_date <- XML::xmlAttrs(XML::getNodeSet(core_xml_chapters[[2]][["tr"]][["td"]], ".//a")[[3]])[["href"]]
+  event_date <- stringr::str_match(event_date, "\\d{8}")
+  event_date <- paste(stringr::str_sub(event_date,1,4), stringr::str_sub(event_date,5,6), stringr::str_sub(event_date,7,8), sep="-")
+  
+  event_start_time <- XML::xmlAttrs(XML::getNodeSet(core_xml_chapters[[2]][["tr"]][["td"]], ".//a")[[3]])[["href"]]
+  event_start_time <- stringr::str_match(event_start_time, "\\d{2}:\\d{2}:\\d{2}")
+  
+  event_end_time <- XML::xmlAttrs(XML::getNodeSet(core_xml_chapters[[core_xml_nbchapters]][["tr"]][["td"]], ".//a")[[3]])[["href"]]
+  event_end_time <- stringr::str_match(event_end_time, "\\d{2}:\\d{2}:\\d{2}")
+  
+  president_name <- XML::xmlValue(XML::getNodeSet(core_xml_chapters[[2]][["tr"]][["td"]], ".//p")[[1]])
+  if ( stringr::str_detect(tolower(president_name), "^présidence de") ) {
+    president_name <- trimws(stringr::str_match(tolower(president_name), "présidence de (.*)")[[2]])
+  } else {
+    president_name <- trimws(stringr::str_match(tolower(president_name), "(.*)president")[[2]])
+  }
+
+  president_name <- trimws(stringr::str_split(president_name, "\\.")[[1]][2])
+  president_name <- stringr::str_to_title(president_name)
+  
+  
   event_title <- NA
   event_subtitle <- NA
   event_word_count <- NA
@@ -407,28 +470,162 @@ for (i in 1:length(urls_list)) {
       # From potentially multiple speakers
       
       # We have to loop through every intervention
-      for (k in which(chapter_nodes_list == "a")) {
+      chapter_nodes_list <- which(chapter_nodes_list == "a")
+      
+      for (k in 1:length(chapter_nodes_list)) {
         #Find out if there is an intervention in this section
-        chapter_container_node <- chapter_node[[k+2]]
+        chapter_container_node <- chapter_node[chapter_nodes_list[[k]]+2]
         
-        # Check if the president is identified here and set his name
-        content_node <- XML::getNodeSet(chapter_container_node, ".//p[@class='contents']")
-        
-        # content_actor_node <- XML::getNodeSet(chapter_container_node, ".//span[@class='doc_subtitle_level1_bis']")
-        # content_bold_nodes <- XML::getNodeSet(chapter_container_node, ".//span[@class='bold']")
-        # content_italic_nodes <- XML::getNodeSet(chapter_container_node, ".//span[@class='italic']")
-        # content_reg_nodes <- XML::getNodeSet(chapter_container_node, ".//span[@class='']")
+        content_node <- XML::getNodeSet(chapter_container_node$table, ".//p[@class='contents']")
         
         for (l in 1:length(content_node)) {
           content_type <- XML::xmlAttrs(content_node[[l]][[1]])
+          next_content_type <- if (l < length(content_node)) XML::xmlAttrs(content_node[[l+1]][[1]]) else NULL
+          
+          first_parag <- NULL
+          
+          # We have a new speaker taking the stand - first thing : get his info and then his first paragraph
           if (!is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type) {
-            cat("\n\nspeaker:", stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[2],"\n")
-            cat("first parag:",stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
+            
+            speaker_full_name <- stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[2]
+            
+            if ( stringr::str_detect(tolower(rm_accent(speaker_full_name)), "president") ) {
+              speaker_full_name <- president_name
+              speaker_type <- "President"
+            } else {
+              speaker_full_name <- trimws(str_remove(speaker_full_name, "\\|\\s"))
+              speaker_type <- "MEP"
+            }
+            
+            speaker_first_name <- trimws(str_split(speaker_full_name, "\\s")[[1]][[1]], "both")
+            
+            dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
+            
+            if (!is.na(dfSpeaker$mepid)) {
+              speaker_mepid <- dfSpeaker$mepid
+              speaker_party <- dfSpeaker$party
+              speaker_polgroup <- dfSpeaker$polgroup
+              speaker_country <- dfSpeaker$country
+            } else {
+              speaker_mepid <- NA
+              speaker_party <- NA_character_
+              speaker_polgroup <- NA
+              speaker_country <-  NA
+            }
+
+            speaker_gender <- paste("", gender::gender(word(speaker_first_name)[1])$gender, sep = "")
+            speaker_is_minister <- NA
+            speaker_district <- NA
+            speaker_media <- NA
+            
+            first_parag <- stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3]
+            intervention_text <- ""
+            
+            cat("\n\nspeaker:", speaker_full_name, "\n")
+            #cat("first parag:",stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
           }
           
-          if (is.null(content_type)) cat("content: ", XML::xmlValue(content_node[[l]][[1]]),"\n")
+          # Here we have an intervention - it is either  a new intervention (if first_parag is not null) or the continuation of the same intervention
+          if ( is.null(content_type) || !is.null(first_parag) ) {
+
+            if (!is.null(first_parag)) {
+              #New
+              intervention_text <- first_parag
+            } else {
+              #Continuation
+              intervention_text <- paste(intervention_text, XML::xmlValue(content_node[[l]][[1]]), sep="\n\n")
+            }
+            first_parag <- NULL
+          }
           
-          if (!is.null(content_type) && content_type == "italic") cat("procedural text: ",XML::xmlValue(content_node[[l]][[1]]),"\n")
+          # Here it's only procedural text
+          #if (!is.null(content_type) && content_type == "italic") {
+          #  cat("procedural text: ",XML::xmlValue(content_node[[l]][[1]]),"\n")
+          #  next
+          #}
+          
+          # Look at the next paragraph to see if it is a new intervention
+          if (is.null(next_content_type) || "/doceo/data/img/arrow_summary.gif" %in% next_content_type) {
+            # next is new
+            
+            cat(intervention_text,"\n")
+            cat("****commit****\n")
+            
+            # intervention_text <- trimws(intervention_text, "left")
+            # intervention_word_count <- nrow(unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
+            # intervention_sentence_count <- nrow(unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
+            # intervention_paragraph_count <- length(which(names(intervention_node) == "PARA"))
+            # 
+            # # Translation
+            # intervention_translated_text <- clessnverse::translateText(text = intervention_text, engine = "azure",
+            #                                                         target_lang = "fr", fake = TRUE)
+            # 
+            # if (is.null(intervention_translated_text)) intervention_translated_text <- NA
+            # # commit to dfDeep and the Hub
+            # v2_row_to_commit <- data.frame(eventID = event_id,
+            #                                eventDate = event_date,
+            #                                eventStartTime = event_start_time,
+            #                                eventEndTime = event_end_time,
+            #                                eventTitle = event_title,
+            #                                eventSubTitle = event_subtitle,
+            #                                interventionSeqNum = intervention_seqnum,
+            #                                objectOfBusinessID = NA,
+            #                                objectOfBusinessRubric = NA,
+            #                                objectOfBusinessTitle = NA,
+            #                                objectOfBusinessSeqNum = NA,
+            #                                subjectOfBusinessID = chapter_number,
+            #                                subjectOfBusinessTitle = chapter_title,
+            #                                subjectOfBusinessHeader = NA,
+            #                                subjectOfBusinessSeqNum = NA,
+            #                                subjectOfBusinessProceduralText = NA,
+            #                                subjectOfBusinessTabledDocID = chapter_tabled_docid,
+            #                                subjectOfBusinessTabledDocTitle = NA,
+            #                                subjectOfBusinessAdoptedDocID = chapter_adopted_docid,
+            #                                subjectOfBusinessAdoptedDocTitle = NA,
+            #                                speakerID = NA,
+            #                                speakerFirstName = speaker_first_name,
+            #                                speakerLastName = speaker_last_name,
+            #                                speakerFullName = speaker_full_name,
+            #                                speakerGender = speaker_gender,
+            #                                speakerType = speaker_type,
+            #                                speakerCountry = speaker_country,
+            #                                speakerIsMinister = speaker_is_minister,
+            #                                speakerParty = speaker_party,
+            #                                speakerPolGroup = speaker_polgroup,
+            #                                speakerDistrict = speaker_district,
+            #                                speakerMedia = speaker_media,
+            #                                interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
+            #                                interventionDocID = NA,
+            #                                interventionDocTitle = NA,
+            #                                interventionType = intervention_type,
+            #                                interventionLang = intervention_lang,
+            #                                interventionWordCount = intervention_word_count,
+            #                                interventionSentenceCount = intervention_sentence_count,
+            #                                interventionParagraphCount = intervention_paragraph_count,
+            #                                interventionText = intervention_text,
+            #                                interventionTextFR = NA,
+            #                                interventionTextEN = intervention_translated_text,
+            #                                stringsAsFactors = FALSE)
+            # 
+            # v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+            # 
+            # v2_metadata_to_commit <- list("url"=event_url, "format"="xml", "location"="EU",
+            #                               "parliament_number"=parliament_number, "parliament_session"=NA_character_)
+            # 
+            # dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions,
+            #                                                              type = "parliament_debate", schema = "v2",
+            #                                                              metadata = v2_metadata_to_commit,
+            #                                                              data = v2_row_to_commit,
+            #                                                              opt$dataframe_mode, opt$hub_mode)
+            # 
+            # 
+            # 
+            # current_speaker_full_name <- speaker_full_name
+          } else {
+            # Next is same speaker
+          }
+          
+          
         }
         
         
