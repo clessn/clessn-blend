@@ -130,6 +130,8 @@ library(dplyr)
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file", "hub"), Sys.getenv("LOG_PATH"))
 
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
 # - update : updates the dataframe by adding only new observations to it
@@ -487,17 +489,17 @@ for (i in 1:length(urls_list)) {
           # We have a new speaker taking the stand - first thing : get his info and then his first paragraph
           if (!is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type) {
             
-            speaker_full_name <- stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[2]
+            speaker_full_name <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[2]
             
             if ( stringr::str_detect(tolower(rm_accent(speaker_full_name)), "president") ) {
               speaker_full_name <- president_name
               speaker_type <- "President"
             } else {
-              speaker_full_name <- trimws(str_remove(speaker_full_name, "\\|\\s"))
+              speaker_full_name <- trimws(stringr::str_remove(speaker_full_name, "\\|\\s"))
               speaker_type <- "MEP"
             }
             
-            speaker_first_name <- trimws(str_split(speaker_full_name, "\\s")[[1]][[1]], "both")
+            speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]], "both")
             
             dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
             
@@ -513,16 +515,16 @@ for (i in 1:length(urls_list)) {
               speaker_country <-  NA
             }
 
-            speaker_gender <- paste("", gender::gender(word(speaker_first_name)[1])$gender, sep = "")
+            speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
             speaker_is_minister <- NA
             speaker_district <- NA
             speaker_media <- NA
             
-            first_parag <- stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3]
+            first_parag <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3]
             intervention_text <- ""
             
             cat("\n\nspeaker:", speaker_full_name, "\n")
-            #cat("first parag:",stringi::stri_remove_empty(trimws(str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
+            #cat("first parag:",stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
           }
           
           # Here we have an intervention - it is either  a new intervention (if first_parag is not null) or the continuation of the same intervention
@@ -645,9 +647,9 @@ for (i in 1:length(urls_list)) {
         # speaker_node <- intervention_node[["ORATEUR"]]
         # 
         # speaker_full_name <- xmlGetAttr(speaker_node, "LIB")
-        # speaker_last_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
-        # speaker_first_name <- trimws(str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
-        # speaker_full_name <- str_remove(speaker_full_name, "\\|\\s")
+        # speaker_last_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
+        # speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
+        # speaker_full_name <- stringr::str_remove(speaker_full_name, "\\|\\s")
         # 
         # dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
         # 
@@ -673,7 +675,7 @@ for (i in 1:length(urls_list)) {
         # 
         # speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", xmlValue(speaker_node[["EMPHAS"]])))
         # 
-        # if (!is.na(speaker_type) && str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
+        # if (!is.na(speaker_type) && stringr::str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
         # 
         # speaker_district <- NA
         # speaker_media <- NA
@@ -693,8 +695,8 @@ for (i in 1:length(urls_list)) {
         #   intervention_text <- paste(intervention_text, xmlValue(intervention_node[[l]]), sep = " ")
         # } #for (l in which(names(intervention_node) == "PARA"))
         # 
-        # if (str_detect(intervention_text, ". – ")) {
-        #   intervention_text <- str_split(intervention_text, ". – ")[[1]][2]
+        # if (stringr::str_detect(intervention_text, ". – ")) {
+        #   intervention_text <- stringr::str_split(intervention_text, ". – ")[[1]][2]
         # }
         # 
         # intervention_text <- trimws(intervention_text, "left")
@@ -778,7 +780,7 @@ for (i in 1:length(urls_list)) {
   
   
   # Update the cache
-  row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html.original, stringsAsFactors = FALSE)
+  row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html, stringsAsFactors = FALSE)
   ###dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
   
   # Update cache dans hub v2
