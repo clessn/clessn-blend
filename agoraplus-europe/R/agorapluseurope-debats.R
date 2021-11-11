@@ -66,7 +66,7 @@ installPackages <- function() {
       if (grepl("clessn-hub-r", required_packages[p])) {
         packagename <- "clessnhub"
       } else {
-        packagename <- stringr::stringr::str_split(required_packages[p], "\\/")[[1]][2]
+        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
       }
     }
   }
@@ -416,7 +416,7 @@ for (i in 1:length(urls_list)) {
           speaker_polgroup <- case_when(XML::xmlGetAttr(speaker_node, "PP") != "NULL" ~ 
                                           paste(XML::xmlGetAttr(speaker_node, "PP"), ":", dfSpeaker$polgroup, sep = " "),
                                         TRUE ~ 
-                                          NA_character_)
+                                          dfSpeaker$polgroup)
           speaker_country <- dfSpeaker$country
         } else {
           speaker_mepid <- NA
@@ -428,6 +428,7 @@ for (i in 1:length(urls_list)) {
         }
         
         speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
+        if ( speaker_gender == "" ) speaker_gender <- NA
         speaker_is_minister <- NA
         
         speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", XML::xmlValue(speaker_node[["EMPHAS"]])))
@@ -452,11 +453,16 @@ for (i in 1:length(urls_list)) {
           intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
         } #for (l in which(names(intervention_node) == "PARA"))
         
-        if (stringr::str_detect(intervention_text, ". – ")) {
-          intervention_text <- stringr::str_split(intervention_text, ". – ")[[1]][2]
+        if (stringr::str_detect(intervention_text, "\\. – ")) {
+          intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+        }
+        
+        if (stringr::str_detect(intervention_text, "^– ")) {
+          intervention_text <- stringr::str_split(intervention_text, "^– ")[[1]][2]
         }
         
         intervention_text <- trimws(intervention_text, "left")
+        intervention_text <- gsub("^– ", "", intervention_text) 
         intervention_word_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
         intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
         intervention_paragraph_count <- length(which(names(intervention_node) == "PARA"))
@@ -582,17 +588,17 @@ for (i in 1:length(urls_list)) {
 
 
   # Update the cache
-  row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html, stringsAsFactors = FALSE)
+  #row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html, stringsAsFactors = FALSE)
   ###dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
   
   # Update cache dans hub v2
-  v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html, stringsAsFactors = FALSE)
-  v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC")
+  #v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html, stringsAsFactors = FALSE)
+  #v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC")
   
-  dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "press_conference", schema = "v2",
-                                                metadata = v2_metadata_to_commit,
-                                                data = v2_row_to_commit,
-                                                opt$dataframe_mode, opt$hub_mode)
+  #dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "press_conference", schema = "v2",
+  #                                              metadata = v2_metadata_to_commit,
+  #                                              data = v2_row_to_commit,
+  #                                             opt$dataframe_mode, opt$hub_mode)
   
 } #for (i in 1:length(urls_list))
 
