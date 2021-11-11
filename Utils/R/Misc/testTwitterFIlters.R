@@ -11,7 +11,7 @@ dfPersons <- clessnhub::get_items('persons', myfilter, download_data = T)
 tictoc::toc()
 
 tictoc::tic()
-myfilter <- clessnhub::create_filter(metadata = list(personType="media"), data = list(creationDate__gte="2021-08-08"))
+myfilter <- clessnhub::create_filter(metadata = list(personType="media"), data = list(creationDate__gte="2021-10-08"))
 dfTweets <- clessnhub::get_items('tweets', myfilter, download_data = T)
 tictoc::toc()
 
