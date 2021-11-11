@@ -213,7 +213,7 @@ doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
-list_urls <- doc_urls[grep("assemblee-nationale/42-1/journal-debats", doc_urls)]
+list_urls <- doc_urls[grep("assemblee-nationale/4\\d-\\d/journal-debats", doc_urls)]
 
 # Hack here to scrape only one debate
 #list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20210330/294413.html")
