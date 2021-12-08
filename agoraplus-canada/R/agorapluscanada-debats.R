@@ -82,7 +82,7 @@ installPackages()
 if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
 if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "skip", simple_mode = "update", deep_mode = "update", dataframe_mode = "update", hub_mode = "skip")
+opt <- list(cache_mode = "skip", simple_mode = "rebuild", deep_mode = "rebuild", dataframe_mode = "skip", hub_mode = "skip")
 
 
 if (!exists("opt")) {
