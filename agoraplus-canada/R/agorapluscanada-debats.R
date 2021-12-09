@@ -672,7 +672,7 @@ for (i_url in 1:length(urls_list_fr)) {
             speaker_is_minister <- if (!is.na(speaker_type) && (speaker_type == "Premier ministre" || speaker_type == "Ministre")) 1 else 0
             speaker_party <- dfSpeaker$party
             
-            if (is.na(speaker_party) && speaker_full_name != "Undetermined Speaker") { stop("bingo") }
+            #if (is.na(speaker_party) && speaker_full_name != "Undetermined Speaker") { stop("bingo") }
             
             # Now run through the intervention content and build the intervention with paragraphs breaks
             intervention_text <- ""
