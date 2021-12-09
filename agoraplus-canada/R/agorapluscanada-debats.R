@@ -709,13 +709,13 @@ for (i_url in 1:length(urls_list_fr)) {
                 if (intervention_lang == "fr") {
                   intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
                 }     
                 
                 if (intervention_lang == "en") {
-                  intervention_text <- paste(intervention_text, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text <- paste(intervention_text, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
                 }
                 
                 para_node <- intervention_node[["Content"]][[i_intervention_subnode]]
@@ -809,7 +809,7 @@ for (i_url in 1:length(urls_list_fr)) {
                                                   dfDestination = dfDeep,
                                                   hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
                                                   modeLocalData = opt$deep_mode, 
-                                                  modeHub = opt$hub_update)
+                                                  modeHub = opt$hub_mode)
             
             event_content <- paste(event_content, 
                                    case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text_fr, "\n\n", sep=""),
@@ -865,13 +865,13 @@ for (i_url in 1:length(urls_list_fr)) {
                                             dfDestination = dfSimple,
                                             hubTableName = 'agoraplus-eu_warehouse_event_items', 
                                             modeLocalData = opt$simple_mode, 
-                                            modeHub = opt$hub_update)
+                                            modeHub = opt$hub_mode)
   
   dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html_fr), stringsAsFactors = F),
                                           dfDestination = dfCache,
                                           hubTableName = 'agoraplus-eu_warehouse_cache_items', 
                                           modeLocalData = opt$cache_mode, 
-                                          modeHub = opt$hub_update)
+                                          modeHub = opt$hub_mode)
 } #for (i_url in 1:length(urls_list))
 
 
