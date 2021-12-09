@@ -146,7 +146,7 @@ if (scraping_method == "SessionRange") {
   start_session <- 2
   nb_session <- 1
   start_seance <- 90
-  nb_seance <- 110
+  nb_seance <- 10
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -154,9 +154,9 @@ if (scraping_method == "SessionRange") {
   for (p in start_parliam:(start_parliam+nb_parliam-1)) {
     for (s in start_session:(start_session+nb_session-1)) {
       for (seance in start_seance:(start_seance+nb_seance-1)) {
-        url_fr <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4fr,sep= '')
+        url_fr <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",stringr::str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,stringr::str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4fr,sep= '')
         urls_list_fr <- append(urls_list_fr, url_fr)
-        url_en <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4en,sep= '')
+        url_en <- paste(base_url,hansard_url1,"/", toString(p), toString(s),hansard_url2,"/",stringr::str_pad(toString(seance),3, side = "left", pad = "0"), hansard_url3,stringr::str_pad(toString(seance),3, side = "left", pad = "0"),hansard_url4en,sep= '')
         urls_list_en <- append(urls_list_en, url_en)
       }
     }
@@ -657,9 +657,9 @@ for (i_url in 1:length(urls_list_fr)) {
             speaker_last_name <- trimws(speaker_last_name, "both")
             speaker_full_name <- trimws(speaker_full_name, "both")
             
-            if (!is.na(speaker_full_name) && str_detect(speaker_full_name, "’")) speaker_full_name <- gsub("’", "'",speaker_full_name) 
-            if (!is.na(speaker_first_name) && str_detect(speaker_first_name, "’")) speaker_first_name <- gsub("’", "'",speaker_first_name) 
-            if (!is.na(speaker_last_name) && str_detect(speaker_last_name, "’")) speaker_last_name <- gsub("’", "'",speaker_last_name) 
+            if (!is.na(speaker_full_name) && stringr::str_detect(speaker_full_name, "’")) speaker_full_name <- gsub("’", "'",speaker_full_name) 
+            if (!is.na(speaker_first_name) && stringr::str_detect(speaker_first_name, "’")) speaker_first_name <- gsub("’", "'",speaker_first_name) 
+            if (!is.na(speaker_last_name) && stringr::str_detect(speaker_last_name, "’")) speaker_last_name <- gsub("’", "'",speaker_last_name) 
             
             dfSpeaker <- clessnverse::getCanadaMepData(speaker_full_name)
             
@@ -705,13 +705,13 @@ for (i_url in 1:length(urls_list_fr)) {
                 if (intervention_lang == "fr") {
                   intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                 }     
                 
                 if (intervention_lang == "en") {
-                  intervention_text <- paste(intervention_text, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text <- paste(intervention_text, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                   intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
+                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),xmlValue), sep='\n\n')
                 }
                 
                 para_node <- intervention_node[["Content"]][[i_intervention_subnode]]
