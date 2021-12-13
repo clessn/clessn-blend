@@ -1,0 +1,3064 @@
+
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+
+	<!-- Enonces d'inclusion de fichiers JS et CSS -->
+	
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+<meta http-equiv="content-language" content="fr" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<link type="text/css" href="/styles/ResetCSS.min.css" rel="stylesheet" media="screen"  />
+<link type="text/css" href="/styles/AssNat.min.css" rel="stylesheet" media="screen"  />
+<link type="text/css" href="/styles/Reguliere.css" title="Reguliere"  rel="alternate stylesheet" media="screen" />
+<link type="text/css" href="/styles/Moyenne.css" title="Moyenne" rel="alternate stylesheet" media="screen" />
+<link type="text/css" href="/styles/Grande.css" title="Grande" rel="alternate stylesheet" media="screen" />
+<link type="text/css" href="/styles/infoBulle.min.css" rel="stylesheet" media="screen" />
+<link type="text/css" href="/styles/jScrollPane.min.css" rel="stylesheet" media="screen" />
+<link type="text/css" href="/styles/jquery.treeview.min.css" rel="stylesheet" media="screen" />
+<link type="text/css" href="/styles/jquery.skinned-select.min.css" rel="stylesheet" media="screen"  />
+<link type="text/css" href="/styles/jquery.datePicker.min.css" rel="stylesheet" media="screen"  />
+<link type="text/css" href="/styles/Calendrier.min.css" rel="stylesheet" media="screen"  />
+<link href="/Images/favicon.ico" rel="shortcut icon" />
+
+<!-- Feuilles de styles specifiques IE -->
+
+<!--[if lte IE 6]>
+    <link type="text/css" href="/styles/CorrectionsIE6.min.css" rel="stylesheet" media="screen"  />
+<![endif]-->
+
+<!--[if IE 7]>
+    <link type="text/css" href="/styles/CorrectionsIE7.min.css" rel="stylesheet" media="screen"  />
+<![endif]-->
+
+<!--[if IE 8]>
+    <link type="text/css" href="/styles/CorrectionsIE8.min.css" rel="stylesheet" media="screen"  />
+<![endif]-->
+<link type="text/css" href="/styles/Impression.min.css" rel="stylesheet" media="print"  />
+
+<link type="text/css" href="/styles/Tableau.min.css" rel="stylesheet" media="screen"  />
+
+<script type="text/javascript" src="/scripts/jquery.js?version=1.2.6"></script>
+
+<script type="text/javascript" src="/scripts/jquery-ui.js?version=1.5.2"></script>
+
+<!-- Google Tag Manager -->
+<script>(function (w, d, s, l, i) {
+        w[l] = w[l] || []; w[l].push({
+            'gtm.start':
+                new Date().getTime(), event: 'gtm.js'
+        }); var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+})(window, document, 'script', 'dataLayer', 'GTM-5X47H2N');</script> 
+<!-- End Google Tag Manager -->
+
+
+<script type="text/javascript"  >
+//<![CDATA[
+// Libellé du calendrier
+$.dpText = {
+	TEXT_PREV_YEAR		:	'Année précédente',
+	TEXT_PREV_MONTH		:	'Mois précédent',
+	TEXT_NEXT_YEAR		:	'Année suivante',
+	TEXT_NEXT_MONTH		:	'Mois suivant',
+	TEXT_CLOSE			:	'[x] Fermer',
+	TEXT_CHOOSE_DATE	:	'Choisir une date'
+}
+
+var _contenuLoading = '<img style="width: 16px;height: 16px;" src="/Images/lightbox/loading.gif" />&nbsp; Chargement en cours...';
+
+var _nbAnneeArchiveActivite = '3';
+// Voir Calendrier.js pour _dtSetStartDate
+var _dtSetEndDate = '2022-04-29';
+var intNombreAnneeArchiveActivite = 3;
+var langueCourante = 'fr';
+
+_initCalendrierTypeActiviteJSON = eval([{"NomTypeActivite":"Autres activités","Categorie":"D","Name":null,"Description":null},{"NomTypeActivite":"Conférences et points de presse","Categorie":"C","Name":null,"Description":null},{"NomTypeActivite":"Séances de l'Assemblée","Categorie":"A","Name":null,"Description":null},{"NomTypeActivite":"Séances des commissions","Categorie":"B","Name":null,"Description":null}]);name 
+_urlGetCalendrierDataJSON = '/WebMethod/Calendrier.aspx/GetCalendrier?langue=fr';
+_documentURL = "http://www.assnat.qc.ca/Media/Process.aspx?process=Thumbnail&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&MediaId=";
+_imageThumbnailURL = "http://www.assnat.qc.ca/Media/Process.aspx?process=AlbumThumbnail&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=";
+_imageOriginaleURL = "http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=";
+_imageThumbnailDrapeauURL = "http://www.assnat.qc.ca/Media/Process.aspx?process=ThumbnailDrapeau&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=";
+_lienContenuURL = "/fr/deputes/index";
+_extensionPagesDuSite = "html";
+_lienPatronUrlCommuniquePresse = '/fr/actualites-salle-presse/communiques/';
+_lienPatronUrlTranscription = '/fr/actualites-salle-presse/conferences-points-presse/';
+_lienPatronUrlEnDirect = '/fr/video-audio/index';
+_lienJournalDebat ='/fr/travaux-parlementaires/{0}.html';
+_lienJournalDebatCom ='/fr/travaux-parlementaires/commissions/{0}/journal-debats/index';
+_lienJournalDebatChmbr ='/fr/travaux-parlementaires/{0}';
+_listeObjetMetierPatronUrl = "DocumentGenerique:/fr/document/{0}.html|Commission:/fr/travaux-parlementaires/commissions/{0}/index.html|Mandat:/fr/travaux-parlementaires/mandats/{0}/index.html|Lien:/fr/lien/{0}.html|CommuniquePresse:/fr/actualites-salle-presse/communiques/{0}.html|Actualite:/fr/actualites-salle-presse/nouvelle/{0}.html|ConferencePointPresse:/fr/actualites-salle-presse/conferences-points-presse/{0}.html|Consultation:/fr/travaux-parlementaires/consultations/{0}.html|SeanceAssemblee:/fr/travaux-parlementaires/assemblee-nationale/{0}/index.html|ProjetLoi:/fr/travaux-parlementaires/projets-loi/projet-loi-{0}.html|VideoAudio:/fr/video-audio/{0}.html|Journal:/fr/travaux-parlementaires/{0}.html|SyndicationRSS:/fr/rss/{0}.html|Petition:/fr/exprimez-votre-opinion/petition/{0}/index.html|TermeEncyclopedique:/fr/patrimoine/lexique/{0}.html|SectionDelegation:/fr/diplomatie/{0}/{1}/index.html|Vote:/fr/travaux-parlementaires/registre-des-votes/{0}/index.html|Depute:/fr/deputes/{0}/index.html|Texte:/fr/{0}.html|Individu:/fr/patrimoine/anciens-parlementaires/{0}.html|";
+_lienAideSoutienTechnique = '/fr/aide/aide-recherche.html#javascript';
+
+var _urlGetCalendrierObtenirActiviteEnOndes = '/WebMethod/Calendrier.aspx/ObtenirActiviteEnOndes';
+var intervalleRafraichissementWebDiffusion = '60';
+var urlPageVideoAudio = '/fr/video-audio/index.html?activite={0}';
+var libelleDateDebutDu = 'Du';
+var libelleDateDebutVers = 'Vers';
+var libelleDateFinJusqua = 'jusqu\'à';
+var libelleDateFinAu = 'au';
+var libelleHeureFinA = 'à'
+var libelleDebutApresPeriodeCourante = 'début : après la période des affaires courantes de l\'Assemblée';
+var bulleAidePeriodeAffaireCourante = '<span class="btnInfoBulle sansControle"><a href="javascript:void(0)" class="sanssouligne"><img src="http://www.assnat.qc.ca/Images/btnInfoBulle.gif" title="Afficher l\'aide" alt="Afficher l\'aide"></a><span title="Début : après la période des affaires courantes de l\'Assemblée"></span></span>';
+var libelleActiviteReporteeDateUlterieure = 'Activité reportée à une date ultérieure';
+
+var libelleCalAPartirDe = 'À partir de';
+var libelleCalEnCours = 'En cours';
+var libelleCalDebut = 'Début';
+
+var libelleDuree = 'Durée :';
+
+    var libelleAucunVideo = "La recherche n’a donné aucun résultat.";
+    var libelleAucuneAutreActiviteEnDirect = "Aucune autre activité en direct."
+
+var libelleNombreResultat = 'Nombre de résultats&nbsp;';
+var libelleMotsCles = 'Mots clés';
+var libelleCategorie = 'Catégorie';
+var libelleSession = 'Session';
+var libelleDateOuPeriode = 'Date ou période&nbsp;: ';
+var libelleAPartirDu = 'À partir du';
+var libelleJusquAu = "Jusqu'au";
+
+
+
+var arrCalendrierLblGeneral = {
+                                "lblCalOuvrir": "Ouvrir",
+                                "lblCalFermerEntete": "Fermer"       
+                            };
+var arrCalLblJoursSemaine = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'lblFormDeputesSortants'];
+var arrCalLblMoisAnnee = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+var arrCalLblMoisAnneeAbr = ['JA', 'FE', 'MR', 'AR', 'MA', 'JN', 'JL', 'AU', 'SE', 'OC', 'NO', 'DE'];
+var lblCalAucuneActivite = "Aucune activité au calendrier aujourd'hui.";
+var lblCalDifficulteTechnique = "Le calendrier n'est pas accessible en ce moment. Veuillez réessayer dans quelques minutes.";
+var lblCalActPrivee = "Activité privée"; 
+var lblCalActSurInvitation = "Sur invitation";
+var lblCalActAnnulee = "Activité annulée"; 
+var lblCalEnDirect = "En direct";
+var lblCalTranscription = "Transcription";
+var lblCalCommunique = "Communiqué";
+var lblCalToutesActivites = "Toutes les activités";
+var lblCalVideo = "Vidéo";
+var lblCalAudio = "Audio";
+
+// Libellés du date picker
+
+    Date.dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'lblFormDeputesSortants'];
+    Date.abbrDayNames = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+    Date.monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    Date.abbrMonthNames = ['JA', 'FE', 'MR', 'AR', 'MA', 'JN', 'JL', 'AU', 'SE', 'OC', 'NO', 'DE'];
+	Date.firstDayOfWeek = 7;
+
+
+// Libellés pour treeview - overrider dans les pages au besoin
+var lblOuvrirTout = 'Afficher tout le contenu';
+var lblFermerTout = 'Masquer tout le contenu';
+
+// Libelles pour paginateur
+var _lblPaginationPage = 'Page';
+var _lblPaginationDe = 'de';
+
+// URL drapeau generique 
+var _urlDrapeauGenerique = '/Images/Temp/icoDrapeaux.gif'
+
+// Message pour sites externes
+var _messageSiteExterne = "L'Assemblée n'assume aucune responsabilité quant au contenu des sites externes.";
+var _arrDomainesInternes = ['172.16.48.120','172.16.48.199','localhost','app1dev.assnat.intranet','wwwdev.assnat.qc.ca','wwwdev2.assnat.qc.ca','wwwfon.assnat.qc.ca','wwwfon2.assnat.qc.ca','wwwfor.assnat.qc.ca','wwwacc.assnat.qc.ca','wwwacc2.assnat.qc.ca','www.assnat.qc.ca','www2.assnat.qc.ca','assnat.qc.ca','WWW.bibliotheque.assnat.qc.ca','fondationbonenfant.qc.ca','sd10sri10v','www.parlementsauprimaire.com','www.paricilademocratie.com','boutique.assnat.qc.ca'];
+
+// Pour visionneuse: libelle 'Image' utilise dans slimbox2.js
+var lblVisionneuseTermeImage = "Image {x} de {y}"; 
+
+// Libelle pour le bouton Fermer de la visionneuse
+var libelleCloseLink = "Fermer";
+
+// Libellés pour fermer les bulles d'aide
+var lblBulleAideFermer = "[x] Fermer";
+
+// URL pour la page de redirection javascript
+var urlPageRedirectionJS = '/fr/redirection.html?d=';
+
+var urlBoutonCalendrier = '/Images/btnCalendrier.gif';
+
+
+var urlObtenirVisionneusePhotos = '/Gabarits/InfrastructuresAvecVisionneuse.aspx/ObtenirVisionneusePhotos';
+var lblAlbumPhotos = 'Album de photos';
+var lblAgrandir = 'Agrandir';
+
+// Le script d'effet ne fonctionne pas sous Internet Explorer, ce script distingue ie des autres fureteurs 
+ if ($.browser.msie) {
+    }
+    else {
+        document.write("<script type='text\/javascript' src='\/scripts/jquery.easing.min.js?version=1.3'><\/script>")
+    }
+//]]>
+ 
+    var valEtatDeputeAncienDeputes = "AncienDeputes";
+
+    var urlObtenirTypeTravauxParSessionLegislature = '/Gabarits/RechercheAvancee.aspx/ObtenirTypeTravauxParSessionLegislature';
+    var urlObtenirTypeTravauxParPeriode = '/Gabarits/RechercheAvancee.aspx/ObtenirTypeTravauxParPeriode';
+    var urlObtenirTypeDocumentParTypeTravaux = '/Gabarits/RechercheAvancee.aspx/ObtenirTypeDocumentParTypeTravaux';
+    var urlObtenirSousCategorieVideoParCategorieVideo = '/Gabarits/RechercheAvancee.aspx/ObtenirSousCategorieVideoParCategorieVideo';
+    
+    var idsSectionRechercheTravauxParlementaires = ['9',
+                                                        '27',
+                                                        '29',
+                                                        '31',
+                                                        '33'];
+
+    var idCategorieDocumentJournauxDebats = '13'
+
+    var msgFormatDateInvalide = "Veuillez saisir une date valide selon le format aaaa-mm-jj.";
+    var msgPeriodeInvalide = "La date de début doit précéder la date de fin.";
+    var msgPeriodeDebutFutur = "La date doit être antérieure ou égale à la date du jour.";
+
+</script>
+
+<!-- Gestion des cookies. Documentation : http://stilbuero.de/jquery/cookie/ -->
+<script type="text/javascript" src="/scripts/jquery.cookie.min.js"></script>
+
+<!-- Corrige les problème de z-index d'Internet Explorer. Doc: http://brandonaaron.net/jquery/plugins/bgiframe/docs/ -->
+<script type="text/javascript" src="/scripts/jquery.bgiframe.min.js"></script>
+
+<!-- Permet la gestion de l'objet date. -->
+<script type="text/javascript" src="/scripts/date.min.js"></script>
+
+<!-- Génère des paneaux (Tabs) à partir d'une liste (ul li). info et doc: http://docs.jquery.com/UI/Tabs-->
+<script type="text/javascript" src="/scripts/ui.tabs.js"></script>
+
+<!-- Génère l'affichage dynamique d'un liste (ul li). info et doc: http://bassistance.de/jquery-plugins/jquery-plugin-treeview/ -->
+<script type="text/javascript" src="/scripts/jquery.treeview.pack.min.js"></script>
+
+<!-- Permet de modifier la feuille de style. info et doc:http://kelvinluck.com/article/switch-stylesheets-with-jquery -->
+<script type="text/javascript" src="/scripts/StyleSwitcher.min.js"></script>
+
+<!-- Permet de modifier l'apparence des selects. info et doc:http://www.lotsofcode.com/javascript-and-ajax/jquery-select-box-skin.htm -->
+<script type="text/javascript" src="/scripts/jquery.skinned-select.min.js"></script>
+
+<!-- Permet de créer des masques sur les formulaires info et doc:http://digitalbush.com/projects/masked-input-plugin/ -->
+<script type="text/javascript" src="/scripts/jquery.maskedinput-1.2.2.min.js"></script>
+
+<!-- Permet de générer un calendrier. docs et info : http://kelvinluck.com/assets/jquery/datePicker/v2/demo/datePickerLocalised.html -->
+<script type="text/javascript" src="/scripts/jquery.datePicker.js"></script>
+
+<!-- Permet de gérer les bulles d'aide en popup -->
+<script type="text/javascript" src="/scripts/BulleAide.min.js"></script>
+
+<!-- Permet de modifier l'apparence des scrollbars. info et doc: http://www.kelvinluck.com/assets/jquery/jScrollPane/jScrollPane.html -->
+<script type="text/javascript" src="/scripts/jScrollPane.min.js"></script>
+
+<!-- Permet d'utiliser des PNG transparent dans IE 6 et 5.5. info et doc: http://jquery.andreaseberhard.de/pngFix/ -->
+<script type="text/javascript" src="/scripts/jquery.pngFix.min.js"></script>
+
+<!-- Permet de trier et de paginer des tableaux. docs et info : http://tablesorter.com -->
+<script type="text/javascript" src="/scripts/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="/scripts/jquery.tablesorter.pager.min.js"></script>
+
+<script type="text/javascript" src="/scripts/jquery.uilock.min.js"></script>
+
+<!-- script general -->
+<script type="text/javascript" src="/scripts/AssNat.min.js"></script>
+
+<script type="text/javascript" src="/Scripts/moment.min.js"></script>
+
+<!-- evenements et gestion du calendrier -->
+<script type="text/javascript" src="/scripts/Calendrier.min.js"></script>
+
+<!-- sert uniquement pour débugger les objets JSON. -->
+<script type="text/javascript" src="/scripts/json.min.js"></script>
+
+
+
+
+
+	
+	<!-- Placeholder: permet d'ajouter des enonces specifiques dans le HEAD -->
+    
+
+	<!-- Feuille de style pour le layout de la page -->
+	
+	<link href="/styles/GabGauche-mCentre-l.min.css" rel="stylesheet" type="text/css" media="screen" />
+
+
+	<!-- Placeholder: remplace automatiquement selon rubrique -->
+    <title>
+	
+		    Journal des débats  - Assemblée nationale du Québec
+		
+</title>
+        
+        <meta property="og:title" content="Journal des débats  - Assemblée nationale du Québec" />
+        <meta property="og:description" content="" />
+        <meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19205" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19207" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19209" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19211" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19213" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19215" />
+<meta property="og:image" content="http://www.assnat.qc.ca/Media/Process.aspx?process=Original&amp;token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe/vG7/YWzz&amp;asset=ANQ.Vigie.Bll.Image_19217" />
+
+    <style type="text/css">
+	.ctl00_SousNavigationPlaceHolder_SousNavigation_Menu1_0 { background-color:white;visibility:hidden;display:none;position:absolute;left:0px;top:0px; }
+	.ctl00_SousNavigationPlaceHolder_SousNavigation_Menu1_1 { text-decoration:none; }
+	.ctl00_SousNavigationPlaceHolder_SousNavigation_Menu1_2 {  }
+
+</style></head>
+
+<!-- Placeholder: permet de specifier un tag body personnalise (default: <body>) -->
+<body>
+
+	    
+<!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5X47H2N" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+    <form method="post" action="/fr/travaux-parlementaires/journaux-debats.html" onsubmit="javascript:return WebForm_OnSubmit();" id="aspnetForm">
+<div>
+<input type="hidden" name="versionProgrammationEnCache" id="versionProgrammationEnCache" value="0" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUIOTQyNzA4OTQPFgoeGFRva2VuRXhwaXJhdGlvblZpZXdTdGF0ZQUyYWRhNzI2YzMtZjBlYi00NzMzLTliYWYtOTkyYWY1NWI2OWIyX0RhdGU6MTc6MTY6MzQeDG5iQml6T2JqZWN0cwI/HgdudW1QYWdlAgEeA3RyaQUaSm91cm5hbF9EYXRlRHVKb3VybmFsOmRlc2MeHFZpZXdTdGF0ZU5vbVJlcXVldGVSZWNoZXJjaGUFWzV6a2p0c2t3c2Zla2R2dzUyZXBpeXB5eV80MDg4OTlmMC0wZmRjLTQyMDctODEyMy02NjkzNzEzNmVlNWNfUmVjaGVyY2hlckpvdXJuYWxTZWxvbkNyaXRlcmUWAmYPZBYCAgMQZGQWBAIBD2QWBAIBD2QWAmYPZBYCZg8VAi8vZW4vdHJhdmF1eC1wYXJsZW1lbnRhaXJlcy9qb3VybmF1eC1kZWJhdHMuaHRtbAdFbmdsaXNoZAIEDxYCHgRocmVmBScvZnIvYWlkZS9haWRlLXJlY2hlcmNoZS5odG1sI2phdmFzY3JpcHRkAhUPZBYCAgkPZBYGAgQPEGQQFU8TVG91dGVzIGxlcyBzZXNzaW9uc0RTZXNzaW9uIGVuIGNvdXJzIC0gNDJlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMTkgb2N0b2JyZSAyMDIxIC0gKUI0MmUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMjcgbm92ZW1icmUgMjAxOCAtIDEzIG9jdG9icmUgMjAyMSk7NDFlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDIwIG1haSAyMDE0IC0gMjMgYW/Du3QgMjAxOCk9NDBlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDMwIG9jdG9icmUgMjAxMiAtIDUgbWFycyAyMDE0KT4zOWUgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICgyMyBmw6l2cmllciAyMDExIC0gMSBhb8O7dCAyMDEyKUIzOWUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMTMgamFudmllciAyMDA5IC0gMjIgZsOpdnJpZXIgMjAxMSk8MzhlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDggbWFpIDIwMDcgLSA1IG5vdmVtYnJlIDIwMDgpPjM3ZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDE0IG1hcnMgMjAwNiAtIDIxIGbDqXZyaWVyIDIwMDcpOjM3ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICg0IGp1aW4gMjAwMyAtIDEwIG1hcnMgMjAwNik6MzZlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMjIgbWFycyAyMDAxIC0gMTIgbWFycyAyMDAzKTkzNmUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMiBtYXJzIDE5OTkgLSA5IG1hcnMgMjAwMSk9MzVlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMjUgbWFycyAxOTk2IC0gMjEgb2N0b2JyZSAxOTk4KT8zNWUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMjkgbm92ZW1icmUgMTk5NCAtIDEzIG1hcnMgMTk5Nik6MzRlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoMTcgbWFycyAxOTk0IC0gMTcganVpbiAxOTk0KTozNGUgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICgxOSBtYXJzIDE5OTIgLSAxMCBtYXJzIDE5OTQpPzM0ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgyOCBub3ZlbWJyZSAxOTg5IC0gMTggbWFycyAxOTkyKTkzM2UgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICg4IG1hcnMgMTk4OCAtIDkgYW/Du3QgMTk4OSk/MzNlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDE2IGTDqWNlbWJyZSAxOTg1IC0gOCBtYXJzIDE5ODgpQDMyZSBsw6lnaXNsYXR1cmUsIDVlIHNlc3Npb24gKDE2IG9jdG9icmUgMTk4NCAtIDEwIG9jdG9icmUgMTk4NSk6MzJlIGzDqWdpc2xhdHVyZSwgNGUgc2Vzc2lvbiAoMjMgbWFycyAxOTgzIC0gMjAganVpbiAxOTg0KT0zMmUgbMOpZ2lzbGF0dXJlLCAzZSBzZXNzaW9uICg5IG5vdmVtYnJlIDE5ODEgLSAxMCBtYXJzIDE5ODMpQTMyZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDMwIHNlcHRlbWJyZSAxOTgxIC0gMiBvY3RvYnJlIDE5ODEpOjMyZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgxOSBtYWkgMTk4MSAtIDE4IGp1aW4gMTk4MSk9MzFlIGzDqWdpc2xhdHVyZSwgNmUgc2Vzc2lvbiAoNSBub3ZlbWJyZSAxOTgwIC0gMTIgbWFycyAxOTgxKUAzMWUgbMOpZ2lzbGF0dXJlLCA1ZSBzZXNzaW9uICgyNCBvY3RvYnJlIDE5ODAgLSAyNCBvY3RvYnJlIDE5ODApOTMxZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDYgbWFycyAxOTc5IC0gMTgganVpbiAxOTgwKUIzMWUgbMOpZ2lzbGF0dXJlLCAzZSBzZXNzaW9uICgyMSBmw6l2cmllciAxOTc4IC0gMjAgZsOpdnJpZXIgMTk3OSk+MzFlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoOCBtYXJzIDE5NzcgLSAyMiBkw6ljZW1icmUgMTk3NylFMzFlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDE0IGTDqWNlbWJyZSAxOTc2IC0gMjMgZMOpY2VtYnJlIDE5NzYpPTMwZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDE2IG1hcnMgMTk3NiAtIDE4IG9jdG9icmUgMTk3Nik/MzBlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoMTggbWFycyAxOTc1IC0gMTkgZMOpY2VtYnJlIDE5NzUpPzMwZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDE0IG1hcnMgMTk3NCAtIDI4IGTDqWNlbWJyZSAxOTc0KUQzMGUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMjIgbm92ZW1icmUgMTk3MyAtIDIyIGTDqWNlbWJyZSAxOTczKT8yOWUgbMOpZ2lzbGF0dXJlLCA0ZSBzZXNzaW9uICgxNSBtYXJzIDE5NzMgLSAyNSBzZXB0ZW1icmUgMTk3Myk5MjllIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoNyBtYXJzIDE5NzIgLSAxNCBtYXJzIDE5NzMpQzI5ZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDIzIGbDqXZyaWVyIDE5NzEgLSAyNCBkw6ljZW1icmUgMTk3MSk/MjllIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDkganVpbiAxOTcwIC0gMTkgZMOpY2VtYnJlIDE5NzApPjI4ZSBsw6lnaXNsYXR1cmUsIDVlIHNlc3Npb24gKDI0IGbDqXZyaWVyIDE5NzAgLSAxMiBtYXJzIDE5NzApQzI4ZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDI1IGbDqXZyaWVyIDE5NjkgLSAyMyBkw6ljZW1icmUgMTk2OSlDMjhlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoMjAgZsOpdnJpZXIgMTk2OCAtIDE4IGTDqWNlbWJyZSAxOTY4KUAyOGUgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICgyMCBvY3RvYnJlIDE5NjcgLSAyMCBvY3RvYnJlIDE5NjcpQDI4ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgxIGTDqWNlbWJyZSAxOTY2IC0gMTIgYW/Du3QgMTk2Nyk+MjdlIGzDqWdpc2xhdHVyZSwgNmUgc2Vzc2lvbiAoMjUgamFudmllciAxOTY2IC0gMTggYXZyaWwgMTk2NilAMjdlIGzDqWdpc2xhdHVyZSwgNWUgc2Vzc2lvbiAoMjIgb2N0b2JyZSAxOTY1IC0gMjMgb2N0b2JyZSAxOTY1KT0yN2UgbMOpZ2lzbGF0dXJlLCA0ZSBzZXNzaW9uICgyMSBqYW52aWVyIDE5NjUgLSA2IGFvw7t0IDE5NjUpQDI3ZSBsw6lnaXNsYXR1cmUsIDNlIHNlc3Npb24gKDE0IGphbnZpZXIgMTk2NCAtIDMxIGp1aWxsZXQgMTk2NCk8MjdlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMjEgYW/Du3QgMTk2MyAtIDIzIGFvw7t0IDE5NjMpQTI3ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgxNSBqYW52aWVyIDE5NjMgLSAxMSBqdWlsbGV0IDE5NjMpPjI2ZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDEwIG5vdmVtYnJlIDE5NjAgLSAxMCBqdWluIDE5NjEpRTI2ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgyMCBzZXB0ZW1icmUgMTk2MCAtIDIyIHNlcHRlbWJyZSAxOTYwKT4yNWUgbMOpZ2lzbGF0dXJlLCA0ZSBzZXNzaW9uICgxOCBub3ZlbWJyZSAxOTU5IC0gMTggbWFycyAxOTYwKT0yNWUgbMOpZ2lzbGF0dXJlLCAzZSBzZXNzaW9uICgxOSBub3ZlbWJyZSAxOTU4IC0gNSBtYXJzIDE5NTkpQjI1ZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDEzIG5vdmVtYnJlIDE5NTcgLSAyMSBmw6l2cmllciAxOTU4KUMyNWUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMTQgbm92ZW1icmUgMTk1NiAtIDIxIGbDqXZyaWVyIDE5NTcpQjI0ZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDE2IG5vdmVtYnJlIDE5NTUgLSAyMyBmw6l2cmllciAxOTU2KUEyMGUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoNyBvY3RvYnJlIDE5MzYgLSAxMiBub3ZlbWJyZSAxOTM2KT4xOGUgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICgxMCBqYW52aWVyIDE5MzMgLSAxMyBhdnJpbCAxOTMzKUIxOGUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoMyBub3ZlbWJyZSAxOTMxIC0gMTkgZsOpdnJpZXIgMTkzMik8MTdlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoOCBqYW52aWVyIDE5MjkgLSA0IGF2cmlsIDE5MjkpPTE2ZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDExIGphbnZpZXIgMTkyNyAtIDEgYXZyaWwgMTkyNyk8MTZlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoNyBqYW52aWVyIDE5MjYgLSAyNCBtYXJzIDE5MjYpPjE2ZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgxNyBqYW52aWVyIDE5MjMgLSAxNSBtYXJzIDE5MjQpQjE1ZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDI0IG9jdG9icmUgMTkyMiAtIDI5IGTDqWNlbWJyZSAxOTIyKT0xNWUgbMOpZ2lzbGF0dXJlLCAzZSBzZXNzaW9uICgxMCBqYW52aWVyIDE5MjIgLSAyMSBtYXJzIDE5MjIpPTE1ZSBsw6lnaXNsYXR1cmUsIDJlIHNlc3Npb24gKDExIGphbnZpZXIgMTkyMSAtIDE5IG1hcnMgMTkyMSlEMTVlIGzDqWdpc2xhdHVyZSwgMXJlIHNlc3Npb24gKDEwIGTDqWNlbWJyZSAxOTE5IC0gMTQgZsOpdnJpZXIgMTkyMCk9MTRlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoMjEgamFudmllciAxOTE5IC0gMTcgbWFycyAxOTE5KUExNGUgbMOpZ2lzbGF0dXJlLCAyZSBzZXNzaW9uICg0IGTDqWNlbWJyZSAxOTE3IC0gOSBmw6l2cmllciAxOTE4KUMxNGUgbMOpZ2lzbGF0dXJlLCAxcmUgc2Vzc2lvbiAoNyBub3ZlbWJyZSAxOTE2IC0gMjIgZMOpY2VtYnJlIDE5MTYpPTEzZSBsw6lnaXNsYXR1cmUsIDRlIHNlc3Npb24gKDExIGphbnZpZXIgMTkxNiAtIDE2IG1hcnMgMTkxNik7MTNlIGzDqWdpc2xhdHVyZSwgM2Ugc2Vzc2lvbiAoNyBqYW52aWVyIDE5MTUgLSA1IG1hcnMgMTkxNSlCMTNlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMTEgbm92ZW1icmUgMTkxMyAtIDE5IGbDqXZyaWVyIDE5MTQpQzEzZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICg1IG5vdmVtYnJlIDE5MTIgLSAyMSBkw6ljZW1icmUgMTkxMik8MTJlIGzDqWdpc2xhdHVyZSwgNGUgc2Vzc2lvbiAoOSBqYW52aWVyIDE5MTIgLSAzIGF2cmlsIDE5MTIpPTEyZSBsw6lnaXNsYXR1cmUsIDNlIHNlc3Npb24gKDEwIGphbnZpZXIgMTkxMSAtIDI0IG1hcnMgMTkxMSk5MTJlIGzDqWdpc2xhdHVyZSwgMmUgc2Vzc2lvbiAoMTUgbWFycyAxOTEwIC0gNCBqdWluIDE5MTApOTEyZSBsw6lnaXNsYXR1cmUsIDFyZSBzZXNzaW9uICgyIG1hcnMgMTkwOSAtIDI5IG1haSAxOTA5KToxMWUgbMOpZ2lzbGF0dXJlLCA0ZSBzZXNzaW9uICgzIG1hcnMgMTkwOCAtIDI1IGF2cmlsIDE5MDgpFU8BMAQxNjA3BDE1NzkEMTA3OQM3ODkDNDk5AzQ5MQM0ODkDNDg3AzQ4NQM0ODMDNDgxAzQ3OQM0NzcDNDc1AzQ3MwM0NzEDNDY5AzQ2NwM0NjUDNDYzAzQ2MQM0NTkDNDU3AzQ1NQM0NTMDNDUxAzQ0OQM0NDcDNDQ1AzQ0MwM0NDEDNDM5AzQzNwM0MzUDNDMzAzQzMQM0MjkDNDI3AzQyNQM0MjMDNDIxAzQxOQM0MTcDNDE1AzQxMwM0MTEDNDA5AzQwNwM0MDMDNDAxAzM5OQMzOTcDMzk1AzM5MwMzOTEDMzUxAzM0MwMzNDEDMzM1AzMzMQMzMjkDMzI1AzMyMwMzMjEDMzE5AzMxNwMzMTUDMzEzAzMxMQMzMDkDMzA3AzMwNQMzMDMDMzAxAzI5OQMyOTcDMjk1AzI5MxQrA09nZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnFgECTWQCCw8QDxYEHg5EYXRhVmFsdWVGaWVsZAUCSWQeDURhdGFUZXh0RmllbGQFDU5vbUNvbW1pc3Npb25kEBUBFlRvdXRlcyBsZXMgY29tbWlzc2lvbnMVAQItMRQrAwFnZGQCDQ9kFgoCAQ8PFgIeBFRleHQFHkxpc3RlIGRlcyBqb3VybmF1eCBkZXMgZMOpYmF0c2RkAgMPDxYEHiVOb21icmVNaW5pbWFsUmVzdWx0YXRQYXJQYWdlVmlld1N0YXRlAgoeB1Zpc2libGVnZBYEAgEPZBYUAgEPDxYEHwgFNVBhZ2UgPHNwYW4+MTwvc3Bhbj4gZGUgPHNwYW4gY2xhc3M9Im5iUGFnZXMiPjE8L3NwYW4+HwpnZGQCCQ8PFgYfCAUBMR4PQ29tbWFuZEFyZ3VtZW50BQExHwpnZGQCCw8PFgYfCAUBMh8LBQEyHwpoZGQCDQ8PFgYfCAUBMx8LBQEzHwpoZGQCDw8PFgYfCAUBNB8LBQE0HwpoZGQCEQ8PFgYfCAUBNR8LBQE1HwpoZGQCEw8PFgYfCAUBNh8LBQE2HwpoZGQCFQ8PFgYfCAUBNx8LBQE3HwpoZGQCHQ8PFgIfCmhkZAIfDw8WBB8LBQEyHwpoZGQCAw9kFgQCAQ8PFgIfCmdkZAIDDxAPFggfBgUGVmFsZXVyHwcFBVRleHRlHgtfIURhdGFCb3VuZGcfCmdkEBUFAjEwAjI1AjUwAjc1AzEwMBUFAjEwAjI1AjUwAjc1AzEwMBQrAwVnZ2dnZxYBAgRkAgUPFgIfCmcWBmYPFgIeBWNsYXNzBQZoZWFkZXIWAgIBDw8WAh8LBQhEYXRlOkFzY2RkAgEPFgIfDQUGaGVhZGVyFgICAQ8PFgIfCwUITGlldTpBc2NkZAICDxYCHw0FBmhlYWRlchYCAgEPDxYCHwsFCVRpdHJlOkFzY2RkAgkPFgIfCmhkAgsPDxYEHwkCCh8KZ2QWBAIBD2QWFAIBDw8WBB8IBTVQYWdlIDxzcGFuPjE8L3NwYW4+IGRlIDxzcGFuIGNsYXNzPSJuYlBhZ2VzIj4xPC9zcGFuPh8KZ2RkAgkPDxYGHwgFATEfCwUBMR8KZ2RkAgsPDxYGHwgFATIfCwUBMh8KaGRkAg0PDxYGHwgFATMfCwUBMx8KaGRkAg8PDxYGHwgFATQfCwUBNB8KaGRkAhEPDxYGHwgFATUfCwUBNR8KaGRkAhMPDxYGHwgFATYfCwUBNh8KaGRkAhUPDxYGHwgFATcfCwUBNx8KaGRkAh0PDxYCHwpoZGQCHw8PFgQfCwUBMh8KaGRkAgMPZBYEAgEPDxYCHwpnZGQCAw8QDxYIHwYFBlZhbGV1ch8HBQVUZXh0ZR8MZx8KZ2QQFQUCMTACMjUCNTACNzUDMTAwFQUCMTACMjUCNTACNzUDMTAwFCsDBWdnZ2dnFgECBGQYAQU0Y3RsMDAkU291c05hdmlnYXRpb25QbGFjZUhvbGRlciRTb3VzTmF2aWdhdGlvbiRNZW51MQ8PZAUrVHJhdmF1eCBwYXJsZW1lbnRhaXJlc1xKb3VybmFsIGRlcyBkw6liYXRzIGQTBG4X0HfWB95GWuGlMZTVs3jZNQ==" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=1get-kBLXIv4lYmiJS7fFwsJIGSbKod0ACp0VdQcn5EEh7MtusAHAxPNlFp8WX5mAXpR0XAwzGTRIS2068k_fydT8pY1&amp;t=637505458660000000" type="text/javascript"></script>
+
+
+<script src="/WebResource.axd?d=_lk6xaT2GCvozHWKGRW-ultLysgTCZKODjhOrZAnORh4vg0zp8bH3HmizlEyOgVLRf_CD2nOQ9VoVgZdPVjfImyDr8E1&amp;t=637505458660000000" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="AD499B54" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEdAG3I6LzhqFmh0sM1lfzSTImm3hH/puXvwl4FGZa6rYP8j7zfnYlPDIamE8E+dcJv2yOeWKaAmro0O7/HRkRO9GZTinlEqqNRJUnlgbWxodS6uLDvrlK4gCghEWps5/5JCaZKZKzeWu2c/EG2QS4BN61CCxirtb0ixyMjZXPRAU+JwYZUJM39gSeFS1fjEFVCVzC80FQt+xPvsUFO0g6EcB01+e6DuvQiRRkzIemX0CoboRGxzsKDyRY12ipyko846/5ylAW1Cw5Ctly5uPRh2HsqIvIYX51FNaKvBCgrGKL1r9WeR26K1Qysy6odq7XnqcKG8I827f2A7GExxOZfoqb9IYdwcyRgihhXlk0oI1NEGjxGxc3in9GtHub+djY5s8nw8w/3pPjY/TBwwe4E+xgxEi6bJlOZJIUiy+rYv1J9tLADpYr0qZx38PkvdZe1xJUlxtGL93ty2oZPUypS3Ba1UdUQMMe7jaMFAqbpaJ53MJwXEjGr0XxBBDJTrJCYkhRJJ9mODF1+/jsR7ZcSkrF/VnlrL0Xe8AvydENIimDQq8UteATofKPoCHD0SaHKzT1raTHbu/wGFijo/oMqQqKuGjqN+OVtqbuu992gfRvZFHYhiMvhIEfEI/NVEXU5gsgKH5eb04OdZjfYpyet89QI5AwGj/lgXNrb+cTF3lpLQ6Udp8x5A1V790FGWGw1nK7mt+ujN5WMP/3heYPO1oEVarPogOKOuTxCZIAdWPYnAPP6lWCGAltcmyrN37wpYLhVVNyw7VS45TDtT6FadOlcwaIYX9DufMZbvt5LYmFs8Uw/nUVc+E19nfVEpH2DJmjOx3n/kaXroCIBLY7wrWx2batNBxs2PQVVFWAID4/waKl6Il9zMe4kqkhqS9hByG0x1O4GBrByGS6Gde8I7ymgZjidHnuaAJDB6Cq3ZCbEL+Fx/StsAkM/0n8Y6vqi60mDeRQ10Z2GW146RUBclPZH9jamEIWXZiytHPqYZZDigIHrqRD06X47YSOJwZ0KIzn2WSXK75aAm+Vj7FZiG/aP+yxttZPLmUU10mqBVY1OYl7sDauOOt/kkR+Mc9cX1iil7qBxvni36HGtxb3EXP0G1QYGyt2swS9g+tMqgAnDOM1I4vClzTv5SrxyA8xDpbSnSL2SaMYJnxLtXsSZZoCyN2arg1Pg7rCZEG46DiRWgS0hrvDI+nhisvDKYO01I7pqZ1NF6sw3WQGA5G8bqwpOxRm1TFjEqhSUP/k/qI3eFH+TUQNK1fLBjH3JwKgxCfQWU0vOoTOQnD43iKXyAdxi549Tj38aPIbpwULELiK8SZVq1Zqof6G0MOvFZKggdsXKlCx1hLiKGiEdZp/V174AzwnE90WdS7980lf4ms0t9voR+VwTbK9EtxHlO8rFnFYrMpjPeMdZGGjmIFlcpRlqtMg4tT+tN7uBF2AFQ/lQOW8ZoU8EyCPWF9Va66gMZvlQMdDWNSBK5L8dQmjXEAgIsOENMhvwKAtgaAlvVOK/hIkOasMxWNPb+qSmoPb7KpchMYOkEB+LeSoLhPN5NoLopGBbecbx8AIWJpwt7Pdh9iq1fO/uj3N3KFigO/BFrWVOM3KiYn5+8YOZiN7f7lPIMhZ8NA/2h6YN+TufDnaVSMrNX7RZFjWwGX574RRRwH+fgBdEmHe7mtIFIwy4YUhi+3DOhC4AzD9loAF+DS81LlesHpQlJwL8/lNYaQtnn25pEA0VArSi4667Q8gS95GVnNtWJFCptuZf4EqSJ35X21InkbClcAL7Ubs0LPUy5qmmmFVLdPVYHJ8/zrDUIrLTKpBY+vkUfCmnUh3inTFsWmlDQyFtymIK6Eqxqj5hMlRLbf4nGTzAjnyHtty6ZiL3bqQ5AGdyMrFYNyAg9uy8Bd4Wcf5ntzytvC1NDIPzWrY8SG4/eOMgZJZTP8SbFCbdEZSTubzAOvN55ed5C37zWncH8PePjasc9nEUhfTsRiTh+hEwGfj+g3Vx9vBdvVXdaJ8agos6wBNQfJngHkCISvdlZuAohO+EdZOQzgDrqK2th57GX7rYhZWuVoQMZu04Hz9KuoKUVg+ZuyC1B5WVTM/e58kMDfBjYu46QzlNsieepV8Ije/BPF0sHVlV2O+9AseyvH5hkU7V94+tYkw34AS9/TXsStYZ4JxPRd3aWKtu222rCZwgFGnk99SU4cYIFcPL1T2kiVvz+Rlm9HmSpYtsbqE9AGLPttkvfHJNBuVgiiqEHLB4tbh1flFnSolAvUuLyCUeeczxQCnQCdThTCCCqeUpwQcn5RPgEwNqEPCpxi0tXOcjpFEci8Fw4aH4G4b+MoSYgTTfs3m1RiUtHSVzERU=" />
+</div>
+		<div id="Wrap">
+	    
+			<!-- Utilitaires: impression, agrandir texte, recherche, etc -->
+			
+
+
+<script type="text/javascript">
+    var motCleDefaut = 'Rechercher';
+</script>
+
+<a name="haut"></a>
+<div id="enteteUtilitaire">
+    <div id="skip" class="skiplinks">
+        <a href="#ancreContenuPrincipal">Atteindre le contenu</a>
+        <a href="#ancreSousNavigation">Atteindre la navigation secondaire</a>               
+    </div>
+    <div class="listeUtilitaires listeUtilitaires2">
+        <ul>
+            <li class="Premier">
+                <a class="sanssouligne nePasRediriger icoMobile" href="http://m.assnat.qc.ca">
+                    <span class="styleHyperlien">Mobile</span>
+                </a>
+            </li>
+            <li>
+                <a href="/fr/accueil/mediassociaux.html" class="sanssouligne icoMediasSociauxEntete">
+                    <span class="styleHyperlien">Suivez-nous</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="listeUtilitaires">
+        <ul>
+            
+            <li><a href="/en/travaux-parlementaires/journaux-debats.html">English</a></li>
+            
+            <li><a id="A2" href="http://www.assnat.qc.ca/carrieres">Carrières</a></li>
+            <li><a href="/fr/nous-joindre.html" id="ctl00_Utilitaires_A1">Nous joindre</a></li>
+            <li>
+                <div class="outilRecherche">
+                    <label for="ctl00_Utilitaires_motCle" class="nepasafficher">Saisir un mot clé pour faire une recherche générale</label>
+                    <input type="text" id="ctl00_Utilitaires_motCle" class="outilRechercheMotCle" />
+                    <input onclick="RechercherMotCle();return false;" type="image" src="/Images/btnRecherche_of.gif" class="btnRechercheGlobal" title="Rechercher" alt="Rechercher"/>
+                </div>
+            </li>
+            <li>
+                <a href="/fr/aide/aide-recherche.html#javascript" onclick="LancerRechercheAvancee();return false;">Recherche avancée</a>
+            </li>
+        </ul>
+    </div>
+</div>
+<script type="text/javascript">
+    function RechercherMotCle() {
+        var mot = $('#ctl00_Utilitaires_motCle');
+        if (mot.val() != "")
+        {
+            window.location = '/fr/recherche/recherche-avancee.html?SectionRecherche=-1&MotsCles=' + encodeURIComponent(htmlEscape(mot.val()));
+        }
+    }
+
+    function LancerRechercheAvancee() {
+        var urlRechercheAvancee = '/fr/recherche/recherche-avancee.html';
+        window.location = urlRechercheAvancee + "?EstNouvelleRecherche=true";
+    }
+
+
+    $(document).ready(
+
+		function() {
+		    // Masquer le bouton Envoyer a un ami dans certaines pages
+
+		    var Recherche = '';
+		    var EnvoyerAmi = '';
+
+		    if (Recherche + EnvoyerAmi != '')
+		        $("#EnvoyerAmi").addClass("cacherUnElement");
+		}
+	);				
+		
+
+
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	        
+			<!-- Banniere: image d'entete -->
+			
+<div id="Banniere">
+    <h1>Assemblée nationale du Québec - Retour à l'accueil</h1>
+	<a href="/fr/index.html" class="sanssouligne" title="Assemblée nationale du Québec - Retour à l&#39;accueil">
+    <img class="nepasafficher" width="88" height="58" title="Assemblée nationale du Québec - Retour à l'accueil" alt="Assemblée nationale du Québec - Retour à l'accueil" src='/images/transparent.gif' /></a>
+</div>
+        
+	        
+			<!-- NavigationPrincipale: menu horizontal -->
+			
+
+<div id="NavigationPrincipaleConteneur">
+    <div id="NavPrincipaleNiveau1">
+        <ul>
+            <li class="btnAccueil">
+                <a href="/fr/index.html" id="ctl00_NavigationPrincipale_hrfAcceuil">
+                    Accueil</a></li>
+            <li aria-haspopup="true" class='menuHoverParent btnDeputes'><a href="/fr/deputes/index.html" id="ctl00_NavigationPrincipale_hrfDeputes">
+                Députés</a>
+                <div class='menuHoverEnfant'>
+                    
+                            <ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10006.html">Le président</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10002.html#listeDeputes">Liste des députés en fonction </a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11861.html">Les députés depuis 1764</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10002.html#listeDeputes">Coordonnées des députés</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10042.html">La fonction de député</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10014.html">Fonctions parlementaires des députés</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10020.html">Composition des commissions</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10028.html">Membres du Bureau de l'Assemblée</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10052.html">Indemnités et allocations</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/deputes/cerclefemmes/index.html">Cercle des femmes parlementaires</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12661.html">Cercle des jeunes parlementaires</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10965.html">Cercle des ex-parlementaires de l’Assemblée nationale du Québec</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12603.html">Fondation Jean-Charles-Bonenfant </a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12605.html">Fondation des parlementaires québécois Cultures à partager </a></li>
+</ul>
+                        
+                </div>
+            </li>
+            <li aria-haspopup="true" class='menuHoverParent btnTravaux menuActif'>
+                <a href="/fr/travaux-parlementaires/index.html" id="ctl00_NavigationPrincipale_hrfTravauxParlementaires">
+                    Travaux parlementaires</a>
+                <div class='menuHoverEnfant'>
+                    
+                            <ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12119.html">Calendrier hebdomadaire des travaux</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12213.html">Journal des débats</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11867.html">Index du Journal des débats</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10114.html#procedure">Règlement et autres règles de procédure de l'Assemblée nationale</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10114.html#procedure">Propos non parlementaires</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10044.html">Assister aux travaux</a></li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10118.html">Travaux de l'Assemblée</a></strong> 
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10118.html">Toutes les séances</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10198.html">Documents déposés</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10192.html">Projets de loi</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12215.html">Cheminement des projets de loi</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12779.html">Registre des votes par appel nominal</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10126.html">Travaux des commissions</a></strong> 
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10126.html">Liste des commissions</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11185.html">Mandats en cours</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10198.html">Documents déposés</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10140.html">Rapports et documents de réflexion</a></li>
+</ul>
+</li>
+</ul>
+                        
+                </div>
+            </li>
+            <li aria-haspopup="true" class='menuHoverParent btnExprimez'>
+                <a href="/fr/exprimez-votre-opinion/index.html" id="ctl00_NavigationPrincipale_hrfExprimezVotreOpinion">
+                    Exprimez votre opinion!</a>
+                <div class='menuHoverEnfant'>
+                    
+                            <ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10999.html">Pétitions</a></strong> 
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11001.html">Signer une pétition électronique</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11003.html">Consulter une pétition présentée à l'Assemblée</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10108.html">Lancer une pétition</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/exprimez-votre-opinion/petition/cheminement-petition">Cheminement d'une pétition</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/tablecitoyenne">Table citoyenne</a></strong></li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10901.html">Consultations publiques</a></strong> 
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10901.html#CommentParticiper">Comment participer à une consultation</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10126.html">Liste des consultations publiques</a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/10995.html">Participer à une consultation en ligne</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10997.html">Commenter un sujet à l'étude</a></strong></li>
+</ul>
+<ul>
+<li><strong><a href="http://www.assnat.qc.ca/fr/lien/10110.html">Présenter un projet de loi d'intérêt privé</a></strong></li>
+</ul>
+                        
+                </div>
+            </li>
+            <li aria-haspopup="true" class='menuHoverParent btnVideoAudio'>
+                <a href="/fr/video-audio/index.html" id="ctl00_NavigationPrincipale_hrfVideoAudio">
+                    Vidéo</a>
+                <div class='menuHoverEnfant'>
+                    
+                            <ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12541.html"><strong>En direct et webdiffusions à venir</strong></a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12543.html"><strong>Archives des travaux et activités parlementaires</strong></a> 
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12545.html">Travaux de l'Assemblée </a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12559.html">Travaux des commissions</a> </li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12547.html">Activités de presse </a></li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12549.html">Activités spéciales et institutionnelles</a> </li>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12551.html">Députés </a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12553.html"><strong>Le Canal de l'Assemblée</strong></a> </li>
+</ul>
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12555.html"><strong>Émissions et capsules promotionnelles</strong></a></li>
+</ul>
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/12561.html"><strong>Espace jeunesse</strong></a> </li>
+</ul>
+<ul>
+<li><a href="http://www.assnat.qc.ca/fr/lien/11183.html"><strong>Commander un extrait</strong></a> </li>
+</ul>
+                        
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+	        
+            <!-- PlaceHolder: permet de masquer le calendrier sommaire (defaut: s'affiche) -->
+			
+				
+
+<script type="text/javascript">
+</script>
+
+<div class="calendrier calSommaire" id="Calendrier">
+    <div class="titreCalendrier" id="TitreCalendrier">
+        <ul>
+            <li class="btnCalendrier" id="btnCalendrier">
+                <a href="javascript:void(0)" id="ctl00_CalendrierSommaire_CalendrierSommaire1_LienCalendrier">
+                    Calendrier
+                    <p class="libelleOuvrirFermer">
+                    Ouvrir</p></a>
+            </li>
+        </ul>
+    </div>
+    <div class="contenuCalendrier" id="ContenuCalendrier">
+        <div class="contenuCalendrierInterne" style="display: none">
+            <div class="overlayCalendrier">
+                <p class="contenuOverlay">
+                    <img src="/Images/lightbox/loading.gif" alt="Chargement en cours"
+                        title="Chargement en cours" />
+                </p>
+            </div>
+            <div class="blocAssembleeEnDirect">
+                <ul class="listeIconesHorizontale">
+                    <li id="IconeEnDirectCalendrier" class="icoEnDirectInactif"><span id="spnEnDirectCalendrier">
+                        En direct</span></li>
+                    <li><a class="anchorCalendrierDetaille" href='/fr/calendrier-detaille.html'>
+                        Calendrier détaillé</a></li>
+                </ul>
+            </div>
+            <div class="blocNavigateurDates">
+                <div>
+                    <p id="ConteneurCalendrierPopup">
+                        <span class="calendrierPopup"></span>
+                    </p>
+                    <h2 id="TitreDateDuJour">_date_du_jour
+                    </h2>
+                </div>
+                <ul>
+                    <li class="versGauche"><a href="#" class="dateNavigateur fleche" id="dateNavGauche"><img alt="Semaine précédente" title="Semaine précédente"
+                        src='/Images/transparent.gif' width="15" height="25"/></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavDi" title="_dimanche" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">DIM</span><br />
+                        <span class="libelleDate">6</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavLu" title="_lundi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">LUN</span><br />
+                        <span class="libelleDate">7</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavMa" title="_mardi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">MAR</span><br />
+                        <span class="libelleDate">8</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavMe" title="_mercredi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">MER</span><br />
+                        <span class="libelleDate">9</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavJe" title="_jeudi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">JEU</span><br />
+                        <span class="libelleDate">10</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavVe" title="_vendredi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">VEN</span><br />
+                        <span class="libelleDate">11</span></a></li>
+                        
+                    <li><a class="dateNavigateur" id="dateNavSa" title="_samedi" href="#">
+                        <span class="overlayJour overlayJourSommaire"></span>
+                        <span class="libelleJournee">SAM</span><br />
+                        <span class="libelleDate">12</span></a></li>
+                        
+                    <li class="versDroite"><a href="#" class="dateNavigateur fleche" id="dateNavDroite">
+                        <img alt="Semaine suivante" title="Semaine suivante"
+                        src='/Images/transparent.gif' width="15" height="25"/></a></li>
+                </ul>
+                <span class="aujourdhui"><a class="aujourdhuiLien" href=''>
+                    Aujourd'hui</a></span>
+            </div>
+            <hr />
+            <div class="blocEnCours" style="display: none">
+                <div class="blocEnCoursTitre">
+                    <h3 id="HeureEnCours" class="heure">_heure_en_cours
+                    </h3>
+                    <h3>
+                        En cours</h3>
+                </div>
+                <div class="boiteDefilante">
+                </div>
+            </div>
+            <div class="blocActivitesDuJour">
+                <h3><label for="ctl00_CalendrierSommaire_CalendrierSommaire1_selectFiltreCategorieActivite">Activités du jour</label></h3>
+                <div class="my-skinnable-select">
+                    <select name="ctl00$CalendrierSommaire$CalendrierSommaire1$selectFiltreCategorieActivite" id="ctl00_CalendrierSommaire_CalendrierSommaire1_selectFiltreCategorieActivite" class="selectFiltreCategorieActivite">
+	<option selected="selected" value="*"></option>
+
+</select>
+                </div>
+                <div class="boiteDefilante">
+                </div>
+            </div>
+            <div class="blocExpositions" style="display: none">
+                <h3>
+                    Exposition(s)</h3>
+                <div id="listeExpositions">
+                </div>
+            </div>
+            <div class="blocSurLesTours" id="BlocSurLesTours" style="display: none">
+                <h3>
+                    Drapeau(x) sur l'hôtel du Parlement</h3>
+                <div id="listeDrapeaux">
+                </div>
+            </div>
+        </div>
+        <p id="calendrierNoJs">
+            L'utilisation du calendrier requiert que Javascript soit activé dans votre navigateur.<br />
+            <a href='/fr/aide/aide-recherche.html#javascript'>
+                Pour plus de renseignements</a>
+        </p>
+    </div>
+</div>
+
+			
+
+            <!-- NavigationPrincipaleNiveau2: menu horizontal -->
+			
+
+<div id="NavigationPrincipaleNiveau2Conteneur">
+    <div id="NavPrincipaleNiveau2">
+        <ul>
+            <li class='' id="lienABC"><a href="/fr/abc-assemblee/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfABCDeLassemblee">
+                L'ABC de l'Assemblée</a></li>
+            <li class='' id="lienVisiteurs"><a href="/fr/visiteurs/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfVisiteurs">
+                Visiteurs</a></li>
+            <li class='' id="lienRestaurants"><a href="/fr/visiteurs/restaurants/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfRestaurants">
+                Restaurants</a></li>
+            <li class='' id="lienActualites"><a href="/fr/actualites-salle-presse/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfActualiteEtSalleDePresse">
+                Actualités et salle de presse</a></li>
+            <li class='' id="lienBibliotheque">
+                <a href="/fr/bibliotheque/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfBibliotheque">
+                    Bibliothèque</a></li>
+            <li class='' id="lienPublications">
+                <a href="/fr/publications/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfPublications">
+                    Publications</a></li>
+            <li class='' id="lienEducatives">
+                <a href="http://www.paricilademocratie.com" id="ctl00_NavigationPrincipaleNiveau2_hrfActivitesEducatives">
+                    Éducation</a></li>
+            <li class='' id="lienInternational">
+                <a href="/fr/diplomatie/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfInternational">
+                    Diplomatie</a></li>
+            <li class='' id="lienHistoire"><a href="/fr/patrimoine/index.html" id="ctl00_NavigationPrincipaleNiveau2_hrfHistoire">
+                Histoire</a></li>
+        </ul>
+    </div>
+</div>
+
+
+			<!-- FilAriane: affiche le fil d'ariane -->			
+			
+				
+<div id="FilAriane" class="FilAriane">
+<span id="ctl00_FilAriane_FilAriane1_SiteMapPath1"><span><a href="/fr/index.html">Accueil</a></span><span> &gt; </span><span><a href="/fr/travaux-parlementaires/index.html">Travaux parlementaires</a></span><span> &gt; </span><span>Journal des d&#233;bats </span></span>
+</div>
+			
+	        
+            
+            
+
+            <!-- Ancre pour le "skiplink atteindreSousNavigation" -->
+            <div id="divAncreSousNavigation" class="skipLinks">
+                <a name="ancreSousNavigation" id="ancreSousNavigation"></a>
+            </div>
+
+            <div class="ColGauche colonne">        
+				
+				<!-- PlaceHolder: permet de masquer la navigation secondaire (defaut: s'affiche) -->
+				
+                    
+<div id="SousNavigation" class="ContenuNavigation SousNavigation">
+
+
+	
+	<ul>
+		<li>
+			<h2><a href="/fr/travaux-parlementaires/index.html" class="selected">
+				Travaux parlementaires</a></h2>
+			<ul>
+				<li>
+					<a href="/fr/travaux-parlementaires/journaux-debats.html" class="selected">
+						Journal des débats </a>
+					<ul>
+						<li>
+							<a href="/fr/travaux-parlementaires/journaux-debats/index-jd/index.html" class="">
+								Index du Journal des débats</a>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/assemblee-nationale/index.html" class="">
+						Travaux de l'Assemblée</a>
+					<ul>
+						<li>
+							<a href="/fr/travaux-parlementaires/registre-des-votes/index.html" class="">
+								Registre des votes par appel nominal</a>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/commissions/index.html" class="">
+						Travaux des commissions</a>
+					<ul>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cap/index.html" class="">
+								Administration publique</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/capern/index.html" class="">
+								Agriculture, pêcheries, énergie et ressources naturelles</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cat/index.html" class="">
+								Aménagement du territoire</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/can/index.html" class="">
+								Assemblée nationale</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cce/index.html" class="">
+								Culture et éducation</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cet/index.html" class="">
+								Économie et travail</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cfp/index.html" class="">
+								Finances publiques</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/ci/index.html" class="">
+								Institutions</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/crc/index.html" class="">
+								Relations avec les citoyens</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/csss/index.html" class="">
+								Santé et services sociaux</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/cte/index.html" class="">
+								Transports et environnement</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/mandats-encours-commissions.html" class="">
+								Mandats en cours</a>
+						</li>
+						<li>
+							<a href="/fr/travaux-parlementaires/commissions/rapports-documents-reflexion/index.html" class="">
+								Rapports et documents de réflexion</a>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/projets-loi/rapport/index.html" class="">
+						Cheminement des projets de loi</a>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/projets-loi/index.html" class="">
+						Projets de loi</a>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/documents-deposes.html" class="">
+						Documents déposés </a>
+					<ul>
+						<li>
+							<a href="/fr/travaux-parlementaires/documents-deposes/depots-du-jour.html" class="">
+								Dépôts du jour </a>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<a href="/fr/travaux-parlementaires/calendrier-travaux.html" class="">
+						Calendrier hebdomadaire des travaux </a>
+				</li>
+			</ul>
+		</li>
+	</ul>
+
+	
+  <div class="clear"></div>
+</div>
+
+
+<script type="text/javascript">
+
+</script>        
+				
+
+				<!-- PlaceHolder: permet d'ajouter du contenu sous la navigation secondaire (defaut: vide) -->			
+				
+	            
+			</div>  
+	        
+            <div class="ColCentre colonne Contenu">
+
+				<!-- PlaceHolder: permet d'afficher une accroche (defaut: vide) -->
+				
+	            			
+				<!-- PlaceHolder: conteneur pour tout le contenu excepte la navigation -->
+				
+	            				
+					<!-- PlaceHolder: permet de masquer les utilitaires d'Assemblee (defaut: s'affiche) -->
+					
+						
+
+<div class="utilitairesAssemblee" id="utilitairesAssemblee">
+    <div id="ColIconesUtilitairesAssemblee">
+        <div id="ColOutilsUtilitairesAssemblee">
+            <ul class="utilitairesAssemblee listeSansPuces">
+                <li>
+                    <a href="javascript:ImprimerBase()">
+			            <img alt="Imprimer la page" title="Imprimer la page"
+                        src='/Images/icones/partageImprimante.gif' width="16" height="16"/></a>
+                </li>
+                <li class="styleswitch">
+                    <a href="#Reguliere" rel="Reguliere" class="styleswitch Reguliere">
+                        <img alt="Taille du texte : régulière" title="Taille du texte : régulière" src='/Images/icones/retrecir.gif' width="16" height="16"/></a>
+                    <a href="#Grande" rel="Grande" title="Taille du texte : très grande" class="styleswitch Grande">
+                        <img alt="Taille du texte : très grande" title="Taille du texte : très grande" src='/Images/icones/agrandir.gif' width="16" height="16"/></a>
+                </li>
+                <li>
+                    <a href='/fr/fils-rss.html' class="nePasRediriger">
+                        <img alt="Fils RSS" title="Fils RSS"
+                        src='/Images/icones/partageRss.gif' width="16" height="16"/></a>
+                </li>
+            </ul>
+        </div>
+  
+        <div id="ColPartageUtilitairesAssemblee">
+            <div class="boutonPartager">
+                <a href="#">Partager</a>
+            </div>
+            <ul class="utilitairesAssemblee listeSansPuces" style="z-index:999;">
+                <div class="fleche"></div>
+                <li>
+                    <a target="_blank" href='/fr/envoyer-ami_TEMP.html?lienurl=%2ffr%2ftravaux-parlementaires%2fjournaux-debats.html' class="nePasRediriger">
+                        <img alt="Partager par courriel" title="Partager par courriel"
+                        src='/Images/icones/partageCourriel.gif' /></a>
+                </li>
+                <li>
+                    <a target="_blank" href='http://www.facebook.com/sharer/sharer.php?u=http://www.assnat.qc.ca%2ffr%2ftravaux-parlementaires%2fjournaux-debats.html' class="nePasRediriger">
+                        <img alt="Partager par Facebook" title="Partager par Facebook"
+                        src='/Images/icones/partageFacebook.gif' /></a>
+                </li>
+                <li>
+                    <a target="_blank" href='http://twitter.com/home?status=http://www.assnat.qc.ca%2ffr%2ftravaux-parlementaires%2fjournaux-debats.html' class="nePasRediriger">
+                        <img alt="Partager par Twitter" title="Partager par Twitter"
+                        src='/Images/icones/partageTwitter.gif' /></a>
+                </li>
+                <li>
+                    <a target="_blank" href='http://www.linkedin.com/cws/share?url=http://www.assnat.qc.ca%2ffr%2ftravaux-parlementaires%2fjournaux-debats.html' class="nePasRediriger">
+                        <img alt="Partager par LinkedIn" title="Partager par LinkedIn"
+                        src='/Images/icones/partageLinkedin.gif' /></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="ColLiensUtilitairesAssemblee">
+        <ul class="listeIconesHorizontale listeIconesHorizontaleUtilitaires listeSansPuces">
+            <!-- Icone "Diagramme de l'Assemblée" -->
+		    
+			    <li class="icoDiagramme">
+                    <a href="/fr/document/19787.html">Diagramme de l'Assemblée</a>
+                </li>
+		    
+
+            <li id="IndicateurEnDirectPage">
+                <span id="spnEnDirect" class="styleHyperlien">
+		            <span id="IconeEnDirect" class="icoEnDirect"> </span>		
+		            En direct sur le Web
+	            </span>
+            </li>
+            <!-- Section "Vidéo et audio" -->
+            
+        </ul>
+    </div>
+</div>        
+					
+
+                    <!-- Ancre pour le "skiplink atteindreContenu" -->
+                    <div id="divAncreContenuPrincipal" class="skipLinks">
+                        <a name="ancreContenuPrincipal" id="ancreContenuPrincipal"></a>
+                    </div>
+
+                    <!-- Note sur les titres H1: dans ce gabarit, il y a 2 emplacements possibles pour le H1. Le cas
+						 le plus usuel est généré par défaut. Si necessaire, overrider dans la page ASPX -->
+			
+					<!-- PlaceHolder: permet d'afficher le titre sur les 2 colonnes. Cas plus rare. (default: vide) -->
+					
+
+					<!-- PlaceHolder: permet d'afficher le texte en dessus des colonnes -->
+					
+					
+					<div class="conteneurColonnesImbriquees">		
+                        <div class="colonneImbriquee imbGauche">
+
+							<!-- PlaceHolder: permet d'afficher le titre sur 1 colonne. Cas usuel. (default: s'affiche) -->
+							
+    <h1>Journal des débats</h1>
+
+
+							<!-- PlaceHolder: contenu principal de la page (defaut: vide) -->
+							
+
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+            $(".radioCommission input, .radio input").click(RafraichirAffichageListeCommissions);
+            RafraichirAffichageListeCommissions();
+
+            $("select.listeLegislatures").change(RafraichirTypeTravaux);
+            RafraichirTypeTravaux.call($("select.listeLegislatures"));
+        });
+
+        function RafraichirTypeTravaux() {
+            if ($(this).val() == "-1") {
+                $("#divTypeTravaux").hide();
+            } else {
+                $("#divTypeTravaux").show();
+            }
+        }
+
+        function RafraichirAffichageListeCommissions() {
+            $(function() {
+                if ($(".radioCommission input:checked").length == 1) {
+                    $("#divChoixCommission").show();
+
+                    //Cas particulier d'affichage IE7
+                    if ($.browser.msie) {
+                        if (($.browser.version) == "7.0") {
+                            $("div#listeLegislatures").css('top', '1px');
+                        }
+                    }
+
+                }
+                else {
+                    $("#divChoixCommission").hide();
+                    var selectCommissions = $(".listeCommission select")[0];
+                    selectCommissions.options[0].selected = true;
+
+                    var monText = $('.listeCommission div.select-text');
+                    $(monText).text(selectCommissions.options[0].text);
+
+                    //Cas particulier d'affichage IE7
+                    if ($.browser.msie) {
+                        if (($.browser.version) == "7.0") {
+                            $("div#listeLegislatures").css('top', '0px');
+                        }
+                    }
+                }
+            });
+        }
+    
+        function ConserverChampsDatesPeriodeSeulement() {
+            $(function() {
+
+                var selectSessionLegislature = $(".listeLegislatures select")[0];
+                selectSessionLegislature.options[0].selected = true;
+
+                var monText = $('.listeLegislatures div.select-text');
+                $(monText).text(selectSessionLegislature.options[0].text);
+                Page_ClientValidate();
+            });
+        }
+
+        function ConverserChampSessionLegislatureSeulement() {
+            $(".datePeriode").val('');
+            Page_ClientValidate();
+        }
+
+        function ValiderRecherche() {
+            var valide = false
+            $(function() {
+                //Validation des champs dates et/ou de la session législature.
+                $(".choisirDate,.champMotsCles,.listeLegislatures").each(function(index) {
+                    if (!valide) {
+                        valide = (($(this).val() != '') && ($(this).val() != '0'));
+                    }
+                });
+
+                //Si invalide, vérifier si une commission a été choisie.
+                if (!valide) {
+                    if ($(".radioCommission input:checked").length == 1) {
+                        valide = ($(".listeCommission select")[0].selectedIndex != 0);
+                    }
+                }
+
+                Page_ClientValidate();
+
+                //Afficher le message d'erreur en fonction de la validité du formulaire.
+                if (valide) {
+                    $(".messageErreur_AucunCritere").hide();
+                }
+                else {
+                    $(".messageErreur_AucunCritere").show();
+                }
+            });
+            return valide;
+        }
+    </script>
+
+    
+		    <p>Cette page Web donne accès aux Journaux des débats (transcription) de l'Assemblée nationale et des commissions parlementaires.</p>
+<p><strong><a href="http://www.assnat.qc.ca/fr/abc-assemblee/organisation-travaux-assemblee/publications.html" target="_self">Délais de mise en ligne</a></strong></p>
+<p><a href="http://www.assnat.qc.ca/fr/lien/11867.html">Chercher dans l'Index du Journal des débats</a></p>
+<!--
+<p><strong>Des travaux liés à la production du Journal des débats et à la transcription des activités de presse peuvent influencer le délai de publication. Nous nous excusons de tout inconvénient que cela peut causer.</strong></p>
+<p><strong>Pour tout renseignement concernant le Journal des débats, veuillez téléphoner au 418&nbsp;643-2890.</strong></p>
+-->			
+	    
+    
+	<div class="clear">&nbsp;</div>
+	<div class="criteresDeRecherche" style="padding-bottom:30px;">
+	
+	    <div style="position:relative;">
+	        <h2 style="margin-top:0;">Trouver un journal</h2>
+	    </div>
+		
+		<div>
+			<span id="ctl00_ColCentre_ContenuColonneGauche_cvMessages" style="color:Red;display:none;"></span>
+		</div>
+
+	    
+        <div style="clear:both;margin-top:10px;margin-left:2px;max-width:332px;position:relative;">
+	        <label for="ctl00_ColCentre_ContenuColonneGauche_txtMotCle" style="float:left;margin-right:10px;">Mots clés :</label>
+	        <input name="ctl00$ColCentre$ContenuColonneGauche$txtMotCle" type="text" id="ctl00_ColCentre_ContenuColonneGauche_txtMotCle" title="La recherche par mots clés cherche dans le contenu des journaux sélectionnés, soit la table des matières et la transcription intégrale des propos des députés et des autres intervenants. Si vous faites une recherche par mots clés, les journaux correspondant à votre recherche s&#39;afficheront par ordre de pertinence, soit du plus pertinent au moins pertinent, plutôt que par ordre de date, du plus récent au plus ancien. Vous pouvez revenir à l&#39;affichage par date en cliquant sur l&#39;en-tête de la colonne Date." class="champMotsCles BulleInfo" style="width:250px;left:72px;top:0px;" />
+	    </div>	
+
+		
+        <div class="criteresDeBase criteresAlignGauche" style="margin-left:2px;margin-top:15px">
+			<label style="" for="ctl00_ColCentre_ContenuColonneGauche_ddlSessionLegislature">Choisir une session</label> 
+			
+			<div class="my-skinnable-select listeLegislatures" id="listeLegislatures" >
+				<select name="ctl00$ColCentre$ContenuColonneGauche$ddlSessionLegislature" onchange="ConverserChampSessionLegislatureSeulement();setTimeout(&#39;__doPostBack(\&#39;ctl00$ColCentre$ContenuColonneGauche$ddlSessionLegislature\&#39;,\&#39;\&#39;)&#39;, 0)" id="ctl00_ColCentre_ContenuColonneGauche_ddlSessionLegislature" class="listeLegislatures">
+	<option value="0">Toutes les sessions</option>
+	<option value="1607">Session en cours - 42e l&#233;gislature, 2e session (19 octobre 2021 - )</option>
+	<option value="1579">42e l&#233;gislature, 1re session (27 novembre 2018 - 13 octobre 2021)</option>
+	<option value="1079">41e l&#233;gislature, 1re session (20 mai 2014 - 23 ao&#251;t 2018)</option>
+	<option value="789">40e l&#233;gislature, 1re session (30 octobre 2012 - 5 mars 2014)</option>
+	<option value="499">39e l&#233;gislature, 2e session (23 f&#233;vrier 2011 - 1 ao&#251;t 2012)</option>
+	<option value="491">39e l&#233;gislature, 1re session (13 janvier 2009 - 22 f&#233;vrier 2011)</option>
+	<option value="489">38e l&#233;gislature, 1re session (8 mai 2007 - 5 novembre 2008)</option>
+	<option value="487">37e l&#233;gislature, 2e session (14 mars 2006 - 21 f&#233;vrier 2007)</option>
+	<option value="485">37e l&#233;gislature, 1re session (4 juin 2003 - 10 mars 2006)</option>
+	<option value="483">36e l&#233;gislature, 2e session (22 mars 2001 - 12 mars 2003)</option>
+	<option value="481">36e l&#233;gislature, 1re session (2 mars 1999 - 9 mars 2001)</option>
+	<option value="479">35e l&#233;gislature, 2e session (25 mars 1996 - 21 octobre 1998)</option>
+	<option value="477">35e l&#233;gislature, 1re session (29 novembre 1994 - 13 mars 1996)</option>
+	<option value="475">34e l&#233;gislature, 3e session (17 mars 1994 - 17 juin 1994)</option>
+	<option value="473">34e l&#233;gislature, 2e session (19 mars 1992 - 10 mars 1994)</option>
+	<option value="471">34e l&#233;gislature, 1re session (28 novembre 1989 - 18 mars 1992)</option>
+	<option value="469">33e l&#233;gislature, 2e session (8 mars 1988 - 9 ao&#251;t 1989)</option>
+	<option value="467">33e l&#233;gislature, 1re session (16 d&#233;cembre 1985 - 8 mars 1988)</option>
+	<option value="465">32e l&#233;gislature, 5e session (16 octobre 1984 - 10 octobre 1985)</option>
+	<option value="463">32e l&#233;gislature, 4e session (23 mars 1983 - 20 juin 1984)</option>
+	<option value="461">32e l&#233;gislature, 3e session (9 novembre 1981 - 10 mars 1983)</option>
+	<option value="459">32e l&#233;gislature, 2e session (30 septembre 1981 - 2 octobre 1981)</option>
+	<option value="457">32e l&#233;gislature, 1re session (19 mai 1981 - 18 juin 1981)</option>
+	<option value="455">31e l&#233;gislature, 6e session (5 novembre 1980 - 12 mars 1981)</option>
+	<option value="453">31e l&#233;gislature, 5e session (24 octobre 1980 - 24 octobre 1980)</option>
+	<option value="451">31e l&#233;gislature, 4e session (6 mars 1979 - 18 juin 1980)</option>
+	<option value="449">31e l&#233;gislature, 3e session (21 f&#233;vrier 1978 - 20 f&#233;vrier 1979)</option>
+	<option value="447">31e l&#233;gislature, 2e session (8 mars 1977 - 22 d&#233;cembre 1977)</option>
+	<option value="445">31e l&#233;gislature, 1re session (14 d&#233;cembre 1976 - 23 d&#233;cembre 1976)</option>
+	<option value="443">30e l&#233;gislature, 4e session (16 mars 1976 - 18 octobre 1976)</option>
+	<option value="441">30e l&#233;gislature, 3e session (18 mars 1975 - 19 d&#233;cembre 1975)</option>
+	<option value="439">30e l&#233;gislature, 2e session (14 mars 1974 - 28 d&#233;cembre 1974)</option>
+	<option value="437">30e l&#233;gislature, 1re session (22 novembre 1973 - 22 d&#233;cembre 1973)</option>
+	<option value="435">29e l&#233;gislature, 4e session (15 mars 1973 - 25 septembre 1973)</option>
+	<option value="433">29e l&#233;gislature, 3e session (7 mars 1972 - 14 mars 1973)</option>
+	<option value="431">29e l&#233;gislature, 2e session (23 f&#233;vrier 1971 - 24 d&#233;cembre 1971)</option>
+	<option value="429">29e l&#233;gislature, 1re session (9 juin 1970 - 19 d&#233;cembre 1970)</option>
+	<option value="427">28e l&#233;gislature, 5e session (24 f&#233;vrier 1970 - 12 mars 1970)</option>
+	<option value="425">28e l&#233;gislature, 4e session (25 f&#233;vrier 1969 - 23 d&#233;cembre 1969)</option>
+	<option value="423">28e l&#233;gislature, 3e session (20 f&#233;vrier 1968 - 18 d&#233;cembre 1968)</option>
+	<option value="421">28e l&#233;gislature, 2e session (20 octobre 1967 - 20 octobre 1967)</option>
+	<option value="419">28e l&#233;gislature, 1re session (1 d&#233;cembre 1966 - 12 ao&#251;t 1967)</option>
+	<option value="417">27e l&#233;gislature, 6e session (25 janvier 1966 - 18 avril 1966)</option>
+	<option value="415">27e l&#233;gislature, 5e session (22 octobre 1965 - 23 octobre 1965)</option>
+	<option value="413">27e l&#233;gislature, 4e session (21 janvier 1965 - 6 ao&#251;t 1965)</option>
+	<option value="411">27e l&#233;gislature, 3e session (14 janvier 1964 - 31 juillet 1964)</option>
+	<option value="409">27e l&#233;gislature, 2e session (21 ao&#251;t 1963 - 23 ao&#251;t 1963)</option>
+	<option value="407">27e l&#233;gislature, 1re session (15 janvier 1963 - 11 juillet 1963)</option>
+	<option value="403">26e l&#233;gislature, 2e session (10 novembre 1960 - 10 juin 1961)</option>
+	<option value="401">26e l&#233;gislature, 1re session (20 septembre 1960 - 22 septembre 1960)</option>
+	<option value="399">25e l&#233;gislature, 4e session (18 novembre 1959 - 18 mars 1960)</option>
+	<option value="397">25e l&#233;gislature, 3e session (19 novembre 1958 - 5 mars 1959)</option>
+	<option value="395">25e l&#233;gislature, 2e session (13 novembre 1957 - 21 f&#233;vrier 1958)</option>
+	<option value="393">25e l&#233;gislature, 1re session (14 novembre 1956 - 21 f&#233;vrier 1957)</option>
+	<option value="391">24e l&#233;gislature, 4e session (16 novembre 1955 - 23 f&#233;vrier 1956)</option>
+	<option value="351">20e l&#233;gislature, 1re session (7 octobre 1936 - 12 novembre 1936)</option>
+	<option value="343">18e l&#233;gislature, 2e session (10 janvier 1933 - 13 avril 1933)</option>
+	<option value="341">18e l&#233;gislature, 1re session (3 novembre 1931 - 19 f&#233;vrier 1932)</option>
+	<option value="335">17e l&#233;gislature, 2e session (8 janvier 1929 - 4 avril 1929)</option>
+	<option value="331">16e l&#233;gislature, 4e session (11 janvier 1927 - 1 avril 1927)</option>
+	<option value="329">16e l&#233;gislature, 3e session (7 janvier 1926 - 24 mars 1926)</option>
+	<option value="325">16e l&#233;gislature, 1re session (17 janvier 1923 - 15 mars 1924)</option>
+	<option value="323">15e l&#233;gislature, 4e session (24 octobre 1922 - 29 d&#233;cembre 1922)</option>
+	<option value="321">15e l&#233;gislature, 3e session (10 janvier 1922 - 21 mars 1922)</option>
+	<option value="319">15e l&#233;gislature, 2e session (11 janvier 1921 - 19 mars 1921)</option>
+	<option value="317">15e l&#233;gislature, 1re session (10 d&#233;cembre 1919 - 14 f&#233;vrier 1920)</option>
+	<option value="315">14e l&#233;gislature, 3e session (21 janvier 1919 - 17 mars 1919)</option>
+	<option value="313">14e l&#233;gislature, 2e session (4 d&#233;cembre 1917 - 9 f&#233;vrier 1918)</option>
+	<option value="311">14e l&#233;gislature, 1re session (7 novembre 1916 - 22 d&#233;cembre 1916)</option>
+	<option value="309">13e l&#233;gislature, 4e session (11 janvier 1916 - 16 mars 1916)</option>
+	<option value="307">13e l&#233;gislature, 3e session (7 janvier 1915 - 5 mars 1915)</option>
+	<option value="305">13e l&#233;gislature, 2e session (11 novembre 1913 - 19 f&#233;vrier 1914)</option>
+	<option value="303">13e l&#233;gislature, 1re session (5 novembre 1912 - 21 d&#233;cembre 1912)</option>
+	<option value="301">12e l&#233;gislature, 4e session (9 janvier 1912 - 3 avril 1912)</option>
+	<option value="299">12e l&#233;gislature, 3e session (10 janvier 1911 - 24 mars 1911)</option>
+	<option value="297">12e l&#233;gislature, 2e session (15 mars 1910 - 4 juin 1910)</option>
+	<option selected="selected" value="295">12e l&#233;gislature, 1re session (2 mars 1909 - 29 mai 1909)</option>
+	<option value="293">11e l&#233;gislature, 4e session (3 mars 1908 - 25 avril 1908)</option>
+
+</select>
+			</div>
+	    </div>
+
+        
+        <div style="margin-left:2px;margin-top:10px" >
+            <div style="color: #333333; font-weight: 800;">OU</div>
+            <div style="margin-top:10px">Veuillez saisir une date valide selon le format aaaa-mm-jj.
+</div>
+	        <div style="margin-top:10px">
+            <span id="ctl00_ColCentre_ContenuColonneGauche_cprvDateDu" class="validateurs" style="color:Red;display:none;">Veuillez saisir une date valide selon le format aaaa-mm-jj.
+</span>
+            <span id="ctl00_ColCentre_ContenuColonneGauche_cprvDateAu" class="validateurs" style="color:Red;display:none;">Veuillez saisir une date valide selon le format aaaa-mm-jj.
+</span>
+            <span id="ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode" class="validateurs" style="color:Red;display:none;"><br />La date de début de la recherche doit être antérieure ou égale à la date de fin.</span>
+          
+            <label style="" for="ctl00_ColCentre_ContenuColonneGauche_txtDateDu">Sélectionner une période :</label> 
+            <table class="tableInvisible">	        
+	            
+                <tr>
+	                <td style="padding-top:7px;"><label for="ctl00_ColCentre_ContenuColonneGauche_txtDateDu">De</label></td>
+	                <td><input name="ctl00$ColCentre$ContenuColonneGauche$txtDateDu" type="text" id="ctl00_ColCentre_ContenuColonneGauche_txtDateDu" tabindex="1" class="choisirDate dateDebut datePeriode" onchange="ConserverChampsDatesPeriodeSeulement();" /></td>
+	                <td style="padding-top:7px;"><label for="ctl00_ColCentre_ContenuColonneGauche_txtDateAu">À</label></td>
+	                <td><input name="ctl00$ColCentre$ContenuColonneGauche$txtDateAu" type="text" onchange="ConserverChampsDatesPeriodeSeulement();setTimeout(&#39;__doPostBack(\&#39;ctl00$ColCentre$ContenuColonneGauche$txtDateAu\&#39;,\&#39;\&#39;)&#39;, 0)" onkeypress="if (WebForm_TextBoxKeyHandler(event) == false) return false;" id="ctl00_ColCentre_ContenuColonneGauche_txtDateAu" tabindex="1" class="choisirDate dateFin datePeriode" /></td>
+	                <td></td>
+                </tr>
+	            
+	        </table>
+            </div>
+	    </div>
+
+        
+        <div id="divTypeTravaux">
+            <div style="margin-left:2px;margin-top:10px;" >
+              <label style="" for="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat">Type de travaux</label> 
+            </div>        
+		    <div>
+		        <fieldset> 
+                    <legend>Type de travaux</legend>
+                    <span id="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat"><span class="typeJournalDebat radio radioDefault"><input id="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_0" type="radio" name="ctl00$ColCentre$ContenuColonneGauche$rblOptionTypeDebat" value="3" checked="checked" /><label for="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_0">Tous les journaux</label></span><span class="typeJournalDebat radio"><input id="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_1" type="radio" name="ctl00$ColCentre$ContenuColonneGauche$rblOptionTypeDebat" value="1" /><label for="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_1">Assemblée</label></span><span class="typeJournalDebat radioCommission"><input id="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_2" type="radio" name="ctl00$ColCentre$ContenuColonneGauche$rblOptionTypeDebat" value="2" /><label for="ctl00_ColCentre_ContenuColonneGauche_rblOptionTypeDebat_2">Commissions</label></span></span>
+                </fieldset>
+		    </div>
+		
+		    <div id="divChoixCommission" class="criteresDeBase criteresAlignGauche" style="background:none;border:none;display:none;clear:both;margin-left:22px; margin-top:5px">
+			        <label style="" for="ctl00_ColCentre_ContenuColonneGauche_ddlCommission">Choisir une commission :</label>
+			        <div style="width:50em;" class="my-skinnable-select listeCommission" id="Div1">
+				        <select name="ctl00$ColCentre$ContenuColonneGauche$ddlCommission" id="ctl00_ColCentre_ContenuColonneGauche_ddlCommission" class="listeCommission" style="width:50em;">
+	<option selected="selected" value="-1">Toutes les commissions</option>
+
+</select>
+			        </div>
+	        </div>
+        </div>
+	   	
+		
+		<div class="clear">&nbsp;</div>
+		<div style="" align="right">		   
+            <input type="submit" name="ctl00$ColCentre$ContenuColonneGauche$btnRecherche" value="Rechercher" onclick="return ValiderRecherche();WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$btnRecherche&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ctl00_ColCentre_ContenuColonneGauche_btnRecherche" class="btnSoumettre btnSoumettrePetit" />
+		</div>
+		<div class="messageErreur_AucunCritere validateurs" style="color:#FF0000; display:none;">
+		    Il n'est pas possible de chercher dans tous les journaux de toutes les sessions sans indiquer une période, une date ou un mot clé. Vous devez préciser votre recherche pour obtenir de meilleurs résultats.
+		</div>
+		
+	</div>
+	<div id="ctl00_ColCentre_ContenuColonneGauche_pnlContenu">
+	
+	    <h2><span id="ctl00_ColCentre_ContenuColonneGauche_lblListeJournaux">Liste des journaux des débats</span></h2>
+    	<HeaderTemplate>
+	        <div class="clear">&nbsp;</div>
+	        
+
+<div class="conteneurPaginateur">
+    <div id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_divPaginateur" class="paginateur">
+	    <span id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_lblPagination">Page <span>1</span> de <span class="nbPages">1</span></span>
+	    <p style="margin:0;padding:0;border:0;margin-bottom:2px;">
+		    
+		    
+		    
+		    <a id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_lkbPage1" class="nePasRediriger" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$PaginationHaut$lkbPage1&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">1</a>
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+	    </p>
+	    <div class="clear"></div>
+    </div>
+    <div id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_divSelecteurNbItemsPage" class="selecteurNbItemsPage">
+	    <label for="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_ddlNombreParPage" id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_lblNombreParPage">Nombre de résultats par page :</label>
+	    <div class="my-skinnable-select">
+		    <select name="ctl00$ColCentre$ContenuColonneGauche$PaginationHaut$ddlNombreParPage" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$ColCentre$ContenuColonneGauche$PaginationHaut$ddlNombreParPage\&#39;,\&#39;\&#39;)&#39;, 0)" id="ctl00_ColCentre_ContenuColonneGauche_PaginationHaut_ddlNombreParPage">
+		<option value="10">10</option>
+		<option value="25">25</option>
+		<option value="50">50</option>
+		<option value="75">75</option>
+		<option selected="selected" value="100">100</option>
+
+	</select>
+	    </div>
+    </div>
+</div>
+	        <div class="clear">&nbsp;</div>
+    	
+	        
+            <table id="tblListeJournal" class="tableTriable">
+            <caption>Liste - Journal des débats</caption>
+            <thead>
+                <tr>
+                    <th id="ctl00_ColCentre_ContenuColonneGauche_thDate" scope="col" class="header">      <a id="ctl00_ColCentre_ContenuColonneGauche_lkbTriDate" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$lkbTriDate&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Date</a></th>
+	<th id="ctl00_ColCentre_ContenuColonneGauche_thLieu" scope="col" class="header"> <a id="ctl00_ColCentre_ContenuColonneGauche_lkbTriLieu" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$lkbTriLieu&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Assemblée/Commission</a></th>
+	
+                    <th scope="col" id="thLegislatureSession" style="padding-right:41px;"> Session</th>
+		            <th scope="col" id="thVersion"> Version</th>
+                    <th id="ctl00_ColCentre_ContenuColonneGauche_thListeMandat" scope="col" class="header">      <a id="ctl00_ColCentre_ContenuColonneGauche_lkbTriListeMandat" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$lkbTriListeMandat&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">Mandats traités si Journaux de commission</a></th>
+	
+                </tr>
+    	    </thead>
+            <tbody>
+        </HeaderTemplate>
+        
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090529/86679.html">
+                            1909-05-29
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090528/86677.html">
+                            1909-05-28
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090527/86675.html">
+                            1909-05-27
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090526/86673.html">
+                            1909-05-26
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090525/86671.html">
+                            1909-05-25
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090522/86669.html">
+                            1909-05-22
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090521/86667.html">
+                            1909-05-21
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090519/86665.html">
+                            1909-05-19
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090518/86663.html">
+                            1909-05-18
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090517/86661.html">
+                            1909-05-17
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090515/86659.html">
+                            1909-05-15
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090514/86657.html">
+                            1909-05-14
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090513/86655.html">
+                            1909-05-13
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090512/86653.html">
+                            1909-05-12
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090511/86651.html">
+                            1909-05-11
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090510/86649.html">
+                            1909-05-10
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090508/86647.html">
+                            1909-05-08
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090507/86645.html">
+                            1909-05-07
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090506/86643.html">
+                            1909-05-06
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090505/86641.html">
+                            1909-05-05
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090504/86639.html">
+                            1909-05-04
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090503/86637.html">
+                            1909-05-03
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090430/86635.html">
+                            1909-04-30
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090429/86633.html">
+                            1909-04-29
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090428/86631.html">
+                            1909-04-28
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090427/86629.html">
+                            1909-04-27
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090426/86627.html">
+                            1909-04-26
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090423/86625.html">
+                            1909-04-23
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090422/86623.html">
+                            1909-04-22
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090421/86621.html">
+                            1909-04-21
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090420/86619.html">
+                            1909-04-20
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090419/86617.html">
+                            1909-04-19
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090416/86615.html">
+                            1909-04-16
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090415/86613.html">
+                            1909-04-15
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090414/86611.html">
+                            1909-04-14
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090413/86609.html">
+                            1909-04-13
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090407/86607.html">
+                            1909-04-07
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090406/86605.html">
+                            1909-04-06
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090405/86603.html">
+                            1909-04-05
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090402/86601.html">
+                            1909-04-02
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090401/86599.html">
+                            1909-04-01
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090331/86597.html">
+                            1909-03-31
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090330/86595.html">
+                            1909-03-30
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090329/86593.html">
+                            1909-03-29
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090326/86591.html">
+                            1909-03-26
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090325/86589.html">
+                            1909-03-25
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090324/86587.html">
+                            1909-03-24
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090323/86585.html">
+                            1909-03-23
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090322/86583.html">
+                            1909-03-22
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090319/86581.html">
+                            1909-03-19
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090318/86579.html">
+                            1909-03-18
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090317/86577.html">
+                            1909-03-17
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090316/86575.html">
+                            1909-03-16
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090315/86573.html">
+                            1909-03-15
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090312/86571.html">
+                            1909-03-12
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090311/86569.html">
+                            1909-03-11
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090310/86567.html">
+                            1909-03-10
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090309/86565.html">
+                            1909-03-09
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090308/86563.html">
+                            1909-03-08
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090305/86561.html">
+                            1909-03-05
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090304/86559.html">
+                            1909-03-04
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090303/86557.html">
+                            1909-03-03
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    <tr>
+				    <td class="colonneDate" headers="ctl00_ColCentre_ContenuColonneGauche_thDate">
+                        <a href="/fr/travaux-parlementaires/assemblee-nationale/12-1/journal-debats/19090302/86555.html">
+                            1909-03-02
+                        </a>
+                        
+                        
+                        
+                    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thLieu">
+					    Assemblée 
+				    </td>
+				    <td headers="thLegislatureSession">
+					    12<sup>e</sup> législature,<br /> 1<sup>re</sup> session
+				    </td>
+				    <td headers="thVersion">
+					    Finale
+				    </td>
+				    <td headers="ctl00_ColCentre_ContenuColonneGauche_thListeMandat">
+					    
+				    </td>
+			    </tr>
+		    
+			    </tbody></table> 
+		    
+        </table>
+        
+        <div><div id="ctl00_ColCentre_ContenuColonneGauche_vsMessages" style="color:Red;display:none;">
+
+	</div></div>
+        
+        <div class="clear">&nbsp;</div>
+	    
+
+<div class="conteneurPaginateur">
+    <div id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_divPaginateur" class="paginateur">
+	    <span id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_lblPagination">Page <span>1</span> de <span class="nbPages">1</span></span>
+	    <p style="margin:0;padding:0;border:0;margin-bottom:2px;">
+		    
+		    
+		    
+		    <a id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_lkbPage1" class="nePasRediriger" href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ColCentre$ContenuColonneGauche$PaginationBas$lkbPage1&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, true))">1</a>
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+		    
+	    </p>
+	    <div class="clear"></div>
+    </div>
+    <div id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_divSelecteurNbItemsPage" class="selecteurNbItemsPage">
+	    <label for="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_ddlNombreParPage" id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_lblNombreParPage">Nombre de résultats par page :</label>
+	    <div class="my-skinnable-select">
+		    <select name="ctl00$ColCentre$ContenuColonneGauche$PaginationBas$ddlNombreParPage" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$ColCentre$ContenuColonneGauche$PaginationBas$ddlNombreParPage\&#39;,\&#39;\&#39;)&#39;, 0)" id="ctl00_ColCentre_ContenuColonneGauche_PaginationBas_ddlNombreParPage">
+		<option value="10">10</option>
+		<option value="25">25</option>
+		<option value="50">50</option>
+		<option value="75">75</option>
+		<option selected="selected" value="100">100</option>
+
+	</select>
+	    </div>
+    </div>
+</div>
+	    <div class="clear">&nbsp;</div>      
+	
+</div>
+
+							
+						</div>
+						
+						<div class="colonneImbriquee imbDroite">
+						
+							<!-- PlaceHolder: contenu secondaire de la page (defaut: vide) -->
+							
+						</div>
+
+					</div>
+
+					<!-- PlaceHolder: permet d'afficher du texte en dessous des colonnes -->
+					
+
+					<!-- PlaceHolder: contenu en complement de la page -->
+					
+						
+				
+					
+
+				
+			</div>
+	        
+	        <!-- N'est plus utilisee a cause des utilitaire d'assemblee qui doivent spanner col centre + col droite -->
+			<div class="ColDroite colonne"></div>        
+			
+			<div class="clear" id="ClearPiedPage"></div>
+	        
+			<!-- PiedDePage: affiche le contenu du pied de page -->
+			
+
+<div id="PiedDePage" class="PiedDePage">
+    <ul>
+        <li class="Premier">
+            <a href="/fr/fils-rss.html" class="sanssouligne icoFilsRss">
+                <span class="styleHyperlien">Fils RSS</span>
+            </a>
+        </li>
+        
+        <li><a href="/fr/liens-interet.html">Liens d'intérêt</a></li>
+        <li><a href="/fr/aide/index.html">Aide</a></li>
+        <li><a href="/fr/plan-site.html">Plan du site</a></li>
+        <li><a href="/fr/lien/10214.html">Portail Québec</a></li>     
+        <li><a href="/fr/propos-site/accessibilite.html">Accessibilité</a></li>
+        <li><a href="/fr/abc-assemblee/acces-information/index.html">Accès à l'information</a></li>
+    </ul><br />
+    <ul>
+        <li class="Premier">
+            <a href="/fr/accueil/mediassociaux.html" class="sanssouligne icoMediasSociauxPied">
+                <span class="styleHyperlien">Suivez-nous</span>
+            </a>
+        </li>
+        <li><a href="/fr/propos-site/index.html">À propos du site</a> </li>
+		<li><a href="/fr/propos-site/droits-propriete-intellectuelle.html">© Assemblée nationale du Québec</a></li>
+		<li><a href="http://m.assnat.qc.ca">Mobile</a></li>
+    </ul>
+    <br />
+    <span class="NonVisible">
+        
+            <ul>
+        
+                <li class="Premier">Date de la dernière modification : 22 septembre 2010 </li>
+        
+            </ul>
+        
+    </span>
+</div>
+               
+
+<script type="text/javascript">
+    var isPiwikActiver = 'True';
+    var PiwikIdSite = '3';
+    if (isPiwikActiver == "True") {
+        var u = (("https:" == document.location.protocol) ? "https" : "http") + "://stats.assnat.qc.ca/piwik/";
+        var _paq = _paq || [];
+        _paq.push(["trackPageView"]);
+        _paq.push(["enableLinkTracking"]);
+
+        (function () {
+            _paq.push(["setTrackerUrl", u + "piwik.php"]);
+            _paq.push(["setSiteId", PiwikIdSite]);
+            var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0]; g.type = "text/javascript";
+            g.defer = true; g.async = true; g.src = u + "piwik.js"; s.parentNode.insertBefore(g, s);
+        })();
+    }
+</script>   
+		</div>
+	
+<script type="text/javascript">
+//<![CDATA[
+var Page_ValidationSummaries =  new Array(document.getElementById("ctl00_ColCentre_ContenuColonneGauche_vsMessages"));
+var Page_Validators =  new Array(document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cvMessages"), document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvDateDu"), document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvDateAu"), document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var ctl00_ColCentre_ContenuColonneGauche_cvMessages = document.all ? document.all["ctl00_ColCentre_ContenuColonneGauche_cvMessages"] : document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cvMessages");
+ctl00_ColCentre_ContenuColonneGauche_cvMessages.display = "None";
+ctl00_ColCentre_ContenuColonneGauche_cvMessages.evaluationfunction = "CustomValidatorEvaluateIsValid";
+var ctl00_ColCentre_ContenuColonneGauche_cprvDateDu = document.all ? document.all["ctl00_ColCentre_ContenuColonneGauche_cprvDateDu"] : document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvDateDu");
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.controltovalidate = "ctl00_ColCentre_ContenuColonneGauche_txtDateDu";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.focusOnError = "t";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.errormessage = "Veuillez saisir une date valide selon le format aaaa-mm-jj.\r\n";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.display = "Dynamic";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.type = "Date";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.dateorder = "ymd";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.cutoffyear = "2029";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.century = "2000";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.evaluationfunction = "CompareValidatorEvaluateIsValid";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateDu.operator = "DataTypeCheck";
+var ctl00_ColCentre_ContenuColonneGauche_cprvDateAu = document.all ? document.all["ctl00_ColCentre_ContenuColonneGauche_cprvDateAu"] : document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvDateAu");
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.controltovalidate = "ctl00_ColCentre_ContenuColonneGauche_txtDateAu";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.focusOnError = "t";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.errormessage = "Veuillez saisir une date valide selon le format aaaa-mm-jj.\r\n";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.display = "Dynamic";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.type = "Date";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.dateorder = "ymd";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.cutoffyear = "2029";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.century = "2000";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.evaluationfunction = "CompareValidatorEvaluateIsValid";
+ctl00_ColCentre_ContenuColonneGauche_cprvDateAu.operator = "DataTypeCheck";
+var ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode = document.all ? document.all["ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode"] : document.getElementById("ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode");
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.controltovalidate = "ctl00_ColCentre_ContenuColonneGauche_txtDateDu";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.focusOnError = "t";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.errormessage = "<br />La date de début de la recherche doit être antérieure ou égale à la date de fin.";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.display = "Dynamic";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.type = "Date";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.dateorder = "ymd";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.cutoffyear = "2029";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.century = "2000";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.evaluationfunction = "CompareValidatorEvaluateIsValid";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.controltocompare = "ctl00_ColCentre_ContenuColonneGauche_txtDateAu";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.controlhookup = "ctl00_ColCentre_ContenuColonneGauche_txtDateAu";
+ctl00_ColCentre_ContenuColonneGauche_cprvalDatesPeriode.operator = "LessThanEqual";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        //]]>
+</script>
+</form>
+
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("th.header, th.headerSortDown, headerSortUp").click(function (e) {
+                window.location = $(this).find('a').attr('href');
+                e.stopPropagation();
+                return false;
+            });
+
+            $("th a").click(function (e) {
+                window.location = $(this).attr('href');
+                e.stopPropagation();
+                return false;
+            });
+        });
+    </script>
+
+
+</body>
+</html>
