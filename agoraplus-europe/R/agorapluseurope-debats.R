@@ -93,8 +93,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "rebuild", hub_mode = "skip", download_data = FALSE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", download_data = FALSE, translate=FALSE)
 
 
 if (!exists("opt")) {
@@ -139,40 +138,14 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
   dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="parliament_debate", schema = "v2")
 }
 
-# Download v2 Cache
-if (opt$dataframe_mode %in% c("update","refresh")) {
-  dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "parliament_debate", schema = "v2",
-                                                location = "EU",
-                                                download_data = opt$download_data,
-                                                token = Sys.getenv('HUB_TOKEN'))
-  
-  if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2")
-  
-  if (opt$download_data) { 
-    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
-                            "data.eventID", "data.rawContent")]
-  } else {
-    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
-  }
-  
-} else {
-  clessnverse::logit(scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
-  dfCache2 <- clessnverse::createAgoraplusCacheDf(type="parliament_debate", schema = "v2")
-}
 
-# Download v2 MPs information
-metadata_filter <- list(country="CA", province_or_state="EU")
-filter <- clessnhub::create_filter(type="mp", schema="v2", metadata=metadata_filter)  
+# Download v3 MPs information
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+metadata_filter <- list(institution="European Parliament")
+filter <- clessnhub::create_filter(type="mp", schema="v3", metadata=metadata_filter)  
 dfPersons <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
-# Download v2 public service personnalities information
-clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
-metadata_filter <- list(country="CA", province_or_state="EU")
-filter <- clessnhub::create_filter(type="public_service", schema="v2", metadata=metadata_filter)  
-dfPublicService <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
-
-dfPersons <- dfPersons %>% full_join(dfPublicService)
-dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
+#dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
 
 
 
@@ -195,9 +168,13 @@ clessnverse::loadETLRefData()
 scraping_method <- "DateRange"
 #scraping_method <- "FrontPage"
 
-start_date <- "2019-12-01"
+#start_date <- "2019-12-01"
+start_date <- "2020-01-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 60
+num_days <- 13
+start_parliament <- 7
+num_parliaments <- 2
+
 
 if (scraping_method == "frontpage") {
   base_url <- "https://www.europarl.europa.eu"
@@ -221,11 +198,13 @@ if (scraping_method == "DateRange") {
   nb_deb <- 0
   
   for (d in date_vect) {
-    url <- paste("https://www.europarl.europa.eu/doceo/document/CRE-9-", as.character(as.Date(d, "1970-01-01")), "_FR.xml",sep= '')
-    r <- httr::GET(url)
-    if (r$status_code == 200) {
-      urls_list <- c(urls_list, url)
-      nb_deb <- nb_deb + 1
+    for (p in c(start_parliament:(start_parliament+num_parliaments))) {
+      url <- paste("https://www.europarl.europa.eu/doceo/document/CRE-", p, "-", as.character(as.Date(d, "1970-01-01")), "_FR.xml",sep= '')
+      r <- httr::GET(url)
+      if (r$status_code == 200) {
+        urls_list <- c(urls_list, url)
+        nb_deb <- nb_deb + 1
+      }
     }
   }
 }
@@ -248,9 +227,8 @@ if (scraping_method == "DateRange") {
 
 ###############################################################################
 # Let's get serious!!!
-# Run through the URLs list, get the html content from the cache if it is 
-# in it, or from the assnat website and start parsing it to extract the
-# debates content
+# Run through the URLs list, get the html content from the assnat website and 
+# start parsing it to extract the debates content
 #
 for (i in 1:length(urls_list)) {
   event_url <- urls_list[[i]]
@@ -263,14 +241,6 @@ for (i in 1:length(urls_list)) {
   cat("\nDebat", i, "de", length(urls_list),"\n")
   
 
-  ###
-  # If the data is not cache we get the raw html from assnat.qc.ca
-  # if it is cached (we scarped it before), we prefer not to bombard
-  # the website with HTTP_GET requests and ise the cached version
-  ###
-  if ( !(event_id %in% dfCache2$key) ) {
-    # Read and parse HTML from the URL directly
-    #doc_html <- getURL(event_url)
     r <- httr::GET(event_url)
     if (r$status_code == 200) {
       doc_html <- httr::content(r)
@@ -278,23 +248,11 @@ for (i in 1:length(urls_list)) {
       top_xml <- XML::xmlRoot(doc_xml)
       head_xml <- top_xml[[1]]
       core_xml <- top_xml[[2]]
-      cached_html <- FALSE
+      clessnverse::logit(scriptname, event_id, logger)
     } else {
       next
     }
-  } else{ 
-    # Retrieve the XML structure from dfCache and Parse
-    filter <- clessnhub::create_filter(key = event_id, type = "parliament_debate", schema = "v2", metadata = list("location"="EU", "format"="xml"))
-    doc_html <- clessnhub::get_items('agoraplus_cache', filter = filter)
-    doc_html <- doc_html$data.rawContent
-    doc_xml <- XML::xmlTreeParse(doc_xml, useInternalNodes = TRUE)
-    top_xml <- XML::xmlRoot(doc_xml)
-    head_xml <- top_xml[[1]]
-    core_xml <- top_xml[[2]]
-    cached_html <- TRUE
-    clessnverse::logit(scriptname, paste(event_id, "cached"), logger)
-  }
-    
+
   # Get the length of all branches of the XML document
   core_xml_nbchapters <- length(names(core_xml))
 
@@ -408,15 +366,38 @@ for (i in 1:length(urls_list)) {
         speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
         speaker_full_name <- stringr::str_remove(speaker_full_name, "\\|\\s")
         
-        dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
+        #Get the speaker from the hub
+        #If not, get it from the parliament search 
+        #If not use the data in the xml structure without properties such as political party etc
+        
+        dfSpeaker <- dfPersons[which(dfPersons$data.fullName == speaker_full_name),]
+        
+        if (nrow(dfSpeaker) ==0) {
+          # Not found in hub
+          dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name)
+          
+          
+          
+          
+        } else {
+          # Found in hub => convert data structure to match as if we went to find it from parliament web site
+          #gsub("metadata.", "", colnames(dfSpeaker))
+          #gsub("data.", "", colnames(dfSpeaker))
+          names(dfSpeaker)[names(dfSpeaker)=="key"] <- "mepid"
+          names(dfSpeaker)[names(dfSpeaker)=="data.currentParty"] <- "party"
+          names(dfSpeaker)[names(dfSpeaker)=="data.fullName"] <- "fullname"
+          names(dfSpeaker)[names(dfSpeaker)=="data.currentPolGroup"] <- "polgroup"
+          names(dfSpeaker)[names(dfSpeaker)=="metadata.country"] <- "country"
+        }
         
         if (!is.na(dfSpeaker$mepid)) {
           speaker_mepid <- dfSpeaker$mepid
           speaker_party <- dfSpeaker$party
-          speaker_polgroup <- case_when(XML::xmlGetAttr(speaker_node, "PP") != "NULL" ~ 
-                                          paste(XML::xmlGetAttr(speaker_node, "PP"), ":", dfSpeaker$polgroup, sep = " "),
-                                        TRUE ~ 
-                                          dfSpeaker$polgroup)
+          #speaker_polgroup <- case_when(XML::xmlGetAttr(speaker_node, "PP") != "NULL" ~ 
+          #                                paste(XML::xmlGetAttr(speaker_node, "PP"), ":", dfSpeaker$polgroup, sep = " "),
+          #                              TRUE ~ 
+          #                                dfSpeaker$polgroup)
+          speaker_polgroup <- dfSpeaker$polgroup
           speaker_country <- dfSpeaker$country
         } else {
           speaker_mepid <- NA
@@ -427,13 +408,57 @@ for (i in 1:length(urls_list)) {
           if (length(speaker_country) == 0) speaker_country <- NA
         }
         
+        if (!is.na(speaker_polgroup) && stringr::str_detect(speaker_polgroup, ":")) speaker_polgroup <- trimws(stringr::str_split(speaker_polgroup, ":")[[1]][2])
+        
         speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
         if ( speaker_gender == "" ) speaker_gender <- NA
         speaker_is_minister <- NA
         
-        speaker_type <- trimws(gsub("\\.|\\,|\\s\\–", "", XML::xmlValue(speaker_node[["EMPHAS"]])))
+        intervention_type <- trimws(gsub("\\.|\\,|\\s\\–", "", XML::xmlValue(speaker_node[["EMPHAS"]])))
         
-        if (!is.na(speaker_type) && stringr::str_detect(tolower(speaker_type), tolower(speaker_full_name)) ) speaker_type <- NA
+        if (!is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), tolower(speaker_full_name)) ) intervention_type <- NA
+        if (!is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "\\((.*)\\)$") ) intervention_type <- NA
+        
+        if ( !is.na(intervention_type) && intervention_type != "" && !stringr::str_detect(tolower(intervention_type), "sident") &&
+             !stringr::str_detect(tolower(intervention_type), "on behalf") &&
+             !stringr::str_detect(tolower(intervention_type), "au nom") &&
+             !stringr::str_detect(tolower(intervention_type), "membre de") &&
+             !stringr::str_detect(tolower(intervention_type), "member of") &&
+             (is.na(textcat::textcat(tolower(intervention_type))) ||
+              textcat::textcat(tolower(intervention_type)) != "french" &&
+              textcat::textcat(tolower(intervention_type)) != "english") 
+             ) {
+          cat("\ntranslating", intervention_type)
+          intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="fr",fake=!opt$translate)[2]
+          cat(" to ", intervention_type, "\n")
+        }
+        
+        if ( !is.na(intervention_type) && stringr::str_detect(intervention_type, "sident") ) {
+          intervention_type <- "President"
+        }
+        
+        if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "president") ) {
+          intervention_type <- "moderation"
+          speaker_type <- "President"
+        } 
+        
+        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
+                                           stringr::str_detect(tolower(intervention_type), "reporter")) ) {
+          intervention_type <- NA
+          speaker_type <- "Rapporteur"
+        }
+        
+        if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "auteur") ) {
+          intervention_type <- NA
+          speaker_type <- "Auteur"
+        }
+        
+        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
+                                           stringr::str_detect(tolower(intervention_type), "member")) ) {
+          speaker_type <- intervention_type
+          intervention_type <- NA
+        }
+        
         
         speaker_district <- NA
         speaker_media <- NA    
@@ -449,7 +474,50 @@ for (i in 1:length(urls_list)) {
         # Strip out the intervention by looping through paragraphs
         for (l in which(names(intervention_node) == "PARA")) {
           #cat("Paragraph", l, "\n", sep = " ")
-          if (is.na(speaker_type)) speaker_type <- XML::xmlValue(intervention_node[["PARA"]][["EMPHAS"]])
+          if (is.na(intervention_type)) intervention_type <- trimws(XML::xmlValue(intervention_node[["PARA"]][["EMPHAS"]]))
+          
+          if ( !is.na(intervention_type) && intervention_type != "" && !stringr::str_detect(tolower(intervention_type), "sident") &&
+               !stringr::str_detect(tolower(intervention_type), "on behalf") &&
+               !stringr::str_detect(tolower(intervention_type), "au nom") &&
+               !stringr::str_detect(tolower(intervention_type), "membre de") &&
+               !stringr::str_detect(tolower(intervention_type), "member of") &&
+               (is.na(textcat::textcat(tolower(intervention_type))) ||
+               textcat::textcat(tolower(intervention_type)) != "french" &&
+               textcat::textcat(tolower(intervention_type)) != "english") 
+               ) {
+            cat("\ntranslating", intervention_type)
+            intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="fr",fake=!opt$translate)[2]
+            cat(" to ", intervention_type, "\n")
+          }
+          
+          if ( !is.na(intervention_type) && stringr::str_detect(intervention_type, "sident") ) {
+            intervention_type <- "President"
+          }
+          
+          if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "president") ) {
+            intervention_type <- "moderation"
+            speaker_type <- "President"
+          } 
+          
+          if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
+                                             stringr::str_detect(tolower(intervention_type), "reporter")) ) {
+            intervention_type <- NA
+            speaker_type <- "Rapporteur"
+          }
+          
+          if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "auteur") ) {
+            intervention_type <- NA
+            speaker_type <- "Auteur"
+          }
+          
+          if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
+                                             stringr::str_detect(tolower(intervention_type), "member")) ) {
+            speaker_type <- intervention_type
+            intervention_type <- NA
+          }
+          
+          
+          
           intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
         } #for (l in which(names(intervention_node) == "PARA"))
         
@@ -468,11 +536,13 @@ for (i in 1:length(urls_list)) {
         intervention_paragraph_count <- length(which(names(intervention_node) == "PARA"))
         
         # Translation
-        intervention_translated_text <- clessnverse::translateText(text = intervention_text, engine = "azure", 
-                                                                target_lang = "fr", fake = TRUE)
+        intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", 
+                                                                target_lang="fr", fake=!opt$translate)
+        
+        intervention_translated_text <- intervention_translation[2]
         
         if (is.null(intervention_translated_text)) intervention_translated_text <- NA
-          
+        
         # commit to dfDeep and the Hub
         v2_row_to_commit <- data.frame(eventID = event_id,
                                        eventDate = event_date,
@@ -515,8 +585,8 @@ for (i in 1:length(urls_list)) {
                                        interventionSentenceCount = intervention_sentence_count,
                                        interventionParagraphCount = intervention_paragraph_count,
                                        interventionText = intervention_text,
-                                       interventionTextFR = NA,
-                                       interventionTextEN = intervention_translated_text,
+                                       interventionTextFR = intervention_translated_text,
+                                       interventionTextEN = NA,
                                        stringsAsFactors = FALSE)
         
         v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
@@ -585,21 +655,6 @@ for (i in 1:length(urls_list)) {
   #                         eventParagraphCount = event_paragraph_count,
   #                         eventContent = event_content,
   #                         eventTranslatedContent = event_translated_content)
-
-
-  # Update the cache
-  #row_to_commit <- data.frame(uuid = "", created = "", modified = "", metadata = "", eventID = event_id, eventHtml = doc_html, stringsAsFactors = FALSE)
-  ###dfCache <- clessnverse::commitCacheRows(row_to_commit, dfCache, 'agoraplus_warehouse_cache_items', opt$cache_mode, opt$hub_mode)
-  
-  # Update cache dans hub v2
-  #v2_row_to_commit <- data.frame(eventID = event_id, rawContent = doc_html, stringsAsFactors = FALSE)
-  #v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC")
-  
-  #dfCache2 <- clessnverse::commitAgoraplusCache(dfDestination = dfCache2, type = "press_conference", schema = "v2",
-  #                                              metadata = v2_metadata_to_commit,
-  #                                              data = v2_row_to_commit,
-  #                                             opt$dataframe_mode, opt$hub_mode)
-  
 } #for (i in 1:length(urls_list))
 
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
