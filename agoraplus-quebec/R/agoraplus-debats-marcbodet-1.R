@@ -145,9 +145,12 @@ patterns_sob_header <- c("En comité", "Messages du Conseil législatif:", "Rés
 
 patterns_sob_proc_text <- c("adopt(é|ée|ées|és).", "adopt(é|ée|ées|és) sur division.")
 
-patterns_new_speakers <- c("^M. l'Orateur:", "^M. l'Orateur\\s", "M\\.\\s+(\\w+)\\s+\\((\\w*)\\)", "^L'honorable", "Le gentilhomme huissier à la verge noire",
-                           "Son Honneur le lieutenant-gouverneur", "M. l'Orateur du Conseil législatif",
-                           "Messages du lieutenant-gouverneur:", "Son Honneur le lieutenant-gouverneur")
+patterns_new_speakers <- c("^M. l'Orateur:", "^M. l'Orateur\\s", 
+                           "^L'honorable\\s+M\\.\\s+(\\w+)\\s+\\(((?:\\w+-?)+\\w+)\\)", 
+                           "^M\\.\\s+(\\w+)\\s+\\(((?:\\w+-?)+\\w+)\\)", 
+                           "^L'honorable", "^Le gentilhomme huissier à la verge noire",
+                           "^Son Honneur le lieutenant-gouverneur(.*)\\:$", "^M. l'Orateur du Conseil législatif",
+                           "^Messages du lieutenant-gouverneur:", "^Son Honneur le lieutenant-gouverneur")
 
 ###############################################################################
 # Data source
@@ -164,7 +167,7 @@ content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 #doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/agoraplus-quebec/journaux-debats-12-1.html")
+doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/agoraplus-quebec/journaux-debats-13-2.html")
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
@@ -300,90 +303,166 @@ for (i in 1:length(list_urls)) {
       doc_text <- sub("^\\s+", "", doc_text)
       doc_text <- sub("\\s+$", "", doc_text)
       
-      patterns_time_digits_or_text_fr <- "((une|1)\\s+heure.)) | (((deux|2)|(trois|3)|(quatre|4)|(cinq|5)|(six|6)|(sept|7)|(huit|8)|(neuf|9)|
-      (dix|10)|(onze|11)|(douze|12)|(treize|13)|(quatorze|14)|(quinze|15)|(seize|16)|(dix-sept|17)|(dix-huit|18)|(dix-neuf|19)|(vingt|20)|
-      (vingt-et-une|21)|(vingt-deux|22)|(vingt-trois|23))\\s+heures\\.)"
+      patterns_time_digits_or_text_fr <- "((une|1)\\s+(heure|\\sh\\s)\\d+(.*)?\\.?)|(((deux|2)|(trois|3)|(quatre|4)|(cinq|5)|(six|6)|(sept|7)|(huit|8)|(neuf|9)|(dix|10)|(onze|11)|(douze|midi|12)|(treize|13)|(quatorze|14)|(quinze|15)|(seize|16)|(dix-sept|17)|(dix-huit|18)|(dix-neuf|19)|(vingt|20)|(vingt-et-une|21)|(vingt-deux|22)|(vingt-trois|23))\\s+(heures|h)(\\s+\\d+)?(.*)?\\.?)"
       
-      patterns_time_text_fr <- "(une\\s+heure.) | ((deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt|vint-et-une|vingt-deux|vingt-trois)\\s+heures\\.)"
+      patterns_time_text_fr <- "(une\\s+(heure|h)(\\s+\\d+)?\\.?)|((deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|midi|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt|vint-et-une|vingt-deux|vingt-trois|minuit)(\\s+heures)?(.*)?\\.?)"
       
-      patterns_time_digits <- "(1\\s+heure.) | ((2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23)\\s+heures\\.)"
+      patterns_time_digits <- "(1\\s+(heure|h)(\\s+\\d+)?(.*)?\\.?)|((2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23)\\s+(heures|h)(\\s+\\d+)?(.*)?\\.?)"
+      
+      time_anomaly_index <- grep("heures(\\d+)", doc_text)
+      if ( length(time_anomaly_index) > 0 ) {
+        doc_text[time_anomaly_index] <- stringr::str_replace(doc_text[time_anomaly_index], "heures(\\d+)", "heures \\1")
+      }
+      
+      time_anomaly_index <- grep("minuit(\\d+)", doc_text)
+      if ( length(time_anomaly_index) > 0 ) {
+        doc_text[time_anomaly_index] <- stringr::str_replace(doc_text[time_anomaly_index], "minuit(\\d+)", "minuit \\1")
+      }
       
       start.index <- grep(patterns_time_digits_or_text_fr, tolower(doc_text))
       
-      for (x in 0:(start.index[1]-2)) doc_text[x] <- NA
+      #if ( length(start.index) > 0 ) {
       
-      doc_text <- na.omit(doc_text)  
-
-      # Extract start time of the conference
-      if (stringr::str_detect(tolower(doc_text[2]), patterns_time_text_fr)) {
-        doc_text[2] <- gsub("\\(|\\)", "", doc_text[2])
-        doc_text[2] <- gsub("\\s\\s+", " ", doc_text[2])
-        hour <- strsplit(doc_text[2], " ")[[1]][1]
-        hour <- clessnverse::convertTextToNumberFR(hour)[[2]][1]
-        if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
-        if (clessnverse::countWords(doc_text[2]) > 2) {
-          minute <- strsplit(doc_text[2], " ")[[1]][3]
-          if (strsplit(doc_text[2], " ")[[1]][4] == "et") {
-            minute <- paste(minute, "et", strsplit(doc_text[2], " ")[[1]][5], sep = ' ')
-          }
-          minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
-          if (nchar(minute) == 1) minute <- paste("0",minute,sep='')
-        } else {
-          minute <- "00"
-        }
-        event_start_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
-      }
-      
-      
-      if (stringr::str_detect(tolower(doc_text[2]), patterns_time_digits)) {
-        doc_text[2] <- gsub("\\(|\\)", "", doc_text[2])
-        doc_text[2] <- gsub("\\s\\s+", " ", doc_text[2])
-        doc_text[2] <- gsub("^La séance s'ouvre à " , "", doc_text[2])
-        doc_text[2] <- gsub("\\.$" , "", doc_text[2])
+        for (x in 0:(start.index[1]-2)) doc_text[x] <- NA
         
-        hour <- strsplit(doc_text[2], " ")[[1]][1]
-
-        if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
-        
-        if (clessnverse::countWords(doc_text[2]) > 2) {
-          minute <- strsplit(doc_text[2], " ")[[1]][3]
-          if (!is.na(strsplit(doc_text[2], " ")[[1]][4]) && strsplit(doc_text[2], " ")[[1]][4] == "et") {
-            minute <- paste(minute, "et", strsplit(doc_text[2], " ")[[1]][5], sep = ' ')
+        doc_text <- na.omit(doc_text)  
+  
+        # Extract start time of the conference
+        if ( stringr::str_detect(tolower(doc_text[2]), patterns_time_text_fr) ) {
+          doc_text[2] <- gsub("\\(|\\)", "", doc_text[2])
+          doc_text[2] <- gsub("\\s\\s+", " ", doc_text[2])
+          hour <- strsplit(doc_text[2], " ")[[1]][1]
+          hour <- clessnverse::convertTextToNumberFR(hour)[[2]][1]
+          if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
+          if (clessnverse::countWords(doc_text[2]) > 2) {
+            minute <- strsplit(doc_text[2], " ")[[1]][3]
+            if (strsplit(doc_text[2], " ")[[1]][4] == "et") {
+              minute <- paste(minute, "et", strsplit(doc_text[2], " ")[[1]][5], sep = ' ')
+            }
+            minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
+            if (nchar(minute) == 1) minute <- paste("0",minute,sep='')
+          } else {
+            minute <- "00"
           }
-          #minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
-          if (nchar(minute) == 1) minute <- paste("0",minute,sep='')
-        } else {
-          minute <- "00"
+          event_start_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
         }
-        event_start_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
-      } 
-      
-
-      # Get rid of the line containing the start time
-      doc_text[2] <- NA
-      doc_text <- na.omit(doc_text)  
+        
+        
+        if ( stringr::str_detect(tolower(doc_text[2]), patterns_time_digits) ) {
+          doc_text[2] <- gsub("^La séance s'ouvre à |^La séance est ouverte à " , "", doc_text[2])
+          doc_text[2] <- gsub("\\(|\\)", "", doc_text[2])
+          doc_text[2] <- gsub("\\s\\s+", " ", doc_text[2])
+          doc_text[2] <- gsub("\\.$" , "", doc_text[2])
+          
+          hour <- strsplit(doc_text[2], " ")[[1]][1]
+  
+          if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
+          
+          if (clessnverse::countWords(doc_text[2]) > 2) {
+            minute <- strsplit(doc_text[2], " ")[[1]][3]
+            if (!is.na(strsplit(doc_text[2], " ")[[1]][4]) && strsplit(doc_text[2], " ")[[1]][4] == "et") {
+              minute <- paste(minute, "et", strsplit(doc_text[2], " ")[[1]][5], sep = ' ')
+            }
+            #minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
+            if (nchar(minute) == 1) minute <- paste("0",minute,sep='')
+          } else {
+            minute <- "00"
+          }
+          event_start_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
+        } 
+        
+  
+        # Get rid of the line containing the start time
+        doc_text[2] <- NA
+        doc_text <- na.omit(doc_text)  
+      #}
 
       # Figure out the end time of the conference
-      event_end_time <- doc_text[which(stringr::str_detect( doc_text, "^\\La séance est levée à"))]
-      event_end_time <- event_end_time[length(event_end_time)]
-      event_end_time <- gsub("\\(",'', event_end_time)
-      event_end_time <- gsub("\\)",'', event_end_time)
-      event_end_time <- gsub("\\.",'', event_end_time)
-      event_end_time <- clessnverse::splitWords(event_end_time)
-      
-      if ( event_end_time[length(event_end_time)] == "heures" || event_end_time[length(event_end_time)] == "h" ) {
-        event_end_time[length(event_end_time)] <- ":"
-        event_end_time[length(event_end_time)+1] <- "00"
+      event_end_time <- doc_text[which(stringr::str_detect( doc_text, "^\\La séance est levée (à|vers)"))]
+      if ( length(event_end_time) > 0 ) {
+        event_end_time <- event_end_time[length(event_end_time)]
+        
+        if ( stringr::str_detect(event_end_time, patterns_time_digits) ) {
+        
+          event_end_time <- gsub("\\(",'', event_end_time)
+          event_end_time <- gsub("\\)",'', event_end_time)
+          event_end_time <- gsub("\\.",'', event_end_time)
+          event_end_time <- gsub("et quart",'15', event_end_time)
+          event_end_time <- gsub("environ",'', event_end_time)
+          event_end_time <- clessnverse::splitWords(event_end_time)
+        
+          # if ( event_end_time[length(event_end_time)] == "heures" || event_end_time[length(event_end_time)] == "h" ) {
+          #   event_end_time[length(event_end_time)] <- ":"
+          #   event_end_time[length(event_end_time)+1] <- "00"
+          # }
+          
+          hour_separator_index <- which(stringr::str_detect(event_end_time, "heure(s?)|h"))
+          
+          event_end_time <- gsub("du|matin|soir|de|l|après-midi", "", event_end_time)
+
+          event_end_time <- paste(event_end_time[hour_separator_index-1],":",event_end_time[hour_separator_index+1])
+          event_end_time <- gsub(" ", "", event_end_time)
+          event_end_time <- gsub("NA", "", event_end_time)
+          
+          event_end_time <- gsub("\\:$", "\\:00", event_end_time)
+    
+          event_end_time <- strptime(paste(event_date,event_end_time), "%Y-%m-%d %H:%M")
+        } 
+        
+        if ( stringr::str_detect(tolower(event_end_time), patterns_time_text_fr) ) {
+          event_end_time <- gsub("\\(",'', event_end_time)
+          event_end_time <- gsub("\\)",'', event_end_time)
+          event_end_time <- gsub("\\.",'', event_end_time)
+          event_end_time <- gsub("et quart",'15', event_end_time)
+          event_end_time <- gsub("environ",'', event_end_time)
+          event_end_time <- clessnverse::splitWords(event_end_time)
+          
+          end_time_index_pos <- which(stringr::str_detect(patterns_time_text_fr, event_end_time))[1]
+          
+          hour <- clessnverse::convertTextToNumberFR(event_end_time[end_time_index_pos])[[2]][1]
+          if (nchar(hour) == 1) hour <- paste("0",hour,sep="")
+          
+          if ( grepl("heure(s?)|h" , event_end_time[end_time_index_pos+1]) ) {
+            end_time_minute_offset <- 2 
+          } else {
+            end_time_minute_offset <- 1 
+          }
+          
+          if ( !is.na(event_end_time[end_time_index_pos+end_time_minute_offset]) ) {
+            if ( grepl("\\d+", event_end_time[end_time_index_pos+end_time_minute_offset]) ) {
+              minute <- event_end_time[end_time_index_pos+end_time_minute_offset]
+            } else {
+              if ( !grepl("moins", tolower(event_end_time[end_time_index_pos+end_time_minute_offset])) ) {
+                minute <- clessnverse::convertTextToNumberFR(event_end_time[end_time_index_pos+end_time_minute_offset])[[2]][1]
+              } else {
+                minute <- "00"
+              }
+            }
+            if (nchar(minute) == 1) minute <- paste("0",minute,sep="")
+          } else {
+            minute <- "00"
+          }
+          
+          event_end_time <- paste(event_date, " ", hour,":",minute,":00",sep='')
+        }
+        
+      } else {
+        event_end_time <- NA
       }
-      
-      event_end_time <- paste(event_end_time[length(event_end_time)-2],":",event_end_time[length(event_end_time)])
-      event_end_time <- gsub(" ", "", event_end_time)
-      event_end_time <- strptime(paste(event_date,event_end_time), "%Y-%m-%d %H:%M")
-      
+        
       # Remove consecutive spaces (cleaning)
       doc_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", doc_text, perl=TRUE)
       doc_text[which(doc_text == "")] <- NA
       doc_text <- na.omit(doc_text)  
+      
+      print(paste("event_start_time", event_start_time, "event_end_time", event_end_time))
+      
+      # Find come patterns in doc_text that are impossible to find and replace in html
+      for ( j in 1:length(doc_text) ) {
+        if ( stringr::str_detect(doc_text[j], "^Son Honneur le lieutenant-gouverneur(.*):$") ) {
+          doc_text[j] <- paste("NewSpeaker:=", doc_text[j])
+        }
+      } 
       
 
       ####################################
@@ -422,46 +501,83 @@ for (i in 1:length(list_urls)) {
       
       for (j in 1:length(doc_text)) {
         president_name <- NA
-        
+
         paragraph_start <- substr(doc_text[j],1,75)
-        
         next_paragraph_start <- substr(doc_text[j+1],1,75)
+        next2_paragraph_start <- substr(doc_text[j+1],1,75)
+        current_paragraph <- doc_text[j]
+        next_paragraph <- doc_text[j+1]
+        next2_paragraph <- doc_text[j+1]
         
         if ( grepl("^Titre:=", paragraph_start) ) {
           # it's a agenda item
-          oob_title <- doc_text[j]
-          sob_title <- doc_text[j]
+          
+          speaker_first_name <- NA
+          speaker_last_name <- NA
+          speaker_full_name <- NA
+          speaker_gender <- NA
+          speaker_type <- NA
+          speaker_party <- NA
+          speaker_district <- NA
+          speaker_is_minister <- NA
+          
+          intervention_type <- NA
+          intervention_text <- NA
+          language <- NA
+          sob_procedural_text <- NA
+          speaker <- data.frame()
+          
+          speech_paragraph_count <- 1
+          speech_sentence_count <- 0
+          speech_word_count <- 0
+          
+          oob_title <- gsub("^Titre:=", "", current_paragraph)
+          sob_title <- gsub("^Titre:=", "", current_paragraph)
+
+          if ( !grepl("^NewSpeaker:=", next_paragraph_start) ) {
+            sob_procedural_text <- ""
+          }
+          
+          title_in_progress <- TRUE
+          
           next
         }
 
         if ( grepl("^NewSpeaker:=", paragraph_start) ) {
-
-          title <- trimws(gsub("^NewSpeaker:=", "", doc_text[j]), "both")
+          title_in_progress <- FALSE
           
-          if ( TRUE %in% stringr::str_detect(title, patterns_oob_rubric) ) {
-            oob_rubric <- gsub(":$", "", title)
+          paragraph_start <- trimws(gsub("^NewSpeaker:=", "", paragraph_start), "both")
+
+          current_paragraph <- trimws(gsub("^NewSpeaker:=", "", current_paragraph), "both")
+          
+          if ( TRUE %in% stringr::str_detect(tolower(paragraph_start), tolower(patterns_oob_rubric)) ) {
+            oob_rubric <- gsub(":$", "", current_paragraph)
             if ( stringr::str_detect(tolower(oob_rubric), "présidence de l'honorable ") ) {
-              president_name <- str_replace(tolower(oob_rubric), "présidence de l'honorable ", "")
+              president_name <- stringr::str_replace(tolower(oob_rubric), "présidence de l'honorable ", "")
+              president_name <- stringr::str_replace(tolower(oob_rubric), "sous la présidence de l'honorable ", "")
               president_name <- stringr::str_to_title(president_name)
               president_first_name <- strsplit(president_name, " ")[[1]][1]
               president_last_name <- strsplit(president_name, " ")[[1]][2]
               president_full_name <- president_name
+              sob_procedural_text <- current_paragraph
+              sob_title <- current_paragraph
+              oob_title <- current_paragraph
             } 
             next
           } 
           
-          if ( TRUE %in% stringr::str_detect(title, patterns_sob_header) ) {
+          if ( TRUE %in% stringr::str_detect(paragraph_start, patterns_sob_header) ) {
             # It's a sob header ("En comité", "Messages du Conseil législatif:", "Résolutions à rapporter:") etc... 
-            sob_header <- gsub(":$", "", title)
+            sob_header <- gsub(":$", "", current_paragraph)
             next
           } 
           
-          if ( j < length(doc_text) && TRUE %in% stringr::str_detect(title, patterns_sob_proc_text) ) {
+          if ( j < length(doc_text) && TRUE %in% stringr::str_detect(paragraph_start, patterns_sob_proc_text) ) {
             # It's a procedural text ("adopté", "La résolution est adoptée.", "adoptées.") etc...
-            sob_procedural_text <- doc_text[j+1]
+            sob_procedural_text <- next_paragraph
           }
                     
-          if ( TRUE %in% stringr::str_detect(title, patterns_new_speakers) ) {
+          if ( TRUE %in% stringr::str_detect(paragraph_start, patterns_new_speakers) ) {
             # It's a new person speaking
             speaker_first_name <- NA
             speaker_last_name <- NA
@@ -475,7 +591,6 @@ for (i in 1:length(list_urls)) {
             intervention_type <- NA
             intervention_text <- NA
             language <- NA
-            sob_procedural_text <- NA
             speaker <- data.frame()
             
             speech_paragraph_count <- 1
@@ -492,13 +607,13 @@ for (i in 1:length(list_urls)) {
             }
             
             # Otherwise parse this paragraph
-            intervention_text <- gsub(":$", "", title)
-            pattern_found <- patterns_new_speakers[which(stringr::str_detect(title, patterns_new_speakers) == TRUE)]
+            intervention_text <- gsub(":$", "", current_paragraph)
+            pattern_found <- patterns_new_speakers[which(stringr::str_detect(paragraph_start, patterns_new_speakers) == TRUE)[1]][1]
             intervention_text <- trimws(stringr::str_split(intervention_text, pattern_found)[[1]][2])
             #speaker_full_name <- gsub("\\^|\\$", "", pattern_found)
-            speaker_full_name <- str_match_all(title, pattern_found)[[1]][1]
+            speaker_full_name <- trimws(stringr::str_match_all(current_paragraph, pattern_found)[[1]][1])
 
-            if ( stringr::str_detect(speaker_full_name, "^M\\.") ) {
+            if ( stringr::str_detect(speaker_full_name, "^M\\.") || stringr::str_detect(speaker_full_name, "^L'honorable\\s+M\\.") ) {
               speaker_gender <- "M"
             } else {
               speaker_gender <- "F"
@@ -509,7 +624,11 @@ for (i in 1:length(list_urls)) {
               speaker_district <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
               speaker_full_name <- trimws(gsub(speaker_district, "", speaker_full_name))
               speaker_full_name <- trimws(gsub(" \\(\\)", "", speaker_full_name))
+              speaker_full_name <- trimws(gsub("^L'honorable\\s+", "", speaker_full_name))
               speaker_full_name <- trimws(gsub("^M\\.|^Mme\\s+", "", speaker_full_name))
+              
+              
+              
               if ( stringr::str_detect(speaker_full_name, " ") ) {
                 speaker_first_name <- strsplit(speaker_full_name, " ")[1]
                 speaker_last_name <- strsplit(speaker_full_name, " ")[2]
@@ -521,7 +640,7 @@ for (i in 1:length(list_urls)) {
               if ( stringr::str_detect(speaker_full_name, "^M\\.|^Mme\\s+(.*)$") ) {
                 speaker_full_name <- trimws(gsub("^M\\.|^Mme\\s+", "", speaker_full_name))
                 
-                if ( stringr::str_detect(speaker_full_name, "orateur") ) {
+                if ( stringr::str_detect(tolower(speaker_full_name), "orateur") ) {
                   speaker_full_name <- president_full_name
                   speaker_first_name <- president_first_name
                   speaker_last_name <- president_last_name
@@ -536,17 +655,23 @@ for (i in 1:length(list_urls)) {
         } else { 
           # It's the same person as in the previous paragraph speaking
           # We will append it to the same row instead of creating an extra row for a new paragraph
-          intervention_text <- paste(intervention_text,"\n\n",doc_text[j], sep="")
-          speech_paragraph_count <- speech_paragraph_count + 1
+          if ( !title_in_progress ) { 
+            intervention_text <- paste(intervention_text,"\n\n",doc_text[j], sep="")
+            speech_paragraph_count <- speech_paragraph_count + 1
+            intervention_text <- gsub("^:\\s+", "", intervention_text)
+            intervention_text <- gsub("^NA\n\n", "", intervention_text)
+          } else {
+            sob_procedural_text <- paste(sob_procedural_text, current_paragraph)
+          }
         } #if ( grepl("^NewSpeaker:=", paragraph_start) )
-        
         
 
         # If the next speaker is different or if it's the last record, then let's commit this observation into the dataset
-        if ( j < length(doc_text) && 
+        if ( (j < length(doc_text) && 
              (grepl("^NewSpeaker:=", next_paragraph_start) &&
-             TRUE %in% stringr::str_detect(next_paragraph_start, patterns_new_speakers)) ||
-             grepl("^Titre:=", next_paragraph_start) ) {  
+             TRUE %in% stringr::str_detect(gsub("^NewSpeaker:=","",next_paragraph_start), patterns_new_speakers)) ||
+             grepl("^Titre:=", next_paragraph_start)) &&
+             !title_in_progress ) {
           
           language <- textcat::textcat(stringr::str_replace_all(intervention_text, "[[:punct:]]", ""))
           if ( !(language %in% c("english","french")) ) { 
@@ -658,8 +783,7 @@ for (i in 1:length(list_urls)) {
       # Join all the elements of the character vector into a single
       # character string, separated by spaces for the simple dataSet
       collapsed_doc_text <- paste(paste(doc_text, "\n\n", sep=""), collapse = ' ')
-      collapsed_doc_text <- stringr::str_replace_all(
-        string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
+      collapsed_doc_text <- stringr::str_replace_all(string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
       
       clessnverse::logit(scriptname, paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
