@@ -167,7 +167,7 @@ content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 #doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/agoraplus-quebec/journaux-debats-15-4.html")
+doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-vintage/journaux-debats-15-4.html")
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
