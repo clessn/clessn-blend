@@ -1,0 +1,39 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2636
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 CourierNewPSMT;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww20620\viewh10200\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf0 OOB Rubric\
+|	|\
+|	OOB Title\
+|	|	|\
+|	|	SOB Title\
+|	|	|	|\
+|	|	|	SOB Header\
+|	|	|	|\
+|	|	|	SOB Procedural Text\
+\
+\
+\
+
+\f1\fs22 patterns_oob_rubric <- c("Pr\'e9sidence de") \
+\
+\
+patterns_oob_title <- c() # Ce sont les titres centr\'e9s\
+\
+patterns_sob_title <- c() # Ce sont les titres centr\'e9s\
+\
+patterns_sob_header <- c("En comit\'e9", "Messages du Conseil l\'e9gislatif:", "R\'e9solutions \'e0 rapporter:", "Rapports de comit\'e9s:", \
+                         "Messages du lieutenant-gouverneur:", "Demande de documents:", "D\'e9p\'f4t de documents:")\
+\
+patterns_sob_proc_text <- c("adopt\'e9", "La r\'e9solution est adopt\'e9e.", "adopt\'e9es.")\
+\
+patterns_new_speakers <- c("^M. l'Orateur", "M\\\\.\\\\s+(w+)\\\\s+\\\\((.*)\\\\)", "^L'honorable", "Le gentilhomme huissier \'e0 la verge noire",\
+                           "Le gentilhomme huissier \'e0 la verge noire", "Son Honneur le lieutenant-gouverneur", "M. l'Orateur du Conseil l\'e9gislatif")\
+\
+\
+doc_html <- stringr::str_replace_all(doc_html, '<P ALIGN="CENTER"><B>','<P ALIGN="CENTER"><B>Titre:=')\
+doc_html <- stringr::str_replace_all(doc_html, '<P ALIGN="JUSTIFY"><B>','<P ALIGN="JUSTIFY"><B>NewSpeaker:=')\
+}
