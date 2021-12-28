@@ -190,7 +190,7 @@ def main():
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
    
-    extract_date = "2021-11-29"
+    extract_date = "2021-12-22"
 
     select_publish_date_start = extract_date
     select_publish_date_end = extract_date
