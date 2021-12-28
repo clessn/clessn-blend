@@ -81,7 +81,6 @@ installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agoraplus-debats-v2.R"
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file", "hub"), Sys.getenv("LOG_PATH"))
 
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
@@ -89,13 +88,13 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(cache_mode = "rebuild", simple_mode = "rebuild", deep_mode = "rebuild", 
-            dataframe_mode = "update", hub_mode = "update", download_data = FALSE)
+#opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "file,console,hub", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file", "hub"), Sys.getenv("LOG_PATH"))
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
