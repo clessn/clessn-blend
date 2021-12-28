@@ -89,7 +89,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", download_data = FALSE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", log_output = "hub,file,console", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -167,7 +167,7 @@ content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 #doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
 
 # Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/agoraplus-quebec/journaux-debats-13-2.html")
+doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/agoraplus-quebec/journaux-debats-15-4.html")
 
 parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
 doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
@@ -303,7 +303,7 @@ for (i in 1:length(list_urls)) {
       doc_text <- sub("^\\s+", "", doc_text)
       doc_text <- sub("\\s+$", "", doc_text)
       
-      patterns_time_digits_or_text_fr <- "((une|1)\\s+(heure|\\sh\\s)\\d+(.*)?\\.?)|(((deux|2)|(trois|3)|(quatre|4)|(cinq|5)|(six|6)|(sept|7)|(huit|8)|(neuf|9)|(dix|10)|(onze|11)|(douze|midi|12)|(treize|13)|(quatorze|14)|(quinze|15)|(seize|16)|(dix-sept|17)|(dix-huit|18)|(dix-neuf|19)|(vingt|20)|(vingt-et-une|21)|(vingt-deux|22)|(vingt-trois|23))\\s+(heures|h)(\\s+\\d+)?(.*)?\\.?)"
+      patterns_time_digits_or_text_fr <- "((une|1)\\s+(heure|h\\s?)(\\d+)?(.*)?\\.?)|(((deux|2)|(trois|3)|(quatre|4)|(cinq|5)|(six|6)|(sept|7)|(huit|8)|(neuf|9)|(dix|10)|(onze|11)|(douze|midi|12|minuit)|(treize|13)|(quatorze|14)|(quinze|15)|(seize|16)|(dix-sept|17)|(dix-huit|18)|(dix-neuf|19)|(vingt|20)|(vingt-et-une|21)|(vingt-deux|22)|(vingt-trois|23))(\\s+)?(heures|h)?(\\s+\\d+)?(.*)?\\.?)"
       
       patterns_time_text_fr <- "(une\\s+(heure|h)(\\s+\\d+)?\\.?)|((deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|midi|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt|vint-et-une|vingt-deux|vingt-trois|minuit)(\\s+heures)?(.*)?\\.?)"
       
@@ -318,6 +318,11 @@ for (i in 1:length(list_urls)) {
       if ( length(time_anomaly_index) > 0 ) {
         doc_text[time_anomaly_index] <- stringr::str_replace(doc_text[time_anomaly_index], "minuit(\\d+)", "minuit \\1")
       }
+
+      time_anomaly_index <- grep("midi(\\d+)", doc_text)
+      if ( length(time_anomaly_index) > 0 ) {
+        doc_text[time_anomaly_index] <- stringr::str_replace(doc_text[time_anomaly_index], "midi(\\d+)", "midi \\1")
+      }
       
       start.index <- grep(patterns_time_digits_or_text_fr, tolower(doc_text))
       
@@ -329,8 +334,11 @@ for (i in 1:length(list_urls)) {
   
         # Extract start time of the conference
         if ( stringr::str_detect(tolower(doc_text[2]), patterns_time_text_fr) ) {
+          doc_text[2] <- gsub("^La séance s'ouvre à |^La séance est ouverte à " , "", doc_text[2])
           doc_text[2] <- gsub("\\(|\\)", "", doc_text[2])
           doc_text[2] <- gsub("\\s\\s+", " ", doc_text[2])
+          doc_text[2] <- gsub("\\.$" , "", doc_text[2])
+          
           hour <- strsplit(doc_text[2], " ")[[1]][1]
           hour <- clessnverse::convertTextToNumberFR(hour)[[2]][1]
           if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
@@ -793,5 +801,5 @@ for (i in 1:length(list_urls)) {
   
 } #for (i in 1:nrow(result))
 
-clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
+  clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
