@@ -601,7 +601,7 @@ tryCatch(
     library(dplyr)
     
     if (!exists("scriptname")) scriptname <<- "agoraplus-pressrelease"
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","hub"), Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console","hub"), Sys.getenv("LOG_PATH"))
     
     # login to the hub
     clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
