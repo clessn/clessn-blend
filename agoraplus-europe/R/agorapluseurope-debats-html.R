@@ -139,7 +139,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "update", log_output = "file,console", download_data = FALSE, translate = TRUE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", log_output = "file,console", download_data = FALSE, translate = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -192,14 +192,9 @@ metadata_filter <- list(institution="European Parliament")
 filter <- clessnhub::create_filter(type="mp", schema="v3", metadata=metadata_filter)  
 dfPersons <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
-#dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
-
 
 
 # Load all objects used for ETL including V1 HUB MPs
-# clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-#                             password = Sys.getenv('HUB_PASSWORD'), 
-#                             url = Sys.getenv('HUB_URL'))
 clessnverse::loadETLRefData()
 dfCountryLanguageCodes <- clessnverse::loadCountryLanguageCodes(token  = Sys.getenv('DROPBOX_TOKEN'))
 
@@ -216,12 +211,12 @@ dfCountryLanguageCodes <- clessnverse::loadCountryLanguageCodes(token  = Sys.get
 scraping_method <- "DateRange"
 #scraping_method <- "FrontPage"
 
-#start_date <- "2020-01-01"
-start_date <- "2014-01-01"
+start_date <- "2020-01-01"
+#start_date <- "2014-01-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 2190
-start_parliament <- 7
-num_parliaments <- 2
+num_days <- 16
+start_parliament <- 9
+num_parliaments <- 1
 
 if (scraping_method == "frontpage") {
   base_url <- "https://www.europarl.europa.eu"
@@ -259,7 +254,7 @@ if (scraping_method == "DateRange") {
 }
 
 # Hack here to get the url list from a rds file
-urls_list <- readRDS("urls_list.rds")
+#urls_list <- readRDS("urls_list.rds")
 
 clessnverse::logit(scriptname = scriptname, message = paste("list of urls containing", length(urls_list), "debates"), logger = logger)
 
@@ -284,8 +279,7 @@ clessnverse::logit(scriptname = scriptname, message = paste("list of urls contai
 # from the parliament  website and start parsing it to extract the
 # debates content
 #
-#for (i in 1:length(urls_list)) {
-for (i in 252:329) {
+for (i in 1:length(urls_list)) {
   event_url <- urls_list[[i]]
   event_id <- stringr::str_match(event_url, "\\CRE-(.*)\\.")[2]
   event_id <- stringr::str_replace_all(event_id, "[[:punct:]]", "")
@@ -348,11 +342,11 @@ for (i in 252:329) {
   }
     
   
-  last_chapter <- grep("Closure of the sitting", lapply(core_xml_chapters, xmlValue))[2]
+  last_chapter <- grep("Closure of the sitting", lapply(core_xml_chapters, XML::xmlValue))[2]
   
-  if (is.na(last_chapter)) last_chapter <- grep("Interruption of the sitting", lapply(core_xml_chapters, xmlValue))[2]
+  if (is.na(last_chapter)) last_chapter <- grep("Interruption of the sitting", lapply(core_xml_chapters, XML::xmlValue))[2]
   if (is.na(last_chapter)) last_chapter <- grep("End of session", lapply(core_xml_chapters, xmlValue))[2]
-  if (is.na(last_chapter)) last_chapter <- grep("Adjournment of the session", lapply(core_xml_chapters, xmlValue))[2]
+  if (is.na(last_chapter)) last_chapter <- grep("Adjournment of the session", lapply(core_xml_chapters, XML::xmlValue))[2]
   
   event_end_time <- XML::xmlAttrs(XML::getNodeSet(core_xml_chapters[[last_chapter]][["tr"]][["td"]], ".//a")[[3]])
   
@@ -448,11 +442,11 @@ for (i in 252:329) {
   # and strip out any relevant info
   intervention_seqnum <- 0
   
-  pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-                          max = core_xml_nbchapters, # Maximum value of the progress bar
-                          style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                          width = 80,   # Progress bar width. Defaults to getOption("width")
-                          char = "=")   # Character used to create the bar
+  # pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+  #                         max = core_xml_nbchapters, # Maximum value of the progress bar
+  #                         style = 3,    # Progress bar style (also available style = 1 and style = 2)
+  #                         width = 80,   # Progress bar width. Defaults to getOption("width")
+  #                         char = "=")   # Character used to create the bar
   
   event_content <- ""
   event_translated_content <- ""
@@ -461,8 +455,8 @@ for (i in 252:329) {
   
   for (j in 2:core_xml_nbchapters) {
     # We start at 2 because the first one is the TOC
-    cat(" chapter progress\r")
-    setTxtProgressBar(pb_chap, j)
+    # cat(" chapter progress\r")
+    # setTxtProgressBar(pb_chap, j)
     
     # New chapter
     chapter_node <- core_xml_chapters[[j]][["tr"]][["td"]]
@@ -575,19 +569,17 @@ for (i in 252:329) {
               
 
               
-              if ( !is.na(intervention_type) && intervention_type != "" && !stringr::str_detect(tolower(intervention_type), "president") &&
+              if ( !is.na(intervention_type) && intervention_type != "" && tolower(intervention_type) != "president" &&
                    !stringr::str_detect(tolower(intervention_type), "on behalf") &&
                    !stringr::str_detect(tolower(intervention_type), "member of") &&
                    (is.na(textcat::textcat(tolower(intervention_type))) ||
                    textcat::textcat(tolower(intervention_type)) != "english")
                    ) {
-                #cat("\ntranslating", intervention_type)
-                
+
                 if (opt$translate) { 
                   intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
                 }
 
-                #cat(" to ", intervention_type, "\n")
               }
               
               
@@ -609,7 +601,7 @@ for (i in 252:329) {
                 intervention_type <- NA
               }
               
-              if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary") ) {
+              if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary|king") ) {
                 speaker_type <- intervention_type
                 intervention_type <- "Speech"
               }
@@ -619,7 +611,7 @@ for (i in 252:329) {
                 speaker_type <- "President"
               } 
               
-              if ( is.na(speaker_type) ) speaker_type <- "MP"
+              if ( is.na(speaker_type) ) speaker_type <- "Member Of The Commission"
               
             } else {
               speaker_full_name <- speaker_text 
@@ -638,23 +630,29 @@ for (i in 252:329) {
             
             if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)") ) {
                 speaker_party <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
-                #speaker_full_name <- stringr::str_match(speaker_full_name, "^(.*)\\((.*)\\)")[2]
                 speaker_full_name <- stringr::str_replace(speaker_full_name, "\\((.*)\\)", "")
                 speaker_full_name <- stringr::str_replace(gsub("\\s+", " ", stringr::str_trim(speaker_full_name)), "B", "b")
-                #speaker_full_name <- trimws(speaker_full_name, "both")
             }
             
             speaker_full_name <- trimws(speaker_full_name)
             speaker_full_name <- gsub('^(\u00a0*)','', speaker_full_name)
+            
+            speaker_full_name <- stringr::str_to_title(speaker_full_name)
             
             speaker_full_name_native  <- speaker_full_name
             
             # Get the speaker data from hub 2.0.  If absent try to get it from the parliament.
             # If parliament successful and not in hub, then write in hub for next time
             if ( !is.null(dfPersons) ) {
-              dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name_native)),]
+              dfSpeaker <- dfPersons[which(dfPersons$data.fullName == speaker_full_name),]
               if (nrow(dfSpeaker) == 0) {
-                dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name_native)),]
+                dfSpeaker <- dfPersons[which(dfPersons$data.fullNameNative == speaker_full_name_native),]
+                if (nrow(dfSpeaker) == 0) {
+                  dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name_native)),]
+                  if (nrow(dfSpeaker) == 0) {
+                    dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name_native)),]
+                  }
+                }
               }
             } else {
               dfSpeaker <- data_frame()
@@ -751,10 +749,10 @@ for (i in 252:329) {
                 
                 tryCatch(
                   {
-                    clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
+                    #clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
                   },
                   error= function(e) {
-                    clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
+                    #clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
                   },
                   finally={}
                 )
