@@ -190,7 +190,7 @@ def main():
         todays_date = datetime.date.today()
         extract_date = todays_date.strftime("%Y-%m-%d")
    
-    extract_date = "2021-12-22"
+    extract_date = "2022-01-27"
 
     select_publish_date_start = extract_date
     select_publish_date_end = extract_date
@@ -241,7 +241,7 @@ def main():
         logging.info(video_uuid)
 
         language_list = ['fr','en']
-        #language_list = ['fr']
+        #language_list = ['en']
 
         for lang in language_list:
             transctipt_file_path = from_azure_file_path
