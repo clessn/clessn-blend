@@ -1,20 +1,37 @@
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 metadata_filter <- list(location="EU")
-filter <- clessnhub::create_filter(type="parliament_debate", schema="v2", metadata=metadata_filter)  
-df <- clessnhub::get_items('agoraplus_interventions', filter=filter, download_data = TRUE)
+
+#data_filter <- list(speakerCountry="Croatie")
+data_filter <- list(speakerType="First Vice-President of the European Commission")
+
+filter <- clessnhub::create_filter(type="parliament_debate", schema="v2", metadata=metadata_filter, data=data_filter)  
+dfToClean <- clessnhub::get_items('agoraplus_interventions', filter=filter, download_data = TRUE)
+
+dfToClean$data.speakerType <- "First Vice-President of the Commission"
 
 
-for (z in 1:nrow(df)) {
-#for (z in 1:5) {
-    interv_metadata <- df[z,which(stringr::str_detect(colnames(df), "^metadata."))]
+for (z in 1:nrow(dfToClean)) {
+    interv_metadata <- dfToClean[z,which(stringr::str_detect(colnames(dfToClean), "^metadata."))]
     names(interv_metadata) <- gsub("^metadata.", "", names(interv_metadata))
-    interv_data <- df[z,which(stringr::str_detect(colnames(df), "^data."))]
+    interv_data <- dfToClean[z,which(stringr::str_detect(colnames(dfToClean), "^data."))]
     names(interv_data) <- gsub("^data.", "", names(interv_data))
 
-    cat(z, df$key[z], "\n")
+    cat(z, dfToClean$key[z], "\n")
 
-    clessnhub::edit_item('agoraplus_interventions', df$key[z], df$type[z], df$schema[z], as.list(interv_metadata), as.list(interv_data))
+    clessnhub::edit_item('agoraplus_interventions', dfToClean$key[z], dfToClean$type[z], dfToClean$schema[z], as.list(interv_metadata), as.list(interv_data))
 }
+
+
+# for (z in 1:nrow(df)) {
+#     interv_metadata <- df[z,which(stringr::str_detect(colnames(df), "^metadata."))]
+#     names(interv_metadata) <- gsub("^metadata.", "", names(interv_metadata))
+#     interv_data <- df[z,which(stringr::str_detect(colnames(df), "^data."))]
+#     names(interv_data) <- gsub("^data.", "", names(interv_data))
+# 
+#     cat(z, df$key[z], "\n")
+# 
+#     clessnhub::edit_item('agoraplus_interventions', df$key[z], df$type[z], df$schema[z], as.list(interv_metadata), as.list(interv_data))
+# }
 
 # for (z in 1:nrow(df)) {
 # 
