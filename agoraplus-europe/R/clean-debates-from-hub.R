@@ -1,14 +1,17 @@
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 metadata_filter <- list(location="EU")
 
-#data_filter <- list(speakerCountry="Croatie")
-data_filter <- list(speakerType="Hungarian Prime Minister")
-
+data_filter <- list(speakerParty = "S%26D%2C")
 filter <- clessnhub::create_filter(type="parliament_debate", schema="v2", metadata=metadata_filter, data=data_filter)  
 dfToClean <- clessnhub::get_items('agoraplus_interventions', filter=filter, download_data = TRUE)
+  
+dfToClean$data.speakerType <- dfToClean$data.speakerPolGroup
+dfToClean$data.speakerPolGroup <- NA
 
-dfToClean$data.speakerType <- "Prime Minister of Hungary"
 
+# for (z in 1:nrow(dfToClean)) {
+#   clessnhub::delete_item('agoraplus_interventions', dfToClean$key[z])
+# }
 
 for (z in 1:nrow(dfToClean)) {
     interv_metadata <- dfToClean[z,which(stringr::str_detect(colnames(dfToClean), "^metadata."))]

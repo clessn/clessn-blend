@@ -138,15 +138,19 @@ logger <- clessnverse::loginit("clean-mps-from-hub", "file,console", Sys.getenv(
  
 
 
-logger <- clessnverse::loginit("clesn-mos-from-hub", "file,console", Sys.getenv("LOG_PATH"))
+#logger <- clessnverse::loginit("clean-mps-from-hub", "file,console", Sys.getenv("LOG_PATH"))
 
-for (s in 1:nrow(dfPersonsDirty)) {
+for (s in 101:nrow(dfPersonsDirty)) {
+#for (s in 1:100) {
 
-  if (!is.na(dfPersonsDirty$metadata.country[s])) {
+
+    newMP <- clessnverse::getEuropeMepData(dfPersonsDirty$data.fullName[s])    
     
-    newCountry <- dfPersonsDirty$metadata.country[s]
-    change <- FALSE
-    
+    if (!is.na(newMP$fullname)) {
+      
+    # newCountry <- dfPersonsDirty$metadata.country[s]
+    # change <- FALSE
+    # 
     # if (dfPersonsDirty$metadata.country[s] == "Allemagne") {
     #   newCountry <- "Germany"
     #   change <- TRUE
@@ -241,23 +245,41 @@ for (s in 1:nrow(dfPersonsDirty)) {
     # }
     # 
     
-    if (change) {
-      dfPersonsDirty$metadata.country[s] <- newCountry
-      dfPersonsDirty$metadata.province_or_state[s] <- newCountry
-      dfPersonsDirty$data.currentProvinceOrState[s] <- newCountry
+    # if (change) {
+    #   dfPersonsDirty$metadata.country[s] <- newCountry
+    #   dfPersonsDirty$metadata.province_or_state[s] <- newCountry
+    #   dfPersonsDirty$data.currentProvinceOrState[s] <- newCountry
+    #   
+    #   person <- dfPersonsDirty[s,]
+    # 
+    #   person_metadata <- person[,which(stringr::str_detect(colnames(person), "^metadata."))]
+    #   names(person_metadata) <- gsub("metadata.", "", names(person_metadata))
+    #   person_data <- person[,which(stringr::str_detect(colnames(person), "^data."))]
+    #   names(person_data) <- gsub("data.", "", names(person_data))
+    #   
+    #   clessnverse::logit("clean-mps-from-hub", paste(s,"updating",  person$data.fullName, "-", person$metadata.country, "in the hub"), logger)
+    #   
+    #   clessnhub::edit_item('persons', person$key, person$type, person$schema, as.list(person_metadata), as.list(person_data))
+    # }
       
-      person <- dfPersonsDirty[s,]
-    
-      person_metadata <- person[,which(stringr::str_detect(colnames(person), "^metadata."))]
-      names(person_metadata) <- gsub("metadata.", "", names(person_metadata))
-      person_data <- person[,which(stringr::str_detect(colnames(person), "^data."))]
-      names(person_data) <- gsub("data.", "", names(person_data))
-      
-      clessnverse::logit("clean-mps-from-hub", paste(s,"updating",  person$data.fullName, "-", person$metadata.country, "in the hub"), logger)
-      
-      clessnhub::edit_item('persons', person$key, person$type, person$schema, as.list(person_metadata), as.list(person_data))
-    }
-    
+        dfPersonsDirty$metadata.country[s] <- newMP$country
+        dfPersonsDirty$metadata.province_or_state[s] <- newMP$country
+        dfPersonsDirty$data.currentProvinceOrState[s] <- newMP$country
+        dfPersonsDirty$data.fullName[s] <- newMP$fullname
+        dfPersonsDirty$data.currentParty[s] <- newMP$party
+        dfPersonsDirty$data.currentPolGroup[s] <- newMP$polgroup
+
+        person <- dfPersonsDirty[s,]
+
+        person_metadata <- person[,which(stringr::str_detect(colnames(person), "^metadata."))]
+        names(person_metadata) <- gsub("metadata.", "", names(person_metadata))
+        person_data <- person[,which(stringr::str_detect(colnames(person), "^data."))]
+        names(person_data) <- gsub("data.", "", names(person_data))
+
+        clessnverse::logit("clean-mps-from-hub", paste(s,"updating",  person$key, "-", person$data.fullName, "-", person$metadata.country, "-", person$data.currentPolGroup, "-", person$data.currentParty, "in the hub"), logger)
+
+        clessnhub::edit_item('persons', person$key, person$type, person$schema, as.list(person_metadata), as.list(person_data))
+
   }
   
 }

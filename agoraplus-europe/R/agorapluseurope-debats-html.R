@@ -611,7 +611,7 @@ for (i in 1:length(urls_list)) {
                 speaker_type <- "President"
               } 
               
-              if ( is.na(speaker_type) ) speaker_type <- "Member Of The Commission"
+              if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
               
             } else {
               speaker_full_name <- speaker_text 

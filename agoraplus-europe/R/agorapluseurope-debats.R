@@ -83,7 +83,7 @@ installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file", "console"), Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file"), Sys.getenv("LOG_PATH"))
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
@@ -93,7 +93,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", download_data = FALSE, translate=FALSE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -152,7 +152,9 @@ dfPersons <- clessnhub::get_items('persons', filter=filter, download_data = TRUE
 clessnverse::loadETLRefData()
 dfCountryLanguageCodes <- clessnverse::loadCountryLanguageCodes(file = 'countrylanguagecodes-eu.csv', token  = Sys.getenv('DROPBOX_TOKEN'))
 
-intervention_types_no_translate <- c("resident", "blue-card question", "blue-card answer", "on behalf", "member of", "rapporteur", "rapporteure")
+intervention_types_no_translate <- c("de facto", "made in europe", "fake news", "on behalf of", "member of", "rapporteur", "author", "business as usual", "blue card", "blue-card")
+intervention_types_manual_translate  <- c("ombudsman", "skriftlig", "schriftelijk", "par écrit", "kirjalikult", "european ombudsman", "namens de", "u ime kluba", "président", "president", "písemně", "membre de la commission", "au nom du groupe", "przewodnicząca", "elnök", "för", "im namen der", "der präsident", "en nombre del grupo", "în numele grupului", "a nome del gruppo", "em nome do grupo", "réponse «carton bleu»", "question «carton bleu»", "pregunta de «tarjeta azul»", "respuesta de «tarjeta azul»", "die präsidentin", "autor", '"blauwe kaart"-antwoord', "pytanie zadane przez podniesienie niebieskiej kartki", "per iscritto", "schriftlich", "rakstiski", "pisno", "na piśmie", "írásban", "pitanje postavljeno podizanjem plave kartice", "în scris", "písomne", "kirjallinen", "por escrito", "в писмена форма", "za skupinu", "verfasser", "auteure", "w imieniu grupy", "raštu", "Πρόεδρο", "γραπτώςς", 'risposta a una domanda "cartellino blu"', 'antwort auf eine frage nach dem verfahren der „blauen karte“', "întrebare adresată conform procedurii „cartonașului albastru”", "γραπτώς", "ερώτηση με γαλάζια κάρτα", "blåt-kort-spørgsmål", "blåt-kort-svar", "πρόεδρος", "puhemies", "berichterstatter",'réponse "carton bleu"', 'question "carton bleu"', '“blauwe kaart”-vraag', '“blauwe kaart”-antwoord', "thar ceann an Ghrúpa", "członek Komisji", 'resposta segundo o procedimento "cartão azul"', 'pergunta segundo o procedimento "cartão azul"')
+intervention_types_manual_translated <- c("Ombudsman", "In Writing", "In Writing", "In Writing", "In Writing", "European Ombudsman", "On Behalf Of The", "On Behalf Of The", "President", "President", "In Writing", "Member of the Commission", "On Behalf Of The", "President", "President", "On Behalf Of The", "On Behalf Of The", "President", "On Behalf Of The", "On Behalf Of The", "On Behalf Of The", "On Behalf Of The", "Blue Card Answer", "Blue Card Question", "Blue Card Question", "Blue Card Answer", "President", "Author", "Blue Card Answer", "Blue Card Question", "In Writing", "In Writing", "In Writing", "In Writing", "In Writing", "In Writing", "Blue Card Question", "In Writing", "In Writing", "In Writing", "In Writing", "In Writing", "On Behalf Of The", "Author", "Author", "On Behalf Of The", "In Writing", "President", "In Writing", "Blue Card Answer", "Blue Card Answer", "Blue Card Question", "In Writing", "Blue Card Question", "Blue Card Question", "Blue Card Answer", "President", "President", "President", "Blue Card Answer", "Blue Card Question", "Blue Card Question", "Blue Card Answer", "On Behalf Of The", "Member of the Commission", "Blue Card Answer", "Blue Card Question")
 
 
 ###############################################################################
@@ -170,7 +172,7 @@ scraping_method <- "DateRange"
 #start_date <- "2019-12-01"
 start_date <- "2020-01-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 16
+num_days <- 761
 start_parliament <- 9
 num_parliaments <- 1
 
@@ -331,13 +333,17 @@ for (i in 1:length(urls_list)) {
       chapter_tabled_docid <- stringr::str_split(XML::xmlGetAttr(chapter_node[["TL-CHAP"]][[2]], "redmap-uri"), "/")[[1]][3]
       
       tabled_document_url <- paste("https://www.europarl.europa.eu/doceo/document/", chapter_tabled_docid, "_EN.html", sep = "")
-      tabled_document_html <- getURL(tabled_document_url)
-      tabled_document_html_table <- readHTMLTable(tabled_document_html)
+      tabled_document_html <- RCurl::getURL(tabled_document_url)
+      tabled_document_html_table <- XML::readHTMLTable(tabled_document_html)
       
       list1_id <- grep("Texts adopted", tabled_document_html_table)[1]
       list2_id <- grep("Texts adopted", tabled_document_html_table[[list1_id]])[2]
       chapter_adopted_docid <- tabled_document_html_table[[list1_id]][[list2_id]][which(grepl("Texts adopted",tabled_document_html_table[[list1_id]][[list2_id]]))]
-      chapter_adopted_docid <- stringr::str_split(chapter_adopted_docid, " ")[[1]][length(stringr::str_split(chapter_adopted_docid, " ")[[1]])]
+      if (!is.null(chapter_adopted_docid)) {
+        chapter_adopted_docid <- stringr::str_split(chapter_adopted_docid, " ")[[1]][length(stringr::str_split(chapter_adopted_docid, " ")[[1]])]
+      } else {
+        chapter_adopted_docid <- NA
+      }
       
     } else {
       chapter_tabled_docid <- NA
@@ -391,6 +397,7 @@ for (i in 1:length(urls_list)) {
         speaker_last_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
         speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
         speaker_full_name <- trimws(stringr::str_remove(speaker_full_name, "\\|\\s"))
+        speaker_full_name <- stringr::str_squish(speaker_full_name)
  
         speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
         if ( speaker_gender == "" ) speaker_gender <- NA
@@ -399,13 +406,13 @@ for (i in 1:length(urls_list)) {
         #If not, get it from the parliament search 
         #If not use the data in the xml structure without properties such as political party etc
         
-        dfSpeaker <- dfPersons[which(stringr::str_to_title(dfPersons$data.fullName) == speaker_full_name),]
-        df_persons_row <- which(stringr::str_to_title(dfPersons$data.fullName) == speaker_full_name)
+        dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name)),]
+        df_persons_row <- which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name))
         
         # If we did not find the speaker fullname in the hub, we can try looking for the native spelling of his name also
         if ( nrow(dfSpeaker) == 0 ) {
-          dfSpeaker <- dfPersons[which(stringr::str_to_title(dfPersons$data.fullNameNative) == speaker_full_name),]
-          df_persons_row <- which(stringr::str_to_title(dfPersons$data.fullNameNative) == speaker_full_name)
+          dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name)),]
+          df_persons_row <- which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name))
           keep_full_name_native <- FALSE
         } else {
           keep_full_name_native <- TRUE
@@ -431,8 +438,10 @@ for (i in 1:length(urls_list)) {
             speaker_mepid <- case_when(XML::xmlGetAttr(speaker_node, "MEPID") != "0" ~  XML::xmlGetAttr(speaker_node, "MEPID"), TRUE ~ NA_character_)
             
             speaker_polgroup <- NA
-            if (XML::xmlGetAttr(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]], "NAME")=="I") {
-              if ( grepl("chancellor|president|minister|holiness|king|member", tolower(XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]]))) ) {
+            
+            if (!is.null(XML::xmlGetAttr(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]], "NAME")) && 
+                XML::xmlGetAttr(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]], "NAME")=="I") {
+              if ( grepl("winner|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe", tolower(XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]]))) ) {
                 speaker_type <- XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]])
               } else {
                 speaker_polgroup <- XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]])
@@ -492,7 +501,7 @@ for (i in 1:length(urls_list)) {
           }
         } #if (nrow(dfSpeaker) == 0) {
         
-        dfSpeaker$fullname <- stringr::str_to_title(dfSpeaker$fullname)
+        #dfSpeaker$fullname <- stringr::str_to_title(dfSpeaker$fullname)
         
         if (update_speaker_in_the_hub || add_speaker_to_the_hub) {
           person_metadata_row <- list("source"="https://www.europarl.europa.eu/meps/fr/download/advanced/xml?name=",
@@ -583,48 +592,55 @@ for (i in 1:length(urls_list)) {
         if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "\\((.*)\\)$") ) intervention_type <- NA
         
         if ( !is.na(intervention_type) && intervention_type != "" && !(TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_no_translate)) &&
-             (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english") ) {
+             (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english" || tolower(intervention_type) == "im namen der ppe-fraktion") ) {
           
           #if (opt$translate) { 
-            #intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
-            #if (opt$translate) 
-              clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_type), logger = logger)
-              intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=TRUE)[2]
-            #if (opt$translate) 
-              clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_type), logger = logger)
+              if ( TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) ) {
+                t_index <- which(stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) == TRUE) 
+                intervention_type_translated <- intervention_types_manual_translated[[t_index]]
+                if (intervention_type_translated == "On Behalf Of The") {
+                  group_name <- gsub(intervention_types_manual_translate[[t_index]], "", tolower(intervention_type))
+                  group_name <- trimws(group_name)
+                  group_name <- stringr::str_to_title(group_name)
+                  intervention_type_translated <- paste(intervention_type_translated, group_name, "Group")
+                }
+                
+                if ((i %% 5)== 0) clessnverse::logit(scriptname = scriptname, message = paste("self-translating", intervention_type, "to", intervention_type_translated), logger = logger)
+                
+                intervention_type <- intervention_type_translated
+                intervention_type <- gsub("-Gruppen", "", intervention_type)
+                intervention_type <- gsub("-Fraktion", "", intervention_type)
+                intervention_type <- gsub("-Fractie", "", intervention_type)
+              } else {
+                #clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_type), logger = logger)
+                intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
+                #clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_type), logger = logger)
+              }
           #}
           
         }
         
-        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
-                                           stringr::str_detect(tolower(intervention_type), "reporter")) ) {
+        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteure|rapporteur|representative")) ) {
           intervention_type <- NA
-          speaker_type <- "Reporter"
+          speaker_type <- "Rapporteur"
         }
         
-        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "auteur") ||
-                                           stringr::str_detect(tolower(intervention_type), "author")) ) {
-          intervention_type <- NA
-          speaker_type <- "Author"
-        }
-        
-        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
-                                           stringr::str_detect(tolower(intervention_type), "member")) ) {
+        if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "member")) ) {
           speaker_type <- intervention_type
           intervention_type <- NA
         }
         
-        if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary|king") ) {
+        if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "winner|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe") ) {
           speaker_type <- intervention_type
           intervention_type <- "Speech"
         }
         
         if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
-          intervention_type <- "moderation"
+          intervention_type <- "Moderation"
           speaker_type <- "President"
         } 
         
-        if ( is.na(speaker_type) ) speaker_type <- "Member Of The Commission"
+        if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
         
         if ( !is.null(intervention_type) && !is.na(intervention_type) ) {
           intervention_type <- gsub("\\(", "", intervention_type)
@@ -632,11 +648,17 @@ for (i in 1:length(urls_list)) {
           intervention_type <- gsub("\"", "", intervention_type)
           intervention_type <- gsub("\\\\u2012", "", intervention_type)
           intervention_type <- gsub("\\\\ U2012", "", intervention_type)
+          intervention_type <- gsub("blue-card", "Blue Card", intervention_type)
+          intervention_type <- gsub("Blue-Card", "Blue Card", intervention_type)
+          intervention_type <- gsub("Blue-card", "Blue Card", intervention_type)
           intervention_type <- stringr::str_squish(intervention_type)
           intervention_type <- trimws(intervention_type)
           intervention_type <- stringr::str_to_title(intervention_type)
         }
         
+        if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
+          if (tolower(speaker_type) == "member of the commission") speaker_type <- "Member of the Commission"
+        }
         
         speaker_district <- NA
         speaker_media <- NA    
@@ -654,51 +676,57 @@ for (i in 1:length(urls_list)) {
 
           if (is.na(intervention_type)) {
             intervention_type <- trimws(XML::xmlValue(intervention_node[["PARA"]][["EMPHAS"]]))
-          
+            
             if ( !is.na(intervention_type) && intervention_type != "" && !(TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_no_translate)) &&
-                 (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english") ) {
+                 (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english" || tolower(intervention_type) == "im namen der ppe-fraktion") ) { 
               
-              #if (opt$translate) { 
-                #intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
-                #if (opt$translate) 
-                clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_type), logger = logger)
-                intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=TRUE)[2]
-                #if (opt$translate) 
-                clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_type), logger = logger)
+              if (opt$translate) { 
+              if ( TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) ) {
+                t_index <- which(stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) == TRUE) 
+                intervention_type_translated <- intervention_types_manual_translated[[t_index]]
+                if (intervention_type_translated == "On Behalf Of The") {
+                  group_name <- gsub(intervention_types_manual_translate[[t_index]], "", tolower(intervention_type))
+                  group_name <- trimws(group_name)
+                  group_name <- stringr::str_to_title(group_name)
+                  intervention_type_translated <- paste(intervention_type_translated, group_name, "Group")
+                }
                 
-              #}
+                if ((i %% 5)== 0) clessnverse::logit(scriptname = scriptname, message = paste("self-translating", intervention_type, "to", intervention_type_translated), logger = logger)
+                
+                intervention_type <- intervention_type_translated
+                intervention_type <- gsub("-Gruppen", "", intervention_type)
+                intervention_type <- gsub("-Fraktion", "", intervention_type)
+                intervention_type <- gsub("-Fractie", "", intervention_type)
+              } else {
+                #clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_type), logger = logger)
+                intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
+                #clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_type), logger = logger)
+              }
+              }
               
             }
             
-            if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
-                                               stringr::str_detect(tolower(intervention_type), "reporter")) ) {
+            if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteure|rapporteur|representative")) ) {
               intervention_type <- NA
-              speaker_type <- "Reporter"
+              speaker_type <- "Rapporteur"
             }
             
-            if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "auteur") ||
-                                               stringr::str_detect(tolower(intervention_type), "author")) ) {
-              intervention_type <- NA
-              speaker_type <- "Author"
-            }
-            
-            if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
-                                               stringr::str_detect(tolower(intervention_type), "member")) ) {
+            if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "member")) ) {
               speaker_type <- intervention_type
               intervention_type <- NA
             }
             
-            if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary") ) {
+            if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "winner|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe") ) {
               speaker_type <- intervention_type
               intervention_type <- "Speech"
             }
             
             if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
-              intervention_type <- "moderation"
+              intervention_type <- "Moderation"
               speaker_type <- "President"
             } 
             
-            if ( is.na(speaker_type) ) speaker_type <- "MP"
+            if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
             
           } #if (is.na(intervention_type)) {
           
@@ -708,9 +736,16 @@ for (i in 1:length(urls_list)) {
             intervention_type <- gsub("\"", "", intervention_type)
             intervention_type <- gsub("\\\\u2012", "", intervention_type)
             intervention_type <- gsub("\\\\ U2012", "", intervention_type)
+            intervention_type <- gsub("blue-card", "Blue Card", intervention_type)
+            intervention_type <- gsub("Blue-Card", "Blue Card", intervention_type)
+            intervention_type <- gsub("Blue-card", "Blue Card", intervention_type)
             intervention_type <- stringr::str_squish(intervention_type)
             intervention_type <- trimws(intervention_type)
             intervention_type <- stringr::str_to_title(intervention_type)
+          }
+          
+          if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
+            if (tolower(speaker_type) == "member of the commission") speaker_type <- "Member of the Commission"
           }
           
           intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
@@ -737,10 +772,15 @@ for (i in 1:length(urls_list)) {
         
         
         
-        if (opt$translate) clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_text), logger = logger)
-        intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", target_lang="en", fake=!opt$translate)
-        intervention_translated_text <- intervention_translation[2]
-        if (opt$translate) clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_translated_text), logger = logger)
+        if (opt$translate) {
+          #clessnverse::logit(scriptname = scriptname, message = paste("translating", intervention_text), logger = logger)
+          intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", target_lang="en", fake=!opt$translate)
+          intervention_translated_text <- intervention_translation[2]
+          #clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_translated_text), logger = logger)
+        } else {
+          intervention_translation <- NA
+          intervention_translated_text <- NA
+        }
         
         
         if (is.null(intervention_translated_text)) intervention_translated_text <- NA
@@ -816,3 +856,4 @@ for (i in 1:length(urls_list)) {
 
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
+
