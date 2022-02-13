@@ -1,10 +1,31 @@
-
+library(dplyr)
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
-filter <- clessnhub::create_filter(type="mp", schema="v3", metadata=list(institution="European Parliament"))  
+filter <- clessnhub::create_filter(type = "mp", schema = "v3", 
+                                   metadata=list(institution  = "European Parliament"),
+                                   data=list(currentPolGroup = "amtierender Ratspräsident")
+                                   )  
 dfPersonsDirty <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
 logger <- clessnverse::loginit("clean-mps-from-hub", "file,console", Sys.getenv("LOG_PATH"))
+
+
+for (s in 1:nrow(dfPersonsDirty)) {
+  
+    dfPersonsDirty$data.currentPolGroup[s] <- "Group Renew Europe"
+    
+    person <- dfPersonsDirty[s,]
+    
+    person_metadata <- person[,which(stringr::str_detect(colnames(person), "^metadata."))]
+    names(person_metadata) <- gsub("metadata.", "", names(person_metadata))
+    person_data <- person[,which(stringr::str_detect(colnames(person), "^data."))]
+    names(person_data) <- gsub("data.", "", names(person_data))
+    
+    clessnverse::logit("clean-mps-from-hub", paste(s,"updating",  person$key, "-", person$data.fullName, "-", person$metadata.country, "-", person$data.currentPolGroup, "-", person$data.currentParty, "in the hub"), logger)
+    
+    clessnhub::edit_item('persons', person$key, person$type, person$schema, as.list(person_metadata), as.list(person_data))
+
+}
 
 
 ###  Clean all names longer than 3 words
@@ -140,9 +161,7 @@ logger <- clessnverse::loginit("clean-mps-from-hub", "file,console", Sys.getenv(
 
 #logger <- clessnverse::loginit("clean-mps-from-hub", "file,console", Sys.getenv("LOG_PATH"))
 
-for (s in 101:nrow(dfPersonsDirty)) {
-#for (s in 1:100) {
-
+for (s in 1:nrow(dfPersonsDirty)) {
 
     newMP <- clessnverse::getEuropeMepData(dfPersonsDirty$data.fullName[s])    
     

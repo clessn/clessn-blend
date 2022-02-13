@@ -1,3 +1,4 @@
+library(dplyr)
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 metadata_filter <- list(location="EU")
 
@@ -5,7 +6,7 @@ metadata_filter <- list(location="EU")
 start_date <- "2014-01-01"
 start_date <- as.Date(start_date)
 
-end_date <- "2019-12-31"
+end_date <- "2022-02-10"
 end_date <- as.Date(end_date)
 
 nb_days <- as.integer(difftime(end_date, start_date, units = 'days'))
@@ -13,7 +14,7 @@ nb_days <- as.integer(difftime(end_date, start_date, units = 'days'))
 little_df <- data.frame()
 big_df <- data.frame()
 
-for (d in 0:nb_days) {
+for (d in 1:nb_days) {
   day <- start_date + d
   
   metadata_filter <- list(location="EU")
