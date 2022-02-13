@@ -167,29 +167,8 @@ dfPublicService <- clessnhub::get_items('persons', filter=filter, download_data 
 
 dfPersons <- dfPersons %>% full_join(dfPublicService)
 
-
-# Download v2 MPs information
-#dfPersons <-  clessnverse::loadAgoraplusPersonsDf(type = "mp", schema = "v2",
-#                                                  location = "CA-QC",
-#                                                  download_data = TRUE,
-#                                                  token = Sys.getenv('HUB_TOKEN'))
-#
-#dfPersons <- dfPersons %>% 
-#  rbind(clessnverse::loadAgoraplusPersonsDf(type = "public_service", schema = "v2",
-#                                            location = "CA-QC",
-#                                            download_data = TRUE,
-#                                            token = Sys.getenv('HUB_TOKEN')
-#                                            )
-#  )
-
 dfPersons <<- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
 
-
-
-# Load all objects used for ETL including V1 HUB MPs
-# clessnverse::loadETLRefData(username = Sys.getenv('HUB_USERNAME'), 
-#                             password = Sys.getenv('HUB_PASSWORD'), 
-#                             url = Sys.getenv('HUB_URL'))
 clessnverse::loadETLRefData()
 
 
@@ -298,18 +277,11 @@ for (i in 1:length(list_urls)) {
     }
   
     if ( version_finale && 
-         ( ((opt$simple_mode == "update" && !(event_id %in% dfSimple$eventID) ||
-             opt$simple_mode == "refresh" ||
-             opt$simple_mode == "rebuild") ||
-            (opt$deep_mode == "update" && !(event_id %in% dfDeep$eventID) ||
-             opt$deep_mode == "refresh" ||
-             opt$deep_mode == "rebuild") ||
-           (opt$dataframe_mode == "update" && !(event_id %in% dfInterventions$data.eventID) ||
+         ( (opt$dataframe_mode == "update" && !(TRUE %in% grepl(event_id, dfInterventions$key)) ||
             opt$dataframe_mode == "refresh" ||
             opt$dataframe_mode == "rebuild")) ||
-         ((opt$hub_mode == "refresh" ||
-             opt$hub_mode == "update") && event_id %in% dfSimple$eventID))
-    ) {
+         ( (opt$hub_mode == "refresh" || opt$hub_mode == "update") && 
+           TRUE %in% grepl(event_id, dfInterventions$key)) ) {
       
       ###############################
       # Columns related to the event
@@ -383,7 +355,7 @@ for (i in 1:length(list_urls)) {
         if (nchar(hour) == 1) hour <- paste("0",hour,sep='')
         if (clessnverse::countWords(doc_text[1]) > 2) {
           minute <- strsplit(doc_text[1], " ")[[1]][3]
-          if (strsplit(doc_text[1], " ")[[1]][4] == "et") {
+          if (!is.na(strsplit(doc_text[1], " ")[[1]][4]) && strsplit(doc_text[1], " ")[[1]][4] == "et") {
             minute <- paste(minute, "et", strsplit(doc_text[1], " ")[[1]][5], sep = ' ')
           }
           minute <- clessnverse::convertTextToNumberFR(minute)[[2]][1]
@@ -915,7 +887,7 @@ for (i in 1:length(list_urls)) {
       
       
       # Join all the elements of the character vector into a single
-      # character string, separated by spaces for the simple dataSet
+      # character string, separated by spaces 
       collapsed_doc_text <- paste(paste(doc_text, "\n\n", sep=""), collapse = ' ')
       collapsed_doc_text <- stringr::str_replace_all(
         string = collapsed_doc_text, pattern = "\n\n NA\n\n", replacement = "")
@@ -932,29 +904,6 @@ for (i in 1:length(list_urls)) {
                                                     metadata = v2_metadata_to_commit,
                                                     data = v2_row_to_commit,
                                                     opt$dataframe_mode, opt$hub_mode)
-      
-      # Update Simple
-      row_to_commit <- data.frame(uuid = "",
-                                  created = "",
-                                  modified = "",
-                                  metadata = "",
-                                  eventID = event_id,
-                                  eventSourceType = event_source_type,
-                                  eventURL = event_url,
-                                  eventDate = as.character(event_date), 
-                                  eventStartTime = as.character(event_start_time), 
-                                  eventEndTime = as.character(event_end_time), 
-                                  eventTitle = event_title, 
-                                  eventSubtitle = event_subtitle, 
-                                  eventSentenceCount = event_sentence_count,
-                                  eventParagraphCount = event_paragraph_count,
-                                  eventContent = collapsed_doc_text,
-                                  eventTranslatedContent = NA,
-                                  stringsAsFactors = FALSE)
-      
-      ###dfSimple <- clessnverse::commitSimpleRows(row_to_commit, dfSimple, 'agoraplus_warehouse_event_items', opt$simple_mode, opt$hub_mode)
-      
-      #clessnverse::logit(scriptname, paste("commited event", event_id, "from", event_date,"containing", intervention_seqnum, "interventions", sep=' '), logger)
       
     } # version finale
     

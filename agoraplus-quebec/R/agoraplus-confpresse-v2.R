@@ -286,12 +286,11 @@ for (i in 1:length(list_urls)) {
     }
   
     #if ( version_finale && 
-    if ( ((opt$dataframe_mode == "update" && !(event_id %in% dfInterventions$data.eventID) ||
+    if ( ((opt$dataframe_mode == "update" && !(TRUE %in% grepl(event_id, dfInterventions$key)) ||
            opt$dataframe_mode == "refresh" ||
            opt$dataframe_mode == "rebuild")) ||
-         ((opt$hub_mode == "refresh" ||
-           opt$hub_mode == "update") && event_id %in% dfSimple$eventID)
-      ) {
+         ((opt$hub_mode == "refresh" || opt$hub_mode == "update") && 
+          TRUE %in% grepl(event_id, dfInterventions$key)) ) {
       
       ###############################
       # Columns related to the event
