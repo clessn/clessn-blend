@@ -1,29 +1,131 @@
+library(dplyr)
+
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+
+table <- table(df$data.interventionType)
+freq <- as.data.frame(table)
+badfreq <-  freq %>% filter(!stringr::str_detect(tolower(Var1), "behalf|namen|draftsman|chairman of|^chairman$|blue|^for ") & Freq <  10) 
+goodfreq <- freq %>% filter(stringr::str_detect(tolower(Var1),  "behalf|namen|draftsman|chairman of|^chairman$|blue|^for ") | Freq >= 10) 
+goodfreq <- goodfreq[-c(9,10,54,58,47,111),]
+
+
+logger <- clessnverse::loginit("clean-debates-from-hub", backend = c("file", "console"), logpath = Sys.getenv("LOG_PATH"))
+
 metadata_filter <- list(location="EU")
 
-data_filter <- list(speakerParty = "S%26D%2C")
-filter <- clessnhub::create_filter(type="parliament_debate", schema="v2", metadata=metadata_filter, data=data_filter)  
-dfToClean <- clessnhub::get_items('agoraplus_interventions', filter=filter, download_data = TRUE)
+for (i in 1:nrow(goodfreq)) {
   
-dfToClean$data.speakerType <- dfToClean$data.speakerPolGroup
-dfToClean$data.speakerPolGroup <- NA
+  clessnverse::logit("clean-debates-from-hub", paste("."), logger = logger)
+  clessnverse::logit("clean-debates-from-hub", paste("================================"), logger = logger)
+  clessnverse::logit("clean-debates-from-hub", paste("."), logger = logger)
+  clessnverse::logit("clean-debates-from-hub", paste("retreiving interventions of type", goodfreq$Var1[i]), logger = logger)
 
+  if ( grepl("^On Behalf Of", as.character(goodfreq$Var1[i]))  ) next
+  
+  #if (!grepl(',', as.character(goodfreq$Var1[i]))){
+    data_filter <- list(interventionType = as.character(goodfreq$Var1[i]))
+  #} else {
+  #  data_filter <- list(interventionType = gsub(",","%2C%",as.character(goodfreq$Var1[i])))
+  #}
+  
+  filter <- clessnhub::create_filter(type="parliament_debate", schema="v2", metadata=metadata_filter, data=data_filter)  
+  dfToClean <- clessnhub::get_items('agoraplus_interventions', filter=filter, download_data = TRUE)
+  
+  if (is.null(dfToClean)) next
 
-# for (z in 1:nrow(dfToClean)) {
-#   clessnhub::delete_item('agoraplus_interventions', dfToClean$key[z])
-# }
+  if ( grepl("question", tolower(as.character(goodfreq$Var1[i]))) && grepl("blue card", tolower(as.character(goodfreq$Var1[i]))) || 	
+       grepl("raised with a blue card lift", tolower(as.character(goodfreq$Var1[i]))) ) {
+    dfToClean$data.interventionType <- "Blue Card Question"
+  }
+  
+  if ( grepl("answer|response", tolower(as.character(goodfreq$Var1[i])))  && grepl("blue card", tolower(as.character(goodfreq$Var1[i]))) ||
+       grepl("set by raising a blue card", tolower(as.character(goodfreq$Var1[i]))) ) {
+    dfToClean$data.interventionType <- "Blue Card Answer"
+  }
+  
+  if ( tolower(as.character(goodfreq$Var1[i])) == "blue card" ) {
+    dfToClean$data.interventionType <- "Blue Card Question"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Au Nom Du Groupe The Left" ||  as.character(goodfreq$Var1[i]) == "Em Nome Do Grupo The Left" ||
+       as.character(goodfreq$Var1[i]) == "Im Namen Der Fraktion The Left" || as.character(goodfreq$Var1[i]) == "Im Namen Der The Left-Fraktion" ||
+       as.character(goodfreq$Var1[i]) == "Namens De Fractie The Left" || as.character(goodfreq$Var1[i]) == "Namens De The Left-Fractie" ) {
+    dfToClean$data.interventionType <- "On Behalf Of The Left Group"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Green Deal" ) {
+    dfToClean$data.interventionType <- "On Behalf Of The Green Deal Group"
+  }
 
-for (z in 1:nrow(dfToClean)) {
-    interv_metadata <- dfToClean[z,which(stringr::str_detect(colnames(dfToClean), "^metadata."))]
-    names(interv_metadata) <- gsub("^metadata.", "", names(interv_metadata))
-    interv_data <- dfToClean[z,which(stringr::str_detect(colnames(dfToClean), "^data."))]
-    names(interv_data) <- gsub("^data.", "", names(interv_data))
+  if ( as.character(goodfreq$Var1[i]) == "Vpc/Hr" ) {
+    dfToClean$data.interventionType <- "On Behalf Of The Vpc/Hr Group"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Brexit") {
+    dfToClean$data.interventionType <- NA
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Chairman") {
+    dfToClean$data.interventionType <- NA
+    dfToClean$data.speakerType <- "President"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Chairman Of The Agri Committee") {
+    dfToClean$data.interventionType <- NA
+    dfToClean$data.speakerType <- "Chairman Of The Agri Committee"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Renew On Behalf Of The Group" || as.character(goodfreq$Var1[i]) == "Renew, On Behalf Of The Group") {
+    dfToClean$data.interventionType <- NA
+    dfToClean$data.speakerType <- "On Behalf Of The Group Renew"
+  }
+  
+  if ( as.character(goodfreq$Var1[i]) == "Dimitrios Papadimoulis" || as.character(goodfreq$Var1[i]) == "Elena Kountoura" ||
+       as.character(goodfreq$Var1[i]) == "For The Results Of The Vote And Other Details Of The Vote: See Minutes" ||
+       as.character(goodfreq$Var1[i]) == "Konstantinos Arvanitis" || as.character(goodfreq$Var1[i]) == "Sophia In ‘T Veld") {
+    dfToClean$data.interventionType <- NA
+  }
+  
+  if ( grepl("draftsman|lecturer|mayor|ombudsman|author|rapporteur|referents", tolower(as.character(goodfreq$Var1[i]))) ) {
+    dfToClean$data.speakerType <- dfToClean$data.interventionType
+    dfToClean$data.interventionType <- NA
+  }
+  
+  if ( grepl("^for\\s(.*)", tolower(as.character(goodfreq$Var1[i]))) ) {
+    dfToClean$data.interventionType <- gsub("^For", "On Behalf Of The", dfToClean$data.interventionType)
+    dfToClean$data.interventionType <- gsub("The The", "The", dfToClean$data.interventionType)
+    dfToClean$data.interventionType <- gsub("Groups", "Group", dfToClean$data.interventionType)
+    dfToClean$data.interventionType <- gsub("-Gruppen", " Group", dfToClean$data.interventionType)
+    dfToClean$data.interventionType <- gsub("Gruppen", "Group", dfToClean$data.interventionType)
+    
+    if (!grepl("group", tolower(dfToClean$data.interventionType))) {
+      dfToClean$data.interventionType <- paste(dfToClean$data.interventionType, "Group")
+    }
+  }
 
-    cat(z, dfToClean$key[z], "\n")
-
-    clessnhub::edit_item('agoraplus_interventions', dfToClean$key[z], dfToClean$type[z], dfToClean$schema[z], as.list(interv_metadata), as.list(interv_data))
+  for (j in 1:nrow(dfToClean)) {
+      interv_metadata <- dfToClean[j,which(stringr::str_detect(colnames(dfToClean), "^metadata."))]
+      names(interv_metadata) <- gsub("^metadata.", "", names(interv_metadata))
+      interv_data <- dfToClean[j,which(stringr::str_detect(colnames(dfToClean), "^data."))]
+      names(interv_data) <- gsub("^data.", "", names(interv_data))
+  
+      cat(j, dfToClean$key[j], "\n")
+      
+      
+      interv_data_display <- interv_data
+      interv_metadata_display <- interv_metadata
+      interv_data_display$interventionText <- NULL
+      interv_data_display$interventionTextEN <- NULL
+      interv_data_display$interventionTextFR <- NULL
+      #if (j==1) {
+        clessnverse::logit("clean-debates-from-hub", )
+        clessnverse::logit("clean-debates-from-hub", paste(interv_metadata_display, collapse=" * "), logger = logger)
+        clessnverse::logit("clean-debates-from-hub", paste(interv_data_display, collapse=" * "), logger = logger)
+      #}
+  
+      clessnhub::edit_item('agoraplus_interventions', dfToClean$key[j], dfToClean$type[j], dfToClean$schema[j], as.list(interv_metadata), as.list(interv_data))
+  }
 }
-
 
 # for (z in 1:nrow(df)) {
 #     interv_metadata <- df[z,which(stringr::str_detect(colnames(df), "^metadata."))]
