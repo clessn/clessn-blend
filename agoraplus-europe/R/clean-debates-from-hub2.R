@@ -5,7 +5,7 @@ nullToNA <- function(x) {
   return(x)
 }
 
-df <- readRDS("dfInterventions_all2.rds")
+df <- readRDS("dfInterventions_all4.rds")
 
 # eu_parties_acronyms <- c("ECR", 
 #                          "S&D", 
@@ -28,7 +28,8 @@ eu_parties_acronyms <- c("S%26D",
                          "Europe Écologie", 
                          "Renew",
                          "NI",
-                         "ENF"
+                         "ENF",
+                         "PPE"
                          )
 
 eu_parties_longname <- c("Group of the Progressive Alliance of Socialists and Democrats in the European Parliament",
@@ -42,7 +43,8 @@ eu_parties_longname <- c("Group of the Progressive Alliance of Socialists and De
                          "Europe Écologie",
                          "Group Renew Europe", 
                          "Non-attached Members",
-                         "Europe of Nations and Freedom"
+                         "Europe of Nations and Freedom",
+                         "European People's Party Group"
                          )
 
 
