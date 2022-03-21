@@ -146,7 +146,10 @@ patterns_sob_header <- c("En comité", "Messages du Conseil législatif:", "Rés
 patterns_sob_proc_text <- c("adopt(é|ée|ées|és).", "adopt(é|ée|ées|és) sur division.")
 
 patterns_new_speakers <- c("^M. l'Orateur:", "^M. l'Orateur\\s", 
-                           "^L'honorable\\s+M\\.\\s+(\\w+)\\s+\\(((?:\\w+-?)+\\w+)\\)", 
+                           "^L'honorable\\s+M\\.?(\\s+)?(.*?)\\s+(\\(.*?\\))", 
+                           "^L'honorable\\s+M\\.?(\\s+)?(.*?)\\s+(\\(.*?\\))", 
+                           "^L'honorable\\s+M\\.?(\\s+)?(.*?)\\s+(\\(.*?\\:)", 
+                           "^L'honorable\\s+Mme(\\s+)?(.*?)\\s+(\\(.*?\\))",
                            "^M\\.\\s+(\\w+)\\s+\\(((?:\\w+-?)+\\w+)\\)", 
                            "^L'honorable", "^Le gentilhomme huissier à la verge noire",
                            "^Son Honneur le lieutenant-gouverneur(.*)\\:$", "^M. l'Orateur du Conseil législatif",
@@ -164,14 +167,21 @@ base_url <- "http://www.assnat.qc.ca"
 content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 
 # Pour rouler le script sur une base quotidienne et aller chercher les débats récents Utiliser le ligne ci-dessous
-#doc_html <- RCurl::getURL(paste(base_url,content_url,sep=""))
+file_list <- clessnverse::dbxListDir('/clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-vintage', Sys.getenv("DROPBOX_TOKEN"))
+file_list <- file_list %>% filter(objectType == "file")
 
-# Hack here Pour obtenir l'historique des débats depuis le début de l'année 2020 enlever le commentaire dans le ligne ci-dessous
-doc_html <- RCurl::getURL("file:///Users/patrick/Dev/CLESSN/clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-vintage/journaux-debats-15-4.html")
+list_urls <- NULL
 
-parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
-doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
-list_urls <- doc_urls[grep("assemblee-nationale/\\d\\d-\\d/journal-debats", doc_urls)]
+for (i in 1:nrow(file_list)) {
+  doc_html_name <- paste(file_list$objectPath[i], "/", file_list$objectName[i], sep='')
+  doc_html <- clessnverse::dbxDownloadFile(doc_html_name, "./", Sys.getenv("DROPBOX_TOKEN"))
+
+  if (doc_html) doc_html <- readLines(file_list$objectName[i])
+    
+  parsed_html <- XML::htmlParse(doc_html, asText = TRUE)
+  doc_urls <- XML::xpathSApply(parsed_html, "//a/@href")
+  list_urls <- c(list_urls, doc_urls[grep("assemblee-nationale/\\d\\d-\\d/journal-debats", doc_urls)])
+}
 
 # Hack here to scrape only one debate
 #list_urls <- c("/fr/travaux-parlementaires/assemblee-nationale/42-1/journal-debats/20210330/294413.html")
@@ -187,8 +197,9 @@ list_urls <- doc_urls[grep("assemblee-nationale/\\d\\d-\\d/journal-debats", doc_
 # in it, or from the assnat website and start parsing it to extract the
 # press conference content
 #
-for (i in 1:length(list_urls)) {
-  
+#for (i in 1:length(list_urls)) {
+for (i in 1:600) {
+
   #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
@@ -561,9 +572,14 @@ for (i in 1:length(list_urls)) {
           if ( TRUE %in% stringr::str_detect(tolower(paragraph_start), tolower(patterns_oob_rubric)) ) {
             oob_rubric <- gsub(":$", "", current_paragraph)
             if ( stringr::str_detect(tolower(oob_rubric), "présidence de l'honorable ") ) {
-              president_name <- stringr::str_replace(tolower(oob_rubric), "présidence de l'honorable ", "")
-              president_name <- stringr::str_replace(tolower(oob_rubric), "sous la présidence de l'honorable ", "")
+              if ( stringr::str_detect("sous la présidence de", tolower(oob_rubric)) ) {
+                president_name <- stringr::str_replace(tolower(oob_rubric), "sous la présidence de l'honorable ", "")
+              } else {
+                president_name <- stringr::str_replace(tolower(oob_rubric), "présidence de l'honorable ", "")
+              }
+
               president_name <- stringr::str_to_title(president_name)
+              president_name <- trimws(president_name) 
               president_first_name <- strsplit(president_name, " ")[[1]][1]
               president_last_name <- strsplit(president_name, " ")[[1]][2]
               president_full_name <- president_name
@@ -618,28 +634,50 @@ for (i in 1:length(list_urls)) {
             intervention_text <- gsub(":$", "", current_paragraph)
             pattern_found <- patterns_new_speakers[which(stringr::str_detect(paragraph_start, patterns_new_speakers) == TRUE)[1]][1]
             intervention_text <- trimws(stringr::str_split(intervention_text, pattern_found)[[1]][2])
-            #speaker_full_name <- gsub("\\^|\\$", "", pattern_found)
-            speaker_full_name <- trimws(stringr::str_match_all(current_paragraph, pattern_found)[[1]][1])
-
+            intervention_text <- gsub("^:", "", intervention_text)
+            intervention_test <- gsub("^,", "", intervention_text)
+            intervention_text <- trimws(intervention_text)
+            
+            #if (pattern_found == "^L'honorable\\s+(M\\.|Mme)\\s+(.*)\\((.*)\\):") {
+            #  speaker_full_name <- trimws(stringr::str_match_all(current_paragraph, pattern_found)[[1]][3])
+            #} else {
+              speaker_full_name <- trimws(stringr::str_match_all(current_paragraph, pattern_found)[[1]][1])
+            #}
+            
             if ( stringr::str_detect(speaker_full_name, "^M\\.") || stringr::str_detect(speaker_full_name, "^L'honorable\\s+M\\.") ) {
               speaker_gender <- "M"
             } else {
               speaker_gender <- "F"
             }
             
-            if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)$") ) {
+            if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)?:?$") ) {
               # speaker identification : Title Name (district) 
-              speaker_district <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
-              speaker_full_name <- trimws(gsub(speaker_district, "", speaker_full_name))
-              speaker_full_name <- trimws(gsub(" \\(\\)", "", speaker_full_name))
-              speaker_full_name <- trimws(gsub("^L'honorable\\s+", "", speaker_full_name))
-              speaker_full_name <- trimws(gsub("^M\\.|^Mme\\s+", "", speaker_full_name))
+              if ( stringr::str_detect(speaker_full_name, "\\((.*)\\):?$") ) {
+                speaker_district <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
+                speaker_full_name <- trimws(gsub(speaker_district, "", speaker_full_name))
+                speaker_full_name <- trimws(gsub(" \\(\\)", "", speaker_full_name))
+                speaker_full_name <- trimws(gsub("^L'honorable\\s+", "", speaker_full_name))
+                speaker_full_name <- trimws(gsub("^M\\.|^Mme\\s+", "", speaker_full_name))
+                speaker_full_name <- trimws(gsub(":", "", speaker_full_name))
+              } else {
+                if ( stringr::str_detect(speaker_full_name, "\\((.*)\\:$") ) {
+                  speaker_district <- stringr::str_match(speaker_full_name, "\\((.*)\\:")[2]
+                  speaker_full_name <- trimws(gsub(speaker_district, "", speaker_full_name))
+                  speaker_full_name <- trimws(gsub(" \\(\\:", "", speaker_full_name))
+                  speaker_full_name <- trimws(gsub("^L'honorable\\s+", "", speaker_full_name))
+                  speaker_full_name <- trimws(gsub("^M\\.|^Mme\\s+", "", speaker_full_name))
+                  speaker_full_name <- trimws(gsub(":", "", speaker_full_name))
+                } else {
+                  # nothing
+                }
+                
+              }
               
               
               
               if ( stringr::str_detect(speaker_full_name, " ") ) {
-                speaker_first_name <- strsplit(speaker_full_name, " ")[1]
-                speaker_last_name <- strsplit(speaker_full_name, " ")[2]
+                speaker_first_name <- strsplit(speaker_full_name, " ")[[1]][1]
+                speaker_last_name <- strsplit(speaker_full_name, " ")[[1]][2]
               } else {
                 speaker_last_name <- speaker_full_name
               }
@@ -658,6 +696,11 @@ for (i in 1:length(list_urls)) {
                 # speaker identification not determined...
                 
               }
+              
+              speaker_full_name <- trimws(gsub(":", "", speaker_full_name))
+              
+              if (speaker_full_name == "Messages du lieutenant-gouverneur") speaker_full_name <- "Son Honneur le lieutenant-gouverneur"
+              
             }
           }
         } else { 
@@ -666,7 +709,7 @@ for (i in 1:length(list_urls)) {
           if ( !title_in_progress ) { 
             intervention_text <- paste(intervention_text,"\n\n",doc_text[j], sep="")
             speech_paragraph_count <- speech_paragraph_count + 1
-            intervention_text <- gsub("^:\\s+", "", intervention_text)
+            intervention_text <- gsub("^:", "", intervention_text)
             intervention_text <- gsub("^NA\n\n", "", intervention_text)
           } else {
             sob_procedural_text <- paste(sob_procedural_text, current_paragraph)
@@ -797,9 +840,11 @@ for (i in 1:length(list_urls)) {
       
     } # version finale
     
+  } else {
+    clessnverse::logit(scriptname, paste("not a parliament debate","", sep=' '), logger)
   } #if (grepl("actualites-salle-presse", event_url))
   
 } #for (i in 1:nrow(result))
 
-  clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
+clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
