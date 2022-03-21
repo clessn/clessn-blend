@@ -1,5 +1,10 @@
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
+
+myfilter <- clessnhub::create_filter(data = list(speakerCountry ="Sierra Leone"))
+df <- clessnhub::get_items('agoraplus_interventions', myfilter,  download_data = F)
+
+
 tictoc::tic()
 myfilter <- clessnhub::create_filter(metadata = list(twitterAccountHasBeenScraped = "1"))
 dfPersons <- clessnhub::get_items('persons', myfilter,  download_data = F)
