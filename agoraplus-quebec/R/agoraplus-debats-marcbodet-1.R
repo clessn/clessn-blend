@@ -706,6 +706,7 @@ for (i in 1:1665) {
                 speaker_full_name <- trimws(gsub(":", "", speaker_full_name))
                 speaker_full_name <- stringr::str_to_title(speaker_full_name)
                 persistent_president_name <- speaker_full_name
+                speaker_type <- "modérateur"
                 speaker_district <- NA
               } 
               
@@ -724,7 +725,15 @@ for (i in 1:1665) {
                 }
                 
                 if ( stringr::str_detect(tolower(speaker_full_name), "président") || stringr::str_detect(tolower(speaker_full_name), "president") ) {
-                  speaker_full_name <- persistent_president_name
+                  if ( !is.na(persistent_president_name) ) {
+                    speaker_full_name <- persistent_president_name
+                    speaker_type <- "modérateur"
+                  } else {
+                    speaker_full_name <- president_full_name
+                    speaker_first_name <- president_first_name
+                    speaker_last_name <- president_last_name
+                    speaker_type <- "modérateur"
+                  }
                 }
                 
               } else {
