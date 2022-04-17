@@ -424,7 +424,7 @@ main <- function(opt, scriptname, logger) {
   
   leaders_index <-  which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
                             dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd5" |
-                            dfPersons$key == "104669")
+                            dfPersons$key == "104669" | dfPersons$key == "25455")
   
   politicians_index <- c(mps_index,candidates_index)
   
