@@ -212,7 +212,7 @@ for (i in 1:nrow(file_list)) {
 # press conference content
 #
 #for (i in 1:length(list_urls)) {
-for (i in 1:600) {
+for (i in 601:length(list_urls)) {
 #for (i in 4768:4768) {
 
   if (i %% 100 == 0) {
