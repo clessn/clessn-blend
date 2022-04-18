@@ -212,7 +212,7 @@ for (i in 1:nrow(file_list)) {
 # press conference content
 #
 #for (i in 1:length(list_urls)) {
-for (i in 601:length(list_urls)) {
+for (i in 1594:length(list_urls)) {
 #for (i in 4768:4768) {
 
   if (i %% 100 == 0) {
@@ -492,7 +492,7 @@ for (i in 601:length(list_urls)) {
 
         if (stringr::str_detect(event_end_time, "\\((.*)\\)")) event_end_time <- stringr::str_match(event_end_time, "\\((.*)\\)")[2]
 
-        if (stringr::str_detect(event_end_time, patterns_time_digits) && !stringr::str_detect(event_end_time, "midi|minuit")) {
+        if (!is.na(event_end_time) && stringr::str_detect(event_end_time, patterns_time_digits) && !stringr::str_detect(event_end_time, "midi|minuit")) {
 
           event_end_time <- gsub("\\(", "", event_end_time)
           event_end_time <- gsub("\\)", "", event_end_time)
@@ -517,7 +517,7 @@ for (i in 601:length(list_urls)) {
 
           if (length(hour_separator_index) == 0) hour_separator_index <- 0
 
-          if (length(event_end_time[hour_separator_index+1]) == 1) event_end_time[hour_separator_index+1] <- paste("0", event_end_time[hour_separator_index+1], sep = "")
+          if (nchar(event_end_time[hour_separator_index+1]) == 1) event_end_time[hour_separator_index+1] <- paste("0", event_end_time[hour_separator_index+1], sep = "")
           if (event_end_time[hour_separator_index-1] == "24") {
             event_end_time[hour_separator_index - 1] <- "00"
             event_end_date <- event_date + 1
@@ -538,7 +538,7 @@ for (i in 601:length(list_urls)) {
           event_end_time <- strptime(paste(event_end_date, event_end_time), "%Y-%m-%d %H:%M")
         }
 
-        if (stringr::str_detect(tolower(event_end_time), patterns_time_text_fr)) {
+        if (!is.na(event_end_time) && stringr::str_detect(tolower(event_end_time), patterns_time_text_fr)) {
           event_end_time <- gsub("\\(", '', event_end_time)
           event_end_time <- gsub("\\)", '', event_end_time)
           event_end_time <- gsub("\\.", '', event_end_time)
