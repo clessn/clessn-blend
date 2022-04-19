@@ -212,7 +212,7 @@ for (i in 1:nrow(file_list)) {
 # press conference content
 #
 #for (i in 1:length(list_urls)) {
-for (i in 1594:length(list_urls)) {
+for (i in 3341:length(list_urls)) {
 #for (i in 4768:4768) {
 
   if (i %% 100 == 0) {
@@ -546,6 +546,7 @@ for (i in 1594:length(list_urls)) {
           event_end_time <- gsub("environ", '', event_end_time)
           event_end_time <- clessnverse::splitWords(event_end_time)
           event_end_time <- gsub("^de$", "", event_end_time)
+          event_end_time <- gsub("^a$", "", event_end_time)
 
           end_time_index_pos <- which(stringr::str_detect(patterns_time_text_fr, event_end_time))[1]
 
