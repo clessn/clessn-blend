@@ -4,13 +4,13 @@ import sys
 
 sys.path.append("./agoraplus-canada/Python")
 
-import agoraplusmstranscribeautomated as pyscraper
+import agoraplus_canada_youtube_partyleaders.py as pyscraper
 
 print("Running python script")
 print('------')
 
 try: 
-    scriptname = 'agoraplusmstranscribeautomated.py'
+    scriptname = 'agoraplus-canada-youtube-partyleaders'
     filename = os.environ.get('LOG_PATH') + '/' + scriptname + '.log'
     print('logging to ' + filename)
     logging.basicConfig(level=logging.INFO, filename=filename, filemode='w+', format='%(asctime)s : %(levelname)s - %(message)s',datefmt='%d-%b-%y %H:%M:%S')
