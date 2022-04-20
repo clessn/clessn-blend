@@ -4,7 +4,7 @@ import sys
 
 sys.path.append("./agoraplus-canada/Python")
 
-import agoraplus_canada_youtube_partyleaders.py as pyscraper
+import agoraplus_canada_youtube_partyleaders as pyscraper
 
 print("Running python script")
 print('------')
