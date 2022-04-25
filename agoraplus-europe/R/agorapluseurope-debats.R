@@ -93,7 +93,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 #opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
-#opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -168,9 +168,9 @@ intervention_types_manual_translated <- c("president", "Ombudsman", "In Writing"
 scraping_method <- "FrontPage"
 
 #start_date <- "2019-12-01"
-start_date <- "2020-01-01"
+start_date <- "2022-01-27"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 761
+num_days <- 31
 start_parliament <- 9
 num_parliaments <- 1
 
