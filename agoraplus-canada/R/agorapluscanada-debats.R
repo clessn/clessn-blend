@@ -380,11 +380,11 @@ for (i_url in 1:length(urls_list_fr)) {
   sob_seqnum <- 0
   intervention_seqnum <- 0
 
-  pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-                            max = nb_interventions, # Maximum value of the progress bar
-                            style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                            width = 80,   # Progress bar width. Defaults to getOption("width")
-                            char = "=")   # Character used to create the bar
+  # pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+  #                           max = nb_interventions, # Maximum value of the progress bar
+  #                           style = 3,    # Progress bar style (also available style = 1 and style = 2)
+  #                           width = 80,   # Progress bar width. Defaults to getOption("width")
+  #                           char = "=")   # Character used to create the bar
 
   event_content <- ""
   event_translated_content <- ""
@@ -529,7 +529,7 @@ for (i_url in 1:length(urls_list_fr)) {
             intervention_translated_text <- NA
 
             intervention_seqnum <- intervention_seqnum + 1
-            setTxtProgressBar(pb_chap, intervention_seqnum)
+            # setTxtProgressBar(pb_chap, intervention_seqnum)
 
             # Type of the intervention
             intervention_type <- XML::xmlGetAttr(sob_content_node[[i_sob_content]], "Type")
