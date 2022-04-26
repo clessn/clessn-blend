@@ -236,7 +236,6 @@ if (scraping_method == "SessionRange") {
 # debates content
 #
 for (i_url in 1:length(urls_list_fr)) {
-  if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url_fr <- urls_list_fr[[i_url]]
   #event_id <- stringr::str_replace_all(urls_list_fr[i_url], "[[:punct:]]", "")
   event_id <- paste(stringr::str_match(urls_list_fr[i_url], "\\/(\\d+)?\\/[a-zA-Z]+\\/(\\d+)?\\/(.*)?-[E|F]\\.XML$")[2:4], collapse="")
