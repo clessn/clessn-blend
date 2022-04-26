@@ -82,21 +82,64 @@ safe_GET <- purrr::safely(httr::GET)
 #   logger
 #
 installPackages()
+library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, "file", Sys.getenv("LOG_PATH"))
 
-opt <- list(cache_mode = "skip", simple_mode = "rebuild", deep_mode = "rebuild", dataframe_mode = "skip", hub_mode = "skip")
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+
+#opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "skip", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-clessnverse::loadAgoraplusHUBDatasets("canada", opt, 
-                                      Sys.getenv('HUB_USERNAME'), 
-                                      Sys.getenv('HUB_PASSWORD'), 
-                                      Sys.getenv('HUB_URL'))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", opt$log_output, Sys.getenv("LOG_PATH"))
+
+
+# Download HUB v2 data
+if (opt$dataframe_mode %in% c("update","refresh")) {
+  clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
+  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
+                                                               location = "EU", format = "html",
+                                                               download_data = opt$download_data,
+                                                               token = Sys.getenv('HUB_TOKEN'))
+  
+  if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2")
+  
+  if (opt$download_data) { 
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                                          "metadata.parliament_number", "metadata.parliament_session", 
+                                          "data.eventID", "data.eventDate", "data.eventStartTime", "data.eventEndTime", 
+                                          "data.eventTitle", "data.eventSubTitle", "data.interventionSeqNum", "data.objectOfBusinessID", 
+                                          "data.objectOfBusinessRubric", "data.objectOfBusinessTitle", "data.objectOfBusinessSeqNum", 
+                                          "data.subjectOfBusinessID", "data.subjectOfBusinessTitle", "data.subjectOfBusinessHeader", 
+                                          "data.subjectOfBusinessSeqNum", "data.subjectOfBusinessProceduralText", 
+                                          "data.subjectOfBusinessTabledDocID", "data.subjectOfBusinessTabledDocTitle", 
+                                          "data.subjectOfBusinessAdoptedDocID", "data.subjectOfBusinessAdoptedDocTitle", 
+                                          "data.speakerID", "data.speakerFirstName", "data.speakerLastName", "data.speakerFullName", 
+                                          "data.speakerGender", "data.speakerType", "data.speakerCountry", "data.speakerIsMinister", 
+                                          "data.speakerParty", "data.speakerPolGroup", "data.speakerDistrict", "data.interventionID", 
+                                          "data.interventionDocID", "data.interventionDocTitle", "data.interventionType", 
+                                          "data.interventionLang", "data.interventionWordCount", "data.interventionSentenceCount", 
+                                          "data.interventionParagraphCount", "data.interventionText", "data.interventionTextFR", 
+                                          "data.interventionTextEN")]
+  } else {
+    dfInterventions <- dfInterventions[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
+                                          "metadata.parliament_number", "metadata.parliament_session")]
+  }
+  
+} else {
+  clessnverse::logit(scriptname, "Not retreiving interventions from hub because hub_mode is rebuild or skip", logger)
+  dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type="parliament_debate", schema = "v2")
+}
+
+# Download v3 MPs information
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+metadata_filter <- list(institution="House of Commons of Canada")
+filter <- clessnhub::create_filter(type="mp", schema="v2", metadata=metadata_filter)  
+dfPersons <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
 
 
 # Load all objects used for ETL
@@ -112,8 +155,8 @@ clessnverse::loadETLRefData()
 # each debate
 #
 
-scraping_method <- "SessionRange"
-#scraping_method <- "Latest"
+#scraping_method <- "SessionRange"
+scraping_method <- "Latest"
 base_url <- "https://www.noscommunes.ca"
 hansard_url1 <- "/Content/House"
 hansard_url2 <- "/Debates"
@@ -129,18 +172,31 @@ if (scraping_method == "Latest") {
   i_get_attempt <- 1
   while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
 
-  source_page_xml <- XML::xmlParse(source_page$result$content, useInternalNodes = TRUE)
+  source_page_html <- httr::content(source_page$result)
+
+  source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
   root_xml <- XML::xmlRoot(source_page_xml)
+  head_xml <- root_xml[[1]]
+  core_xml <- root_xml[[2]]
 
-  latest_handsard <- as.list(XML::xmlApply(root_xml[["Publications"]], XML::xmlAttrs)[1]$Publication)
-  hansard_num <- stringr::str_pad(trimws(strsplit(latest_handsard$Title, "-")[[1]][2]), 3, side = "left", pad = "0") 
-  session_num <- latest_handsard$Session
-  parliam_num <- latest_handsard$Parliament
+  latest_handsards <- as.list(XML::xmlApply(root_xml[["Publications"]], XML::xmlAttrs))
+  latest_handsards <- lapply(latest_handsards, as.list)
 
-  url_fr <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
-  urls_list_fr <- url_fr
-  url_en <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4en,sep='')
-  urls_list_en <- url_en
+  urls_list_fr <- list()
+  urls_list_en <- list()
+
+  for (h in 1:length(latest_handsards)) {
+    hansard_num <- stringr::str_pad(trimws(strsplit(latest_handsards[h]$Publication$Title, "-")[[1]][2]), 3, side = "left", pad = "0")
+
+    session_num <- latest_handsards[h]$Publication$Session
+    parliam_num <- latest_handsards[h]$Publication$Parliament
+
+    url_fr <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4fr,sep='')
+    urls_list_fr <- c(urls_list_fr, url_fr)
+    url_en <- paste(base_url, hansard_url1,"/",parliam_num,session_num,hansard_url2,"/",hansard_num,hansard_url3,hansard_num,hansard_url4en,sep='')
+    urls_list_en <- c(urls_list_en, url_en)
+  } 
+
 }
 
 if (scraping_method == "SessionRange") {
@@ -182,59 +238,61 @@ if (scraping_method == "SessionRange") {
 for (i_url in 1:length(urls_list_fr)) {
   if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   current_url_fr <- urls_list_fr[[i_url]]
-  current_id <- stringr::str_replace_all(urls_list_fr[i_url], "[[:punct:]]", "")
+  #event_id <- stringr::str_replace_all(urls_list_fr[i_url], "[[:punct:]]", "")
+  event_id <- paste(stringr::str_match(urls_list_fr[i_url], "\\/(\\d+)?\\/[a-zA-Z]+\\/(\\d+)?\\/(.*)?-[E|F]\\.XML$")[2:4], collapse="")
+  
 
-  clessnverse::logit(scriptname, paste("Debate", i_url, "of", length(urls_list_fr),sep = " "), logger)
-  cat("\nDebat", i_url, "de", length(urls_list_fr),"\n")
+  clessnverse::logit(scriptname, paste("Debate", i_url, "of", length(urls_list_fr), event_id, sep = " "), logger)
+  clessnverse::logit(scriptname, current_url_fr, logger)
 
+  event_check <- NULL
+  tryCatch(
+    {event_check <- clessnhub::get_item('agoraplus_interventions', paste(event_id, "-1", sep=""))},
+    error = function(e) {event_check <- NULL}, 
+    finally = {}
+  )
 
-  ###
-  # If the data is not cache we get the raw html from assnat.qc.ca
-  # if it is cached (we scarped it before), we prefer not to bombard
-  # the website with HTTP_GET requests and ise the cached version
-  ###
-  if ( !(current_id %in% dfCache$eventID) ) {
-    # Read and parse HTML from the URL directly
-    #doc_html_fr <- getURL(current_url_fr)
-    r_fr <- NULL
-    r_en <- NULL
+  if (!is.null(event_check) && stringr::str_detect(event_check$key, event_id) ||
+      TRUE %in% stringr::str_detect(dfInterventions$key, event_id)) {
+      clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list_fr), "event_id=", event_id, "ALREADY EXISTS.  Skipping...", sep = " "), logger)
+      next
+  }
+
+  # Read and parse HTML from the URL directly
+  #doc_html_fr <- getURL(current_url_fr)
+  r_fr <- NULL
+  r_en <- NULL
+
+  i_get_attempt <- 1
+  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+
+  if (r_fr$result$status_code == 200) {
+    current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
-    while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+    while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
 
-    if (r_fr$result$status_code == 200) {
-      current_url_en <- urls_list_en[[i_url]]
-
-      i_get_attempt <- 1
-      while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
-
-      if (r_en$result$status_code == 200) {
-        doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
-        doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
-        top_xml_en <- XML::xmlRoot(doc_xml_en)
-        title_xml_en <- top_xml_en[["DocumentTitle"]]
-        header_xml_en <- top_xml_en[["ExtractedInformation"]]
-        hansard_body_xml_en <- top_xml_en[["HansardBody"]]
-      }
-      doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
-      doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
-      top_xml_fr <- XML::xmlRoot(doc_xml_fr)
-      title_xml_fr <- top_xml_fr[["DocumentTitle"]]
-      header_xml_fr <- top_xml_fr[["ExtractedInformation"]]
-      hansard_body_xml_fr <- top_xml_fr[["HansardBody"]]
-      cached_html <- FALSE
+    if (r_en$result$status_code == 200) {
+      doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
+      doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
+      top_xml_en <- XML::xmlRoot(doc_xml_en)
+      title_xml_en <- top_xml_en[["DocumentTitle"]]
+      header_xml_en <- top_xml_en[["ExtractedInformation"]]
+      hansard_body_xml_en <- top_xml_en[["HansardBody"]]
     } else {
-      next
+      clessnverse::logit(scriptname, paste("Could not GET", current_url_en, "error code", r_fr$result$status_code, sep = " "), logger)
+      next  
     }
-  } else{ 
-    # Retrieve the XML structure from dfCache and Parse
-    doc_html_fr <- dfCache$eventHtml[which(dfCache$eventID==current_id)]
-    doc_xml_fr <- xmlParse(doc_html_fr, useInternalNodes = TRUE)
-    top_xml_fr <- xmlRoot(doc_xml_fr)
+    doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
+    doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
+    top_xml_fr <- XML::xmlRoot(doc_xml_fr)
     title_xml_fr <- top_xml_fr[["DocumentTitle"]]
     header_xml_fr <- top_xml_fr[["ExtractedInformation"]]
     hansard_body_xml_fr <- top_xml_fr[["HansardBody"]]
-    cached_html <- TRUE
+    cached_html <- FALSE
+  } else {
+    clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, "error code", r_fr$result$status_code, sep = " "), logger)
+    next
   }
 
   # Get the length of all branches of the XML document
@@ -253,13 +311,18 @@ for (i_url in 1:length(urls_list_fr)) {
     if (header_child_node_attr == "MetaCreationTime") event_date_time <- XML::xmlValue(header_xml_fr[[i_header_child_node]])
   }
 
-  ###############################
-  # Columns of the simple dataset
+  #####################################
+  # Columns common to all interventions
   event_source_type <- event_source_type
   event_url <- current_url_fr
   event_date <- substr(event_date_time,1,10)
   event_start_time <- substr(event_date_time,12,19)
-  event_end_time <- NA
+
+  event_end_time <- str_match(XML::xmlValue(hansard_body_xml_fr[[hansard_body_xml_fr_length]]), "\\(La séance est levée à\\s(.*)?\\.\\)$")[2]
+  event_end_time <- gsub("\u00a0", " ", event_end_time)
+  event_end_time <- gsub(" h ", ":", event_end_time)
+  if (length(event_end_time) < 8 ) event_end_time <- paste(event_end_time, ":00", sep = "")
+
   event_title <- paste( "parliament number",event_parliam_number,"| session",event_session_number,sep=' ')
   event_subtitle <- paste(event_volume_number,"| Hansard number",event_hansard_number,sep=' ')
   event_word_count <- NA
@@ -269,8 +332,8 @@ for (i_url in 1:length(urls_list_fr)) {
   event_translated_content <- NA
 
 
-  ####################################
-  # The colums of the detailed dataset
+  ##########################################
+  # The colums specific to each intervention
   oob_id <- NA
   oob_rubric <- NA
   oob_title <- NA
@@ -497,6 +560,7 @@ for (i_url in 1:length(urls_list_fr)) {
                                                speaker_type == "93" ~ "Vice-président(e) adjoint(e)",
                                                speaker_type == "92" ~ "Vice-président(e) adjoint(e)",
                                                speaker_type == "22" ~ "Vice-président(e)",
+                                               speaker_type == "12" ~ "Whip en chef du gouvernement",
                                                speaker_type == "60056" ~ "Leader adjoint(e) du gouvernement à la Chambre des communes",
                                                TRUE ~ speaker_type) 
             } else {
@@ -761,69 +825,62 @@ for (i_url in 1:length(urls_list_fr)) {
 
             sob_procedural_text <- trimws(sob_procedural_text, "both")
 
-
             # commit to dfDeep and the Hub
-            dfInterventionRow = data.frame(
-              uuid = "",
-              created = "",
-              modified = "",
-              metadata = "",
-              eventID = current_id,
-              eventDate = as.character(event_date),
-              objectOfBusinessId = oob_id,
-              objectOfBusinessRubric = oob_rubric,
-              objectOfBusinessTitle = oob_title,
-              objectOfBusinessSeqNum = oob_seqnum,
-              subjectOfBusinessId = sob_id,
-              subjectOfBusinessTitle = sob_title,
-              subjectOBusinessHeader = sob_header,
-              subjectOBusinessSeqNum = sob_seqnum,
-              subjectOBusinessProceduralText = sob_procedural_text,
-              subjectOBusinessDocId = sob_doc_id,
-              subjectOBusinessDocTitle = sob_doc_title,
-              interventionSeqNum = intervention_seqnum,
-              speakerFirstName = speaker_first_name,
-              speakerLastName = speaker_last_name,
-              speakerFullName = speaker_full_name,
-              speakerGender = speaker_gender,
-              speakerId = speaker_id,
-              speakerIsMinister = speaker_is_minister,
-              speakerType = speaker_type,
-              speakerParty = speaker_party,
-              speakerDistrict = speaker_district,
-              speakerMedia = speaker_media,
-              interventionID = intervention_id,
-              interventionDocId = intervention_doc_id,
-              interventionDocTitle = intervention_doc_title,
-              interventionType = intervention_type,
-              interventionLang = intervention_lang,
-              interventionWordCount = intervention_word_count,
-              interventionSentenceCount = intervention_sentence_count,
-              interventionParagraphCount = intervention_paragraph_count,
-              interventionText = intervention_text,
-              interventionTextFR = intervention_text_fr,
-              interventionTextEN = intervention_text_en
-            )
-
-            dfDeep <- clessnverse::commitDeepRows(dfSource = dfInterventionRow, 
-                                                  dfDestination = dfDeep,
-                                                  hubTableName = 'agoraplus-eu_warehouse_intervention_items', 
-                                                  modeLocalData = opt$deep_mode, 
-                                                  modeHub = opt$hub_mode)
-
-            event_content <- paste(event_content, 
-                                   case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text_fr, "\n\n", sep=""),
-                                             TRUE ~ paste(speaker_full_name, 
-                                                          " (", 
-                                                          speaker_party,
-                                                          "). – ", intervention_text_fr, "\n\n", sep = "")), sep = "")
-
-            event_translated_content <- paste(event_translated_content, 
-                                   case_when(speaker_full_name == current_speaker_full_name ~ paste(intervention_text_en, "\n\n", sep=""),
-                                             TRUE ~ paste(speaker_full_name, 
-                                                          " (", 
-                                                          speaker_party,
-                                                          "). – ", intervention_text_en, "\n\n", sep = "")), sep = "")
+            v2_row_to_commit <- data.frame(eventID = event_id,
+                                          eventDate = event_date,
+                                          eventStartTime = event_start_time,
+                                          eventEndTime = event_end_time,
+                                          eventTitle = event_title,
+                                          eventSubTitle = event_subtitle,
+                                          interventionSeqNum = intervention_seqnum,
+                                          objectOfBusinessID = oob_id,
+                                          objectOfBusinessRubric = oob_rubric,
+                                          objectOfBusinessTitle = oob_title,
+                                          objectOfBusinessSeqNum = oob_seqnum,
+                                          subjectOfBusinessID = sob_id,
+                                          subjectOfBusinessTitle = sob_id,
+                                          subjectOfBusinessHeader = sob_header,
+                                          subjectOfBusinessSeqNum = sob_seqnum,
+                                          subjectOfBusinessProceduralText = sob_procedural_text,
+                                          subjectOfBusinessTabledDocID = NA,
+                                          subjectOfBusinessTabledDocTitle = NA,
+                                          subjectOfBusinessAdoptedDocID = NA,
+                                          subjectOfBusinessAdoptedDocTitle = NA,
+                                          speakerID = speaker_id,
+                                          speakerFirstName = speaker_first_name,
+                                          speakerLastName = speaker_last_name,
+                                          speakerFullName = speaker_full_name,
+                                          speakerGender = speaker_gender,
+                                          speakerType = speaker_type,
+                                          speakerCountry = "CA",
+                                          speakerIsMinister = speaker_is_minister,
+                                          speakerParty = speaker_party,
+                                          speakerPolGroup = NA,
+                                          speakerDistrict = speaker_district,
+                                          speakerMedia = speaker_media,
+                                          interventionID = intervention_id,
+                                          interventionDocID = intervention_doc_id,
+                                          interventionDocTitle = intervention_doc_title,
+                                          interventionType = intervention_type,
+                                          interventionLang = intervention_lang,
+                                          interventionWordCount = intervention_word_count,
+                                          interventionSentenceCount = intervention_sentence_count,
+                                          interventionParagraphCount = intervention_paragraph_count,
+                                          interventionText = intervention_text,
+                                          interventionTextFR = intervention_text_fr,
+                                          interventionTextEN = intervention_text_en,
+                                          stringsAsFactors = FALSE)
+            
+            v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+            
+            v2_metadata_to_commit <- list("url"=event_url, "format"="xml", "location"="CA", "institution"="House of Commons of Canada",
+                                          "parliament_number"=event_parliam_number, "parliament_session"=event_session_number)
+            
+            dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
+                                                                        type = "parliament_debate", schema = "v2",
+                                                                        metadata = v2_metadata_to_commit,
+                                                                        data = v2_row_to_commit,
+                                                                        opt$dataframe_mode, opt$hub_mode)
 
             current_speaker_full_name <- speaker_full_name
 
@@ -839,39 +896,10 @@ for (i_url in 1:length(urls_list_fr)) {
 
   } #for (i_oob in names(hansard_body_xml_fr))
 
-  event_word_count <- sum(dfDeep$interventionWordCount[which(dfDeep$eventID == current_id)])
-  event_sentence_count <- sum(dfDeep$interventionSentenceCount[which(dfDeep$eventID == current_id)])
-  event_paragraph_count <- sum(dfDeep$interventionParagraphCount[which(dfDeep$eventID == current_id)])
-
-  dfEventRow <- data.frame(uuid = "",
-                           created = "",
-                           modified = "",
-                           metadata = "",
-                           eventID = current_id,
-                           eventSourceType = event_source_type,
-                           eventURL = current_url_fr,
-                           eventDate = as.character(event_date),
-                           eventStartTime = as.character(event_start_time),
-                           eventEndTime = as.character(event_end_time),
-                           eventTitle = event_title,
-                           eventSubtitle = event_subtitle,
-                           eventWordCount = event_word_count,
-                           eventSentenceCount = event_sentence_count,
-                           eventParagraphCount = event_paragraph_count,
-                           eventContent = event_content,
-                           eventTranslatedContent = event_translated_content)
-
-  dfSimple <- clessnverse::commitSimpleRows(dfSource = dfEventRow,
-                                            dfDestination = dfSimple,
-                                            hubTableName = 'agoraplus-eu_warehouse_event_items',
-                                            modeLocalData = opt$simple_mode,
-                                            modeHub = opt$hub_mode)
-
-  dfCache <- clessnverse::commitCacheRows(dfSource = data.frame(eventID = current_id, eventHtml = toString(doc_html_fr), stringsAsFactors = F),
-                                          dfDestination = dfCache,
-                                          hubTableName = 'agoraplus-eu_warehouse_cache_items', 
-                                          modeLocalData = opt$cache_mode,
-                                          modeHub = opt$hub_mode)
+  clessnverse::logit(scriptname, 
+                     paste("Commited", intervention_seqnum, "interventions to the hub for debate", event_id, "at URL", current_url_fr, sep = " "), 
+                     logger)
+                     
 } #for (i_url in 1:length(urls_list))
 
 
