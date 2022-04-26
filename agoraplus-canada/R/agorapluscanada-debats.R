@@ -591,8 +591,8 @@ for (i_url in 1:length(urls_list_fr)) {
               name_matches <- ""
               name_matches[1] <- ""
               name_matches[2] <- "M."
-              speaker_full_name = "Bruce Stanton"
-              speaker_first_name = "Bruce"
+              speaker_full_name = ""
+              speaker_first_name = ""
               speaker_last_name = "Stanton"
             }
 
