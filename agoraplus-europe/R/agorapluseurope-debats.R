@@ -211,6 +211,8 @@ if (scraping_method == "DateRange") {
 
 clessnverse::logit(scriptname = scriptname, message = paste("list of urls containing", length(urls_list), "debates"), logger = logger)
 
+
+if (length(urls_list) == 0) stop("Exiting normally because no new debate has been found")
 # Hack here to use another data source
 #urls_list <- urls_list[1:8]
 #urls_list[9] <- "https://www.europarl.europa.eu/doceo/document/CRE-9-2020-02-10_FR.xml" 
