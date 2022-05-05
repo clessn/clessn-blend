@@ -253,7 +253,7 @@ for (i_url in 1:length(urls_list_fr)) {
 
   if (!is.null(event_check) && stringr::str_detect(event_check$key, event_id) ||
       TRUE %in% stringr::str_detect(dfInterventions$key, event_id)) {
-      clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list_fr), "event_id=", event_id, "ALREADY EXISTS.  Skipping...", sep = " "), logger)
+      clessnverse::logit(scriptname, paste("Debate", i_url, "of", length(urls_list_fr), "event_id=", event_id, "ALREADY EXISTS.  Skipping...", sep = " "), logger)
       next
   }
 
