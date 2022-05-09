@@ -42,16 +42,30 @@ class Pipeline:
             stderr=subprocess.PIPE,
         )
 
-    def get_stdout(self):
-        if self.process is not None:
-            self.stdout += self.process.stdout.readlines()
-            return self.stdout
-        return None
-
     def get_stderr(self):
         if self.process is not None:
-            self.stderr += self.process.stderr.readlines()
+            errs = self.process.stderr.readlines()
+            clean_errs = []
+            for err in errs:
+                if isinstance(err, bytes):
+                    clean_errs.append(err.decode("utf-8"))
+                else:
+                    clean_errs.append(err)
+            self.stderr += clean_errs
             return self.stderr
+        return None
+
+    def get_stdout(self):
+        if self.process is not None:
+            outs = self.process.stdout.readlines()
+            clean_outs = []
+            for out in outs:
+                if isinstance(out, bytes):
+                    clean_outs.append(out.decode("utf-8"))
+                else:
+                    clean_outs.append(out)
+            self.stdout += clean_outs
+            return self.stdout
         return None
 
     def get_return_code(self):

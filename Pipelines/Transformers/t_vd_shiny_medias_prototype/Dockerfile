@@ -4,6 +4,9 @@ FROM r-base:4.1.3
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    libgit2-dev \
     python3 \
     python3-pip \
     python3-setuptools \
@@ -22,17 +25,21 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-dev;
 
 # setup renv
-RUN Rscript -e 'install.packages("renv")'
-
 COPY renv.lock .
+RUN Rscript -e 'install.packages("renv")'
 RUN Rscript -e 'renv::restore()'
+RUN mv /usr/local/lib/R/site-library/* /usr/lib/R/library/
+<<<<<<< HEAD
 # copy content
 COPY . .
+=======
+>>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
 
+# copy all data and switch user
+COPY . .
 RUN chmod -R 775 .
 RUN chown -R 1000:root .
 USER 1000
 
 # run server
 CMD ["python3", "./pipeline/server.py"]
-#CMD ["Rscript", "main.R"]

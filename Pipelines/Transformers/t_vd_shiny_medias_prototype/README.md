@@ -89,6 +89,7 @@ On utilise ici le package `renv`, qui permet d'installer localement les packages
   * Si vous trouvez vos packages comme dplyr ou autre, c'est que l'environnement ne fonctionne pas, redémarrez RStudio
 * dans la console R, installer les packages nécessaires un après l'autre
 * taper `renv::snapshot()`; renv stockera les packages et les versions que vous avez installé
+* parfois, certains packages ne sont pas appliqués au fichier renv.lock. Validez son contenu et utilisez `renv::record("package")` pour enregistrer les packages qui ne sont pas appliqués.
 * développer votre projet. À chaque fois que vous devez installer un nouveau package ou en retirer un, assurez vous de `renv::snapshot()` pour mettre à jour renv.lock
 * Tester votre projet final en roulant `Rscript main.R`, ce qui roulera votre script en entier (l'équivalent de sourcer). Si votre script fonctionne, on pourra dockeriser et le publier.
 
