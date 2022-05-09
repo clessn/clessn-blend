@@ -29,11 +29,6 @@ COPY renv.lock .
 RUN Rscript -e 'install.packages("renv")'
 RUN Rscript -e 'renv::restore()'
 RUN mv /usr/local/lib/R/site-library/* /usr/lib/R/library/
-<<<<<<< HEAD
-# copy content
-COPY . .
-=======
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
 
 # copy all data and switch user
 COPY . .

@@ -23,13 +23,7 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "e8a22846fff485f0be3770c2da758713",
-<<<<<<< HEAD
       "Requirements": []
-=======
-      "Requirements": [
-        "sys"
-      ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "assertthat": {
       "Package": "assertthat",
@@ -45,13 +39,9 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "23abf173c2b783dcc43379ab9bba00ee",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "glue"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "cpp11": {
       "Package": "cpp11",
@@ -77,24 +67,12 @@
       "Hash": "022c42d49c28e95d69ca60446dbabf88",
       "Requirements": []
     },
-<<<<<<< HEAD
-    "devtools": {
-      "Package": "devtools",
-      "Version": "2.4.3",
-      "Source": "Repository",
-      "Requirements": []
-    },
-=======
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     "dplyr": {
       "Package": "dplyr",
       "Version": "1.0.9",
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "f0bda1627a7f5d3f9a0b5add931596ac",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "R6",
         "generics",
@@ -107,7 +85,6 @@
         "tidyselect",
         "vctrs"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -115,13 +92,9 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "bb0eec2fe32e88d9e2836c2f73ea2077",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "rlang"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "fansi": {
       "Package": "fansi",
@@ -145,13 +118,9 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "07a91f99e56951818ab911366db77700",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "rstudioapi"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "glue": {
       "Package": "glue",
@@ -167,9 +136,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "88d1b310583777edf01ccd1216fb0b2b",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "R6",
         "curl",
@@ -177,7 +143,6 @@
         "mime",
         "openssl"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "hubr": {
       "Package": "hubr",
@@ -190,9 +155,6 @@
       "RemoteRef": "HEAD",
       "RemoteSha": "06dc0bed7c28a69c268e8638bbabf70703038f01",
       "Hash": "04e67fcde17f12a82c871c74cb985323",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "getPass",
         "httr",
@@ -200,7 +162,6 @@
         "openssl",
         "tidyjson"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "jsonlite": {
       "Package": "jsonlite",
@@ -216,14 +177,10 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "a6b6d352e3ed897373ab19d8395c98d0",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "glue",
         "rlang"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "magrittr": {
       "Package": "magrittr",
@@ -247,13 +204,9 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "cf4329aac12c2c44089974559c18e446",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "askpass"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "pillar": {
       "Package": "pillar",
@@ -261,9 +214,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "51dfc97e1b7069e9f7e6f83f3589c22e",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "cli",
         "crayon",
@@ -275,7 +225,6 @@
         "utf8",
         "vctrs"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "pkgconfig": {
       "Package": "pkgconfig",
@@ -291,20 +240,10 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "97def703420c8ab10d8f0e6c72101e02",
-<<<<<<< HEAD
-      "Requirements": []
-    },
-    "readr": {
-      "Package": "readr",
-      "Version": "2.1.2",
-      "Source": "Repository",
-      "Requirements": []
-=======
       "Requirements": [
         "magrittr",
         "rlang"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "renv": {
       "Package": "renv",
@@ -330,15 +269,6 @@
       "Hash": "06c85365a03fdaf699966cc1d3cf53ea",
       "Requirements": []
     },
-<<<<<<< HEAD
-    "stringr": {
-      "Package": "stringr",
-      "Version": "1.4.0",
-      "Source": "Repository",
-      "Requirements": []
-    },
-=======
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     "sys": {
       "Package": "sys",
       "Version": "3.4",
@@ -353,9 +283,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "08415af406e3dd75049afef9552e7355",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "ellipsis",
         "fansi",
@@ -366,7 +293,6 @@
         "rlang",
         "vctrs"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "tidyjson": {
       "Package": "tidyjson",
@@ -374,9 +300,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "fd8fdbc816adcbcdc77fca6fa40d2d0e",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "assertthat",
         "dplyr",
@@ -387,7 +310,6 @@
         "tibble",
         "tidyr"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "tidyr": {
       "Package": "tidyr",
@@ -395,9 +317,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "d8b95b7fee945d7da6888cf7eb71a49c",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "cpp11",
         "dplyr",
@@ -411,7 +330,6 @@
         "tidyselect",
         "vctrs"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "tidyselect": {
       "Package": "tidyselect",
@@ -419,9 +337,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "17f6da8cfd7002760a859915ce7eef8f",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "ellipsis",
         "glue",
@@ -429,7 +344,6 @@
         "rlang",
         "vctrs"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     },
     "utf8": {
       "Package": "utf8",
@@ -445,15 +359,11 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "8b54f22e2a58c4f275479c92ce041a57",
-<<<<<<< HEAD
-      "Requirements": []
-=======
       "Requirements": [
         "cli",
         "glue",
         "rlang"
       ]
->>>>>>> 635ed59d4334e73ace7981ef05c15690ce0b276f
     }
   }
 }
