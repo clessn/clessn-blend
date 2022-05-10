@@ -28,7 +28,7 @@ RUN poetry install --no-dev;
 COPY renv.lock .
 RUN Rscript -e 'install.packages("renv")'
 RUN Rscript -e 'renv::restore()'
-RUN mv /usr/local/lib/R/site-library/* /usr/lib/R/library/
+RUN cp -radf /usr/local/lib/R/site-library/* /usr/lib/R/library/ && rm -rf /usr/local/lib/R/site-library
 
 # copy all data and switch user
 COPY . .
