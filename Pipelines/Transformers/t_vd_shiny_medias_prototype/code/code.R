@@ -66,20 +66,15 @@ filter <- clessnhub::create_filter(type="journalist")
 df_journalists <- clessnhub::get_items('persons', filter)
 clessnverse::logit(scriptname=scriptname, message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
 
-# Getting tweets from journalists of jan 2022
+# Getting tweets from journalists of feb 2022
 filter <- clessnhub::create_filter(metadata = list("personType"="journalist"), data=list("creationDate__gte"="2022-02-01", "creationDate__lte"="2022-02-02"))
 df_tweets <- clessnhub::get_items('tweets', filter)
 clessnverse::logit(scriptname=scriptname, message=paste("Tweets dataframe contains", nrow(df_tweets)), logger=logger)
 
-# Getting agoraplus press conf interventions from journalists of jan 2022
-filter <- clessnhub::create_filter(type="journalist")
-df_journalists <- clessnhub::get_items('persons', filter)
-clessnverse::logit(scriptname=scriptname, message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
-
-# Getting radar+ front pages articles from jan 2022 in csv
-filter <- clessnhub::create_filter(type="journalist")
-df_journalists <- clessnhub::get_items('persons', filter)
-clessnverse::logit(scriptname="r_vd_shiny_medias_prototype", message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
+# Getting agoraplus press conf interventions from journalists of feb 2022
+filter <- clessnhub::create_filter(type="press_conference", metadata=list("location"="CA-QC"), data=list("eventDate__gte"="2022-02-01", "eventDate__lte"="2022-02-02"))
+df_interventions <- clessnhub::get_items('agoraplus_interventions', filter)
+clessnverse::logit(scriptname=scriptname, message=paste("Agoraplus press_conference interventions dataframe contains", nrow(df_interventions)), logger=logger)
 
 
 ###############################################################################
@@ -96,7 +91,7 @@ polparties_dictionnary <- read.csv(file_info$file)
 polparties_dictionnary$X <- NULL
 
 # Getting the radar+ csv file from february
-
+hubr::retrieve_lake_item("21c99719-701b-4876-867d-0795b3b1aea3", credentials)
 
 ###############################################################################
 ########################               Main              ######################
