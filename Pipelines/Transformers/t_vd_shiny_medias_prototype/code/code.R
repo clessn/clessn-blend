@@ -18,6 +18,8 @@
 clessnverse::version()
 hubr::check_version()
 
+scriptname <- "r_vd_shiny_medias_prototype"
+
 credentials <- hubr::get_credentials(Sys.getenv("HUB3_URL"), 
                                      Sys.getenv("HUB3_USERNAME"), 
                                      Sys.getenv("HUB3_PASSWD"))
@@ -30,13 +32,14 @@ clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
 dbx_token <- Sys.getenv("DROPBOX_TOKEN")
 
-logger <- clessnverse::loginit(script="scraper", backend=c("console", "file", "hub"), logpath=".")
+logger <- clessnverse::loginit(script=scriptname, backend=c("console", "file", "hub"), logpath=".")
+
+clessnverse::logit(scriptname = scriptname, )
 
 ###############################################################################
 ######################  Get Data Sources from Warehouse  ######################
 ######################              HUB 3.0              ######################
 ###############################################################################
-# admettons que j'ai sélectionné une table et je veux y extraire des données
 my_table <- "clhub_tables_datamart_vd_shiny_medias_prototype"
 hubr::count_table_items(my_table, credentials) # le nombre total d'éléments dans la table
 # les éléments d'une table sont paginés, généralement à coup de 1000. Pour récupérer tous les éléments, on doit demander les données suivantes. On commence par une page, puis on demande une autre, jusqu'à ce que la page soit NULL
@@ -52,25 +55,52 @@ repeat {
 }
 datamart <- tidyjson::spread_all(data) # on convertir maintenant les données en tibble
 
+clessnverse::logit(scriptname=scriptname, message=paste("clhub_tables_datamart_vd_shiny_medias_prototype dataframe contains", nrow(datamart)), logger=logger)
 
 ###############################################################################
 ######################   Get Data Sources from HUB 2.0   ######################
 ###############################################################################
 
+# Getting journalists
 filter <- clessnhub::create_filter(type="journalist")
 df_journalists <- clessnhub::get_items('persons', filter)
+clessnverse::logit(scriptname=scriptname, message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
 
-clessnverse::logit(scriptname="scraper", message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
+# Getting tweets from journalists of jan 2022
+filter <- clessnhub::create_filter(metadata = list("personType"="journalist"), data=list("creationDate__gte"="2022-02-01", "creationDate__lte"="2022-02-02"))
+df_tweets <- clessnhub::get_items('tweets', filter)
+clessnverse::logit(scriptname=scriptname, message=paste("Tweets dataframe contains", nrow(df_tweets)), logger=logger)
+
+# Getting agoraplus press conf interventions from journalists of jan 2022
+filter <- clessnhub::create_filter(type="journalist")
+df_journalists <- clessnhub::get_items('persons', filter)
+clessnverse::logit(scriptname=scriptname, message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
+
+# Getting radar+ front pages articles from jan 2022 in csv
+filter <- clessnhub::create_filter(type="journalist")
+df_journalists <- clessnhub::get_items('persons', filter)
+clessnverse::logit(scriptname="r_vd_shiny_medias_prototype", message=paste("Journalists dataframe contains", nrow(df_journalists)), logger=logger)
 
 
 ###############################################################################
-######################   Get Data Sources from Dropbox   ######################
+#################   Get Data Sources from Files in Hub 3.0   ##################
 ###############################################################################
+# Getting the lexicoder of stakes of the vitrine democratique
+file_info <- hubr::retrieve_file("dictionnaire_LexicoderFR-enjeux", credentials)
+stakes_dictionnary <- read.csv(file_info$file)
+stakes_dictionnary$X <- NULL
+
+# Getting the political parties dictionnary
+file_info <- hubr::retrieve_file("dictionnaire_politiqueCAN", credentials)
+polparties_dictionnary <- read.csv(file_info$file)
+polparties_dictionnary$X <- NULL
+
+# Getting the radar+ csv file from february
+
 
 ###############################################################################
 ########################               Main              ######################
 ###############################################################################
-
 
 # Ajouter un élément dans une table
 hubr::add_table_item(table_name,
