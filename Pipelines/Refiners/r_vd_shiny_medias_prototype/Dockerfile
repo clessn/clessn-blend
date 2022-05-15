@@ -25,6 +25,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-dev;
 
 # setup renv
+COPY marker /dev/null
 COPY renv.lock .
 RUN Rscript -e 'install.packages("renv")'
 RUN Rscript -e 'renv::restore()'
