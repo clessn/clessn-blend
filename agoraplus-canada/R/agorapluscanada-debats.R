@@ -420,6 +420,8 @@ for (i_url in 1:length(urls_list_fr)) {
       }
     }
 
+    if (!is.null(oob_title) && !is.na(oob_title))  oob_title <- stringr::str_to_title(oob_title)
+
 
     oob_sob_list <- names(oob_node)
 
