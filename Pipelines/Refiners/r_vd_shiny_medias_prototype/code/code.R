@@ -29,6 +29,7 @@ compute_nb_sentences <- function(txt_bloc) {
 
 
 
+
 compute_nb_words <- function(txt_bloc) {
     df_words <- tibble::tibble(text = txt_bloc) %>%
                         tidytext::unnest_tokens(sentence, text, token="words",format="text", to_lower = T)
@@ -37,6 +38,7 @@ compute_nb_words <- function(txt_bloc) {
 
     return(nb_words)
 }
+
 
 
 
@@ -65,6 +67,7 @@ compute_relevance_score <- function(txt_bloc, dictionary) {
 
 
 
+
 compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sentiment_dictionary) {    
     # Build one corpus per category and compute sentiment on each corpus
     corpus <- data.frame(doc_id = integer(), category = character(), text = character())
@@ -75,7 +78,7 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
     toks <- quanteda::tokens(df_sentences$sentence)
 
     dfm_corpus <- quanteda::dfm(toks)
-    lookup <- quanteda::dfm_lookup(dfm_corpus, dictionary = dictionary, valuetype = "glob")
+    lookup <- quanteda::dfm_lookup(dfm_corpus, dictionary = category_dictionary, valuetype = "glob")
     df <- quanteda::convert(lookup, to="data.frame") %>% select(-c("doc_id"))
 
     df_sentences <- df_sentences %>% cbind(df)
@@ -88,6 +91,7 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
 
     toks <- quanteda::tokens(df_categories$text)
     toks <- quanteda::tokens(df_categories$text, remove_punct = TRUE)
+    # On n'enlève pas les stopwords parce qu'on veut garder "pas" ou "ne" car connotation négative
     # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("french"))
     # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("spanish"))
     # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("english"))
@@ -123,6 +127,45 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
 
 
 
+
+commit_hub_row <- function(table, key, row, mode = "refresh", credentials) {
+
+    # If the row with the same key exist and mode=refresh then overwrite it with the new data
+    # Otherwise, do nothing (just log a message)
+
+    filter <- list(key__exact = key)
+    item <- hubr::filter_table_items(table, credentials, filter)
+
+    if(is.null(item)) {
+        # l'item n'existe pas déjà dans hublot
+        hubr::add_table_item(table,
+                body = list(
+                    key = key,
+                    timestamp = Sys.time(),
+                    data = as.list(row)
+                ),
+                credentials
+            )
+    } else {
+        # l'item existe déjè dans hublot
+        if (mode == "refresh") {
+            hubr::update_table_item(table, id = item$result[[1]]$id,
+                                    body = list(
+                                        key = key,
+                                        timestamp = as.character(Sys.time()),
+                                        data = jsonlite::toJSON(as.list(row), auto_unbox = T)
+                                    ),
+                                    credentials
+                                   )
+        } else {
+            # DO nothing but log a message saying skipping
+        }
+
+    }
+}
+
+
+
 clessnverse::version()
 hubr::check_version()
 
@@ -147,11 +190,11 @@ clessnverse::logit(scriptname = scriptname, "starting script", logger)
 ######################              HUB 3.0              ######################
 ###############################################################################
 my_table <- "clhub_tables_datamart_vd_shiny_medias_prototype"
-hubr::count_table_items(my_table, credentials) # le nombre total d'éléments dans la table
-# les éléments d'une table sont paginés, généralement à coup de 1000. Pour récupérer tous les éléments, on doit demander les données suivantes. On commence par une page, puis on demande une autre, jusqu'à ce que la page soit NULL
+hubr::count_table_items(my_table, credentials) 
 
-page <- hubr::list_table_items(my_table, credentials) # on récupère la première page et les informations pour les apges suivantes
-data <- list() # on crée une liste vide pour contenir les données
+
+page <- hubr::list_table_items(my_table, credentials) 
+data <- list() 
 repeat {
     data <- c(data, page$results)
     page <- hubr::list_next(page, credentials)
@@ -398,17 +441,10 @@ for (i in 1:nrow(df_interventions)) {
                         nb_words = compute_nb_words(df_interventions$data.interventionText[i]),
                         stringsAsFactors = F
                         )
+
     df <- df %>% rbind(row)
                       
-    # Ajouter un élément dans une table
-    hubr::add_table_item(my_table,
-            body = list(
-                key = df_interventions$key[i],
-                timestamp = Sys.time(),
-                data = as.list(row)
-            ),
-            credentials
-        )
+   commit_hub_row(my_table, df_interventions$key[i], row, "refresh", credentials)
 }
 
 
@@ -478,15 +514,9 @@ for (i in 1:100) {
 
     df <- df %>% rbind(row)
 
-    # Ajouter un élément dans une table
-    hubr::add_table_item(my_table,
-            body = list(
-                key = df_tweets$key[i],
-                timestamp = Sys.time(),
-                data = as.list(row)
-            ),
-            credentials
-        )
+  
+    commit_hub_row(my_table, df_tweets$key[i], row, "refresh", credentials)
+
 }
 
 
@@ -579,15 +609,9 @@ for (i in 1:100){
 
     df <- df %>% rbind(row)
 
-    # Ajouter un élément dans une table
-    hubr::add_table_item(my_table,
-            body = list(
-                key = digest::digest(df_radarplus$liens[i]),
-                timestamp = Sys.time(),
-                data = as.list(row)
-            ),
-            credentials
-        )
+    
+    commit_hub_row(my_table, digest::digest(df_radarplus$liens[i]), row, "refresh", credentials)
+
 }
 
 
