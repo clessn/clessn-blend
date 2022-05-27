@@ -88,9 +88,9 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
 
     toks <- quanteda::tokens(df_categories$text)
     toks <- quanteda::tokens(df_categories$text, remove_punct = TRUE)
-    toks <- quanteda::tokens_remove(toks, quanteda::stopwords("french"))
-    toks <- quanteda::tokens_remove(toks, quanteda::stopwords("spanish"))
-    toks <- quanteda::tokens_remove(toks, quanteda::stopwords("english"))
+    # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("french"))
+    # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("spanish"))
+    # toks <- quanteda::tokens_remove(toks, quanteda::stopwords("english"))
     toks <- quanteda::tokens_replace(
                                 toks, 
                                 quanteda::types(toks), 
