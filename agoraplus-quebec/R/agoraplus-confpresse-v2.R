@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "agoraplus-confpresse-v2.R"
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-#opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "file,console,hub", download_data = FALSE)
+#opt <- list(dataframe_mode = "refresh", hub_mode = "refresh", log_output = "file,console,hub", download_data = TRUE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -232,7 +232,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 # press conference content
 #
 for (i in 1:length(list_urls)) {
-#for (i in 67:67) {
+#for (i in 235:254) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
   #event_url <- list_urls[i]
@@ -613,6 +613,9 @@ for (i in 1:length(list_urls)) {
               
               if ( !is.na(speaker_first_name) ){
                 speaker <- dplyr::filter(dfJournalists, tolower(paste(speaker_first_name, speaker_last_name, sep = " ")) == tolower(data.fullName))
+                if (nrow(speaker) == 0) {
+                  speaker <- dplyr::filter(dfJournalists, tolower(paste(speaker_last_name, speaker_first_name, sep = ", ")) == tolower(data.fullName))
+                }
               }
               else {
                 if (!is.na(speaker_last_name))
