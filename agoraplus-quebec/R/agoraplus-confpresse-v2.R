@@ -142,17 +142,12 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
 if (opt$dataframe_mode %in% c("update","refresh")) {
   dfCache2 <- clessnverse::loadAgoraplusCacheDf(type = "press_conference", schema = "v2",
                                                 location = "CA-QC",
-                                                download_data = opt$download_data,
+                                                download_data = FALSE,
                                                 token = Sys.getenv('HUB_TOKEN'))
   
   if (is.null(dfCache2)) dfCache2 <- clessnverse::createAgoraplusCacheDf(type = "parliament_debate", schema = "v2")
   
-  if (opt$download_data) { 
-    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location", 
-                            "data.eventID", "data.rawContent")]
-  } else {
-    dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
-  }
+  dfCache2 <- dfCache2[,c("key","type","schema","uuid", "metadata.url", "metadata.format", "metadata.location")]
   
 } else {
   clessnverse::logit(scriptname, "Not retreiving cache from hub because hub_mode is rebuild or skip", logger)
@@ -231,8 +226,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 # in it, or from the assnat website and start parsing it o extract the
 # press conference content
 #
-for (i in 1:length(list_urls)) {
-#for (i in 235:254) {
+for (i in 94:length(list_urls)) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
   #event_url <- list_urls[i]
@@ -381,8 +375,8 @@ for (i in 1:length(list_urls)) {
       event_start_time <- strptime(event_start_time, "%Y-%m-%d %H:%M")
       
       # Figure out the end time of the conference
-      if (doc_text[length(doc_text)] != "") event_end_time <- doc_text[length(doc_text)] else event_end_time <- doc_text[length(doc_text)-1]
-      event_end_time <- if (doc_text[length(doc_text)] == "") doc_text[length(doc_text)-1] else doc_text[length(doc_text)]
+      if ( doc_text[length(doc_text)] != "" && !grepl("Cliquez", doc_text[length(doc_text)]) ) event_end_time <- doc_text[length(doc_text)] else event_end_time <- doc_text[length(doc_text)-1]
+      #event_end_time <- if (doc_text[length(doc_text)] == "") doc_text[length(doc_text)-1] else doc_text[length(doc_text)]
       event_end_time <- gsub("\\(",'', event_end_time)
       event_end_time <- gsub("\\)",'', event_end_time)
       event_end_time <- clessnverse::splitWords(event_end_time) 
