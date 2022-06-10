@@ -19,8 +19,7 @@ library(dplyr)
 
 
 # modified method from clessnhub. Force json and ignore some parts
-http_post <- function(path, body, options=NULL, verify=T)
-{
+http_post <- function(path, body, options=NULL, verify=T) {
     token <- hub_config$token
     token_prefix <- hub_config$token_prefix
     response <- httr::POST(url=paste0(hub_config$url, path), body=body, httr::accept_json(), httr::content_type_json(), config=httr::add_headers(Authorization=paste(token_prefix, token)), verify=verify, httr::timeout(30))
@@ -31,8 +30,7 @@ http_post <- function(path, body, options=NULL, verify=T)
 
 
 # function that will extract all data from a specified table based on a hubr type filter and an optional maximum of loops
-extract_data <- function(table_name, hubr_filter=list(), max_pages=-1)
-{
+extract_data <- function(table_name, hubr_filter=list(), max_pages=-1) {
     #hubr_filter <- jsonlite::toJSON(hubr_filter)
     path <- paste("/data/", table_name, "/count/", sep="")
     response <- http_post(path, body=hubr_filter)
@@ -160,7 +158,7 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
                                 stringi::stri_replace_all_regex(quanteda::types(toks), "[lsd]['\\p{Pf}]", ""))
 
 
-    if (length(toks[[1]]) == 0) {
+    if (length(toks) == 0) {
         tokens <- quanteda::tokens("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", remove_punct = TRUE)
     } 
 
@@ -456,10 +454,12 @@ for (i in 1:nrow(df_interventions)) {
         last_name <- trimws(last_name)
 
         person_filter <- clessnhub::create_filter(data=list("firstName" = first_name, "lastName" = last_name))
-        person <- clessnhub::get_items('persons', person_filter) 
+        #person <- clessnhub::get_items('persons', person_filter) 
+        person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
 
 
-        if (is.null(person)) {
+
+        if (nrow(person) == 0) {
             first_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][1]
             last_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][2]
 
@@ -467,16 +467,18 @@ for (i in 1:nrow(df_interventions)) {
             last_name <- trimws(last_name)
 
             person_filter <- clessnhub::create_filter(data=list("firstName" = first_name, "lastName" = last_name))
-            person <- clessnhub::get_items('persons', person_filter) 
+            #person <- clessnhub::get_items('persons', person_filter) 
+            person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
         }
 
-        if (is.null(person)) {
+        if (nrow(person) == 0) {
             person_filter <- clessnhub::create_filter(data=list("fullName" = df_interventions$data.speakerFullName[i]))
-            person <- clessnhub::get_items('persons', person_filter) 
+            #person <- clessnhub::get_items('persons', person_filter) 
+            person <- df_journalists[which(df_journalists$data.fullName == df_interventions$data.speakerFullName[i]),]
         }
     } 
     
-    if (is.null(person)) {
+    if (is.null(person) || nrow(person) == 0) {
         person <- data.frame(key=NA, type="journalist", data.fullName=df_interventions$data.speakerFullName[i], 
                              data.isFemale=df_interventions$data.speakerGender[i], data.currentMedia=df_interventions$data.speakerMedia[i])
     }
@@ -538,8 +540,9 @@ for (i in 1:nrow(df_interventions)) {
                         )
 
     df <- df %>% rbind(row)
-                      
-   commit_hub_row(my_table, df_interventions$key[i], row, "refresh", credentials)
+
+    cat('committing', df_interventions$key[i], '\n')                  
+    commit_hub_row(my_table, df_interventions$key[i], row, "refresh", credentials)
 }
 
 
@@ -548,7 +551,8 @@ for (i in 1:nrow(df_interventions)) {
 for (i in 1:nrow(df_tweets)) {
     person <- NULL
 
-    person <- clessnhub::get_item('persons', df_tweets$data.personKey[i]) 
+    #person <- clessnhub::get_item('persons', df_tweets$data.personKey[i]) 
+    person <- df_journalists[which(df_journalists$key == df_tweets$data.personKey[i]),]
 
     df_stakes_score <- compute_relevance_score(df_tweets$data.text[i], stakes_dictionary)
     df_polparties_score <- compute_relevance_score(df_tweets$data.text[i], polparties_dictionary)
@@ -556,8 +560,8 @@ for (i in 1:nrow(df_tweets)) {
 
     row <- (data.frame(
                     source=df_tweets$type[i], author_id = df_tweets$data.personKey[i], 
-                    author_name = person$data$fullName, author_gender = if (!is.na(person$data$isFemale) && person$data$isFemale == 1) "F" else "M",
-                    author_media = person$data$currentMedia, content = df_tweets$data.text[i], 
+                    author_name = person$data.fullName, author_gender = if (!is.na(person$data.isFemale) && person$data.isFemale == 1) "F" else "M",
+                    author_media = person$data.currentMedia, content = df_tweets$data.text[i], 
                     content_date = df_tweets$data.creationDate[i],
                     LoiCrime_words_count = df_stakes_score$crime,
                     LoiCrime_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "crime"],
@@ -610,7 +614,7 @@ for (i in 1:nrow(df_tweets)) {
 
     df <- df %>% rbind(row)
 
-  
+    cat('committing', df_tweets$key[i], '\n')
     commit_hub_row(my_table, df_tweets$key[i], row, "refresh", credentials)
 
 }
@@ -620,27 +624,38 @@ for (i in 1:nrow(df_tweets)) {
 
 for (i in 1:nrow(df_radarplus)){
 
+    if (is.na(df_radarplus$content[i]) || df_radarplus$content[i] == "") next
+
     person <- NULL
 
     # get the journalist attributes
     if (!is.na(df_radarplus$author[i])) {
+        df_radarplus$author[i] <- gsub(":", "", df_radarplus$author[i])
+        df_radarplus$author[i] <- gsub("Texte", "", df_radarplus$author[i])
+        df_radarplus$author[i] <- trimws(df_radarplus$author[i])
+        
         person_filter <- clessnhub::create_filter(data=list("fullName" = df_radarplus$author[i]))
-        person <- clessnhub::get_items('persons', person_filter) 
+        #person <- clessnhub::get_items('persons', person_filter) 
+        person <- df_journalists[which(df_journalists$data.fullName == df_radarplus$author[i]),]
 
-        if (is.null(person)) {
+        
+
+        if (nrow(person) == 0) {
             first_name <- strsplit(df_radarplus$author[i], " ")[[1]][1]
             last_name <- strsplit(df_radarplus$author[i], " ")[[1]][2]
             person_filter <- clessnhub::create_filter(data=list("firstName" = first_name, "lastName" = last_name))
-            person <- clessnhub::get_items('persons', person_filter) 
+            #person <- clessnhub::get_items('persons', person_filter) 
+            person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
         }
 
-        if (is.null(person)) {
+        if (nrow(person) == 0) {
             person_filter <- clessnhub::create_filter(data=list("twitterName" = df_radarplus$author[i]))
-            person <- clessnhub::get_items('persons', person_filter) 
+            #person <- clessnhub::get_items('persons', person_filter) 
+            person <- df_journalists[which(df_journalists$data.twitterName == df_radarplus$author[i]),]
         }
     } 
     
-    if (is.null(person)) {
+    if (is.null(person) || nrow(person) == 0) {
         person <- data.frame(key=NA, type=NA, data.fullName=NA, data.isFemale=NA, data.currentMedia=df_radarplus$media[i])
     }
 
@@ -706,11 +721,11 @@ for (i in 1:nrow(df_radarplus)){
 
     df <- df %>% rbind(row)
 
-    
+    cat('committing', digest::digest(df_radarplus$liens[i]), '\n')
     commit_hub_row(my_table, digest::digest(df_radarplus$liens[i]), row, "refresh", credentials)
 
 }
-
+ 
 
 
 
