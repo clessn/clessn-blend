@@ -327,22 +327,16 @@ df_interventions <- tidyjson::spread_all(data)
 
 hubr::list_files()
 
-data <- hubr::filter_lake_items(credentials, list(key = "dict_sentiments"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-sentiment_dictionary <- read.csv2(url)
+file_info <- hubr::retrieve_file("dict_sentiments", credentials)
+sentiment_dictionary <- read.csv2(file_info$file)
 dict_list <- list()
 for (i in unique(sentiment_dictionary$categorie)) {
     dict_list[[i]] <- sentiment_dictionary$item[sentiment_dictionary$categorie == i]
 }
 sentiment_dictionary <- quanteda::dictionary(dict_list)
 
-#file_info <- hubr::retrieve_file("dictionnaire_LexicoderFR-enjeux", credentials)
-#stakes_dictionary_fr <- read.csv(file_info$file)
-data <- hubr::filter_lake_items(credentials, list(key = "dict_enjeux_fr"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-stakes_dictionary_fr <- read.csv(url)
+file_info <- hubr::retrieve_file("dict_enjeux_fr", credentials)
+stakes_dictionary_fr <- read.csv(file_info$file)
 stakes_dictionary_fr$X <- NULL
 dict_list <- list()
 for (i in unique(stakes_dictionary_fr$categorie)) {
@@ -351,12 +345,8 @@ for (i in unique(stakes_dictionary_fr$categorie)) {
 stakes_dictionary_fr <- quanteda::dictionary(dict_list)
 
 
-#file_info <- hubr::retrieve_file("dictionnaire_LexicoderEN-enjeux", credentials)
-#stakes_dictionary_en <- read.csv(file_info$file)
-data <- hubr::filter_lake_items(credentials, list(key = "dict_enjeux_en"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-stakes_dictionary_en <- read.csv(url)
+file_info <- hubr::retrieve_file("dict_enjeux_en", credentials)
+stakes_dictionary_en <- read.csv(file_info$file)
 stakes_dictionary_en$X <- NULL
 dict_list <- list()
 for (i in unique(stakes_dictionary_en$categorie)) {
@@ -372,12 +362,8 @@ for (i in names(stakes_dictionary)) {
 
 
 # Getting the political parties dictionary
-#file_info <- hubr::retrieve_file("dictionnaire_politiqueCAN", credentials)
-#polparties_dictionary_can <- read.csv2(file_info$file)
-data <- hubr::filter_lake_items(credentials, list(key = "dict_political_parties_can"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-polparties_dictionary_can <- read.csv2(url)
+file_info <- hubr::retrieve_file("dict_political_parties_can", credentials)
+polparties_dictionary_can <- read.csv2(file_info$file)
 
 polparties_dictionary_can$X <- NULL
 dict_list <- list()
@@ -387,12 +373,8 @@ for (i in unique(polparties_dictionary_can$categorie)) {
 polparties_dictionary_can <- quanteda::dictionary(dict_list)
 
 
-#file_info <- hubr::retrieve_file("dictionnaire_politiqueQC", credentials)
-#polparties_dictionary_qc <- read.csv(file_info$file)
-data <- hubr::filter_lake_items(credentials, list(key = "dict_political_parties_qc"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-polparties_dictionary_qc <- read.csv(url)
+file_info <- hubr::retrieve_file("dict_political_parties_qc", credentials)
+polparties_dictionary_qc <- read.csv(file_info$file)
 
 polparties_dictionary_qc$X <- NULL
 dict_list <- list()
@@ -411,17 +393,13 @@ for (i in names(polparties_dictionary)) {
 
 
 
-data <- hubr::filter_lake_items(credentials, list(key = "dict_covid"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-covid_dictionary <- read.csv(url)
+file_info <- hubr::retrieve_file("dict_covid", credentials)
+covid_dictionary <- read.csv(file_info$file)
 names(covid_dictionary) <- "covid"
 covid_dictionary <- quanteda::dictionary(as.list(covid_dictionary))
 
-data <- hubr::filter_lake_items(credentials, list(key = "dict_ai"))
-df <- tidyjson::spread_all(data$results)
-url <- df$..JSON[[1]]$file
-ai_dictionary <- read.csv2(url)
+file_info <- hubr::retrieve_file("dict_ai", credentials)
+ai_dictionary <- read.csv2(file_info$file)
 ai_dictionary$X <- NULL
 ai_dictionary$X.1 <- NULL
 ai_dictionary$X.2 <- NULL
