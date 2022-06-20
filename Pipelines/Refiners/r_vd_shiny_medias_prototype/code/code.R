@@ -389,7 +389,7 @@ polparties_dictionary_can <- quanteda::dictionary(dict_list)
 
 #file_info <- hubr::retrieve_file("dictionnaire_politiqueQC", credentials)
 #polparties_dictionary_qc <- read.csv(file_info$file)
-data <- hubr::filter_lake_items(credentials, list(key = "dict_political_parties_can"))
+data <- hubr::filter_lake_items(credentials, list(key = "dict_political_parties_qc"))
 df <- tidyjson::spread_all(data$results)
 url <- df$..JSON[[1]]$file
 polparties_dictionary_qc <- read.csv(url)
@@ -408,6 +408,25 @@ polparties_dictionary <- c(polparties_dictionary_qc, polparties_dictionary_can)
 for (i in names(polparties_dictionary)) {
     polparties_dictionary[[i]] <- unique(polparties_dictionary[[i]])
 }
+
+
+
+data <- hubr::filter_lake_items(credentials, list(key = "dict_covid"))
+df <- tidyjson::spread_all(data$results)
+url <- df$..JSON[[1]]$file
+covid_dictionary <- read.csv(url)
+names(covid_dictionary) <- "covid"
+covid_dictionary <- quanteda::dictionary(as.list(covid_dictionary))
+
+data <- hubr::filter_lake_items(credentials, list(key = "dict_ai"))
+df <- tidyjson::spread_all(data$results)
+url <- df$..JSON[[1]]$file
+ai_dictionary <- read.csv2(url)
+ai_dictionary$X <- NULL
+ai_dictionary$X.1 <- NULL
+ai_dictionary$X.2 <- NULL
+ai_dictionary$X.3 <- NULL
+ai_dictionary <- quanteda::dictionary(as.list(ai_dictionary))
 
 
 # Getting the radar+ csv file from february
