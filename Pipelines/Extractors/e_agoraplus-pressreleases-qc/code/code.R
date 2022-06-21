@@ -3,9 +3,10 @@
 ###############################################################################
 #                                                                             #
 #                                                                             #
-#                             agora-plus-canada                               #
+#                        l_agoraplus-pressreleases-qc                         #
 #                                                                             #
-#                                                                             #
+# Script pour extraire les pages html (ou autre format - ex: xml) sur le web  #
+# contenant les communiqués de presse des partis politiques du Québec         #
 #                                                                             #
 ###############################################################################
 
@@ -28,6 +29,7 @@ pq_base_url  <- "https://pq.org/nouvelles"
 
 
 safe_httr_GET <- purrr::safely(httr::GET)
+
 
 
 
@@ -139,52 +141,29 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                     key <- digest::digest(url)
                     path <- "political_party_press_releases"
 
-                    format <- if (grepl("text\\/html", r$result$headers$`content-type`)) "html" else if (grepl("application\\/rss\\+xml", r$result$headers$`content-type`)) "xml" else ""
-            } else {
-                stop("not an xml nor an html document")
-            }
-        }
+                    format <- if (grepl("text\\/html", r$result$headers$`content-type`)) "html" else if (grepl("application\\/rss\\+xml", r$result$headers$`content-type`)) "xml" else if (grepl("application\\/json", r$result$headers$`content-type`)) "json" else ""
 
-                    metadata <- list(
-                        format= format,
-                        content_type= "political_party_press_releases",
-                        hashtag= "elxn-qc2022, vitrine_democratique, polqc",
-                        description= "Communiqués de presse des partis politiques",
-                        party= party_acronym,
-                        prov= "QC",
-                        state= "",
-                        country= "CAN",
-                        storage_class= "lake",
+                    lake_item_metadata <- list(
+                        format = format,
+                        content_type = "political_party_press_release",
+                        hashtags = "elxn-qc2022, vitrine_democratique, polqc",
+                        description = "Communiqués de presse des partis politiques",
+                        political_party = party_acronym,
+                        prov = "QC",
+                        country = "CAN",
+                        storage_class = "lake",
                         url = url
                     )
 
-                    write(html, "file.html")
+                    lake_item_data <- list(key = key, path = path, item = html)
 
-                    # check if an item with this key already exists
-                    data <- hubr::filter_lake_items(credentials, list(key = key))
-                               
-                    if (length(data$results) == 0) {
-                        clessnverse::logit(scriptname, paste("creating new item", key, "in data lake", path), logger)
-                        hublot::add_lake_item(body = list(
-                            key = key,
-                            path = path,
-                            file = httr::upload_file("file.html"),
-                            metadata = jsonlite::toJSON(metadata, auto_unbox = T)
-                        ), credentials)                    
-                    } else {
-                        clessnverse::logit(scriptname, paste("updating existing item", key, "in data lake", path), logger)
 
-                        hublot::remove_lake_item(data$results[[1]]$id, credentials)
-
-                        hublot::add_lake_item(body = list(
-                            key = key,
-                            path = path,
-                            file = httr::upload_file("file.html"),
-                            metadata = jsonlite::toJSON(metadata, auto_unbox = T)
-                        ), credentials)  
-                    }
-                    file.remove("file.html")
-
+                    clessnverse::commit_lake_item(
+                        data = lake_item_data, 
+                        metadata = lake_item_metadata, 
+                        mode = opt$hub_mode, 
+                        credentials = credentials,
+                        logger = logger)
                 } else {
                     clessnverse::logit(scriptname, paste("no press release from", party_acronym, "at", urls_list[[i]]), logger)
                 } #if (!is.null(html)) 
@@ -237,7 +216,12 @@ main <- function(scriptname, logger, credentials) {
   
   for (i in 1:length(urls_list)) {
     clessnverse::logit(scriptname, paste("scraping", urls_list[[i]][1], urls_list[[i]][2]), logger)
-    scrape_party_press_release(urls_list[[i]][1], urls_list[[i]][2], scriptname, logger, credentials)
+    scrape_party_press_release(
+        party_acronym = urls_list[[i]][1],
+        party_url = urls_list[[i]][2],
+        scriptname,
+        logger,
+        credentials)
   }
   
 }
@@ -251,6 +235,13 @@ tryCatch(
     library(dplyr)
     
     if (!exists("scriptname")) scriptname <<- "e_agoraplus-pressreleases-qc"
+
+    opt <<- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+
+    if (!exists("opt")) {
+        opt <<- clessnverse::processCommandLineOptions()
+    }
+
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
     
     # login to hublot
