@@ -3,7 +3,7 @@
 ###############################################################################
 #                                                                             #
 #                                                                             #
-#                        l_agoraplus-pressreleases-qc                         #
+#                        e_agoraplus-pressreleases-qc                         #
 #                                                                             #
 # Script pour extraire les pages html (ou autre format - ex: xml) sur le web  #
 # contenant les communiqués de presse des partis politiques du Québec         #
