@@ -163,3 +163,5 @@ env
 .env
 clessn-blend.code-workspace
 Pipelines/Refiners/r_vd_shiny_medias_prototype/marker
+Pipelines/Loaders/l_agoraplus-pressreleases-qc/output.json
+Pipelines/Extractors/e_agoraplus-pressreleases-qc/output.json
