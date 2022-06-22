@@ -149,7 +149,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                         hashtags = "elxn-qc2022, vitrine_democratique, polqc",
                         description = "Communiqués de presse des partis politiques",
                         political_party = party_acronym,
-                        prov = "QC",
+                        province_or_state = "QC",
                         country = "CAN",
                         storage_class = "lake",
                         url = url
