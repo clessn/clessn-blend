@@ -191,43 +191,43 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
 
 
 
-commit_hub_row <- function(table, key, row, mode = "refresh", credentials) {
+# commit_hub_row <- function(table, key, row, mode = "refresh", credentials) {
 
-    # If the row with the same key exist and mode=refresh then overwrite it with the new data
-    # Otherwise, do nothing (just log a message)
+#     # If the row with the same key exist and mode=refresh then overwrite it with the new data
+#     # Otherwise, do nothing (just log a message)
 
-    table <- paste("clhub_tables_datamart_", table, sep="")
+#     table <- paste("clhub_tables_datamart_", table, sep="")
 
-    filter <- list(key__exact = key)
-    item <- hubr::filter_table_items(table, credentials, filter)
+#     filter <- list(key__exact = key)
+#     item <- hubr::filter_table_items(table, credentials, filter)
 
-    if(length(item$results) == 0) {
-        # l'item n'existe pas déjà dans hublot
-        hubr::add_table_item(table,
-                body = list(
-                    key = key,
-                    timestamp = Sys.time(),
-                    data = as.list(row)
-                ),
-                credentials
-            )
-    } else {
-        # l'item existe déjà dans hublot
-        if (mode == "refresh") {
-            hubr::update_table_item(table, id = item$result[[1]]$id,
-                                    body = list(
-                                        key = key,
-                                        timestamp = as.character(Sys.time()),
-                                        data = jsonlite::toJSON(as.list(row), auto_unbox = T)
-                                    ),
-                                    credentials
-                                   )
-        } else {
-            # DO nothing but log a message saying skipping
-        }
+#     if(length(item$results) == 0) {
+#         # l'item n'existe pas déjà dans hublot
+#         hubr::add_table_item(table,
+#                 body = list(
+#                     key = key,
+#                     timestamp = Sys.time(),
+#                     data = as.list(row)
+#                 ),
+#                 credentials
+#             )
+#     } else {
+#         # l'item existe déjà dans hublot
+#         if (mode == "refresh") {
+#             hubr::update_table_item(table, id = item$result[[1]]$id,
+#                                     body = list(
+#                                         key = key,
+#                                         timestamp = as.character(Sys.time()),
+#                                         data = jsonlite::toJSON(as.list(row), auto_unbox = T)
+#                                     ),
+#                                     credentials
+#                                    )
+#         } else {
+#             # DO nothing but log a message saying skipping
+#         }
 
-    }
-}
+#     }
+# }
 
 
 
@@ -255,9 +255,8 @@ clessnverse::logit(scriptname = scriptname, "starting script", logger)
 ######################              HUB 3.0              ######################
 ###############################################################################
 my_table <- "vd_shiny_medias_prototype"
-datamart <- clessnverse::get_datamart_table(my_table, credentials)
-
-clessnverse::logit(scriptname=scriptname, message=paste("clhub_tables_datamart_vd_shiny_medias_prototype dataframe contains", nrow(datamart)), logger=logger)
+datamart <- clessnverse::get_mart_table(my_table, credentials)
+clessnverse::logit(scriptname=scriptname, message=paste("clhub_tables_mart_vd_shiny_medias_prototype dataframe contains", nrow(datamart)), logger=logger)
 
 
 
@@ -561,7 +560,7 @@ for (i in 1:nrow(df_interventions)) {
     df <- df %>% rbind(row)
 
     cat('committing', df_interventions$key[i], '\n')                  
-    commit_hub_row(my_table, df_interventions$key[i], row, "refresh", credentials)
+    clessnverse::commit_mart_row(my_table, df_interventions$key[i], as.list(row), "refresh", credentials)
 }
 
 
@@ -634,7 +633,7 @@ for (i in 1:nrow(df_tweets)) {
     df <- df %>% rbind(row)
 
     cat('committing', df_tweets$key[i], '\n')
-    commit_hub_row(my_table, df_tweets$key[i], row, "refresh", credentials)
+    clessnverse::commit_mart_row(my_table, df_tweets$key[i], as.list(row), "refresh", credentials)
 
 }
 
@@ -741,7 +740,7 @@ for (i in 1:nrow(df_radarplus)){
     df <- df %>% rbind(row)
 
     cat('committing', digest::digest(df_radarplus$liens[i]), '\n')
-    commit_hub_row(my_table, digest::digest(df_radarplus$liens[i]), row, "refresh", credentials)
+    clessnverse::commit_mart_row(my_table, digest::digest(df_radarplus$liens[i]), as.list(row), "refresh", credentials)
 
 }
  

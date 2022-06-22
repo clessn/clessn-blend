@@ -35,8 +35,6 @@ safe_httr_GET <- purrr::safely(httr::GET)
 
 
 
-
-
 extract_urls_list <- function(party_acronym, xml_root, scriptname, logger) {
     urls_list <- list()
 
@@ -107,7 +105,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
         # On extrait les section <a> qui contiennent les liens vers chaque communiqué
         clessnverse::logit(scriptname, paste("successful GET of", party_acronym, "main press release page", party_url), logger)
     
-        index_html <- httr::content(r$result, as="text")
+        index_html <- httr::content(r$result, as="text", encoding = "UTF-8")
     
         if (grepl("text\\/html", r$result$headers$`content-type`)) {
             index_xml <- XML::htmlTreeParse(index_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
@@ -115,7 +113,11 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
             if (grepl("application\\/rss\\+xml", r$result$headers$`content-type`)) {
                 index_xml <- XML::xmlTreeParse(index_html, useInternalNodes = TRUE)
             } else {
-                stop("not an xml nor an html document")
+                if (grepl("application/json", r$result$headers$`content-type`)) {
+                    index_xml <- XML::xmlTreeParse(index_html, useInternalNodes = TRUE)
+                } else {
+                    stop("not an xml nor an html document")
+                }
             }
         }
 
@@ -126,7 +128,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
         press_releases_urls_list <- extract_urls_list(party_acronym, xml_root, scriptname, logger)
 
         # On loop à travers toutes les URL de ls liste des communiqués
-        # On les scrape et stocke sur le hub 2.0
+        # On les scrape et stocke sur le hublot
         for (url in press_releases_urls_list) {
             clessnverse::logit(scriptname, paste("scraping", party_acronym, "press release page", url), logger)
             
@@ -134,7 +136,15 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
             
             if (r$result$status_code == 200) {
                 clessnverse::logit(scriptname, paste ("successful GET on", party_acronym, "press release at URL", url), logger)
-                html <- httr::content(r$result, as="text")
+                html <- httr::content(r$result, as="text", encoding = "utf-8")
+
+                if (r$result$headers$`content-type` == "application/json") {
+                    # Empiricaly found trick to re-encore to utf-8 for real
+                    # Because for a json structure httr::content has a bug for encoding to utf-8
+                    #html <- toString(jsonlite::toJSON(tidyjson::spread_all(html)$..JSON))
+                    html <- toString(jsonlite::toJSON(tidyjson::spread_all(html)$..JSON, auto_unbox = T))
+                    html <- gsub("^\\[|\\]$", "", html)
+                }
 
                 if (!is.null(html)) {
                     # Construit le data pour le hub
@@ -269,4 +279,5 @@ tryCatch(
     rm(logger)
   }
 )
+
 
