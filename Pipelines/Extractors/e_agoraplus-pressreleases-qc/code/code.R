@@ -99,8 +99,8 @@ extract_urls_list <- function(party_acronym, xml_root, scriptname, logger) {
 
 scrape_party_press_release <- function(party_acronym, party_url, scriptname, logger, credentials) {
     clessnverse::logit(scriptname, paste("scraping", party_acronym, "main press release page", party_url), logger)
-    r <- safe_httr_GET(party_url)
-  
+    r <- safe_httr_GET(party_url, httr::config(ssl_verifypeer=0))
+
     if (r$result$status_code == 200) {
         # On extrait les section <a> qui contiennent les liens vers chaque communiqué
         clessnverse::logit(scriptname, paste("successful GET of", party_acronym, "main press release page", party_url), logger)
@@ -132,7 +132,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
         for (url in press_releases_urls_list) {
             clessnverse::logit(scriptname, paste("scraping", party_acronym, "press release page", url), logger)
             
-            r <- safe_httr_GET(url)
+            r <- safe_httr_GET(url, httr::config(ssl_verifypeer=0))
             
             if (r$result$status_code == 200) {
                 clessnverse::logit(scriptname, paste ("successful GET on", party_acronym, "press release at URL", url), logger)

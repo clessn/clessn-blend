@@ -131,7 +131,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
 
 
 parse_press_release <- function(key, party_acronym, lake_file_url) {
-    r <- safe_httr_GET(lake_file_url)
+    r <- safe_httr_GET(lake_file_url, httr::config(ssl_verifypeer=0))
 
     if (r$result$status_code == 200) {
         clessnverse::logit(scriptname, paste("successful GET of", party_acronym, "press release", key), logger)
