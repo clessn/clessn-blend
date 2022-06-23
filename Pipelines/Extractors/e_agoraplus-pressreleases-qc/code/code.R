@@ -264,6 +264,8 @@ tryCatch(
     
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+
+    status <<- 0
     
     main(scriptname, logger, credentials)
   },
@@ -271,9 +273,11 @@ tryCatch(
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
+    status <<- 1
   },
   
   finally={
+    quit(status = status)
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::logclose(logger)
     rm(logger)

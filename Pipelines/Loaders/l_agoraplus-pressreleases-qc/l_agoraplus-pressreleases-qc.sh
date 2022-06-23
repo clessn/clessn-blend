@@ -1,14 +1,14 @@
 #!/bin/sh
 
 
-cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Extractors/e_agoraplus-pressreleases-qc
+cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Loaders/l_agoraplus-pressreleases-qc
 
 if [[ -f "status.json" ]]; then
    result=`cat status.json`
-   echo "$(date) starting e_agoraplus-pressreleases-qc. current job status: " $result
+   echo "$(date) starting l_agoraplus-pressreleases-qc. current job status: " $result
 else
    result='"not running"'
-   echo "$(date) starting e_agoraplus-pressreleases-qc. current job status: " $result
+   echo "$(date) starting l_agoraplus-pressreleases-qc. current job status: " $result
 fi
 
 
@@ -28,7 +28,7 @@ done
 dock=`docker container ls -f name=pipeline -aq`
 if [[ $dock = "" ]]; then
    echo "$(date) starting container"
-   sudo -u patrick /usr/local/bin/docker-compose up -d pipeline 
+   sudo -u patrick /usr/local/bin/docker-compose up -d pipeline
 else
    echo "$(date) waiting for another pipeline container to terminate..."
    while [[ $dock != ""  ]]
@@ -37,7 +37,6 @@ else
       dock=`docker container ls -f name=pipeline -aq`
       echo "$(date) waiting for another pipeline container to terminate..."
    done
-   echo "$(date) starting container"
    sudo -u patrick /usr/local/bin/docker-compose up -d pipeline
 fi
 
@@ -71,9 +70,9 @@ jq .return_code output.json | sed 's/\\n/'""'/g' > return_code.json
 echo "$(date) job return_code $(cat return_code.json)"
 echo "$(date) job log stdout $(cat stdout.json)"
 echo "$(date) job log stderr $(cat stderr.json)"
-cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/l_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
 
-docker stop e_agoraplus-pressreleases-qc-pipeline-1 
+docker stop l_agoraplus-pressreleases-qc-pipeline-1 
 sudo -u patrick /usr/local/bin/docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
 
 rm stdout.json

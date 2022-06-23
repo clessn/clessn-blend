@@ -192,7 +192,7 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
 main <- function() {
     parties_list <- list("CAQ", "PLQ", "QS", "PCQ", "PQ")
     
-    clessnverse::logit(scriptname, paste("Getting the following political parties press releases from the datalake", paste(parties_list, collapse = '\n'), sep="\n"), logger)
+    clessnverse::logit(scriptname, paste("Getting the following political parties press releases from the datalake", paste(parties_list, collapse = ', '), sep="\n"), logger)
 
     warehouse_items_list <- clessnverse::get_warehouse_table(warehouse_table, credentials, nbrows = 0) 
     lakes_items_list <- get_lake_press_releases(parties_list)
