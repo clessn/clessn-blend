@@ -77,6 +77,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         body <- XML::xmlRoot(body, skip = TRUE, addFinalizer = TRUE)
         body <- XML::xmlValue(body)
         date <- as.Date(as.numeric(xml_root$date/86400), origin = "1970-01-01")
+        date <- trimws(date)
     }
 
     if (party_acronym == "PLQ") {
@@ -100,6 +101,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         date <- XML::getNodeSet(xml_root, ".//div[@class='byline text-muted small']")[[1]]
         date <- trimws(XML::xmlValue(date))
         date <- stringr::str_extract(date, "\\d\\d\\-\\d\\d\\-\\d\\d\\d\\d")
+        date <- trimws(date)
     }
 
     if (party_acronym == "PQ") {
