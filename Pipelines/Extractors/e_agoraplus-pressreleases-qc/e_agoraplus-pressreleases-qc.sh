@@ -71,7 +71,17 @@ jq .return_code output.json | sed 's/\\n/'""'/g' > return_code.json
 echo "$(date) job return_code $(cat return_code.json)"
 echo "$(date) job log stdout $(cat stdout.json)"
 echo "$(date) job log stderr $(cat stderr.json)"
-cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+
+ret=`cat return_code.json`
+
+if [[ $ret = '1' ]]; then
+   echo "$(date) job terminated with an error.  Error log generated in /Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+fi
+
+if [[ $ret = '0' ]]; then
+   echo "$(date) job terminated successfully"
+fi
 
 docker stop e_agoraplus-pressreleases-qc-pipeline-1 
 sudo -u patrick /usr/local/bin/docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
