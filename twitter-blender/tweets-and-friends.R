@@ -416,8 +416,17 @@ main <- function(opt, scriptname, logger) {
   clessnverse::logit(scriptname, "getting political_staff persons", logger)
   filter <- clessnhub::create_filter(type="political_staff")
   dfPoliticalStaff <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
-  
-  dfPersons <- dfMPs %>% bind_rows(dfCandidates) %>% bind_rows(dfJournalists) %>% bind_rows(dfMedias) %>% bind_rows(dfPublicService) %>% bind_rows(dfPoliticalStaff) %>%  
+
+  clessnverse::logit(scriptname, "getting partners", logger)
+  filter <- clessnhub::create_filter(type="partner")
+  dfPartners <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
+
+  dfPersons <- dfMPs %>% bind_rows(dfCandidates) %>% 
+                         bind_rows(dfJournalists) %>% 
+                         bind_rows(dfMedias) %>% 
+                         bind_rows(dfPublicService) %>% 
+                         bind_rows(dfPoliticalStaff) %>%  
+                         bind_rows(dfPartners) %>%  
     filter(!is.na(data.twitterHandle)) %>%
     bind_rows(dfParties) %>%
     dplyr::select(key, type, data.fullName, data.twitterHandle, data.twitterHandleFR, data.twitterHandleEN)
@@ -430,6 +439,7 @@ main <- function(opt, scriptname, logger) {
   medias_index <- which(dfPersons$key %in% dfMedias$key)
   parties_index <- which(dfPersons$key %in% dfParties$key)
   political_staff_index <- which(dfPersons$key %in% dfPoliticalStaff$key)
+  partners_index <- which(dfPersons$key %in% dfPartners$key)
   
   leaders_index <-  which(dfPersons$key == "72773" | dfPersons$key == "58733" | dfPersons$key == "71588" |
                             dfPersons$key == "00eefdd89b55ced5b61f7b82297e5787" | dfPersons$key == "bea0eb58fd0768bc91c0a8cb6ac52cd9" |
@@ -452,6 +462,7 @@ main <- function(opt, scriptname, logger) {
            if (opt$population == "journalists") journalists_index else
            if (opt$population == "parties") parties_index else
            if (opt$population == "politicalstaff") political_staff_index else
+           if (opt$population == "partners") partners_index else
            if (opt$population == "small_sample") sample_index
   
   clessnverse::logit(scriptname, paste("start looping through",length(index),"persons"), logger)
@@ -503,7 +514,7 @@ tryCatch(
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(opt, collapse = " ")), logger)
     
-    valid_population <- c("all", "medias", "mps", "candidates", "leaders", "politicians", "parties", "journalists", "small_sample", "politicalstaff")
+    valid_population <- c("all", "medias", "mps", "candidates", "leaders", "politicians", "parties", "journalists", "small_sample", "politicalstaff", "partners")
     
     if (!opt$population %in% valid_population) stop (paste("invalid population, possible values are", paste(valid_population, collapse = " | ")))
     
