@@ -29,11 +29,11 @@ for (i in 1:nrow(df_source)) {
     person_metadata_row <- list("source"="csv_file",
                             "twitterAccountHasBeenScraped"="0")
             
-    person_data_row <- list("partner_name"=partner_name,
+    person_data_row <- list("fullName"=partner_name,
                             "role"=role,
-                            "contact_full_name"=contact_full_name,
-                            "twitter_id"=NA_character_,
-                            "twitter_handle"=twitter_handle)
+                            "contactFullName"=contact_full_name,
+                            "twitterID"=NA_character_,
+                            "twitterHandle"=twitter_handle)
 
     tryCatch(
         {
