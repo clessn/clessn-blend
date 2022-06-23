@@ -114,8 +114,19 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         date <- XML::getNodeSet(xml_root, ".//span[@class='date updated']")
         date <- trimws(XML::xmlValue(date))
     }
+    
 
-    if (!is.null(title) && !is.null(data) && !is.null(body)) {
+    if (!is.null(title) && !is.null(date) && !is.null(body)) {
+        # remove non breakable spaces and trimws
+        title <- gsub("\u00a0", " ", title)
+        body <- gsub("\u00a0", " ", body)
+        date <- gsub("\u00a0", " ", date)
+
+        title <- trimws(title)
+        body <- trimws(body)
+        date <- trimws(date)
+
+        # structure the data for the warehouse
         press_release_structured <- list(title = title,
                                          date = date,
                                          body = body,
