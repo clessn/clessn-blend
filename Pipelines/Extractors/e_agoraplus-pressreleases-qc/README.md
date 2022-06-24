@@ -46,4 +46,6 @@ Containerization requires that you have docker installed on your machine.
 
 You first need to install the package in your R environment with the root directory of the extractor/loader/refiner as the current directory
 
-See the [README.md](https://github.com/clessn/retl/blob/master/README.md) of the retl repo for more details.`
+`this section needs more work here`
+
+See the [README.md](https://github.com/clessn/retl/blob/master/README.md) of the retl repo for more details.
