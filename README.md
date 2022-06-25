@@ -15,3 +15,6 @@ The data lake contains items in their raw format.  The datawarehouse and datamar
 To conduct their research or data visualization projects, researchers will consume data only from the datamarts they produce.  They produce datamarts by writing refiners that feed from the data warehouse.
 
 Researchers will eventually be able to make some datamarts public in order to be shared them with the community.
+
+Here a view of [the CLESSN data platform](https://github.com/clessn/clessn-blend/blob/main/Doc/DataPlatformCLESSN.drawio.png)
+
