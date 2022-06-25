@@ -1,9 +1,9 @@
-# ´_agoraplus_pressreleases_qc
+# l_agoraplus_pressreleases_qc
 
 ## Purpose
-This loader is used to retrieve the press releases from the Quebec political parties that have been stored in the data lake and transform them into a data warehouse table.  
+This loader is used to retrieve the press releases from the Quebec political parties that have been stored in the data lake and transform them into a data warehouse table.  The data lake items have been harvested by [e_agoraplus_pressreleases_qc](https://github.com/clessn/clessn-blend/blob/main/Pipelines/Extractors/e_agoraplus-pressreleases-qc)
 
-It is the se one step of a pipeline that wss created in order to collect data for the 2022 provincial elections.  The parties (and their web site urls collected are:
+It is the second step of a pipeline that was created in order to collect data for the 2022 provincial elections.  The parties (and their web site urls) collected are:
 * Coalition Avenir Quebec (CAQ): https://coalitionavenirquebec.org/fr/actualites/
 * Parti Libéral du Québec (PLQ): https://plq.org/fr/communiques-de-presse/
 * Québec Solidaire (QS): https://api-wp.quebecsolidaire.net/feed?post_type=articles&types=communiques-de-presse
