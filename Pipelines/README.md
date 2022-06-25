@@ -1,4 +1,4 @@
-# Pipelines folder in CLESSN-blend
+# The Pipelines folder in clessn-blend
 
 This folder contains the code of the data pipelines extractors, loader and refiners.
 
