@@ -8,4 +8,8 @@ The current methodology consists in data pipelines made out of data extractors, 
 * from the data lake or file blob to the data warehouse 
 * from the data warehouse to datamarts 
 
+We say that the data lake contains items.  The datawarehouse and datamarts contain only tabular database tables.
+
 To conduct their research or data visualization projects, researchers will consume data only from the datamarts they produce.  They produce datamarts by writing refiners that feed from the data warehouse.
+
+Researchers will eventually be able to make some datamarts public in order to be shared them with the community.
