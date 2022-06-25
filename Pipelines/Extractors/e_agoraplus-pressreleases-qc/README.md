@@ -28,7 +28,7 @@ The metada on the collected items is as follows
 }
 ```
 ## Development methodology
-Simply edit code/code.R in RStudio and test your code as usual.  **Do not install package or load libraries** (except for dplyr for %>%) from within your code.  The package installation is 
+Simply edit code/code.R in RStudio and test your code as usual.  **Do not install package or load libraries** (except for dplyr for %>%) from within your code.  The package installation is made manually and remembered busing renv (see below).
 
 Always call a fonction from a package by prefixing it with ```packagename::```
 
