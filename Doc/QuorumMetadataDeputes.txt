@@ -1,4 +1,0 @@
-Columns: 5$ nom			<chr> $ femme			<int>
-$ parti			<chr>
-$ circonscription 	<chr>
-$ ministre		<int>
