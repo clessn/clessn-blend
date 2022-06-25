@@ -1,7 +1,6 @@
 # The Pipelines folder in clessn-blend
 
-This folder contains the code of the data pipelines extractors, loader and refiners.  Once all the old scrapers have been converted to this new ETL methodology, it will become the root of this repo.
-
+This folder contains the code of the data pipelines extractors, loader and refiners.  Once all the old scrapers have been converted to this new ETL methodology, this folder will become the root of this repo.
 The current ETL methodology used at the CLESSN consists in data pipelines made out of data extractors, data loaders and data refiners.  Each component moves data from one level of refining to the next: 
 * Extractors move data from its original source to the data lake or file blob and store it in its original form after applying meta data to it.
 * Loaders move data from the data lake or file blob to a data warehouse table.  A data warehouse table contains therefore a tabular representation of the raw data.  A table also has meta data applied to it.
