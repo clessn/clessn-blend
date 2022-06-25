@@ -16,5 +16,6 @@ To conduct their research or data visualization projects, researchers will consu
 
 Researchers will eventually be able to make some datamarts public in order to be shared them with the community.
 
-Here a view of [the CLESSN data platform](https://github.com/clessn/clessn-blend/blob/main/Doc/DataPlatformCLESSN.drawio.png)
+Here a view of the CLESSN data platform
+![Alt text](https://github.com/clessn/clessn-blend/blob/main/Doc/DataPlatformCLESSN.drawio.png)
 
