@@ -1,6 +1,6 @@
 # cless-blend
 
-**As of June 2020, only create/change code in the Pipelines folder of this repo**
+**As of June 2020, only create/change code in the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) of this repo**
 
 This repo contains code used to construct the data ETL pipelines between the various data sources required for the CLESSN and the datamarts providing datasets needed for research or visualization.
 
