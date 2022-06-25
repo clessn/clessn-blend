@@ -13,7 +13,7 @@ The benefits of this ETL methodology are
 * To allow reuse or previously collected data for other purposes without having to rewrite new code to collect it again.
 * To facilitate the creation and maintenance of an accurate inventory of the data and the algorithms that harvest it.
 * To ease the sharing of datasets issued from datamarts, through a data catalog.
-* To prevent having to write multiple R scripts by different people in the CLESSN for the same purposes by facilitating the reuse of data stored in the data warehouse or consuming existing datamarts.
+* To prevent having to write multiple R scripts by different people in the CLESSN for the same purposes, by facilitating the reuse of data stored in the data warehouse or consuming existing datamarts.
 * To accelerate the combination of data of various formats comming from various sources.
 
 The definition of the data lake, data warehouse and datamarts can be found below
