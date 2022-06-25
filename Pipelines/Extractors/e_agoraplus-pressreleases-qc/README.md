@@ -1,7 +1,7 @@
 # e_agoraplus_pressreleases_qc
 
 ## Purpose
-This extractor is used to retrieve the press releases from the Quebec political parties.  It was created in order to collect data for the 2020 provincial elections.  The parties (and their web site urls collected are:
+This extractor is used to retrieve the press releases from the Quebec political parties.  It was created in order to collect data for the 2022 provincial elections.  The parties (and their web site urls collected are:
 * Coalition Avenir Quebec (CAQ): https://coalitionavenirquebec.org/fr/actualites/
 * Parti Libéral du Québec (PLQ): https://plq.org/fr/communiques-de-presse/
 * Québec Solidaire (QS): https://api-wp.quebecsolidaire.net/feed?post_type=articles&types=communiques-de-presse
