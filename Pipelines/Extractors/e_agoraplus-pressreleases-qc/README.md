@@ -30,6 +30,6 @@ The metada on the collected items is as follows
 
 ## Output of the extractor
 
-## Development methodology and contenerization
+## Development methodology and containerization
 This is based on the [retl](https://github.com/clessn/retl) repository.
 See the [README.md](https://github.com/clessn/retl/blob/master/README.md) of the retl repo for more details.
