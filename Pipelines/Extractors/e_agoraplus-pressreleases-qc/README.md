@@ -4,9 +4,7 @@
 This extractor is used to retrieve the press releases from the Quebec political parties.  It was created in order to collect data for the 2022 provincial elections.  
 
 ## Input of the extractor : Data, Path and Meta data
-The data collected is stored in the data lake of the CLESSN in the [political_party_press_releases](https://clhub.clessn.cloud/admin/core/lake/?path=political_party_press_releases) path
-
-The data collected is mostly **html** files except for QS for which **json** files are collect from the RSS feed.
+The data collected comes from the political parties web sites.  It is mostly **html** files except for QS for which **json** files are collect from the RSS feed.
 
 The parties (and their web site urls) collected are:
 * Coalition Avenir Quebec (CAQ): https://coalitionavenirquebec.org/fr/actualites/
@@ -19,7 +17,8 @@ The parties (and their web site urls) collected are:
 ## Output of the extractor
 The output are data lake items which are mostly **html** files except for QS for which **json** files are collect from the RSS feed.
 
-The extractor creates all data lake items in the [political_party_press_releases](https://clhub.clessn.cloud/admin/core/lake/?path=political_party_press_releases) path having the following meta data values
+The extractor creates all data lake items in the [political_party_press_releases](https://clhub.clessn.cloud/admin/core/lake/?path=political_party_press_releases) path having the following meta data values:
+
 ```
 {
   "url": "<URL of the press release>",
