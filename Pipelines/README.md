@@ -20,18 +20,18 @@ The definition of the data lake, data warehouse and datamarts can be found below
 ![alt](https://github.com/clessn/diagrams/blob/master/infra/definitiond_lake_warehouse_datamart.drawio.png)
 
 # Development methodology and containerization
-At the CLESSN we designed a methodology for developping extractors, loaders and refiners so that they can be automated and scheduled to run in **Docker containers** on the **VALERIA OpenShift** (k8s) infrastructure.  Therefore it is important to follow the development methodology of extractors.  
+At the CLESSN, we designed a methodology for developping extractors, loaders and refiners so that they can be automated and scheduled to run in **Docker containers** on the **VALERIA OpenShift** (k8s) infrastructure.  Therefore, it is important to follow the development methodology of extractors.  
 
-There are a few requirements and steps that you must be comply with when writing an extractor:
+There are a few requirements and steps that you must comply with when writing an extractor:
 * All extractors, loaders and refiners must be written within the **clessn-blend** repo, inside the Pipeline folder.
-* Hide the credentials for connecting to **HUBLOT**
-* Use the **retl** repo as a template to your extractor environment within the **clessn-blend** repo
-* Pre-install packages using **renv**
+* Hide the credentials for connecting to **HUBLOT**.
+* Use the **retl** repo as a template to your extractor environment within the **clessn-blend** repo.
+* Pre-install packages using **renv**.
 * Test the container on your machine before deploying.
 
-Note : eventually the Pipelines folder will become the **root** of the clessn-blend repo, once all the old scrapers have been converted to the new CLESSN data-platform design paradigms.
+Note : eventually, the Pipelines folder will become the **root** of the clessn-blend repo, once all the old scrapers have been converted to the new CLESSN data-platform design paradigms.
 
-Also, because we also want to develop them and test them before we **containerize** them, and because they need to authenticate against **HUBLOT** to store data in it, the environment they run on must either use OS defined environment variables or use the .Renviron system to store credentials in order to connect to HUBLOT.
+Also, because we want to develop and test them before we **containerize** them, and because they need to authenticate against **HUBLOT** to store data in it, the environment they run on must either use OS defined environment variables or use the .Renviron system to store credentials in order to connect to HUBLOT.
 
 This is based on the [retl](https://github.com/clessn/retl) repository.
 See the [README.md](https://github.com/clessn/retl/blob/master/README.md) of the retl repo for more details.
