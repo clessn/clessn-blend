@@ -10,7 +10,7 @@ It is the second step of a pipeline that was created in order to collect data fo
 * Parti Conservateur du Québec (PCQ): https://www.conservateur.quebec/communiques
 * Parti Québecois (PQ): https://pq.org/nouvelles/
 
-## Data, Path and Meta data
+## Input of the loader: Data, Path and Meta data
 The data lake items are mostly **html** files except for QS for which **json** files are collect from the RSS feed.
 
 The loader takes all data lake items in the [political_party_press_releases](https://clhub.clessn.cloud/admin/core/lake/?path=political_party_press_releases) path having the following meta data values
@@ -22,6 +22,8 @@ The loader takes all data lake items in the [political_party_press_releases](htt
   "province_or_state": "QC"
 }
 ```
+
+## Output of the loader
 And it loads the 
 * date
 * party
