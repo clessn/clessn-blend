@@ -3,5 +3,6 @@ This the folder containing the **extractors** of the data pipelines of the CLESS
 
 Amongst other uses, the meta data applied to the objects stored in the data lake and file blob storage is used to retrieve them in bulk for further processing.
 
+# Development methodology specific to data extractors
 Here is a schema of an data ETL pipeline and the position of an extractor in it
 ![Alt](https://github.com/clessn/diagrams/blob/master/infra/pipeline_schema.drawio.png).
