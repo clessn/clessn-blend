@@ -4,7 +4,7 @@
 
 This repo contains code used to construct the data ETL pipelines between the various data sources required for the CLESSN and the datamarts providing datasets needed for research or visualization.
 
-The data platform of the CLESSN is composed of scripts that move the data across file storage space and databases to make it analytics ready.
+The data platform of the CLESSN is composed of scripts that move the data across file storage space and databases to make it ready for analytics.
 
 The current methodology consists in data pipelines made out of data extractors, data loaders and data refiners.  Each component moves data in turn 
 * from its original source to the data lake or file blob
