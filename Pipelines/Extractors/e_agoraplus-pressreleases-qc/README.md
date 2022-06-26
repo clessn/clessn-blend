@@ -29,6 +29,22 @@ The metada on the collected items is as follows
 ```
 
 ## Output of the extractor
+The output are data lake items which are mostly **html** files except for QS for which **json** files are collect from the RSS feed.
+
+The extractor creates all data lake items in the [political_party_press_releases](https://clhub.clessn.cloud/admin/core/lake/?path=political_party_press_releases) path having the following meta data values
+```
+{
+  "url": "<URL of the press release>",
+  "format": "html|json",
+  "country": "CAN",
+  "hashtags": "elxn-qc2022, vitrine_democratique, polqc",
+  "description": "Communiqués de presse des partis politiques",
+  "content_type": "political_party_press_release",
+  "storage_class": "lake",
+  "political_party": "<Political parti for this press release>",
+  "province_or_state": "QC"
+}
+```
 
 ## Development methodology and containerization
 This is based on the [retl](https://github.com/clessn/retl) repository.
