@@ -22,6 +22,15 @@ The loader takes all data lake items in the [political_party_press_releases](htt
   "province_or_state": "QC"
 }
 ```
+And it loads the 
+* date
+* party
+* country
+* title
+* content
+
+...of each press release selected in the lake into a table named ´warehouse_political_parties_press_releases'
+
 ## Development methodology
 Simply edit code/code.R in RStudio and test your code as usual.  **Do not install package or load libraries** (except for dplyr for %>%) from within your code.  The package installation is made manually and remembered busing renv (see below)
 
