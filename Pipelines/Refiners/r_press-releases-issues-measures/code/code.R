@@ -3,36 +3,11 @@
 ###############################################################################
 #                                                                             #
 #                                                                             #
-#                              l_file_to_hub2.0                               #
+#                        <e|l|r_name_of_the_etl_script>                       #
 #                                                                             #
-# This script takles a csv or xlsx file from hublot and loads it to hub2.0    #
-# In the appropriate table.   Currently supported tables are                  #
+#  Describe what the script does.  You can copy/paste part of the README.md   #
+#  of the folder which this script resides in                                 #
 #                                                                             #
-#  - people                                                                   #
-#                                                                             #
-# The table targeted for loading the data depends on the 'content_type' meta  #
-# data value of the file in hublot.                                           #
-#                                                                             #
-# So current supported content types are                                      #
-#                                                                             #
-#  - people                                                                   #
-#                                                                             #
-# The input file must be stored in hublot in the Files blob storage and must  #
-# be named import_<content_type>_<records_type>                               #
-#                                                                             #
-# supported records_type are                                                  #
-#                                                                             #
-#  - mp                                                                       #
-#  - candidate                                                                #
-#  - journalist                                                               #
-#  - media                                                                    #
-#  - partner                                                                  #
-#  - political_party                                                          #
-#  - political_staff                                                          #
-#  - public_service                                                           #
-#                                                                             #
-# The file name must be passed as first paramets of the script when it runs   #
-# automated                                                                   #
 ###############################################################################
 
 
@@ -48,26 +23,6 @@
 #      get_lake_press_releases <- functions(parties_list) {
 #         your function code goes here
 #      }
-
-load_input_file_to_df(filename) {
-    file_info <- hubr::retrieve_file(filename, credentials)
-
-    file <- read.csv2(file_info$file)
-
-    if (file_info$metadata$format = "xlsx") {
-        return(df)
-    }
-
-    if (file_info$metadata$format = "xlsx") {
-        return(df)
-    }
-
-    clessnverse::logit(scriptname = scriptname, 
-                       message = paste("filetype", file_info$metadata$format, "for filename", filename, "not supporter"), 
-                       logger = logger)
-    return(data.frame())
-
-}
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -107,7 +62,7 @@ main <- function() {
     #     clessnverse::logit(scriptname, "Getting political parties press releases from the datalake", logger) 
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #      
-    df <- load_input_file_to_df(opt$filename)
+
 
 
 }
@@ -144,21 +99,16 @@ tryCatch(
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     #     warehouse_table <- "political_parties_press_releases"
-    filename <- "import_people_journalists"
 
     # scriptname, opt, logger, credentials are mandatory global objects
     # for them we use the <<- assignment so that they are available in
     # all the tryCatch context ("error", "warning", "finally") 
-    if (!exists("scriptname")) scriptname <<- "l_file_to_hublot"
+    if (!exists("scriptname")) scriptname <<- "l_agoraplus-pressreleases-qc"
 
     # Uncomment the line below to hardcode the command line option passed to this script when it runs
     # This is particularly useful while developping your script but it's wiser to use real command-
     # line options when puting your script in production in an automated container.
-    opt <- list(
-        filename = filename,
-        dataframe_mode = "refresh", hub_mode = "refresh",  
-        log_output = c("file", "console"), download_data = FALSE, translate=FALSE
-        )
+    # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
     if (!exists("opt")) {
         opt <- clessnverse::processCommandLineOptions()
@@ -167,18 +117,21 @@ tryCatch(
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to hublot
-    clessnverse::logit(scriptname, "connecting to hublot", logger)
+    clessnverse::logit(scriptname, "connecting to hub", logger)
 
     credentials <- hublot::get_credentials(
         Sys.getenv("HUB3_URL"), 
         Sys.getenv("HUB3_USERNAME"), 
         Sys.getenv("HUB3_PASSWORD"))
     
-    # Connecting to hub 2.0
-    clessnhub::login(
-        Sys.getenv("HUB_USERNAME"),
-        Sys.getenv("HUB_PASSWORD"),
-        Sys.getenv("HUB_URL"))
+    # if your script uses hub 2.0 uncomment the line below
+    # clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
+    # or 
+    # use this one
+    # clessnhub::login(
+    #    Sys.getenv("HUB_USERNAME"),
+    #    Sys.getenv("HUB_PASSWORD"),
+    #    Sys.getenv("HUB_URL"))
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
