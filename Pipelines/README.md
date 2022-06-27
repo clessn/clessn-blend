@@ -23,8 +23,8 @@ The definition of the data lake, data warehouse and datamarts can be found below
 At the CLESSN, we designed a methodology for developping extractors, loaders and refiners so that they can be automated and scheduled to run in **Docker containers** on the **VALERIA OpenShift** (k8s) infrastructure.  Therefore, it is important to follow the development methodology of extractors.  
 
 There are a few requirements and steps that you must comply with when writing an extractor:
-* All extractors, loaders and refiners must be written within the **clessn-blend** repo, inside the Pipeline folder.
-* Hide the credentials for connecting to **HUBLOT**.
+* All extractors, loaders and refiners must be written within the **clessn-blend** repo, inside the Pipelines (this) folder.
+* Hide the credentials for connecting to **HUBLOT** from your code.
 * Use the **retl** repo as a template to your extractor environment within the **clessn-blend** repo.
 * Pre-install packages using **renv**.
 * Test the container on your machine before deploying.
