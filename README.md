@@ -19,7 +19,7 @@ Side Note: There are exceptions by which an extractor might not be needed in a p
 
 Note that this ETL methodology has recently been implemented at the CLESSN. Prior to that, web scrapers were developped and often combined all three steps in one (extraction, storage and refining).
 
-## Data Lake, Files blob storage, data tables : the passives componentes of ETL pipelines
+## Data Lake, files blob storage, data tables : the passives componentes of ETL pipelines
 The data lake contains items in their raw format.  The datawarehouse and datamarts contain only tabular representations of those items.
 
 To conduct their research or data visualization projects, researchers will consume data only from the datamarts they produce. They produce datamarts by writing refiners that feed from the data warehouse.
