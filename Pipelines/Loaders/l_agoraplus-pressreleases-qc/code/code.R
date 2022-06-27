@@ -69,6 +69,17 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
         date <- trimws(XML::xmlValue(date))
+        #14 juin 2022
+        
+        months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+
+        str_date <- strsplit(date, " ")
+        year <- str_date[[1]][3]
+        day <- str_date[[1]][1]
+        month_name <- str_date[[1]][2]
+        month <-  which(match(months, tolower(month_name)) == 1)
+        if (length(month) == 1) month <- paste("0", month, sep='')
+        date <- paste(year, month, day, sep="-")
     }
 
     if (party_acronym == "QS") {
@@ -89,6 +100,17 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='date']")[[1]]
         date <- trimws(XML::xmlValue(date))
+        #23 Juin 2022
+        
+        months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+        
+        str_date <- strsplit(date, " ")
+        year <- str_date[[1]][3]
+        day <- str_date[[1]][1]
+        month_name <- str_date[[1]][2]
+        month <-  which(match(months, tolower(month_name)) == 1)
+        if (length(month) == 1) month <- paste("0", month, sep='')
+        date <- paste(year, month, day, sep="-")
     }
 
     if (party_acronym == "PCQ") {
@@ -102,6 +124,11 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         date <- trimws(XML::xmlValue(date))
         date <- stringr::str_extract(date, "\\d\\d\\-\\d\\d\\-\\d\\d\\d\\d")
         date <- trimws(date)
+        #30-05-2022
+        month <- substr(date, 4, 5)
+        day <- substr(date, 1, 2)
+        year <- substr(date, 7, 10)
+        date <- paste(year, month, day, sep="-")
     }
 
     if (party_acronym == "PQ") {
@@ -113,6 +140,19 @@ extract_press_release_info <- function(party_acronym, xml_root) {
 
         date <- XML::getNodeSet(xml_root, ".//span[@class='date updated']")
         date <- trimws(XML::xmlValue(date))
+        #avril 28, 2022
+        
+        months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+        
+        str_date <- gsub(",", "", date)
+        str_date <- strsplit(str_date, " ")
+        year <- str_date[[1]][3]
+        day <- str_date[[1]][2]
+        month_name <- str_date[[1]][1]
+        month <-  which(match(months, tolower(month_name)) == 1)
+        if (length(month) == 1) month <- paste("0", month, sep='')
+        date <- paste(year, month, day, sep="-")
+        
     }
     
 
@@ -254,7 +294,6 @@ tryCatch(
     library(dplyr) 
 
     # Globals : scriptname, opt, logger, credentials
-    lake_path <- ""
     lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     warehouse_table <- "political_parties_press_releases"
 
