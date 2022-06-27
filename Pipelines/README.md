@@ -1,6 +1,7 @@
 # The Pipelines folder in clessn-blend
 
-This folder contains the code of the data pipelines extractors, loader and refiners.  Once all the old scrapers have been converted to this new ETL methodology, this folder will become the root of this repo.
+This folder contains the code of the data pipelines extractors, loader and refiners.  Those are also referred to as active components of data ETL pipelines.
+Once all the old scrapers will been converted to this new ETL methodology, this folder will become the root of this repo.
 The current ETL methodology used at the CLESSN consists in data pipelines made out of data extractors, data loaders and data refiners.  Each component moves data from one level of refining to the next: 
 * Extractors move data from its original source to the data lake or file blob and store it in its original form after applying meta data to it.
 * Loaders move data from the data lake or file blob to a data warehouse table.  A data warehouse table contains therefore a tabular representation of the raw data.  A table also has meta data applied to it.
@@ -22,8 +23,8 @@ The definition of the data lake, data warehouse and datamarts can be found below
 # Development methodology and containerization
 At the CLESSN, we designed a methodology for developping extractors, loaders and refiners so that they can be automated and scheduled to run in **Docker containers** on the **VALERIA OpenShift** (k8s) infrastructure.  Therefore, it is important to follow the development methodology of extractors.  
 
-There are a few requirements and steps that you must comply with when writing an extractor:
-* All extractors, loaders and refiners must be written within the **clessn-blend** repo, inside the Pipelines (this) folder.
+There are a few requirements and steps that you must comply with when writing an active component of a pipeline:
+* All extractors, loaders and refiners must be written within the **clessn-blend** repo, inside the *Pipelines* (this) folder.
 * Hide the credentials for connecting to **HUBLOT** from your code.
 * Use the **retl** repo as a template to your extractor environment within the **clessn-blend** repo.
 * Pre-install packages using **renv**.
