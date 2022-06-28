@@ -1,0 +1,94 @@
+---
+title: "Plan de gestion de données"
+author: "CLESSN"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Plan de gestion de données
+
+Basé sur le [Modèle de Portage pour les flux de travail en science ouverte](https://assistant.portagenetwork.ca/template_export/43432169.pdf)
+
+## Responsabilités et ressources
+
+### Attribution des responsabilités
+
+### Planification de la relève
+
+### Budgétisation
+
+## Collecte de données
+
+### Types de données
+
+Types de données (source: catalogue de données)
+
+* csv
+* rsv
+* xlsx
+* sav
+* dta
+* hub
+
+Types de données (pas dans catalogue de données)
+
+* Codes logiciels (R, Python)
+* Fichiers .pdf
+* Fichiers HTML
+* XML
+* Données textuelles
+* Données tabulaires
+* Données spatiales
+
+### Nomenclature et version de fichier
+
+Codes logiciels (R, Python):
+
+Utiliser Git et GitHub pour la gestion des versions.
+
+Données:
+
+1. Source brute passe dans extracteur
+2. Extracteur envoie dans lac
+3. Chargeur envoie dans entrepôt
+4. Raffineur envoie dans comptoir
+
+Accès aux données
+
+Le *chercheur interne* utilise les packages R clessnhub et clessnverse.
+
+Le *chercheur externe* consulte le catalogue de données. Il formule une demande d'accès. Lorsque approuvé, aura accès aux données.
+
+### Flux de travail pour les documents
+
+## Documentation et métadonnées
+
+### Documentation des données
+
+Inclure un README dans les repositories de GitHub.
+
+### Attribution des responsabilités quant à la documentation
+
+### Métadonnées pour les jeux de données
+
+Normes de métadonnées spécifiques aux sciences humaines: [Data Documentation Initiative](https://www.dcc.ac.uk/resources/metadata-standards/ddi-data-documentation-initiative) (DDI)
+
+Identifier données primaires et secondaires.
+
+## Stockage et sauvegarde
+
+### Estimation des besoins de stockage de données
+
+## Partage, réutilisation et préservation
+
+### Licences pour le partage et la réutilisation des données
+
+### Partage de données pour la mobilisation des connaissances
+
+## Conformitéé éthique et juridique
+
+### Protection de la confidentialité
