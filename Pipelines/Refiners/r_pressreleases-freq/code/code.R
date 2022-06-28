@@ -63,8 +63,17 @@ main <- function() {
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #
 
+    warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 
+    warehouse_df$week_num <- strftime(warehouse_df$data.date, format = "%V")
 
+    datamart_df <- warehouse_df %>%
+      dplyr::select(document.id,data.political_party, week_num) %>%
+      dplyr::group_by(data.political_party, week_num) %>%
+      dplyr::summarize(count=n()) %>%
+      dplyr::mutate(key = paste(data.political_party, week_num, format(Sys.Date(), "%Y"), sep=""))
+
+    clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh", credentials)
 }
 
 
@@ -99,9 +108,9 @@ tryCatch(
     # Define your global variables here
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
-    #     warehouse_table <- "political_parties_press_releases"
-    warehouse_table <- "political_parties_press_releases"
-
+    #     warehouse_table_name <- "political_parties_press_releases"
+    warehouse_table_name <- "political_parties_press_releases"
+    datamart_table_name  <- "political_parties_press_releases_freq"
 
 
     # scriptname, opt, logger, credentials are mandatory global objects
