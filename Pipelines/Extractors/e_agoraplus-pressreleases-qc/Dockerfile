@@ -34,6 +34,7 @@ RUN mv -f /usr/local/lib/R/site-library/* /usr/lib/R/library/
 COPY . .
 RUN chmod -R 775 .
 RUN chown -R 1000:root .
+RUN echo "CipherString = DEFAULT@SECLEVEL=1" >> /etc/ssl/openssl.cnf
 USER 1000
 
 # run server
