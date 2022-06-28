@@ -29,7 +29,7 @@ As much as possible, a datamart will serve multiple purposes that require data o
 Researchers will eventually be able to make some datamarts public in order to be shared them with the community.
 
 ## Development methodology
-It is important to respect the CLESSN development methodology and environment requirements to create actibve **and** passive components of a data pipeline. See the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) for more details.
+It is important to respect the CLESSN development methodology and environment requirements to create active **and** passive components of a data pipeline. See the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) for more details.
 
 Here's a view of the CLESSN data platform:
 ![Alt text](https://github.com/clessn/diagrams/blob/master/infra/data_platform_clessn.drawio.png)
