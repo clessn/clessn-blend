@@ -69,15 +69,16 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
         date <- trimws(XML::xmlValue(date))
+        date <- gsub("^\u00a0", "", date)
         #14 juin 2022
         
         months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
 
         str_date <- strsplit(date, " ")
-        year <- str_date[[1]][3]
-        day <- str_date[[1]][1]
-        month_name <- str_date[[1]][2]
-        month <-  which(match(months, tolower(month_name)) == 1)
+        year <- trimws(str_date[[1]][3])
+        day <- trimws(str_date[[1]][1])
+        month_name <- trimws(str_date[[1]][2])
+        month <-  trimws(which(match(months, tolower(month_name)) == 1))
         if (length(month) == 1) month <- paste("0", month, sep='')
         date <- paste(year, month, day, sep="-")
     }
@@ -289,45 +290,55 @@ main <- function() {
 
 
 tryCatch( 
-  {
-    # Package
-    library(dplyr) 
+    withCallingHandlers(
+    {
+        # Package
+        library(dplyr) 
 
-    # Globals : scriptname, opt, logger, credentials
-    lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
-    warehouse_table <- "political_parties_press_releases"
+        # Globals : scriptname, opt, logger, credentials
+        lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
+        warehouse_table <- "political_parties_press_releases"
 
-    if (!exists("scriptname")) scriptname <<- "l_agoraplus-pressreleases-qc"
+        if (!exists("scriptname")) scriptname <<- "l_agoraplus-pressreleases-qc"
 
-    opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
-    if (!exists("opt")) {
-        opt <- clessnverse::processCommandLineOptions()
-    }
+        if (!exists("opt")) {
+            opt <- clessnverse::processCommandLineOptions()
+        }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
-    
-    # login to hublot
-    clessnverse::logit(scriptname, "connecting to hub", logger)
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        
+        # login to hublot
+        clessnverse::logit(scriptname, "connecting to hub", logger)
 
-    credentials <- hublot::get_credentials(
-        Sys.getenv("HUB3_URL"), 
-        Sys.getenv("HUB3_USERNAME"), 
-        Sys.getenv("HUB3_PASSWORD"))
-    
-    
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+        credentials <- hublot::get_credentials(
+            Sys.getenv("HUB3_URL"), 
+            Sys.getenv("HUB3_USERNAME"), 
+            Sys.getenv("HUB3_PASSWORD"))
+        
+        
+        clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
-    # Call main script    
-    main()
-  },
+        status <<- 0
+        
+        # Call main script    
+        main()
+    },
+     warning = function(w) {
+        clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+        print(w)
+        status <<- 2
+    }),
   
   # Handle an error or a call to stop function in the code
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
+    
+    status <<- 1
   },
-  
+
   # Terminate gracefully whether error or not
   finally={
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
@@ -336,6 +347,8 @@ tryCatch(
     # Cleanup
     closeAllConnections()
     rm(logger)
+    
+    quit(status = status)
   }
 )
 

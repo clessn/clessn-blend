@@ -95,13 +95,11 @@ extract_urls_list <- function(party_acronym, xml_root, scriptname, logger) {
 
 
 
-
-
 scrape_party_press_release <- function(party_acronym, party_url, scriptname, logger, credentials) {
     clessnverse::logit(scriptname, paste("scraping", party_acronym, "main press release page", party_url), logger)
-    r <- safe_httr_GET(party_url, httr::config(ssl_verifypeer=0))
+    r <- safe_httr_GET(party_url, httr::config(ssl_verifypeer=0), httr::timeout(30))
 
-    if (r$result$status_code == 200) {
+    if (!is.null(r$result) && r$result$status_code == 200) {
         # On extrait les section <a> qui contiennent les liens vers chaque communiqué
         clessnverse::logit(scriptname, paste("successful GET of", party_acronym, "main press release page", party_url), logger)
     
@@ -134,7 +132,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
             
             r <- safe_httr_GET(url, httr::config(ssl_verifypeer=0))
             
-            if (r$result$status_code == 200) {
+            if (!is.null(r$result) && r$result$status_code == 200) {
                 clessnverse::logit(scriptname, paste ("successful GET on", party_acronym, "press release at URL", url), logger)
                 html <- httr::content(r$result, as="text", encoding = "utf-8")
 
@@ -180,6 +178,8 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
             
             } else {
                 clessnverse::logit(scriptname, paste("error accessing", party_acronym, "press release page", urls_list[[i]]), logger)
+                clessnverse::logit(scriptname, r$error, logger)
+                warning(paste(r$error, paste("error accessing", party_acronym, "press release page", urls_list[[i]]), sep="\n"))
             }
         } #for (url in press_releases_urls_list)
 
@@ -187,6 +187,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
 
     } else {
         clessnverse::logit(scriptname, paste("Error getting", party_acronym, "main press release page"), logger)
+        warning(paste(r$error, paste("Error getting", party_acronym, "main press release page"), sep="\n"))
     } #if (r$result$status_code == 200)
 } #</function scrape_party_press_release>
 
@@ -241,47 +242,54 @@ main <- function(scriptname, logger, credentials) {
 
 
 tryCatch( 
-  {
-    library(dplyr)
+    withCallingHandlers(
+    {
+        library(dplyr)
+        
+        if (!exists("scriptname")) scriptname <<- "e_agoraplus-pressreleases-qc"
+
+        opt <<- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+
+        if (!exists("opt")) {
+            opt <<- clessnverse::processCommandLineOptions()
+        }
+
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        
+        # login to hublot
+        clessnverse::logit(scriptname, "connecting to hub", logger)
+
+        credentials <- hublot::get_credentials(
+            Sys.getenv("HUB3_URL"), 
+            Sys.getenv("HUB3_USERNAME"), 
+            Sys.getenv("HUB3_PASSWORD"))
+        
+        
+        clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+
+        status <<- 0
+        
+        main(scriptname, logger, credentials)
+    },
+
+    warning = function(w) {
+        clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+        print(w)
+        status <<- 2
+    }),
     
-    if (!exists("scriptname")) scriptname <<- "e_agoraplus-pressreleases-qc"
-
-    opt <<- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
-
-    if (!exists("opt")) {
-        opt <<- clessnverse::processCommandLineOptions()
+    error = function(e) {
+        clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
+        print(e)
+        status <<- 1
+    },
+  
+    finally={
+        clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
+        clessnverse::logclose(logger)
+        rm(logger)
+        quit(status = status)
     }
-
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
-    
-    # login to hublot
-    clessnverse::logit(scriptname, "connecting to hub", logger)
-
-    credentials <- hublot::get_credentials(
-        Sys.getenv("HUB3_URL"), 
-        Sys.getenv("HUB3_USERNAME"), 
-        Sys.getenv("HUB3_PASSWORD"))
-    
-    
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
-
-    status <<- 0
-    
-    main(scriptname, logger, credentials)
-  },
-  
-  error = function(e) {
-    clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
-    print(e)
-    status <<- 1
-  },
-  
-  finally={
-    quit(status = status)
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-    clessnverse::logclose(logger)
-    rm(logger)
-  }
 )
 
 

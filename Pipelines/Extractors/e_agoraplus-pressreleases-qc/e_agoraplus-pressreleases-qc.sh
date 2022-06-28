@@ -79,6 +79,11 @@ if [[ $ret = '1' ]]; then
    cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
 fi
 
+if [[ $ret = '2' ]]; then
+   echo "$(date) job terminated with warning(s).  Error log generated in /Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+fi
+
 if [[ $ret = '0' ]]; then
    echo "$(date) job terminated successfully"
 fi

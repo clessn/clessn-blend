@@ -52,13 +52,17 @@
 load_input_file_to_df(filename) {
     file_info <- hubr::retrieve_file(filename, credentials)
 
-    file <- read.csv2(file_info$file)
-
     if (file_info$metadata$format = "xlsx") {
+        df <- openxlsx::read.xlsx(file_info$file)
         return(df)
     }
 
-    if (file_info$metadata$format = "xlsx") {
+    if (file_info$metadata$format = "csv") {
+        L <- readLines("myfile", n = 1)
+        numfields <- count.fields(textConnection(L), sep = ";")
+        if (numfields == 1) read.csv("myfile") else read.csv2("myfile")
+
+        file <- read.csv2(file_info$file)
         return(df)
     }
 
