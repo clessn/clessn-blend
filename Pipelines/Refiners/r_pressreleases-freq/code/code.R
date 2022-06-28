@@ -77,14 +77,13 @@ main <- function() {
 ###############################################################################
 
 tryCatch( 
+  withCallingHandlers(
   {
-    ###########################################################################
     # Package dplyr for the %>% 
     # All other packages must be invoked by specifying its name
     # in front ot the function to be called
     library(dplyr) 
 
-    ###########################################################################
     # Globals
     # Here you must define all objects (variables, arrays, vectors etc that you
     # want to make global to this entire code and that will be accessible to 
@@ -95,10 +94,16 @@ tryCatch(
     # used throught your code.
     #
 
+
+
+    #########################################################################
     # Define your global variables here
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     #     warehouse_table <- "political_parties_press_releases"
+
+
+
 
     # scriptname, opt, logger, credentials are mandatory global objects
     # for them we use the <<- assignment so that they are available in
@@ -135,14 +140,23 @@ tryCatch(
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
+    status <<- 0
+
     # Call main script    
     main()
   },
+
+  warning = function(w) {
+      clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+      print(w)
+      status <<- 2
+  }),
   
   # Handle an error or a call to stop function in the code
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
+    status <<- 1
   },
   
   # Terminate gracefully whether error or not
@@ -153,6 +167,8 @@ tryCatch(
     # Cleanup
     closeAllConnections()
     rm(logger)
+
+    quit(status = status)
   }
 )
 
