@@ -79,7 +79,8 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         day <- trimws(str_date[[1]][1])
         month_name <- trimws(str_date[[1]][2])
         month <-  trimws(which(match(months, tolower(month_name)) == 1))
-        if (length(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(day) == 1) day <- paste("0", day, sep='')
         date <- paste(year, month, day, sep="-")
     }
 
@@ -110,7 +111,8 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         day <- str_date[[1]][1]
         month_name <- str_date[[1]][2]
         month <-  which(match(months, tolower(month_name)) == 1)
-        if (length(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(day) == 1) day <- paste("0", day, sep='')
         date <- paste(year, month, day, sep="-")
     }
 
@@ -151,7 +153,8 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         day <- str_date[[1]][2]
         month_name <- str_date[[1]][1]
         month <-  which(match(months, tolower(month_name)) == 1)
-        if (length(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(month) == 1) month <- paste("0", month, sep='')
+        if (nchar(day) == 1) day <- paste("0", day, sep='')
         date <- paste(year, month, day, sep="-")
         
     }
