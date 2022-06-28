@@ -15,7 +15,7 @@ The current methodology consists in data pipelines made out of **data extractors
 * from the data lake or file  to the **data warehouse**
 * from the data warehouse to **datamarts**
 
-Side Note: There are exceptions by which an extractor might not be needed in a pipeline. For instance, a researcher could very well obtain raw data in the form of a csv or pdf file, such as a university paper, a political parti election program, the answers of survey questions etc. and would store it manually directly in the **data lake** or **files blob storage**. In that case the researcher plays the role of the extractor.
+Side Note: There are exceptions by which an extractor might not be needed in a pipeline. For instance, a researcher could very well obtain raw data in the form of a csv or pdf file, such as a university paper, a political party election program, the answers of survey questions etc. and would store it manually directly in the **data lake** or **files blob storage**. In that case the researcher plays the role of the extractor.
 
 Note that this ETL methodology has recently been implemented at the CLESSN. Prior to that, web scrapers were developped and often combined all three steps in one (extraction, storage and refining).
 
