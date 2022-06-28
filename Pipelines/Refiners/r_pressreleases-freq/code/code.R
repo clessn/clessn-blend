@@ -71,9 +71,35 @@ main <- function() {
       dplyr::select(document.id,data.political_party, week_num) %>%
       dplyr::group_by(data.political_party, week_num) %>%
       dplyr::summarize(count=n()) %>%
-      dplyr::mutate(key = paste(data.political_party, week_num, format(Sys.Date(), "%Y"), sep=""))
+      dplyr::rename(political_party = data.political_party) %>%
+      dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), "%Y"), sep=""))
 
     clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh", credentials)
+
+    g <- ggplot2::ggplot(datamart_df, ggplot2::aes(x=week_num, y=count, fill = factor(political_party)))
+    g <- g + ggplot2::geom_col(alpha = 0.5, position = "identity")
+    g
+    ggplot2::ggsave("plot_bars_pressreleases_freq.png", plot=g)
+
+    clessnverse::commit_lake_item(
+      data = list(
+        item= "plot_bars_pressreleases_freq.png",
+        path="political_party_press_releases_freq"
+      ),
+      metadata = list(
+        format="pngfile",
+        political_party="all",
+        hashtags="elxn-2022, polqc, vitrine_democratique",
+      ),
+      mode = "refresh",
+      credentials = credentials
+    )
+
+    file.remove("plot_bars_pressreleases_freq.png")
+
+    g <- ggplot2::ggplot(datamart_df, ggplot2::aes(x=week_num, y=count, group=1, color = factor(political_party)))
+    g + ggplot2::geom_line()
+
 }
 
 
