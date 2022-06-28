@@ -15,7 +15,7 @@ The current methodology consists in data pipelines made out of **data extractors
 * from the data lake or file  to the **data warehouse**
 * from the data warehouse to **datamarts**
 
-Side Note: There are exceptions by which an extractor might not be needed in a pipeline. For instance, a researcher could very well obtain raw data in the form of a csv or pdf file, such as a university paper, a political parti election program, the answers of survey questions etc. and would store it manually directly in the **data lake** or **files blob storage**. In that case the researcher plays the role of the extractor.
+Side Note: There are exceptions by which an extractor might not be needed in a pipeline. For instance, a researcher could very well obtain raw data in the form of a csv or pdf file, such as a university paper, a political party election program, the answers of survey questions etc. and would store it manually directly in the **data lake** or **files blob storage**. In that case the researcher plays the role of the extractor.
 
 Note that this ETL methodology has recently been implemented at the CLESSN. Prior to that, web scrapers were developped and often combined all three steps in one (extraction, storage and refining).
 
@@ -29,7 +29,7 @@ As much as possible, a datamart will serve multiple purposes that require data o
 Researchers will eventually be able to make some datamarts public in order to be shared them with the community.
 
 ## Development methodology
-It is important to respect the CLESSN development methodology and environment requirements to create actibve **and** passive components of a data pipeline. See the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) for more details.
+It is important to respect the CLESSN development methodology and environment requirements to create active **and** passive components of a data pipeline. See the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) for more details.
 
 Here's a view of the CLESSN data platform:
 ![Alt text](https://github.com/clessn/diagrams/blob/master/infra/data_platform_clessn.drawio.png)
