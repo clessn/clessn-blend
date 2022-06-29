@@ -10,7 +10,7 @@ Hublot: https://clhub.clessn.cloud/admin/
 2. Create a table
     1. Exemple: Créer un raffineur qui va créer un comptoir qui va calculer le nombre de communiqués publiés par partis par semaine. 
 3. Name the table
-    1. Name: mart_ (prefix for datamart table)
+    1. Name: `mart_` (prefix for datamart table)
     2. Table, verbose name and verbose name plural: same
 4. Create datamart metadata
     1. Type: table
@@ -22,7 +22,7 @@ Hublot: https://clhub.clessn.cloud/admin/
     7. Storage class: toujours mart. A aussi lake et un autre (entrepôt?).
 5. Populate the table based on the RETL repo
     1. Clone repository clessn/retl
-    2. Copy content of RETL into cleessn-blend/pipeline/refiners, create new folder with name format r_nom_du_refiner. Prefix r_ stands for refiner.
+    2. Copy content of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
 6. Open RStudio
 7. Open Rprojet in the refiner folder.
 8. Delete README.md
@@ -47,14 +47,14 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 1. Execute
 2. Inspect the variables. Everything with Data. prefix are columns in the storage table.
 3. Enrichir la table to create a datamart that's useful for research. Add column.
-4. You always need to have a key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
+4. You always need to have a key `dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))`
 5. Wrie dataframe to Hublot via R
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
-1. Optional: add gglopt so that the refinor can create your graph. You can add your ggplot to the lake with clessn::commit_lake_item()
+1. Optional: add gglopt so that the refinor can create your graph. You can add your ggplot to the lake with `clessn::commit_lake_item()`
 
 ## R enviro
 
