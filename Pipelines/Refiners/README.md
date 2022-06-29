@@ -28,10 +28,10 @@ Hublot: https://clhub.clessn.cloud/admin/
     1. Clone repository `clessn/retl`
     2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
           DO NOT copy the whole directory. Be sure to copy the content of the directory.
-6. Open RStudio
-7. Open Rprojet in the refiner folder.
-8. Delete README.md
-9. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
+6. Delete README.md
+7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
+8. Open RStudio
+9. Open Rprojet in the refiner folder.
 10. Push in CLESSN-blend
 11. Start coding. À part du README et de dossier de code, pas besoin de toucher le reste. 
 12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
