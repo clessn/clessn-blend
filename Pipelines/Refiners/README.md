@@ -46,21 +46,21 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 
 1. Execute
 2. Inspect the variables. Everything with Data. prefix are columns in the storage table.
-3. Enrichir la table pour créer un comptoir qui est utile pour la recherche. Ajouter colonne.
-4. Doit toujours avoir une key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
-5. Écrire dataframe dans Hublot via R
+3. Enrichir la table to create a datamart that's useful for research. Add column.
+4. You always need to have a key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
+5. Wrie dataframe to Hublot via R
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
-1. Tu peux mettre ton ggplot dedans. Le rafineur peut créer ton graphique. Tu peux mettre ton ggplot dans le lac avec clessn::commit_lake_item()
+1. Optional: add gglopt so that the refinor can create your graph. You can add your ggplot to the lake with clessn::commit_lake_item()
 
 ## R enviro
 
-R enviro: aller dans clessn-blend. Suivre les instructions dans repo Renviro-tutorial: tout est expliqué. Ça crée un fichier dans votre R intentory.
+R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as everything is explained. It creates a file in your R inventory.
 
-## Aide-mémoire
+## Cheatsheet
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
