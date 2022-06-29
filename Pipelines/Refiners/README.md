@@ -4,7 +4,7 @@
 
 Hublot: https://clhub.clessn.cloud/admin/
 
-## Utilisation
+## Create a refiner
 
 1. On the admin site of Hublot, open Dynamic table. 
 2. Create a table
@@ -21,17 +21,17 @@ Hublot: https://clhub.clessn.cloud/admin/
     6. Content type: façon de mettre sous forme python case ce qu’il y a dans la table
     7. Storage class: toujours mart. A aussi lake et un autre (entrepôt?).
 5. Populate the table based on the RETL repo
-    1. Clone repository clessn/retl
+    1. Clone repository `clessn/retl`
     2. Copy content of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
 6. Open RStudio
 7. Open Rprojet in the refiner folder.
 8. Delete README.md
-9. Modify template_README.md to describe the refinor in non-technical language. Rename README.md
+9. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
 10. Push in CLESSN-blend
 11. Start coding. À part du README et de dossier de code, pas besoin de toucher le reste. 
-12. Code.R: open to code as it's the code template. Content is related to automating your refinor.
-13. Create the refinor
-    1. Change line 111 and put the refinor name in snake_case 
+12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
+13. Create the refiner
+    1. Change line 111 and put the refiner name in snake_case 
     2. In MAIN: that's where your code will go and where you'll be able to test it.
     3. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
     4. Take the variable name and:
@@ -54,7 +54,7 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
-1. Optional: add gglopt so that the refinor can create your graph. You can add your ggplot to the lake with `clessn::commit_lake_item()`
+1. Optional: add gglopt so that the refiner can create your graph. You can add your ggplot to the lake with `clessn::commit_lake_item()`
 
 ## R enviro
 
