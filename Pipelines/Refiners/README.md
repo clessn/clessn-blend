@@ -29,12 +29,12 @@ Hublot: https://clhub.clessn.cloud/admin/
 9. Modify template_README.md to describe the refinor in non-technical language. Rename README.md
 10. Push in CLESSN-blend
 11. Start coding. À part du README et de dossier de code, pas besoin de toucher le reste. 
-12. Code.R: ouvrir pour coder. C’est le gabarit de code. Coder à l’intérieur de ce gabarit. Contenu est relié à l’automatisation de ton rafineur.
-13. Créer le rafineur
-    1. Changer la ligne 111 et mettre le nom de notre rafineur en pythoncase.
-    2. Dans MAIN: c’est là que votre code va et que vous allez pouvoir le tester.
-    3. Retourner dans Hublot, regarder table pour identifier l’intrant. A clé unique et timestamp. Voit champ qui s’appelle body.
-    4. Prendre le nom de la table et 
+12. Code.R: open to code as it's the code template. Content is related to automating your refinor.
+13. Create the refinor
+    1. Change line 111 and put the refinor name in snake_case 
+    2. In MAIN: that's where your code will go and where you'll be able to test it.
+    3. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
+    4. Take the variable name and:
 
 ```r
 {
@@ -44,8 +44,8 @@ datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]
 warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 
-1. Exécuter.
-2. Inspecter les variables. Tout ce qui est préfixé par Data. sont colonnes dans la table d’entrepôt.
+1. Execute
+2. Inspect the variables. Everything with Data. prefix are columns in the storage table.
 3. Enrichir la table pour créer un comptoir qui est utile pour la recherche. Ajouter colonne.
 4. Doit toujours avoir une key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
 5. Écrire dataframe dans Hublot via R
