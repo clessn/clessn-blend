@@ -1,0 +1,8 @@
+version: "3"
+services:
+  pipeline:
+    build: .
+    ports:
+      - "8001:8080"
+    #volumes:
+    #  - .:/usr/local/src
