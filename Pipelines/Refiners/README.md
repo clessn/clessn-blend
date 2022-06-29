@@ -26,7 +26,8 @@ Hublot: https://clhub.clessn.cloud/admin/
     7. Storage class: always `mart`. There's also lake and `storage`.
 5. Populate the table based on the `RETL` repo
     1. Clone repository `clessn/retl`
-    2. Copy content of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
+    2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
+          DO NOT copy the whole directory. Be sure to copy the content of the directory.
 6. Open RStudio
 7. Open Rprojet in the refiner folder.
 8. Delete README.md
