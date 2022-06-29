@@ -7,14 +7,14 @@ Hublot: https://clhub.clessn.cloud/admin/
 ## Create a refiner
 
 1. On the admin site of Hublot, open Dynamic table. 
-2. Create a table
+2. Create a table and fill in the form:
+    1. Database: `mart_table_name` (`mart_` is the prefix for datamart table)
+    2. Table name, verbose name and verbose name plural: same 
     1. Exemple: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
-    1. Name: `mart_` (prefix for datamart table)
-    2. Table, verbose name and verbose name plural: same
 4. Create datamart metadata
     1. Type: table
     2. Format: dataframe
-    3. Pillar: Decision-makers, Media, Citizens
+    3. Pillar: Decision-makers, Media and/or citizens
     4. Hashtag: allows tracability for lake to storage or datamart
     5. Description: free text. Explain the datamart. 
     6. Content type: describe what's in the table in `snake_case`.
