@@ -8,8 +8,8 @@ Hublot: https://clhub.clessn.cloud/admin/
 
 1. On the admin site of Hublot, open Dynamic table. 
 2. Create a table and fill in the form:
-    1. Database: `mart_table_name` (`mart_` is the prefix for datamart table)
-    2. Table name, verbose name and verbose name plural: same 
+    1. Database: default
+    2. Table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table) (same)
     1. Exemple: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 4. Create datamart metadata
     1. Type: table
