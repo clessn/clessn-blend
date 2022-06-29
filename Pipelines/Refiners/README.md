@@ -49,12 +49,19 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 4. Doit toujours avoir une key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
 5. Écrire dataframe dans Hublot via R
 
-```markdown
+```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
 1. Tu peux mettre ton ggplot dedans. Le rafineur peut créer ton graphique. Tu peux mettre ton ggplot dans le lac avec clessn::commit_lake_item()
 
-**R enviro**
+## R enviro
 
 R enviro: aller dans clessn-blend. Suivre les instructions dans repo Renviro-tutorial: tout est expliqué. Ça crée un fichier dans votre R intentory.
+
+## Aide-mémoire
+
+```r
+clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
+clessnverse::get_warehouse_table(warehouse_table_name, credentials)
+```
