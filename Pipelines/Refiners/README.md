@@ -8,19 +8,18 @@ Hublot: https://clhub.clessn.cloud/admin/
 
 1. On the admin site of Hublot, open Dynamic table. 
 2. Create a table
-    1. Exemple: Créer un raffineur qui va créer un comptoir qui va calculer le nombre de communiqués publiés par partis par semaine. 
-3. Name the table
+    1. Exemple: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
     1. Name: `mart_` (prefix for datamart table)
     2. Table, verbose name and verbose name plural: same
 4. Create datamart metadata
     1. Type: table
     2. Format: dataframe
-    3. Pillar: décideurs, médias, citoyens
-    4. Hashtag: permet tracabilité du lac vers entrepot/comptoir
-    5. Description: free text. Expliquer le comptoir. 
-    6. Content type: façon de mettre sous forme python case ce qu’il y a dans la table
-    7. Storage class: toujours mart. A aussi lake et un autre (entrepôt?).
-5. Populate the table based on the RETL repo
+    3. Pillar: Decision-makers, Media, Citizens
+    4. Hashtag: allows tracability for lake to storage or datamart
+    5. Description: free text. Explain the datamart. 
+    6. Content type: describe what's in the table in `snake_case`.
+    7. Storage class: always `mart`. There's also lake and `storage`.
+5. Populate the table based on the `RETL` repo
     1. Clone repository `clessn/retl`
     2. Copy content of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
 6. Open RStudio
