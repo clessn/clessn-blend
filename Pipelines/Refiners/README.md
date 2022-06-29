@@ -2,6 +2,7 @@
 
 ## Description
 
+Hublot: https://clhub.clessn.cloud/admin/
 
 ## Utilisation
 
