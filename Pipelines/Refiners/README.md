@@ -1,4 +1,9 @@
-**Comment coder un raffineur**
+# Refiners
+
+## Description
+
+
+## Utilisation
 
 1. Aller dans site d’administration dans Hublot. Accéder à la page d’accueil d’Hublot. Va dans dynamic tables. 
 2. Crée une table.
