@@ -12,6 +12,11 @@ Hublot: https://clhub.clessn.cloud/admin/
     2. Table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table) (same)
     1. Exemple: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 4. Create datamart metadata
+    1. Go on an existing mart table
+    2. Change the view from "Tree" to "Code"
+    3. Copy all the content
+    4. Paste it in your new table metadata field
+    5. Change the appropriate fields 
     1. Type: table
     2. Format: dataframe
     3. Pillar: Decision-makers, Media and/or citizens
