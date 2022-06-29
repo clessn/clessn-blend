@@ -1,7 +1,7 @@
-# <e|l|r>_name_of_the_pipeline_script
+# r_pressrelease_frequency
 
 ## Purpose
-This `[extractor|loader|refiner]` is used to blah blah blah.  
+This `refiner` is used to calculate press releases weekly frequency from the followinf pol parties....  
 
 It was created in order to blah blah blah.  
 
