@@ -6,29 +6,29 @@ Hublot: https://clhub.clessn.cloud/admin/
 
 ## Utilisation
 
-1. Aller dans site d’administration dans Hublot. Accéder à la page d’accueil d’Hublot. Va dans dynamic tables. 
-2. Crée une table.
+1. On the admin site of Hublot, open Dynamic table. 
+2. Create a table
     1. Exemple: Créer un raffineur qui va créer un comptoir qui va calculer le nombre de communiqués publiés par partis par semaine. 
-3. Nommer la table
-    1. Nom: mart_ : table de comptoir
-    2. Table, verbose name and verbose name plural: pareil
-4. Créer métadonnées de comptoir
+3. Name the table
+    1. Name: mart_ (prefix for datamart table)
+    2. Table, verbose name and verbose name plural: same
+4. Create datamart metadata
     1. Type: table
     2. Format: dataframe
-    3. Pillier: décideurs, médias, citoyens
+    3. Pillar: décideurs, médias, citoyens
     4. Hashtag: permet tracabilité du lac vers entrepot/comptoir
     5. Description: free text. Expliquer le comptoir. 
     6. Content type: façon de mettre sous forme python case ce qu’il y a dans la table
     7. Storage class: toujours mart. A aussi lake et un autre (entrepôt?).
-5. Populer la table basé sur le repo retl
-    1. Cloner repository clessn/retl
-    2. Copier contenu retl et coller dans cleessn-blend/pipeline/refiners, créer nouveau dossier selon format r_nom_du_refiner. Préfixe r_ est pour refiner.
-6. Ouvrir RStudio
-7. Ouvrir Rprojet dans dossier de ton raffineur
-8. Supprimer README.md
-9. Modifier template_README.md pour décrire le raffineur dans le langage pas technique. Renommer README.md
-10. Push dans CLESSN-blend
-11. Mettre à coder. À part du README et de dossier de code, pas besoin de toucher le reste. 
+5. Populate the table based on the RETL repo
+    1. Clone repository clessn/retl
+    2. Copy content of RETL into cleessn-blend/pipeline/refiners, create new folder with name format r_nom_du_refiner. Prefix r_ stands for refiner.
+6. Open RStudio
+7. Open Rprojet in the refiner folder.
+8. Delete README.md
+9. Modify template_README.md to describe the refinor in non-technical language. Rename README.md
+10. Push in CLESSN-blend
+11. Start coding. À part du README et de dossier de code, pas besoin de toucher le reste. 
 12. Code.R: ouvrir pour coder. C’est le gabarit de code. Coder à l’intérieur de ce gabarit. Contenu est relié à l’automatisation de ton rafineur.
 13. Créer le rafineur
     1. Changer la ligne 111 et mettre le nom de notre rafineur en pythoncase.
