@@ -394,11 +394,11 @@ main <- function(opt, scriptname, logger) {
   dfMPs <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
   
   clessnverse::logit(scriptname, "getting candidates", logger)
-  filter <- clessnhub::create_filter(type="candidate", schema="v2")
+  filter <- clessnhub::create_filter(type="candidate")
   dfCandidates <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
   
   clessnverse::logit(scriptname, "getting journalists", logger)
-  filter <- clessnhub::create_filter(type="journalist", schema="v2")
+  filter <- clessnhub::create_filter(type="journalist")
   dfJournalists <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
   
   clessnverse::logit(scriptname, "getting political parties", logger)
