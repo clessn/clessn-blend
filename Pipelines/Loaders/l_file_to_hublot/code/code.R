@@ -49,29 +49,97 @@
 #         your function code goes here
 #      }
 
-load_input_file_to_df(filename) {
-    file_info <- hubr::retrieve_file(filename, credentials)
+load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, refresh_data) {
 
-    if (file_info$metadata$format = "xlsx") {
-        df <- openxlsx::read.xlsx(file_info$file)
-        return(df)
+  if (is.null(df) || is.na(df) || nrow(df) == 0) {
+    clessnverse::logit(scriptname, "invalid df given to load_df_to_hub2.0")
+    return(1)
+  }
+
+  metadata_colnames <- colnames(df)[which(grepl("^metadata.", colnames(df)))]
+  data_colnames <- colnames(df)[which(grepl("^data.", colnames(df)))]
+
+  key_column <- gsub(" ", "", key_column)
+  key_column <- strsplit(key_column, ",")
+
+  if (content_type == "people") content_type <- "persons"
+
+  for (i in 1:nrow(df)) {
+    df_row <- df[i,]
+
+    metadata <- as.list(
+      df_row[c(metadata_colnames)]
+    )
+    names(metadata) <- gsub("^metadata.", "", names(metadata))
+
+    data <- as.list(
+      df_row[c(data_colnames)]
+    )
+    names(data) <- gsub("^data.", "", names(data))
+
+    key <- df[[key_column[[1]][1]]][i]
+
+    if (is.null(key) || is.na(key) || length(key) == 0) {
+          key <- df[[key_column[[1]][2]]][i]
     }
 
-    if (file_info$metadata$format = "csv") {
-        L <- readLines("myfile", n = 1)
-        numfields <- count.fields(textConnection(L), sep = ";")
-        if (numfields == 1) read.csv("myfile") else read.csv2("myfile")
-
-        file <- read.csv2(file_info$file)
-        return(df)
+    if (is.null(key) || is.na(key) || length(key) == 0) {
+          msg <- paste("Warning : the key for an entry of the import file could not be computed.  Row of the file:", 
+                       i, 
+                       "date is:",
+                       paste(data, collapse = ' ')
+                      )
+          clessnverse::logit(scriptname, msg, logger)
+          warning(msg)
+         rm(msg)
+         next
     }
 
-    clessnverse::logit(scriptname = scriptname, 
-                       message = paste("filetype", file_info$metadata$format, "for filename", filename, "not supporter"), 
-                       logger = logger)
-    return(data.frame())
+    if (key_encoding == "digest") {
+      key <- digest::digest(key)
+    }
+
+    tryCatch(
+      {
+        clessnverse::logit(scriptname, paste("about to add item to hub2.0: key=", key), logger)
+        clessnhub::create_item(table = content_type, key = key, type = records_type, schema = records_schema, 
+                              metadata = metadata, 
+                              data = data
+                              )
+      },
+      error= function(e) {
+        if (refresh_data) {
+          clessnhub::edit_item(table = content_type, key = key, type = records_type, schema = records_schema, 
+                               metadata = metadata, 
+                               data = data
+                              )
+        } else {
+          clessnverse::logit(scriptname, paste("item with key=", key, "probably already exists.  Actual error is"), logger)
+          clessnverse::logit(scriptname, e, logger)
+        }  
+      },
+
+      finally={
+
+      }
+    )
+  }
+
+  return(0)
 
 }
+
+
+
+
+
+load_df_to_hublot <- function(df, content_type, records_type, key_encoding, key_column) {
+
+}
+
+
+
+
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -102,8 +170,15 @@ main <- function() {
     ###########################################################################
     # Define local objects of your core algorithm here
     # Ex: parties_list <- list("CAQ", "PLQ", "QS", "PCQ", "PQ")
+    ret <- 0
 
-
+    valid_content_types <- list(
+      people = c("candidate", "mp", "journalist", "political_staff", "public_service"), 
+      medias = c("journal, tv"), 
+      institutions = c("parliament", "government", "public_health"), 
+      partners = c("collaborateur", "partenaire_universitaire", "fournisseur"), 
+      political_parties = c("provincial", "federal", "europeean", "national"))
+    
     ###########################################################################
     # Start your main script here using the best practices in activity logging
     #
@@ -111,9 +186,91 @@ main <- function() {
     #     clessnverse::logit(scriptname, "Getting political parties press releases from the datalake", logger) 
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #      
-    df <- load_input_file_to_df(opt$filename)
 
+    # List the import files to import from the file blob storage
+    files_filter <- list(
+      tags = "dimension_import_file",
+      metadata__storage_class="files",
+      metadata__imported = FALSE
+    )
+      
+    file_list <- hublot::filter_files(credentials, files_filter)
 
+    if (length(file_list$results) == 0) {
+      clessnverse::logit(scriptname, "no file candidate for import.  exitting script normally", logger)
+      quit(status)
+    }
+
+    for (file in file_list$results) {
+      clessnverse::logit(scriptname, paste("importing", file$name, "containing", file$metadata$content_type, "of type", file$metadata$records_type), logger)
+
+      if ( !(file$metadata$destination %in% c("hub2.0", "hublot")) ) {
+        clessnverse::logit(scriptname, paste("bad destination in file metadata:", file$metadata$destination, "for file", file$name), logger)
+        status <<- 2
+        next
+      } 
+
+      if (is.null(file$metadata$format) || !(file$metadata$format %in%  c("csv","xlsx"))) {
+        clessnverse::logit(scriptname, paste("invalid file format for", file$name), logger)
+        status <<- 2
+        next
+      }
+
+      if (is.null(file$metadata$format) || 
+          !(file$metadata$content_type %in% names(valid_content_types)) &&
+          !(file$metadata$records_type %in% valid_people_records_types)) {
+        clessnverse::logit(scriptname, paste("invalid content_type", file$metadata$content_type, "for", file$name), logger)
+        status <<- 2
+        next
+      }
+
+      if (file$metadata$format == "csv") {
+        header_line <- readLines(file$file, n = 1)
+        numfields <- count.fields(textConnection(header_line), sep = ";")
+        df <- if (numfields == 1) read.csv(file$file, encoding="UTF-8") else read.csv2(file$file, encoding="UTF-8")
+        if ("X" %in% names(df)) df$X <- NULL
+      }
+
+      if (file$metadata$format == "xlsx") {
+        df <- openxlsx::read.xlsx(file$file)
+      }
+
+      if (file$metadata$destination == "hub2.0") {
+        ret <- load_df_to_hub2.0(
+          df = df, 
+          content_type   = file$metadata$content_type,
+          records_type   = file$metadata$records_type,
+          records_schema = file$metadata$records_schema,
+          key_encoding   = file$metadata$key_encoding,
+          key_column     = file$metadata$key_column,
+          refresh_data   = file$metadata$refresh
+        )
+
+        file$metadata$imported <- TRUE
+
+        # Must update the file here
+        # hublot::update_file(file$slug, file, credentials)
+
+        return(ret)
+      }
+
+      if (file$metadata$destination == "hublot") {
+        ret <- load_df_to_hublot(
+          df = df, 
+          content_type   = file$metadata$content_type,
+          records_type   = file$metadata$records_type,
+          records_schema = file$metadata$records_schema,
+          key_encoding   = file$metadata$key_encoding,
+          key_column     = file$metadata$key_column,
+          refresh_data   = file$metadata$refresh
+        )
+
+        return(ret)
+      }
+
+    } #for (file in file_list$results)
+
+    return(ret)
 }
 
 
@@ -148,7 +305,7 @@ tryCatch(
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     #     warehouse_table <- "political_parties_press_releases"
-    filename <- "import_people_journalists"
+    
 
     # scriptname, opt, logger, credentials are mandatory global objects
     # for them we use the <<- assignment so that they are available in
@@ -179,21 +336,32 @@ tryCatch(
         Sys.getenv("HUB3_PASSWORD"))
     
     # Connecting to hub 2.0
-    clessnhub::login(
-        Sys.getenv("HUB_USERNAME"),
-        Sys.getenv("HUB_PASSWORD"),
-        Sys.getenv("HUB_URL"))
+    #clessnhub::login(
+    #    Sys.getenv("HUB_USERNAME"),
+    #    Sys.getenv("HUB_PASSWORD"),
+    #    Sys.getenv("HUB_URL"))
+
+    clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
+    status <<- 0
+
     # Call main script    
-    main()
+    status <<- main()
   },
+
+  warning = function(w) {
+      clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+      print(w)
+      status <<- 2
+  }),
   
   # Handle an error or a call to stop function in the code
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
+    status <<- 1
   },
   
   # Terminate gracefully whether error or not
@@ -204,6 +372,8 @@ tryCatch(
     # Cleanup
     closeAllConnections()
     rm(logger)
+
+    quit(status=status)
   }
 )
 
