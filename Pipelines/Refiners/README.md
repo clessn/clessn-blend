@@ -2,38 +2,43 @@
 
 ## Description
 
+Hublot: https://clhub.clessn.cloud/admin/
 
-## Utilisation
+## Create a refiner
 
-1. Aller dans site d’administration dans Hublot. Accéder à la page d’accueil d’Hublot. Va dans dynamic tables. 
-2. Crée une table.
-    1. Exemple: Créer un raffineur qui va créer un comptoir qui va calculer le nombre de communiqués publiés par partis par semaine. 
-3. Nommer la table
-    1. Nom: mart_ : table de comptoir
-    2. Table, verbose name and verbose name plural: pareil
-4. Créer métadonnées de comptoir
+1. On the admin site of Hublot, open Dynamic table. 
+2. Create a table and fill in the form:
+    1. Database: default
+    2. Table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table) (same)
+    1. Exemple: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
+4. Create datamart metadata
+    1. Go on an existing mart table
+    2. Change the view from "Tree" to "Code"
+    3. Copy all the content
+    4. Paste it in your new table metadata field
+    5. Change the appropriate fields 
     1. Type: table
     2. Format: dataframe
-    3. Pillier: décideurs, médias, citoyens
-    4. Hashtag: permet tracabilité du lac vers entrepot/comptoir
-    5. Description: free text. Expliquer le comptoir. 
-    6. Content type: façon de mettre sous forme python case ce qu’il y a dans la table
-    7. Storage class: toujours mart. A aussi lake et un autre (entrepôt?).
-5. Populer la table basé sur le repo retl
-    1. Cloner repository clessn/retl
-    2. Copier contenu retl et coller dans cleessn-blend/pipeline/refiners, créer nouveau dossier selon format r_nom_du_refiner. Préfixe r_ est pour refiner.
-6. Ouvrir RStudio
-7. Ouvrir Rprojet dans dossier de ton raffineur
-8. Supprimer README.md
-9. Modifier template_README.md pour décrire le raffineur dans le langage pas technique. Renommer README.md
-10. Push dans CLESSN-blend
-11. Mettre à coder. À part du README et de dossier de code, pas besoin de toucher le reste. 
-12. Code.R: ouvrir pour coder. C’est le gabarit de code. Coder à l’intérieur de ce gabarit. Contenu est relié à l’automatisation de ton rafineur.
-13. Créer le rafineur
-    1. Changer la ligne 111 et mettre le nom de notre rafineur en pythoncase.
-    2. Dans MAIN: c’est là que votre code va et que vous allez pouvoir le tester.
-    3. Retourner dans Hublot, regarder table pour identifier l’intrant. A clé unique et timestamp. Voit champ qui s’appelle body.
-    4. Prendre le nom de la table et 
+    3. Pillar: Decision-makers, Media and/or citizens
+    4. Hashtag: allows tracability for lake to storage or datamart
+    5. Description: free text. Explain the datamart. 
+    6. Content type: describe what's in the table in `snake_case`.
+    7. Storage class: always `mart`. There's also lake and `storage`.
+5. Populate the table based on the `RETL` repo
+    1. Clone repository `clessn/retl`
+    2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
+          DO NOT copy the whole directory. Be sure to copy the content of the directory.
+6. Delete README.md
+7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
+9. Open Rprojet in the refiner folder.
+10. Push in CLESSN-blend
+11. Start coding. The only files you need to change are the code/code.R and README.md  
+12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
+13. Create the refiner
+    1. Change line 111 and put the refiner name in snake_case 
+    2. In MAIN: that's where your code will go and where you'll be able to test it.
+    3. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
+    4. Take the variable name and:
 
 ```r
 {
@@ -43,23 +48,23 @@ datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]
 warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 
-1. Exécuter.
-2. Inspecter les variables. Tout ce qui est préfixé par Data. sont colonnes dans la table d’entrepôt.
-3. Enrichir la table pour créer un comptoir qui est utile pour la recherche. Ajouter colonne.
-4. Doit toujours avoir une key dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))
-5. Écrire dataframe dans Hublot via R
+1. Execute
+2. Inspect the variables. Everything with Data. prefix are columns in the storage table.
+3. Enrichir la table to create a datamart that's useful for research. Add column.
+4. You always need to have a key `dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))`
+5. Wrie dataframe to Hublot via R
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
-1. Tu peux mettre ton ggplot dedans. Le rafineur peut créer ton graphique. Tu peux mettre ton ggplot dans le lac avec clessn::commit_lake_item()
+1. Optional: add gglopt so that the refiner can create your graph. You can add your ggplot to the lake with `clessn::commit_lake_item()`
 
 ## R enviro
 
-R enviro: aller dans clessn-blend. Suivre les instructions dans repo Renviro-tutorial: tout est expliqué. Ça crée un fichier dans votre R intentory.
+R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as everything is explained. It creates a file in your R inventory.
 
-## Aide-mémoire
+## Cheatsheet
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
