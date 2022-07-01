@@ -15,13 +15,15 @@ Based on the [Portage Template for Open Science Workflows](https://assistant.por
 
 ## Responsibilities and Resources
 
-### Assign responsiblities
+### Responsiblities
 
 ### Succession planning
 
 ### Budgeting
 
 ## Data collection
+
+![CLESSN data platform](DataPlatformCLESSN.drawio.png)
 
 ### Data types
 
