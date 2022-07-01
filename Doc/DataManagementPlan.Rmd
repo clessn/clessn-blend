@@ -1,0 +1,101 @@
+---
+title: "Data Management Plan"
+author: "CLESSN"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Management Plan
+
+Based on the [Portage Template for Open Science Workflows](https://assistant.portagenetwork.ca/template_export/43432169.pdf)
+
+## Responsibilities and Resources
+
+### Assign responsiblities
+
+### Succession planning
+
+### Budgeting
+
+## Data collection
+
+### Data types
+
+Data types (source: data catalog)
+
+* csv
+* rsv
+* xlsx
+* sav
+* dta
+* hub
+
+Data type (to be confirmed)
+
+* Code (R, Python)
+* .pdf
+* HTML
+* XML
+* Textual data
+* Tabular data
+* Spatial data
+
+### File naming and versioning
+
+Code (R, Python):
+
+Use Git and GitHub for versioning
+
+Data:
+
+1. Source brute passe dans extracteur
+2. Extracteur envoie dans lac
+3. Chargeur envoie dans entrepôt
+4. Raffineur envoie dans comptoir
+
+Data access
+
+The *chercheur interne* uses R packages clessnhub and clessnverse.
+
+The *external researcher* consults the data catalog. They make an access request. When approved, will have access to data.
+
+### Document workflows
+
+## Documentation and metadata
+
+### Data documentation
+
+Include a README in GitHub repositories.
+
+### Resposibilities for documentation
+
+### Metadata for datasets
+
+Metadata standard for social sciences: [Data Documentation Initiative](https://www.dcc.ac.uk/resources/metadata-standards/ddi-data-documentation-initiative) (DDI)
+
+Identify primary and secondary sources.
+
+### Process documentation
+
+## Storage and backup
+
+### Data storage needs estimate
+
+## Sharing, reuse and preservation
+
+### Licences for sharing and reusing data
+
+### Sharing data for knowledge mobilisation
+
+## Ethics and legal compliance
+
+### Privacy protection
+
+## Ressources
+
+* [Digital Research Alliance of Canada - Research Data Management](https://alliancecan.ca/en/services/research-data-management)
+* [ICPSR](www.icpsr.umich.edu)
