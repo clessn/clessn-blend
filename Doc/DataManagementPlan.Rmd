@@ -48,7 +48,7 @@ Data type (to be confirmed)
 
 Code (R, Python):
 
-Use Git and GitHub for versioning
+Use Git and GitHub for versioning. Create DOI to be able to cite your GitHub repository ([tutorial](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)).
 
 Data:
 
@@ -56,12 +56,6 @@ Data:
 2. Extracteur envoie dans lac
 3. Chargeur envoie dans entrepôt
 4. Raffineur envoie dans comptoir
-
-Data access
-
-The **internal researcher** uses R packages clessnhub and clessnverse.
-
-The **external researcher** consults the data catalog. They make an access request. When approved, will have access to data.
 
 ### Document workflows
 
@@ -95,13 +89,25 @@ License: Creative Commons Attribution 4.0 International License.
 
 ## Storage and backup
 
+* Valeria: Data management and appreciation team of specialists at Université Laval's Centre de valorisation des données
+
 ### Data storage needs estimate
 
 ## Sharing, reuse and preservation
 
-[Université Laval Dataverse](https://borealisdata.ca/dataverse/laval)
+* [Université Laval Dataverse](https://borealisdata.ca/dataverse/laval)
+
+Data access
+
+The **internal researcher** uses R packages clessnhub and clessnverse.
+
+The **external researcher** consults the data catalog. They make an access request. When approved, will have access to data.
+
+Access conditions are clearly indicated, but not necessarily free. When data is inacessable, metadata remains accessible to allow discoverability. When necessary, have a protocol for authentification and authorisation.
 
 ### Licences for sharing and reusing data
+
+To allow discoverability and facilitate legal interoperability, identify the licensing status of each dataset in a format for humans and computers.
 
 * Open Data Commons licenses
 * Creative Commons licenses
