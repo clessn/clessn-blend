@@ -59,11 +59,13 @@ Data:
 
 Data access
 
-The *chercheur interne* uses R packages clessnhub and clessnverse.
+The **internal researcher** uses R packages clessnhub and clessnverse.
 
-The *external researcher* consults the data catalog. They make an access request. When approved, will have access to data.
+The **external researcher** consults the data catalog. They make an access request. When approved, will have access to data.
 
 ### Document workflows
+
+FAIR principles: Findable, Accessible, Interoperable, Reusable
 
 ## Documentation and metadata
 
@@ -97,7 +99,12 @@ License: Creative Commons Attribution 4.0 International License.
 
 ## Sharing, reuse and preservation
 
+[Université Laval Dataverse](https://borealisdata.ca/dataverse/laval)
+
 ### Licences for sharing and reusing data
+
+* Open Data Commons licenses
+* Creative Commons licenses
 
 ### Sharing data for knowledge mobilisation
 
@@ -110,3 +117,9 @@ License: Creative Commons Attribution 4.0 International License.
 * [Digital Research Alliance of Canada - Research Data Management](https://alliancecan.ca/en/services/research-data-management)
 * [ICPSR](www.icpsr.umich.edu)
 * [Gestion de données - Université Laval](https://www5.bibl.ulaval.ca/services/soutien-a-ledition-savante-et-a-la-recherche/gestion-des-donnees-de-recherche)
+
+Videos
+
+* [Le rôle des acteurs institutionnels dans la gestion des données de recherche
+](https://www.youtube.com/watch?v=Jj12kLc60YI&ab_channel=Biblioth%C3%A8quedel%27Universit%C3%A9Laval)
+* [Les principes FAIR de gestion et d’intendance des données](https://www.youtube.com/watch?v=ZDSKwUL8FnU&ab_channel=Biblioth%C3%A8quedel%27Universit%C3%A9Laval)
