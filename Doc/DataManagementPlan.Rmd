@@ -101,9 +101,13 @@ License: Creative Commons Attribution 4.0 International License.
 
 Data access
 
-The **internal researcher** uses R packages clessnhub and clessnverse.
+DataMarts
 
-The **external researcher** consults the data catalog. They make an access request. When approved, will have access to data.
+The **internal researcher** (i.e. chair researcher, direct partners) uses R packages clessnhub and clessnverse.
+
+Data catalog
+
+The **external researcher** (i.e. external partners, other institutions) consults the data catalog. They make an access request. When approved, will have access to data.
 
 Access conditions are clearly indicated, but not necessarily free. When data is inacessable, metadata remains accessible to allow discoverability. When necessary, have a protocol for authentification and authorisation.
 
