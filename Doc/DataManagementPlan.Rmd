@@ -75,9 +75,19 @@ Include a README in GitHub repositories.
 
 ### Metadata for datasets
 
-Metadata standard for social sciences: [Data Documentation Initiative](https://www.dcc.ac.uk/resources/metadata-standards/ddi-data-documentation-initiative) (DDI)
+**Data Documentation Initiative**
 
-Identify primary and secondary sources.
+Metadata standard for social sciences: [Data Documentation Initiative](https://ddialliance.org/) (DDI)
+
+DDI Lifecyle (DDI v. 3): document dataset at each stage of lifecyle (conceptualisation to publication and reuse). Notably used for the ICPSR data catalogue. Based on XML Schemas.
+
+[DDI Lifecyle 3.3](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/) (published: 2020-04-15)
+
+[XML Schema (entry point)](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/XMLSchema/instance.xsd)
+
+[DDI-Lifecycle 3.3 XML Schema Documentation](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/XMLSchema/FieldLevelDocumentation/)
+
+License: Creative Commons Attribution 4.0 International License.
 
 ### Process documentation
 
@@ -99,3 +109,4 @@ Identify primary and secondary sources.
 
 * [Digital Research Alliance of Canada - Research Data Management](https://alliancecan.ca/en/services/research-data-management)
 * [ICPSR](www.icpsr.umich.edu)
+* [Gestion de données - Université Laval](https://www5.bibl.ulaval.ca/services/soutien-a-ledition-savante-et-a-la-recherche/gestion-des-donnees-de-recherche)
