@@ -548,7 +548,7 @@ tryCatch(
     # The objects scriptname, opt, logger and credentials *must* be set and
     # used throught your code.
     #
-  datamart_table_name <- "medias_issues_parties_sentiment_scores"
+    datamart_table_name <- "medias_issues_parties_sentiment_scores"
 
 
     #########################################################################
@@ -571,10 +571,10 @@ tryCatch(
     opt <- list(dataframe_mode = "refresh",  hub_mode = "refresh", log_output = c("file", "console"), download_data = FALSE, translate=FALSE)
 
     if (!exists("opt")) {
-        opt <- clessnverse::processCommandLineOptions()
+        opt <- clessnverse::process_command_line_options()
     }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
