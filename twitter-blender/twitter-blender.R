@@ -1,9 +1,10 @@
 ###############################################################################
 ################         Script Definitions and Specs        ##################
 ###############################################################################
+#                              twitter-blender.R                              #
 #                                                                             #
-#                                                                             #
-#                        all-persons-tweets-collector                         #
+# This script will get the tweets from specific populations and sture them in #
+# a data warehouse
 #                                                                             #
 #                                                                             #
 #                                                                             #

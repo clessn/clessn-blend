@@ -1,0 +1,137 @@
+---
+title: "Data Management Plan"
+author: "CLESSN"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Management Plan
+
+Based on the [Portage Template for Open Science Workflows](https://assistant.portagenetwork.ca/template_export/43432169.pdf)
+
+## Responsibilities and Resources
+
+### Responsiblities
+
+### Succession planning
+
+### Budgeting
+
+## Data collection
+
+![CLESSN data platform](DataPlatformCLESSN.drawio.png)
+
+### Data types
+
+Data types (source: data catalog)
+
+* csv
+* rsv
+* xlsx
+* sav
+* dta
+* hub
+
+Data type (to be confirmed)
+
+* Code (R, Python)
+* .pdf
+* HTML
+* XML
+* Textual data
+* Tabular data
+* Spatial data
+
+### File naming and versioning
+
+Code (R, Python):
+
+Use Git and GitHub for versioning. Create DOI to be able to cite your GitHub repository ([tutorial](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)).
+
+Data:
+
+1. Source brute passe dans extracteur
+2. Extracteur envoie dans lac
+3. Chargeur envoie dans entrepôt
+4. Raffineur envoie dans comptoir
+
+### Document workflows
+
+FAIR principles: Findable, Accessible, Interoperable, Reusable
+
+## Documentation and metadata
+
+### Data documentation
+
+Include a README in GitHub repositories.
+
+### Resposibilities for documentation
+
+### Metadata for datasets
+
+**Data Documentation Initiative**
+
+Metadata standard for social sciences: [Data Documentation Initiative](https://ddialliance.org/) (DDI)
+
+DDI Lifecyle (DDI v. 3): document dataset at each stage of lifecyle (conceptualisation to publication and reuse). Notably used for the ICPSR data catalogue. Based on XML Schemas.
+
+[DDI Lifecyle 3.3](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/) (published: 2020-04-15)
+
+[XML Schema (entry point)](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/XMLSchema/instance.xsd)
+
+[DDI-Lifecycle 3.3 XML Schema Documentation](https://ddialliance.org/Specification/DDI-Lifecycle/3.3/XMLSchema/FieldLevelDocumentation/)
+
+License: Creative Commons Attribution 4.0 International License.
+
+### Process documentation
+
+## Storage and backup
+
+* Valeria: Data management and appreciation team of specialists at Université Laval's Centre de valorisation des données
+
+### Data storage needs estimate
+
+## Sharing, reuse and preservation
+
+* [Université Laval Dataverse](https://borealisdata.ca/dataverse/laval)
+
+Data access
+
+DataMarts
+
+The **internal researcher** (i.e. chair researcher, direct partners) uses R packages clessnhub and clessnverse.
+
+Data catalog
+
+The **external researcher** (i.e. external partners, other institutions) consults the data catalog. They make an access request. When approved, will have access to data.
+
+Access conditions are clearly indicated, but not necessarily free. When data is inacessable, metadata remains accessible to allow discoverability. When necessary, have a protocol for authentification and authorisation.
+
+### Licences for sharing and reusing data
+
+To allow discoverability and facilitate legal interoperability, identify the licensing status of each dataset in a format for humans and computers.
+
+* Open Data Commons licenses
+* Creative Commons licenses
+
+### Sharing data for knowledge mobilisation
+
+## Ethics and legal compliance
+
+### Privacy protection
+
+## Ressources
+
+* [Digital Research Alliance of Canada - Research Data Management](https://alliancecan.ca/en/services/research-data-management)
+* [ICPSR](www.icpsr.umich.edu)
+* [Gestion de données - Université Laval](https://www5.bibl.ulaval.ca/services/soutien-a-ledition-savante-et-a-la-recherche/gestion-des-donnees-de-recherche)
+
+Videos
+
+* [Le rôle des acteurs institutionnels dans la gestion des données de recherche
+](https://www.youtube.com/watch?v=Jj12kLc60YI&ab_channel=Biblioth%C3%A8quedel%27Universit%C3%A9Laval)
+* [Les principes FAIR de gestion et d’intendance des données](https://www.youtube.com/watch?v=ZDSKwUL8FnU&ab_channel=Biblioth%C3%A8quedel%27Universit%C3%A9Laval)
