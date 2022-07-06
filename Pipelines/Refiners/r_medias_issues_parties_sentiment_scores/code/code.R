@@ -115,15 +115,15 @@ get_parties_dict <- function() {
 
 
 get_radarplus_headlines <- function() {
-  data <- hubr::filter_lake_items(credentials, list(key = "radar-feb2022"))
+  data <- hubr::filter_lake_items(credentials, list(key = "dataradar_20210101_20220623_fr"))
   df <- tidyjson::spread_all(data$results)
   url <- df$..JSON[[1]]$file
-  df_headlines <- read.csv2(url)
+  df <- read.csv2(url)
 
   clessnverse::logit(scriptname=scriptname, message=paste("Radarplus headlines dataframe contains", nrow(df)), logger=logger)
 
 
-  return(df_headlines)
+  return(df)
 }
 
 
@@ -150,8 +150,8 @@ get_confpress_journalists_interventions <- function() {
     metadata = list(location="CA-QC"),
     data = list(
       speakerType = "journalist",
-      eventDate__gte = "2022-02-01",
-      eventDate__lte = "2022-02-28"
+      eventDate__gte = "2021-01-01",
+      eventDate__lte = "2022-06-23"
     )
   )
 
@@ -167,8 +167,8 @@ get_journalists_tweets <- function() {
   filter = clessnhub::create_filter(
     metadata = list(personType="journalist"),
     data = list(
-      creationDate__gte = "2022-02-01",
-      creationDate__lte = "2022-02-01"
+      creationDate__gte = "2021-01-01",
+      creationDate__lte = "2022-06-23"
     )
   )
 
@@ -352,12 +352,12 @@ main <- function() {
     df <- df %>% rbind(row)
 
     clessnverse::logit(scriptname, paste('committing', df_interventions$key[i], '\n'), logger)
-    clessnverse::commit_mart_row(datamart_table_name, df_interventions$key[i], as.list(row), "refresh", credentials)
+    clessnverse::commit_mart_row(datamart_table_name, df_interventions$key[i], as.list(row), opt$hub_mode, credentials)
 
   }
 
   # Enrich and load tweets into datamart
-  for (i in 1:nrow(df_tweets)) {
+  for (i in 139330:nrow(df_tweets)) {
     person <- NULL
 
     person <- df_journalists[which(df_journalists$key == df_tweets$data.personKey[i]),]
@@ -422,7 +422,7 @@ main <- function() {
     df <- df %>% rbind(row)
 
     clessnverse::logit(scriptname, paste('committing', df_tweets$key[i], '\n'), logger)
-    clessnverse::commit_mart_row(datamart_table_name, df_tweets$key[i], as.list(row), "refresh", credentials)
+    clessnverse::commit_mart_row(datamart_table_name, df_tweets$key[i], as.list(row), opt$hub_mode, credentials)
   }
 
   # Enrich and load headlines into datamart
@@ -517,7 +517,7 @@ main <- function() {
     df <- df %>% rbind(row)
 
     clessnverse::logit(scriptname, paste('committing', digest::digest(df_headlines$liens[i]), '\n'), logger)
-    clessnverse::commit_mart_row(datamart_table_name, digest::digest(df_headlines$liens[i]), as.list(row), "refresh", credentials)
+    clessnverse::commit_mart_row(datamart_table_name, digest::digest(df_headlines$liens[i]), as.list(row), opt$hub_mode, credentials)
   }
 
 }
@@ -548,7 +548,7 @@ tryCatch(
     # The objects scriptname, opt, logger and credentials *must* be set and
     # used throught your code.
     #
-    datamart_table_name <- "medias_issues_parties_sentiment_scores"
+  datamart_table_name <- "medias_issues_parties_sentiment_scores"
 
 
     #########################################################################
@@ -571,10 +571,10 @@ tryCatch(
     opt <- list(dataframe_mode = "refresh",  hub_mode = "refresh", log_output = c("file", "console"), download_data = FALSE, translate=FALSE)
 
     if (!exists("opt")) {
-        opt <- clessnverse::process_command_line_options()
+        opt <- clessnverse::processCommandLineOptions()
     }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
