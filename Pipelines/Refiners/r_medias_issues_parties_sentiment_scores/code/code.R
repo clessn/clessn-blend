@@ -574,7 +574,7 @@ tryCatch(
         opt <- clessnverse::processCommandLineOptions()
     }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -622,8 +622,8 @@ tryCatch(
 
     # Cleanup
     closeAllConnections()
-    rm(logger)
-
+    clessnverse::log_close(logger)
+    
     quit(status = status)
   }
 )
