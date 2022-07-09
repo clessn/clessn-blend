@@ -12,3 +12,9 @@ That metadata is also used to retrieve observations in bulk from multiple wareho
 
 Here is a schema of an data ETL pipeline and the position of loader in it:
 ![Alt](https://github.com/clessn/diagrams/blob/master/infra/pipeline_schema.drawio.png).
+
+# Verification list
+- The ```library()``` function is not used to load packages into the loader. Instead, functions are called as the following example: ```my_package::my_function()```
+- The warehouse table metadata allow the development team to link the table to the data lake items or data files they were constructed with.
+- The warehouse table metadata are 
+- In the case of warehouse tables that are regularly updated automatically, 
