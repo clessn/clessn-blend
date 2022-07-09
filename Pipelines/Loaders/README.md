@@ -16,5 +16,5 @@ Here is a schema of an data ETL pipeline and the position of loader in it:
 # Verification list
 - The ```library()``` function is not used to load packages into the loader. Instead, functions are called as the following example: ```my_package::my_function()```
 - The warehouse table metadata allow the development team to link the table to the data lake items or data files they were constructed with.
-- The warehouse table metadata are 
-- In the case of warehouse tables that are regularly updated automatically, 
+- The warehouse table metadata can easily be linked to the mart tables they create 
+- In the case of warehouse tables that are regularly updated automatically, the main script is able to handle all cases
