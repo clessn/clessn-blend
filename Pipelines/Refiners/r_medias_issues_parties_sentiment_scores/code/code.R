@@ -83,7 +83,7 @@ extract_data <- function(table_name, hubr_filter=list(), max_pages=-1) {
 get_issues_dict <- function() {
   # Get the issues dictionary in french
   file_info <- hubr::retrieve_file("dict_enjeux_fr", credentials)
-  issues_dictionary_fr <- read.csv(file_info$file)
+  issues_dictionary_fr <- read.csv2(file_info$file)
   issues_dictionary_fr$X <- NULL
   dict_list <- list()
   for (i in unique(issues_dictionary_fr$categorie)) {
@@ -93,7 +93,7 @@ get_issues_dict <- function() {
 
   # Get the issues dictionary in english
   file_info <- hubr::retrieve_file("dict_enjeux_en", credentials)
-  issues_dictionary_en <- read.csv(file_info$file)
+  issues_dictionary_en <- read.csv2(file_info$file)
   issues_dictionary_en$X <- NULL
   dict_list <- list()
   for (i in unique(issues_dictionary_en$categorie)) {
@@ -190,17 +190,21 @@ get_journalists <- function() {
 
 
 get_confpress_journalists_interventions <- function() {
-  filter = clessnhub::create_filter(
+  filter = list(
     type = "press_conference",
-    metadata = list(location="CA-QC"),
-    data = list(
-      speakerType = "journalist",
-      eventDate__gte = "2021-01-01",
-      eventDate__lte = "2022-06-23"
-    )
+    metadata__location = "CA-QC",
+    data__speakerType = "journalist",
+    data__eventDate__gte = "2021-01-01",
+    data__eventDate__lte = "2022-06-23"
   )
 
-  df <- clessnhub::get_items('agoraplus_interventions', filter)
+  #df <- clessnhub::get_items('agoraplus_interventions', filter)
+  df <- clessnverse::get_hub2_table(
+    table_name = 'agoraplus_interventions', 
+    filter = filter, 
+    max_pages = -1, 
+    hub_conf = hub_config)
+
   clessnverse::logit(scriptname=scriptname, message=paste("agoraplus interventions dataframe contains", nrow(df)), logger=logger)
 
 
@@ -209,16 +213,30 @@ get_confpress_journalists_interventions <- function() {
 
 
 get_journalists_tweets <- function() {
-  filter = clessnhub::create_filter(
-    metadata = list(personType="journalist"),
-    data = list(
-      creationDate__gte = "2021-01-01",
-      creationDate__lte = "2022-06-23"
-    )
+    filter = list(
+    metadata__personType="journalist",
+    data__creationDate__gte="2021-01-01",
+    data__creationDate__lte="2022-06-23"
+    # most field lookups here should work
+    # https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups
   )
 
-  df <- clessnhub::get_items('tweets', filter)
-    clessnverse::logit(scriptname=scriptname, message=paste("tweets dataframe contains", nrow(df)), logger=logger)
+  df <- clessnverse::get_hub2_table(
+    table_name = 'tweets', 
+    filter = filter, 
+    max_pages = -1, 
+    hub_conf = hub_config)
+
+  # filter = clessnhub::create_filter(
+  #   metadata = list(personType="journalist"),
+  #   data = list(
+  #     creationDate__gte = "2021-01-01",
+  #     creationDate__lte = "2022-06-23"
+  #   )
+  # )
+
+  # df <- clessnhub::get_items('tweets', filter)
+  #   clessnverse::logit(scriptname=scriptname, message=paste("tweets dataframe contains", nrow(df)), logger=logger)
 
 
   return(df)
@@ -264,25 +282,16 @@ main <- function() {
 
   df_interventions <- get_confpress_journalists_interventions()
   
-  
-  #df_tweets <- get_journalists_tweets()
-  filter = list(
-    #type="tweet",
-    metadata__personType="journalist",
-    data__creationDate__gte="2021-01-01",
-    data__creationDate__lte="2022-06-23"
-    # most field lookups here should work
-    # https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups
-  )
+  df_tweets <- get_journalists_tweets()
 
-  # return a list of elements structured as named lists
-  data <- extract_data(
-    "tweets", # the table name, can be tweets, agoraplus_press_releases, persons, or any other
-    jsonlite::toJSON(filter, auto_unbox = T), # the auto_unbox is really important
-    max_pages = -1 # set to a positive number x to extraxt x * 1000 items only
-  )
+  # # return a list of elements structured as named lists
+  # data <- extract_data(
+  #   "tweets", # the table name, can be tweets, agoraplus_press_releases, persons, or any other
+  #   jsonlite::toJSON(filter, auto_unbox = T), # the auto_unbox is really important
+  #   max_pages = -1 # set to a positive number x to extraxt x * 1000 items only
+  # )
 
-  df_tweets <-  tidyjson::spread_all(data)
+  # df_tweets <-  tidyjson::spread_all(data)
 
   df_headlines <- get_radarplus_headlines()
 
