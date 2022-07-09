@@ -275,10 +275,10 @@ clessnverse::logit(scriptname=scriptname, message=paste("Journalists dataframe c
 #clessnverse::logit(scriptname=scriptname, message=paste("Tweets dataframe contains", nrow(df_tweets)), logger=logger)
 # filter
 filter = list(
-    type="tweet",
+    #type="tweet",
     metadata__personType="journalist",
-    data__creationDate__gte="2022-02-01",
-    data__creationDate__lte="2022-02-28"
+    data__creationDate__gte="2021-01-01",
+    data__creationDate__lte="2022-06-23"
     # most field lookups here should work
     # https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups
 )

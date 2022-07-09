@@ -24,7 +24,54 @@
 ########################           Functions            ######################
 ###############################################################################
 
+# modified method from clessnhub. Force json and ignore some parts
+http_post <- function(path, body, options=NULL, verify=T) {
+    token <- hub_config$token
+    token_prefix <- hub_config$token_prefix
+    response <- httr::POST(url=paste0(hub_config$url, path), body=body, httr::accept_json(), httr::content_type_json(), config=httr::add_headers(Authorization=paste(token_prefix, token)), verify=verify, httr::timeout(30))
+    return(response)
+}
 
+
+
+
+# function that will extract all data from a specified table based on a hubr type filter and an optional maximum of loops
+extract_data <- function(table_name, hubr_filter=list(), max_pages=-1) {
+    #hubr_filter <- jsonlite::toJSON(hubr_filter)
+    path <- paste("/data/", table_name, "/count/", sep="")
+    response <- http_post(path, body=hubr_filter)
+    result <- httr::content(response)
+    count <- result$count
+    print(paste("count:", count))
+    
+    path <- paste("/data/", table_name, "/filter/", sep="")
+    response <- http_post(path, body=hubr_filter)
+    page <- httr::content(response)
+    data = list()
+    
+    repeat {
+        
+        data <- c(data, page$results)
+        print(paste(length(data), "/", count))
+        path <- page$"next"
+        
+        if (is.null(path)) {
+            break
+        }
+        
+        max_pages <- max_pages - 1
+        if (max_pages == 0)
+        {
+            break
+        }
+        
+        path <- strsplit(path, "science")[[1]][[2]]
+        response <- http_post(path, body=hubr_filter)
+        page <- httr::content(response)
+    }
+    
+    return(data)
+}
 
 
 
@@ -70,8 +117,8 @@ get_sentiment_dict <- function() {
   file_info <- hubr::retrieve_file("dict_sentiments", credentials)
   sentiment_dictionary <- read.csv2(file_info$file)
   dict_list <- list()
-  for (i in unique(sentiment_dictionary$categorie)) {
-      dict_list[[i]] <- sentiment_dictionary$item[sentiment_dictionary$categorie == i]
+  for (i in unique(sentiment_dictionary$category)) {
+      dict_list[[i]] <- sentiment_dictionary$item[sentiment_dictionary$category == i]
   }
   sentiment_dictionary <- quanteda::dictionary(dict_list)
 
@@ -85,21 +132,19 @@ get_parties_dict <- function() {
 
   polparties_dictionary_can$X <- NULL
   dict_list <- list()
-  for (i in unique(polparties_dictionary_can$categorie)) {
-      dict_list[[i]] <- polparties_dictionary_can$item[polparties_dictionary_can$categorie == i]
+  for (i in unique(polparties_dictionary_can$category)) {
+      dict_list[[i]] <- polparties_dictionary_can$item[polparties_dictionary_can$category == i]
   }
   polparties_dictionary_can <- quanteda::dictionary(dict_list)
 
 
   file_info <- hubr::retrieve_file("dict_political_parties_qc", credentials)
-  polparties_dictionary_qc <- read.csv(file_info$file)
+  polparties_dictionary_qc <- read.csv2(file_info$file)
 
   polparties_dictionary_qc$X <- NULL
   dict_list <- list()
-  for (name in names(polparties_dictionary_qc)) {
-      for (i in 1:length(polparties_dictionary_qc[[name]])) {
-          if (polparties_dictionary_qc[[name]][i] != "") dict_list[[name]][i] <- polparties_dictionary_qc[[name]][i]
-      }
+  for (i in unique(polparties_dictionary_qc$category)) {
+      dict_list[[i]] <- polparties_dictionary_qc$item[polparties_dictionary_qc$category == i]
   }
   polparties_dictionary_qc <- quanteda::dictionary(dict_list)
 
@@ -208,8 +253,6 @@ main <- function() {
   #     lakes_items_list <- get_lake_press_releases(parties_list)
   #      
   
-  datamart  <- clessnverse::get_mart_table(datamart_table_name, credentials)
-
   # Get all dictionaries
   issues_dict <- get_issues_dict()
   sentiment_dict <- get_sentiment_dict()
@@ -220,9 +263,30 @@ main <- function() {
   df_journalists <- get_journalists()
 
   df_interventions <- get_confpress_journalists_interventions()
-  df_tweets <- get_journalists_tweets()
+  
+  
+  #df_tweets <- get_journalists_tweets()
+  filter = list(
+    #type="tweet",
+    metadata__personType="journalist",
+    data__creationDate__gte="2021-01-01",
+    data__creationDate__lte="2022-06-23"
+    # most field lookups here should work
+    # https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups
+  )
+
+  # return a list of elements structured as named lists
+  data <- extract_data(
+    "tweets", # the table name, can be tweets, agoraplus_press_releases, persons, or any other
+    jsonlite::toJSON(filter, auto_unbox = T), # the auto_unbox is really important
+    max_pages = -1 # set to a positive number x to extraxt x * 1000 items only
+  )
+
+  df_tweets <-  tidyjson::spread_all(data)
+
   df_headlines <- get_radarplus_headlines()
 
+  datamart  <- clessnverse::get_mart_table(datamart_table_name, credentials)
 
   # Decleare our dataframe with the proper columns names
   # Structure de la table
@@ -257,104 +321,104 @@ main <- function() {
   )
 
 
-  # Enrich and load journalists interventions into datamart
-  for (i in 1:nrow(df_interventions)) {
-    # get the journalist attributes
-    person <- NULL
+  # # Enrich and load journalists interventions into datamart
+  # for (i in 1:nrow(df_interventions)) {
+  #   # get the journalist attributes
+  #   person <- NULL
 
-    if (!is.na(df_interventions$data.speakerFullName[i])) {
-        first_name <- strsplit(df_interventions$data.speakerFullName[i], ",")[[1]][2]
-        last_name <- strsplit(df_interventions$data.speakerFullName[i], ",")[[1]][1]
+  #   if (!is.na(df_interventions$data.speakerFullName[i])) {
+  #       first_name <- strsplit(df_interventions$data.speakerFullName[i], ",")[[1]][2]
+  #       last_name <- strsplit(df_interventions$data.speakerFullName[i], ",")[[1]][1]
 
-        first_name <- trimws(first_name)
-        last_name <- trimws(last_name)
+  #       first_name <- trimws(first_name)
+  #       last_name <- trimws(last_name)
 
-        person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
+  #       person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
 
-        if (nrow(person) == 0) {
-            first_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][1]
-            last_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][2]
+  #       if (nrow(person) == 0) {
+  #           first_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][1]
+  #           last_name <- strsplit(df_interventions$data.speakerFullName[i], " ")[[1]][2]
 
-            first_name <- trimws(first_name)
-            last_name <- trimws(last_name)
+  #           first_name <- trimws(first_name)
+  #           last_name <- trimws(last_name)
 
-            person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
-        }
+  #           person <- df_journalists[which(df_journalists$data.firstName == first_name & df_journalists$data.lastName == last_name),]
+  #       }
 
-        if (nrow(person) == 0) {
-            person_filter <- clessnhub::create_filter(data=list("fullName" = df_interventions$data.speakerFullName[i]))
-            person <- df_journalists[which(df_journalists$data.fullName == df_interventions$data.speakerFullName[i]),]
-        }
-    }
+  #       if (nrow(person) == 0) {
+  #           person_filter <- clessnhub::create_filter(data=list("fullName" = df_interventions$data.speakerFullName[i]))
+  #           person <- df_journalists[which(df_journalists$data.fullName == df_interventions$data.speakerFullName[i]),]
+  #       }
+  #   }
 
-    if (is.null(person) || nrow(person) == 0) {
-        person <- data.frame(key=NA, type="journalist", data.fullName=df_interventions$data.speakerFullName[i], 
-                             data.isFemale=df_interventions$data.speakerGender[i], data.currentMedia=df_interventions$data.speakerMedia[i])
-    }
+  #   if (is.null(person) || nrow(person) == 0) {
+  #       person <- data.frame(key=NA, type="journalist", data.fullName=df_interventions$data.speakerFullName[i], 
+  #                            data.isFemale=df_interventions$data.speakerGender[i], data.currentMedia=df_interventions$data.speakerMedia[i])
+  #   }
 
-    df_issues_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], issues_dict)
-    df_parties_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], parties_dict)
-    df_sentiments <- clessnverse::compute_catergory_sentiment_score(df_interventions$data.interventionText[i], c(issues_dict, parties_dict), sentiment_dict)
+  #   df_issues_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], issues_dict)
+  #   df_parties_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], parties_dict)
+  #   df_sentiments <- clessnverse::compute_catergory_sentiment_score(df_interventions$data.interventionText[i], c(issues_dict, parties_dict), sentiment_dict)
 
-    row <- data.frame(
-      source=df_interventions$type[i], author_id = person$key, 
-      author_name = person$data.fullName, author_gender = if (!is.na(person$data.isFemale) && person$data.isFemale == 1) "F" else "M",
-      author_media = person$data.currentMedia, content = df_interventions$data.interventionText[i], 
-      content_date = df_interventions$data.eventDate[i],
-      LoiCrime_words_count = df_issues_score$crime,
-      LoiCrime_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "crime"],
-      CultNation_words_count = df_issues_score$culture,
-      CultNation_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "culture"],
-      TerresPubAgri_words_count = df_issues_score$agriculture + df_issues_score$'land-water-management' + df_issues_score$fisheries + df_issues_score$forestry,
-      TerresPubAgri_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "agriculture"] + df_sentiments$sentiment[df_sentiments$category == "land-water-management"] + df_sentiments$sentiment[df_sentiments$category == "fisheries"] + df_sentiments$sentiment[df_sentiments$category == "forestry"],
-      GvntGvnc_words_count = df_issues_score$government_ops + df_issues_score$prov_local + df_issues_score$intergovernmental + df_issues_score$constitutional_natl_unity,
-      GvntGvnc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "government_ops"] + df_sentiments$sentiment[df_sentiments$category == "prov_local"] + df_sentiments$sentiment[df_sentiments$category == "intergovernmental"] + df_sentiments$sentiment[df_sentiments$category == "constitutional_natl_unity"],
-      Immigration_words_count = df_issues_score$immigration,
-      Immigration_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "immigration"],
-      DroitsEtc_words_count = df_issues_score$civil_rights + df_issues_score$religion + df_issues_score$aboriginal,
-      DroitsEtc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "civil_rights"] + df_sentiments$sentiment[df_sentiments$category == "religion"] + df_sentiments$sentiment[df_sentiments$category == "aboriginal"],
-      SanteServSoc_words_count = df_issues_score$healthcare + df_issues_score$social_welfare,
-      SanteServSoc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "healthcare"] + df_sentiments$sentiment[df_sentiments$category == "social_welfare"],
-      EconomieTravail_words_count = df_issues_score$macroeconomics + df_issues_score$labour + df_issues_score$foreign_trade + df_issues_score$sstc + df_issues_score$finance + df_issues_score$housing + df_issues_score$transportation,
-      EconomieTravail_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "macroeconomics"] + df_sentiments$sentiment[df_sentiments$category == "labour"] + df_sentiments$sentiment[df_sentiments$category == "foreign_trade"] + df_sentiments$sentiment[df_sentiments$category == "sstc"] + df_sentiments$sentiment[df_sentiments$category == "finance"] + df_sentiments$sentiment[df_sentiments$category == "housing"] + df_sentiments$sentiment[df_sentiments$category == "transportation"],
-      Education_words_count = df_issues_score$education,
-      Education_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "education"],
-      EnviroEnergie_words_count = df_issues_score$environment + df_issues_score$energy,
-      EnviroEnergie_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "environment"] + df_sentiments$sentiment[df_sentiments$category == "energy"],
-      AffIntlDefense_words_count = df_issues_score$defence + df_issues_score$intl_affairs,
-      AffIntlDefense_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "defence"] + df_sentiments$sentiment[df_sentiments$category == "intl_affairs"],
-      qc_caq_words_count = df_parties_score$caq,
-      qc_caq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "caq"],
-      qc_pq_words_count = df_parties_score$pq,
-      qc_pq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "pq"],
-      qc_plq_words_count = df_parties_score$plq,
-      qc_plq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "plq"],
-      qc_qs_words_count = df_parties_score$qs,
-      qc_qs_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "qs"],
-      can_lpc_words_count = df_parties_score$lpc,
-      can_lpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "lpc"],
-      can_cpc_words_count = df_parties_score$cpc,
-      can_cpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "cpc"],
-      can_npd_words_count = df_parties_score$ndp,
-      can_npd_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "ndp"],
-      can_bq_words_count = df_parties_score$bq,
-      can_bq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "bq"],
-      can_gpc_words_count = df_parties_score$gpc,
-      can_gpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "gpc"],
-      can_ppc_words_count = df_parties_score$ppc,
-      can_ppc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "ppc"],
-      headline_mins_duration = NA,
-      content_sentences_count = clessnverse::compute_nb_sentences(df_interventions$data.interventionText[i]),
-      content_words_count = clessnverse::compute_nb_words(df_interventions$data.interventionText[i]),
-      stringsAsFactors = F
-      )
+  #   row <- data.frame(
+  #     source=df_interventions$type[i], author_id = person$key, 
+  #     author_name = person$data.fullName, author_gender = if (!is.na(person$data.isFemale) && person$data.isFemale == 1) "F" else "M",
+  #     author_media = person$data.currentMedia, content = df_interventions$data.interventionText[i], 
+  #     content_date = df_interventions$data.eventDate[i],
+  #     LoiCrime_words_count = df_issues_score$crime,
+  #     LoiCrime_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "crime"],
+  #     CultNation_words_count = df_issues_score$culture,
+  #     CultNation_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "culture"],
+  #     TerresPubAgri_words_count = df_issues_score$agriculture + df_issues_score$'land-water-management' + df_issues_score$fisheries + df_issues_score$forestry,
+  #     TerresPubAgri_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "agriculture"] + df_sentiments$sentiment[df_sentiments$category == "land-water-management"] + df_sentiments$sentiment[df_sentiments$category == "fisheries"] + df_sentiments$sentiment[df_sentiments$category == "forestry"],
+  #     GvntGvnc_words_count = df_issues_score$government_ops + df_issues_score$prov_local + df_issues_score$intergovernmental + df_issues_score$constitutional_natl_unity,
+  #     GvntGvnc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "government_ops"] + df_sentiments$sentiment[df_sentiments$category == "prov_local"] + df_sentiments$sentiment[df_sentiments$category == "intergovernmental"] + df_sentiments$sentiment[df_sentiments$category == "constitutional_natl_unity"],
+  #     Immigration_words_count = df_issues_score$immigration,
+  #     Immigration_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "immigration"],
+  #     DroitsEtc_words_count = df_issues_score$civil_rights + df_issues_score$religion + df_issues_score$aboriginal,
+  #     DroitsEtc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "civil_rights"] + df_sentiments$sentiment[df_sentiments$category == "religion"] + df_sentiments$sentiment[df_sentiments$category == "aboriginal"],
+  #     SanteServSoc_words_count = df_issues_score$healthcare + df_issues_score$social_welfare,
+  #     SanteServSoc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "healthcare"] + df_sentiments$sentiment[df_sentiments$category == "social_welfare"],
+  #     EconomieTravail_words_count = df_issues_score$macroeconomics + df_issues_score$labour + df_issues_score$foreign_trade + df_issues_score$sstc + df_issues_score$finance + df_issues_score$housing + df_issues_score$transportation,
+  #     EconomieTravail_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "macroeconomics"] + df_sentiments$sentiment[df_sentiments$category == "labour"] + df_sentiments$sentiment[df_sentiments$category == "foreign_trade"] + df_sentiments$sentiment[df_sentiments$category == "sstc"] + df_sentiments$sentiment[df_sentiments$category == "finance"] + df_sentiments$sentiment[df_sentiments$category == "housing"] + df_sentiments$sentiment[df_sentiments$category == "transportation"],
+  #     Education_words_count = df_issues_score$education,
+  #     Education_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "education"],
+  #     EnviroEnergie_words_count = df_issues_score$environment + df_issues_score$energy,
+  #     EnviroEnergie_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "environment"] + df_sentiments$sentiment[df_sentiments$category == "energy"],
+  #     AffIntlDefense_words_count = df_issues_score$defence + df_issues_score$intl_affairs,
+  #     AffIntlDefense_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "defence"] + df_sentiments$sentiment[df_sentiments$category == "intl_affairs"],
+  #     qc_caq_words_count = df_parties_score$caq,
+  #     qc_caq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "caq"],
+  #     qc_pq_words_count = df_parties_score$pq,
+  #     qc_pq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "pq"],
+  #     qc_plq_words_count = df_parties_score$plq,
+  #     qc_plq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "plq"],
+  #     qc_qs_words_count = df_parties_score$qs,
+  #     qc_qs_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "qs"],
+  #     can_lpc_words_count = df_parties_score$lpc,
+  #     can_lpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "lpc"],
+  #     can_cpc_words_count = df_parties_score$cpc,
+  #     can_cpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "cpc"],
+  #     can_npd_words_count = df_parties_score$ndp,
+  #     can_npd_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "ndp"],
+  #     can_bq_words_count = df_parties_score$bq,
+  #     can_bq_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "bq"],
+  #     can_gpc_words_count = df_parties_score$gpc,
+  #     can_gpc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "gpc"],
+  #     can_ppc_words_count = df_parties_score$ppc,
+  #     can_ppc_pos_neg_diff = df_sentiments$sentiment[df_sentiments$category == "ppc"],
+  #     headline_mins_duration = NA,
+  #     content_sentences_count = clessnverse::compute_nb_sentences(df_interventions$data.interventionText[i]),
+  #     content_words_count = clessnverse::compute_nb_words(df_interventions$data.interventionText[i]),
+  #     stringsAsFactors = F
+  #     )
 
-    df <- df %>% rbind(row)
+  #   df <- df %>% rbind(row)
 
-    clessnverse::logit(scriptname, paste('committing', df_interventions$key[i], '\n'), logger)
-    clessnverse::commit_mart_row(datamart_table_name, df_interventions$key[i], as.list(row), opt$hub_mode, credentials)
+  #   clessnverse::logit(scriptname, paste('committing', df_interventions$key[i], '\n'), logger)
+  #   clessnverse::commit_mart_row(datamart_table_name, df_interventions$key[i], as.list(row), opt$hub_mode, credentials)
 
-  }
+  # }
 
   # Enrich and load tweets into datamart
   for (i in 139330:nrow(df_tweets)) {
@@ -618,13 +682,13 @@ tryCatch(
   # Terminate gracefully whether error or not
   finally={
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-    clessnverse::logclose(logger)
+    clessnverse::log_close(logger)
 
     # Cleanup
     closeAllConnections()
     clessnverse::log_close(logger)
     
-    quit(status = status)
+    #quit(status = status)
   }
 )
 
