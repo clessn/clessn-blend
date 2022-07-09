@@ -24,56 +24,6 @@
 ########################           Functions            ######################
 ###############################################################################
 
-# modified method from clessnhub. Force json and ignore some parts
-http_post <- function(path, body, options=NULL, verify=T) {
-    token <- hub_config$token
-    token_prefix <- hub_config$token_prefix
-    response <- httr::POST(url=paste0(hub_config$url, path), body=body, httr::accept_json(), httr::content_type_json(), config=httr::add_headers(Authorization=paste(token_prefix, token)), verify=verify, httr::timeout(30))
-    return(response)
-}
-
-
-
-
-# function that will extract all data from a specified table based on a hubr type filter and an optional maximum of loops
-extract_data <- function(table_name, hubr_filter=list(), max_pages=-1) {
-    #hubr_filter <- jsonlite::toJSON(hubr_filter)
-    path <- paste("/data/", table_name, "/count/", sep="")
-    response <- http_post(path, body=hubr_filter)
-    result <- httr::content(response)
-    count <- result$count
-    print(paste("count:", count))
-    
-    path <- paste("/data/", table_name, "/filter/", sep="")
-    response <- http_post(path, body=hubr_filter)
-    page <- httr::content(response)
-    data = list()
-    
-    repeat {
-        
-        data <- c(data, page$results)
-        print(paste(length(data), "/", count))
-        path <- page$"next"
-        
-        if (is.null(path)) {
-            break
-        }
-        
-        max_pages <- max_pages - 1
-        if (max_pages == 0)
-        {
-            break
-        }
-        
-        path <- strsplit(path, "science")[[1]][[2]]
-        response <- http_post(path, body=hubr_filter)
-        page <- httr::content(response)
-    }
-    
-    return(data)
-}
-
-
 
 ###############################################################################
 ######################            Functions to           ######################
