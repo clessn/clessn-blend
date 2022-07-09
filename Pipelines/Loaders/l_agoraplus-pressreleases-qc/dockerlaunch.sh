@@ -1,6 +1,22 @@
 #!/bin/sh
 
 
+# Check if Docker is running
+if (! docker stats --no-stream ); then
+  # On Mac OS this would be the terminal command to launch Docker
+  echo "Docker is not running"
+else
+  echo "Docker is running"
+fi
+
+# Wait until Docker daemon is running and has completed initialisation
+while (! docker stats --no-stream ); do
+  # Docker takes a few seconds to initialize
+  echo "Waiting for Docker to launch..."
+  sleep 10
+done
+
+
 cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Loaders/l_agoraplus-pressreleases-qc
 
 if [[ -f "status.json" ]]; then
