@@ -190,6 +190,55 @@ compute_catergory_sentiment_score <- function(txt_bloc, category_dictionary, sen
 
 
 
+"%vcontains%" <- function(values,x) {
+    tx <- table(x)
+    tv <- table(values)
+    z <- tv[names(tx)] - tx
+    all(z >= 0 & !is.na(z))
+}
+
+
+get_dictionary <- function(topic, lang=c("en","fr"), credentials) {
+
+    # Validate arguments
+    file_info <- hubr::retrieve_file("config_dict", credentials)
+    config_dict <- read.csv2(file_info$file)
+
+    if (!topic %in% config_dict$topic) stop (
+        paste("invalid topic in lessnverse::get_dictionary function:", 
+        topic, 
+        "\nvalid topics are", 
+        paste(config_dict$topic, collapse = ", ")))
+
+    if (!unique(unlist(strsplit(config_dict$lang, ","))) %vcontains% lang) stop (
+        paste("invalid language clessnverse::get_dictionary function:", 
+        lang))
+
+    if (is.null(credentials$auth) || is.na(credentials$auth)) stop(
+        "You must supply valid hublot credentials in clessnverse::get_dictionary")
+
+    # Get dictionary file from lake
+    file_key <- paste("dict_", topic, sep="")
+    file_info <- hubr::retrieve_file(file_key, credentials)
+    dict_df <- read.csv2(file_info$file)
+
+    # Filter on language provided in lang if language is a dictionary feature
+    if (!is.null(dict_df$language)) {
+        dict_df <- dict_df[dict_df$language %in% lang,]
+
+        # Remove language column
+        dict_df$language <- NULL
+    }
+
+    dict_list <- list()
+    for (c in unique(dict_df$category)) {
+        dict_list[[c]] <- dict_df$item[dict_df$category == c]
+    }
+
+    # Convert dataframe to quanteda dict and return it
+    qdict <- quanteda::dictionary(as.list(dict_list))
+    return(qdict)
+}
 
 # commit_hub_row <- function(table, key, row, mode = "refresh", credentials) {
 
@@ -239,7 +288,7 @@ scriptname <- "r_vd_shiny_medias_prototype"
 credentials <- hubr::get_credentials(Sys.getenv("HUB3_URL"), 
                                      Sys.getenv("HUB3_USERNAME"), 
                                      Sys.getenv("HUB3_PASSWORD"))
-
+credentials
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
 dbx_token <- Sys.getenv("DROPBOX_TOKEN")
