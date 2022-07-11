@@ -154,7 +154,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                     lake_item_metadata <- list(
                         format = format,
                         content_type = "political_party_press_release",
-                        hashtags = "elxn-qc2022, vitrine_democratique, polqc",
+                        tags = "elxn-qc2022, vitrine_democratique, polqc",
                         description = "Communiqués de presse des partis politiques",
                         political_party = party_acronym,
                         province_or_state = "QC",
