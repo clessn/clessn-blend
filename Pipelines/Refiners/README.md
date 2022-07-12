@@ -66,8 +66,8 @@ Example
     9. Open Rprojet in the folder of your refiner.
     10. Open and modify the `README.md` to describe the refiner in non-technical language. 
     11. Push in CLESSN-blend
-11. Start coding. The only files you need to change are the code/code.R and README.md  
-12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
+11. Start coding using `code/code.R` and `README.md`
+    1. `Code.R`: open to code as it's the code template. Content is related to automating your refiner.
 13. Create the refiner
     1. Change line 111 and put the refiner name in snake_case 
     2. In MAIN: that's where your code will go and where you'll be able to test it.
