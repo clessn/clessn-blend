@@ -117,10 +117,10 @@ extract_press_release_info <- function(party_acronym, xml_root) {
     }
 
     if (party_acronym == "PCQ") {
-        title <- XML::getNodeSet(xml_root, ".//h1")
-        title <- trimws(XML::xmlValue(title))
+        title <- XML::getNodeSet(xml_root, "..//meta[@property='og:title']")#XML::getNodeSet(xml_root, ".//h1")
+        title <- trimws(XML::xmlGetAttr(title[[1]], "content"))
 
-        body <- XML::getNodeSet(xml_root, ".//article")
+        body <- XML::getNodeSet(xml_root, ".//div[@class='content']")
         body <- trimws(XML::xmlValue(body))
 
         date <- XML::getNodeSet(xml_root, ".//div[@class='byline text-muted small']")[[1]]
