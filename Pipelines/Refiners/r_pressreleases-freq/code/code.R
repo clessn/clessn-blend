@@ -89,7 +89,7 @@ main <- function() {
       metadata = list(
         format="pngfile",
         political_party="all",
-        hashtags="elxn-2022, polqc, vitrine_democratique"
+        tags="elxn-2022, polqc, vitrine_democratique"
       ),
       mode = "refresh",
       credentials = credentials
