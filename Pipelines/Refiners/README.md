@@ -23,8 +23,8 @@ Template
 
 ```
 {
-  "type": "",
-  "format": "",
+  "type": "table",
+  "format": "dataframe",
   "pillars": "",
   "hashtag": "",
   "description": "",
