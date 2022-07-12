@@ -16,20 +16,8 @@ Example: Create a refiner for a datamart that will calculate the number of press
     2. For table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table, replace `table_name` by your table name) (same)
 
 4. Create datamart metadata
-    1. Go on an existing mart table
-    2. Change the view from "Tree" to "Code"
-    3. Copy all the content
-    4. Paste it in your new table metadata field
-    5. Change the appropriate fields 
-    1. Type: table
-    2. Format: dataframe
-    3. Pillar: "decision-makers", "media" and/or "citizens"
-    4. Hashtag: allows tracability for lake to storage or datamart
-    5. Description: free text. Explain the datamart. 
-    6. Content type: describe what's in the table in `snake_case`.
-    7. Storage class: always `mart`. There's also lake and `storage`.
-
-Example
+    1. In the Metadata field, change the view from "Tree" to "Code"
+    2. Insert the following template
 
 ```
 {
@@ -44,6 +32,15 @@ Example
   "storage_class": "mart"
 }
 ```
+
+    3. Fill in the elements
+    3. Type: table
+    4. Format: dataframe
+    5. Pillar: "decision-makers", "media" and/or "citizens"
+    6. Hashtag: allows tracability for lake to storage or datamart
+    7. Description: free text. Explain the datamart. 
+    8. Content type: describe what's in the table in `snake_case`.
+    9. Storage class: always `mart`. There's also lake and `storage`.
 
 5. Populate the table based on the `RETL` repo
     1. Clone repository `clessn/retl`
