@@ -62,9 +62,10 @@ Example
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
     3. Copy the ***content*** of `clessn/retl` into your new folder.
     6. In your new folder, delete the `README.md`
-    7. Rename `template_README.md` as `README.md`. Modify it to describe the refiner in non-technical language. 
+    7. Rename `template_README.md` as `README.md`.
     9. Open Rprojet in the refiner folder.
-    10. Push in CLESSN-blend
+    10. Open and modify the `README.md` to describe the refiner in non-technical language. 
+    11. Push in CLESSN-blend
 11. Start coding. The only files you need to change are the code/code.R and README.md  
 12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
 13. Create the refiner
