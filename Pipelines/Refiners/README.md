@@ -14,8 +14,8 @@ Example: Create a refiner for a datamart that will calculate the number of press
 2. Create a table and fill in the form:
     1. Database: default
     2. For table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table, replace `table_name` by your table name) (same)
-4. Create datamart metadata
 
+4. Create datamart metadata
     1. Go on an existing mart table
     2. Change the view from "Tree" to "Code"
     3. Copy all the content
@@ -28,10 +28,6 @@ Example: Create a refiner for a datamart that will calculate the number of press
     5. Description: free text. Explain the datamart. 
     6. Content type: describe what's in the table in `snake_case`.
     7. Storage class: always `mart`. There's also lake and `storage`.
-5. Populate the table based on the `RETL` repo
-    1. Clone repository `clessn/retl`
-    2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
-          DO NOT copy the whole directory. Be sure to copy the content of the directory.
 
 Example
 
@@ -48,6 +44,11 @@ Example
 }
 ```
 
+5. Populate the table based on the `RETL` repo
+    1. Clone repository `clessn/retl`
+    2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
+          DO NOT copy the whole directory. Be sure to copy the content of the directory.
+          
 6. Delete README.md
 7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
 9. Open Rprojet in the refiner folder.
