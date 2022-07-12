@@ -58,14 +58,13 @@ Example
     10. Press Save
 
 5. Populate the table based on the `RETL` repo
-    1. Clone repository `clessn/retl`
-    2. Copy ***content*** of RETL into `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. Prefix r_ stands for refiner.
-          DO NOT copy the whole directory. Be sure to copy the content of the directory.
-          
-6. Delete README.md
-7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
-9. Open Rprojet in the refiner folder.
-10. Push in CLESSN-blend
+    1. Clone or pull the repository `clessn/retl`
+    2. In `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. The refix `r_` stands for refiner.
+    3. Copy the ***content*** of `clessn/retl` into your new folder.
+    6. Delete README.md
+    7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
+    9. Open Rprojet in the refiner folder.
+    10. Push in CLESSN-blend
 11. Start coding. The only files you need to change are the code/code.R and README.md  
 12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
 13. Create the refiner
