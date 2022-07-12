@@ -26,7 +26,7 @@ Template
   "type": "",
   "format": "",
   "pillars": "",
-  "hashtag":
+  "hashtag": "",
   "description": "",
   "content_type": "",
   "storage_class": ""
