@@ -61,8 +61,8 @@ Example
     1. Clone or pull the repository `clessn/retl`
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
     3. Copy the ***content*** of `clessn/retl` into your new folder.
-    6. Delete README.md
-    7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
+    6. In your new folder, delete the `README.md`
+    7. Modify `template_README.md` to describe the refiner in non-technical language. Rename it as `README.md`
     9. Open Rprojet in the refiner folder.
     10. Push in CLESSN-blend
 11. Start coding. The only files you need to change are the code/code.R and README.md  
