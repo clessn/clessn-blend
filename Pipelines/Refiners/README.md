@@ -59,7 +59,7 @@ Example
 
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
-    2. In `cleessn-blend/pipeline/refiners`, create new folder with name format `r_nom_du_refiner`. The refix `r_` stands for refiner.
+    2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
     3. Copy the ***content*** of `clessn/retl` into your new folder.
     6. Delete README.md
     7. Modify template_README.md to describe the refiner in non-technical language. Rename README.md
