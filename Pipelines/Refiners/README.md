@@ -13,7 +13,7 @@ Example: Create a refiner for a datamart that will calculate the number of press
 1. On the admin site of Hublot, open Dynamic table. 
 2. Create a table and fill in the form:
     1. Database: default
-    2. Table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table) (same)
+    2. For table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table, replace `table_name` by your table name) (same)
 4. Create datamart metadata
     1. Go on an existing mart table
     2. Change the view from "Tree" to "Code"
