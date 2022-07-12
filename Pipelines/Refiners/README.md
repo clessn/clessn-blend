@@ -21,12 +21,10 @@ Example: Create a refiner for a datamart that will calculate the number of press
 
 ```
 {
-  "tags": "elxn-qc2022, vitrine_democratique, polqc",
   "type": "table",
   "format": "dataframe",
   "pillars": "citizens",
   "hashtag":
-  "projects": "Civimètre+, Datagotchi, Vitrine démocratique",
   "description": "Comparaison des lifestyle des abstentionnistes et des gens qui votent",
   "content_type": "lifestyle_turnout",
   "storage_class": "mart"
