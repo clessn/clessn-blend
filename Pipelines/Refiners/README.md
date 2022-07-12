@@ -45,16 +45,6 @@ Example
   "content_type": "political_parties_press_release_freq",
   "storage_class": "mart"
 }
-
-{
-  "type": "table",
-  "format": "dataframe",
-  "pillars": "citizens",
-  "hashtag":
-  "description": "Comparaison des lifestyle des abstentionnistes et des gens qui votent",
-  "content_type": "lifestyle_turnout",
-  "storage_class": "mart"
-}
 ```
 
     3. Fill in the elements
