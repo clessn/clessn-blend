@@ -63,11 +63,11 @@ Example
     3. Copy the ***content*** of `clessn/retl` into your new folder.
     6. In your new folder, delete the `README.md`
     7. Rename `template_README.md` as `README.md`.
-    9. Open Rprojet in the folder of your refiner.
-    10. Open and modify the `README.md` to describe the refiner in non-technical language. 
+    8. Open and modify the `README.md` to describe the refiner in non-technical language. 
     11. Push in CLESSN-blend
 11. Start coding using `code/code.R` and `README.md`
-    1. `Code.R`: open to code as it's the code template. Content is related to automating your refiner.
+    1. Open Rprojet in the folder of your refiner.
+    2. `Code.R`: open to code as it's the code template. Content is related to automating your refiner.
 13. Create the refiner
     1. Change line 111 and put the refiner name in snake_case 
     2. In MAIN: that's where your code will go and where you'll be able to test it.
