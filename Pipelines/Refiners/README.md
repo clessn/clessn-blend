@@ -19,6 +19,23 @@ Example: Create a refiner for a datamart that will calculate the number of press
     1. In the Metadata field, change the view from "Tree" to "Code"
     2. Insert the following template
 
+Template
+
+```
+{
+  "type": "",
+  "format": "",
+  "pillars": "",
+  "hashtag":
+  "description": "",
+  "content_type": "",
+  "storage_class": ""
+}
+```
+
+Example
+
+
 ```
 {
   "type": "table",
