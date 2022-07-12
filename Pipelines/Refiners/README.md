@@ -23,19 +23,29 @@ Template
 
 ```
 {
+  "tags": "",
   "type": "table",
   "format": "dataframe",
   "pillars": "",
-  "hashtag": "",
   "description": "",
   "content_type": "",
-  "storage_class": ""
+  "storage_class": "mart"
 }
 ```
 
 Example
 
 ```
+{
+  "tags": "elxn-qc2022, vitrine_democratique, polqc",
+  "type": "observations",
+  "format": "table",
+  "pillars": "decision_makers",
+  "description": "Fréquence de publication des communiqués de presse par partis politiques",
+  "content_type": "political_parties_press_release_freq",
+  "storage_class": "mart"
+}
+
 {
   "type": "table",
   "format": "dataframe",
