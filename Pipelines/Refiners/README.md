@@ -35,7 +35,6 @@ Template
 
 Example
 
-
 ```
 {
   "type": "table",
@@ -56,6 +55,7 @@ Example
     7. Description: free text. Explain the datamart. 
     8. Content type: describe what's in the table in `snake_case`.
     9. Storage class: always `mart`. There's also lake and `storage`.
+    10. Press Save
 
 5. Populate the table based on the `RETL` repo
     1. Clone repository `clessn/retl`
