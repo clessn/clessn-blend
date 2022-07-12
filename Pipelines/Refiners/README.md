@@ -23,7 +23,7 @@ Example: Create a refiner for a datamart that will calculate the number of press
     5. Change the appropriate fields 
     1. Type: table
     2. Format: dataframe
-    3. Pillar: Decision-makers, Media and/or citizens
+    3. Pillar: "decision-makers", "media" and/or "citizens"
     4. Hashtag: allows tracability for lake to storage or datamart
     5. Description: free text. Explain the datamart. 
     6. Content type: describe what's in the table in `snake_case`.
@@ -34,10 +34,11 @@ Example
 ```
 {
   "tags": "elxn-qc2022, vitrine_democratique, polqc",
-  "type": "observations",
-  "format": "table",
+  "type": "table",
+  "format": "dataframe",
   "pillars": "citizens",
-  "projects": "Civimetre+, Datagotchi, Vitrine démocratique",
+  "hashtag":
+  "projects": "Civimètre+, Datagotchi, Vitrine démocratique",
   "description": "Comparaison des lifestyle des abstentionnistes et des gens qui votent",
   "content_type": "lifestyle_turnout",
   "storage_class": "mart"
