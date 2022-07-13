@@ -15,7 +15,7 @@ Example: Create a refiner for a datamart that will calculate the number of press
     1. Database: default
     2. For table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table, replace `table_name` by your table name) (same)
 
-4. Create datamart metadata
+3. Create datamart metadata
     1. In the Metadata field, change the view from "Tree" to "Code"
     2. Insert the following template
 
@@ -48,24 +48,23 @@ Example
 ```
 
     3. Fill in the metadata elements
-    10. Press Save
+    4. Press Save
 
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
     3. Copy the ***content*** of `clessn/retl` into your new folder.
-    6. In your new folder, delete the `README.md`
-    7. Rename `template_README.md` as `README.md`.
-    8. Open and modify the `README.md` to describe the refiner in non-technical language. 
-    11. Push in CLESSN-blend
-11. Start coding
+    4. In your new folder, delete the `README.md`
+    5. Rename `template_README.md` as `README.md`.
+    6. Open and modify the `README.md` to describe the refiner in non-technical language. 
+    7. Push in CLESSN-blend
+6. Start coding
     1. Open Rprojet in the folder of your refiner.
     2. Open `code/code.R`: open to code as it's the code template. Content is related to automating your refiner.
-13. Create the refiner
-    1. Change line 111 and put the refiner name in snake_case 
-    2. In MAIN: that's where your code will go and where you'll be able to test it.
-    3. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
-    4. Take the variable name and:
+    3. Change line 111 and put the refiner name in snake_case 
+    4. In MAIN: that's where your code will go and where you'll be able to test it.
+    5. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
+    6. Take the variable name and:
 
 ```r
 {
@@ -97,15 +96,25 @@ R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as ev
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
+## Parameters
 
-## Metadata parameters
+### Dynamic table
+
+|Parameter|Description|Options|Example|
+|---|---|---|---|
+|Database||default||
+|Table name|Short description of the table in `snake_case` with the prefix `mart_`||mart_political_parties_press_releases_freq|
+|Verbose name|Same as table name||mart_political_parties_press_releases_freq|
+|Verbose name plural|Same as table name||mart_political_parties_press_releases_freq|
+
+### Metadata
 |Parameter|Description|Options|Example|
 |---|---|---|---|
 |tags|Allows tracability for lake to storage or datamart||elxn-qc2022, vitrine_democratique, polqc|
 |type||table, observations||
 |format||table, dataframe||
 |pillars|One or more of the three pillars of the CLESSN|decision_makers, citizens, media||
-|description|Explain the datamart using free text||Fréquence de publication des communiqués de presse par partis politiques|
+|description|Describe the datamart in free text||Fréquence de publication des communiqués de presse par partis politiques|
 |content_type|Describe what's in the table in `snake_case`||political_parties_press_release_freq|
 |storage_class|Storage location|lake, storage, mart||
 
