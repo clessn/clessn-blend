@@ -98,7 +98,7 @@ clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 ## Parameters
 
-### Dynamic table
+### Dynamic table parameters
 
 |Parameter|Description|Options|Example|
 |---|---|---|---|
@@ -107,7 +107,8 @@ clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 |Verbose name|Same as table name||mart_political_parties_press_releases_freq|
 |Verbose name plural|Same as table name||mart_political_parties_press_releases_freq|
 
-### Metadata
+### Metadata parameters
+
 |Parameter|Description|Options|Example|
 |---|---|---|---|
 |tags|Allows tracability for lake to storage or datamart||elxn-qc2022, vitrine_democratique, polqc|
