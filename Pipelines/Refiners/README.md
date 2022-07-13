@@ -47,14 +47,7 @@ Example
 }
 ```
 
-    3. Fill in the elements
-    3. Type: table
-    4. Format: dataframe
-    5. Pillar: "decision-makers", "media" and/or "citizens"
-    6. Hashtag: allows tracability for lake to storage or datamart
-    7. Description: free text. Explain the datamart. 
-    8. Content type: describe what's in the table in `snake_case`.
-    9. Storage class: always `mart`. There's also lake and `storage`.
+    3. Fill in the metadata elements
     10. Press Save
 
 5. Populate the table based on the `RETL` repo
@@ -104,3 +97,17 @@ R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as ev
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
+
+## Metadata parameters
+|Parameter|Description|Options|Example|
+|---|---|---|---|
+|tags|Allows tracability for lake to storage or datamart||elxn-qc2022, vitrine_democratique, polqc|
+|type||table, observations||
+|format||table, dataframe||
+|pillars|One or more of the three pillars of the CLESSN|decision_makers, citizens, media||
+|description|Explain the datamart using free text||Fréquence de publication des communiqués de presse par partis politiques|
+|content_type|Describe what's in the table in `snake_case`||political_parties_press_release_freq|
+|storage_class|Storage location|lake, storage, mart||
+
+
+
