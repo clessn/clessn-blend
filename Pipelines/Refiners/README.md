@@ -2,7 +2,7 @@
 
 ## Description
 
-Data refiners take the information from the data warehouse and prepare them for data marts.
+A data refiner takes the information from the data warehouse and prepares it for data marts.
 
 ## Create a refiner
 
