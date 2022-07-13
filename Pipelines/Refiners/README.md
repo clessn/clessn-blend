@@ -6,7 +6,14 @@ Data refiners take the information from the data warehouse and prepare them for 
 
 ## Create a refiner
 
-To create a refiner, follow the steps bellow.
+### Prerequisites
+
+* R
+* R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo `clessn/Renviron_tutorial`.
+* Access to [Hublot](https://clhub.clessn.cloud/admin/)
+* `clessnverse` R package: download it in R using the code `devtools::install_github("clessn/clessnverse")`
+
+### Tutorial
 
 In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 
@@ -82,10 +89,6 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 ```
 
 12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
-
-## R enviro
-
-R enviro allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo `clessn/Renviron_tutorial`.
 
 ## Cheatsheet
 
