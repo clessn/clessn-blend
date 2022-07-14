@@ -39,7 +39,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "projects": <nom du.des projets en_snake_case separés par des virgules>,
   "tags": <tags cumulatifs des tables d'entrepôt et/ou Files dont les observations de ce comptoir sont constituées>,
   "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
-	"output": {
+  "output": {
     "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
     "graphic": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
   }
@@ -60,7 +60,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "projects": <nom du.des projets en_snake_case separés par des virgules>,
   "tags": <tags cumulatifs des tables d'entrepôt et/ou Files dont les observations de ce comptoir sont constituées>,
   "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
-	"output": {
+  "output": {
     "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
     "graphic": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
   }
@@ -70,8 +70,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
-    3. Copy the ***content*** of `clessn/retl` into your new folder. 
-       ***Attention*** DO NOT COPY THE FOLDERS STARTING WITH a `.` (a dot)
+    3. Copy the ***content*** of `clessn/retl` into your new folder. ***Attention DO NOT COPY THE FOLDERS STARTING WITH a `.` (a dot)***
     4. In your new folder, delete the `README.md`
     5. Rename `template_README.md` as `README.md`.
     6. Open and modify the `README.md` to describe the refiner in non-technical language.
