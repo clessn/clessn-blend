@@ -1,4 +1,4 @@
-# <e|l|r>_name_of_the_pipeline_script
+# r_party_candidate_issue_tone
 
 ## Purpose
 This `refiner` is used to create a mart with the tone of parties and their candidates on issues of 2022 Quebec election.  
