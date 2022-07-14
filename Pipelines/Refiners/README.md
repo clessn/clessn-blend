@@ -25,6 +25,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
     1. In the Metadata field, change the view from "Tree" to "Code"
     2. Insert the following template and fill in according to the Metadata parameters at the bottom of this document. Press Save.
 
+```
 # Template
 
 {
