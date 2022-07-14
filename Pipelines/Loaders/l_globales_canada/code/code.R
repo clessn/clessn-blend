@@ -16,8 +16,28 @@
 ###############################################################################
 
 # Function to prepare data of GlobalES data before loading it in the warehouse
-process_info_globales <- function() {
-  #log for each file processed
+#
+# Return a dataframe ready to be loaded in the warehouse
+process_info_globales <- function(list_tables) {
+  # Note pour l'implémentation :
+  # log for each file processed
+  # Ajouter un identifiant unique à chaque observation (unique_id - ou autre)
+  # Si autre que unique_id, modifier la fonction upload_warehouse_globales
+}
+
+# Function to upload data
+upload_warehouse_globales <- function(input_df) {
+  for (i in seq_len(nrow(input_df))) {
+    row <- as.list(input_df[i, ])
+
+    clessnverse::commit_warehouse_row(
+      table = warehouse_table_name,
+      key = input_df$unique_id[i], ### Clé des données GlobalES
+      row,
+      mode = "refresh",
+      credentials
+    )
+  }
 }
 
 ###############################################################################
@@ -71,26 +91,60 @@ main <- function() {
     # Initial logging
     clessnverse::logit(
       scriptname,
-      paste("Getting the GlobalES data for ",
-        country,
-        " from year 1965 to 2019"
-      ),
-      logger)
+      "Getting the GlobalES data for Canada from year 1965 to 2019.",
+      logger
+    )
 
     # Get lake items
+    clessnverse::logit(
+      scriptname,
+      "Lake items downloading beginning...",
+      logger
+    )
+    globales_list_tables <- get_lake_items_globales()
+    clessnverse::logit(
+      scriptname,
+      paste(length(globales_list_tables),
+            "tables downloaded from the lake. End of downloading."
+      ),
+      logger
+    )
 
-    # Process lake items
+    # Process lake items (return input_df)
+    clessnverse::logit(
+      scriptname,
+      "Data processing beginning...",
+      logger
+    )
+    input_df <- process_info_globales(globales_list_tables)
+    clessnverse::logit(
+      scriptname,
+      "End of data processing.",
+      logger
+    )
 
     # Load items to the warehouse
-      # log during loading of the data to the data warehouse
+    clessnverse::logit(
+      scriptname,
+      "Warehouse uploading beginning...",
+      logger
+    )
+    upload_warehouse_globales(input_df)
+    clessnverse::logit(
+      scriptname,
+      paste0(nrow(input_df),
+            " lines uploaded in the Global ES warehouse table : ",
+            warehouse_table_name,
+            ". End of uploading."
+      ),
+      logger
+    )
 
     # Final logging
     clessnverse::logit(
       scriptname,
-      paste("GlobalES data for ",
-      country,
-      " from year 1965 to 2019 has been loaded to the warehouse",
-      logger)
+      "GlobalES data for Canada from year 1965 to 2019 were uploaded to the warehouse.",
+      logger
     )
 
 }
@@ -121,16 +175,18 @@ tryCatch(
     # The objects scriptname, opt, logger and credentials *must* be set and
     # used throught your code.
     #
-
-
+    lake_items_selection_metadata <- 
+      list(
+        metadata__content_type = "ces_survey",
+        metadata__storage_class = "lake"
+      )
+    warehouse_table_name <- "globales_canada"
 
     #########################################################################
     # Define your global variables here
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     #     warehouse_table <- "political_parties_press_releases"
-    country <- "Canada"
-    country_code <- "CAN"
 
     # scriptname, opt, logger, credentials are mandatory global objects
     # for them we use the <<- assignment so that they are available in
@@ -145,12 +201,18 @@ tryCatch(
     # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
     if (!exists("opt")) {
-        opt <- clessnverse::processCommandLineOptions()
+        opt <- clessnverse::process_command_line_options()
     }
 
     # Initialize the log file
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<-
-      clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) {
+      logger <<-
+        clessnverse::log_init(
+          scriptname,
+          opt$log_output,
+          Sys.getenv("LOG_PATH")
+        )
+    }
 
     # login to hublot
     clessnverse::logit(scriptname, "Connecting to hub3", logger)
