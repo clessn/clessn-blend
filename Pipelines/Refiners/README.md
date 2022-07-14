@@ -52,17 +52,17 @@ In this example, we create a refiner for a datamart that will calculate the numb
 {
   "type": "observations",
   "format": "table",
-  "content_type": <description en_snake_case du contenu d'une observation du comptoir (au singulier = une unité d'observation)>,
+  "content_type": "political_parties_press_release_freq",
   "storage_class": "mart",
-  "source_type": <valeurs de la metadonnée content_type de.s table.s d'entrepôt et Files utilisées pour construire ce comptoir>, # provient donc de la méta donnée content_type des tables d'entrepôt et des Files qui constituent cette table.  En règle général, plusieurs tables d'entrepôt + dictionnaires => un comptoir. Si plusieurs, alors séparer les valeurs par une virgule.
-	"source": <noms des tables de l'entrepot et Files du lac (dictionnaires) dont ce comptoir est constitué separés par des virgules>,
-  "pillars": ["decision_makers"|"citizens"|"medias"],
-  "projects": <nom du.des projets en_snake_case separés par des virgules>,
-  "tags": <tags cumulatifs des tables d'entrepôt et/ou Files dont les observations de ce comptoir sont constituées>,
-  "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
+  "source_type": "lexicoder_topic_dictionary,political_party_press_release",
+	"source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
+  "pillars": "decision_makers",
+  "projects": "agoraplus,vitrine_democratique",
+  "tags": "elxn-qc2022, vitrine_democratique, polqc",
+  "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
   "output": {
-    "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
-    "graphic": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
+    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca"
+    "graphic": "political_press_releases_freq/plots"
   }
 }
 ```
