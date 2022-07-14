@@ -113,6 +113,8 @@ clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 ## Parameters
 
+When in doubt, verify the accuracy of the parameters using the [Notion page](https://www.notion.so/clessn/Metadonn-es-dans-les-pipelines-de-la-CLESSN-f99a8cc4271644b08c4b0ac27ae4d55e). The page on Notion takes priority over information in this README.
+
 ### Dynamic table parameters
 
 |Parameter|Description|Options|Example|
