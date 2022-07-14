@@ -84,7 +84,7 @@ main <- function() {
     clessnverse::commit_lake_item(
       data = list(
         item= "plot_bars_pressreleases_freq.png",
-        path="political_party_press_releases_freq"
+        path="political_party_press_releases/plots/freq"
       ),
       metadata = list(
         format="pngfile",
