@@ -2,79 +2,90 @@
 
 ## Description
 
-Hublot: https://clhub.clessn.cloud/admin/
+A data refiner takes the information from the data warehouse and prepares it for a data mart.
 
 ## Create a refiner
 
-Follow the following steps to create a refiner.
+### Prerequisites
 
-Example: Create a refiner for a datamart that will calculate the number of press releases published every week by a party.
+* R
+* R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo `clessn/Renviron_tutorial`.
+* Access to clessn repositories on GitHub
+* Access to [Hublot](https://clhub.clessn.cloud/admin/)
+* `clessnverse` R package: download it in R using the code `devtools::install_github("clessn/clessnverse")`
 
-1. On the admin site of Hublot, open Dynamic table. 
-2. Create a table and fill in the form:
-    1. Database: default
-    2. For table name, verbose name and verbose name plural: `mart_table_name` (`mart_` is the prefix for datamart table, replace `table_name` by your table name) (same)
+### Tutorial
 
-4. Create datamart metadata
+In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
+
+1. On the admin site of [Hublot](https://clhub.clessn.cloud/admin/), open Dynamic table. 
+2. Create a table and fill in the form according to the Dynamic table parameters at the bottom of this document
+
+3. Create datamart metadata
     1. In the Metadata field, change the view from "Tree" to "Code"
-    2. Insert the following template
-
-Template
+    2. Insert the following template and fill in according to the Metadata parameters at the bottom of this document. Press Save.
 
 ```
+# Template
+
 {
-  "tags": "",
-  "type": "table",
-  "format": "dataframe",
-  "pillars": "",
-  "description": "",
-  "content_type": "",
-  "storage_class": "mart"
-}
-```
-
-Example
-
-```
-{
-  "tags": "elxn-qc2022, vitrine_democratique, polqc",
   "type": "observations",
   "format": "table",
-  "pillars": "decision_makers",
-  "description": "Fréquence de publication des communiqués de presse par partis politiques",
-  "content_type": "political_parties_press_release_freq",
-  "storage_class": "mart"
+  "content_type": <description en_snake_case du contenu d'une observation du comptoir (au singulier = une unité d'observation)>,
+  "storage_class": "mart",
+  "source_type": <valeurs de la metadonnée content_type de.s table.s d'entrepôt et Files utilisées pour construire ce comptoir>, # provient donc de la méta donnée content_type des tables d'entrepôt et des Files qui constituent cette table.  En règle général, plusieurs tables d'entrepôt + dictionnaires => un comptoir. Si plusieurs, alors séparer les valeurs par une virgule.
+	"source": <noms des tables de l'entrepot et Files du lac (dictionnaires) dont ce comptoir est constitué separés par des virgules>,
+  "pillars": ["decision_makers"|"citizens"|"medias"],
+  "projects": <nom du.des projets en_snake_case separés par des virgules>,
+  "tags": <tags cumulatifs des tables d'entrepôt et/ou Files dont les observations de ce comptoir sont constituées>,
+  "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
+  "output": {
+    "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
+    "graphic": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
+  }
 }
 ```
 
-    3. Fill in the elements
-    3. Type: table
-    4. Format: dataframe
-    5. Pillar: "decision-makers", "media" and/or "citizens"
-    6. Hashtag: allows tracability for lake to storage or datamart
-    7. Description: free text. Explain the datamart. 
-    8. Content type: describe what's in the table in `snake_case`.
-    9. Storage class: always `mart`. There's also lake and `storage`.
-    10. Press Save
+```
+# Example
+
+{
+  "type": "observations",
+  "format": "table",
+  "content_type": "political_parties_press_release_freq",
+  "storage_class": "mart",
+  "source_type": "lexicoder_topic_dictionary,political_party_press_release",
+	"source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
+  "pillars": "decision_makers",
+  "projects": "agoraplus,vitrine_democratique",
+  "tags": "elxn-qc2022, vitrine_democratique, polqc",
+  "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
+  "output": {
+    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca"
+    "graphic": "political_press_releases_freq/plots"
+  }
+}
+```
 
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
-    3. Copy the ***content*** of `clessn/retl` into your new folder.
-    6. In your new folder, delete the `README.md`
-    7. Rename `template_README.md` as `README.md`.
-    9. Open Rprojet in the folder of your refiner.
-    10. Open and modify the `README.md` to describe the refiner in non-technical language. 
-    11. Push in CLESSN-blend
-11. Start coding. The only files you need to change are the code/code.R and README.md  
-12. Code.R: open to code as it's the code template. Content is related to automating your refiner.
-13. Create the refiner
-    1. Change line 111 and put the refiner name in snake_case 
-    2. In MAIN: that's where your code will go and where you'll be able to test it.
-    3. Go back into Hublot, look at table to identify the intrant. Look for unique key, timestamp, and body. 
-    4. Take the variable name and:
+    3. Copy the ***content*** of `clessn/retl` into your new folder. ***Attention DO NOT COPY THE FOLDERS STARTING WITH a `.` (a dot)***
+    4. In your new folder, delete the `README.md`
+    5. Rename `template_README.md` as `README.md`.
+    6. Open and modify the `README.md` to describe the refiner in non-technical language.
+    7. Push your changes made in CLESSN-blend
+6. Start coding
+    1. Open the Rprojet in the folder of your refiner.
+    2. Open `code/code.R` to code as it's the code template. It's content is related to automating your refiner.
+    3. Change line 111 and put the refiner name in `snake_case`
+    4. In the MAIN section, that's where your code will go and where you'll be able to test it.
+    5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
+    6. Take the variable name and:
 
 ```r
+# Example
+
 {
 warehouse_table_name <- "political_parties_press_releases"
 datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]"
@@ -82,21 +93,17 @@ datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]
 warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 
-1. Execute
-2. Inspect the variables. Everything with Data. prefix are columns in the storage table.
-3. Enrichir la table to create a datamart that's useful for research. Add column.
-4. You always need to have a key `dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))`
-5. Wrie dataframe to Hublot via R
+    7. Execute
+    8. Inspect the variables. Everything with the `Data.` prefix are columns in the storage table.
+    9. Enrich the table to create a datamart that's useful for research. Add column.
+    10. You always need to have a key `dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), “%Y”), sep = “”))`
+11. To write your dataframe into Hublot via R, add the code below
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
-1. Optional: add gglopt so that the refiner can create your graph. You can add your ggplot to the lake with `clessn::commit_lake_item()`
-
-## R enviro
-
-R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as everything is explained. It creates a file in your R inventory.
+12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
 
 ## Cheatsheet
 
@@ -104,3 +111,25 @@ R enviro: go in clessn-blend. Follow instructions in repo Renviro-tutorial as ev
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
+## Parameters
+
+### Dynamic table parameters
+
+|Parameter|Description|Options|Example|
+|---|---|---|---|
+|Database||default||
+|Table name|Short description of the table in `snake_case` with the prefix `mart_`||mart_political_parties_press_releases_freq|
+|Verbose name|Same as table name||mart_political_parties_press_releases_freq|
+|Verbose name plural|Same as table name||mart_political_parties_press_releases_freq|
+
+### Metadata parameters
+
+|Parameter|Description|Options|Example|
+|---|---|---|---|
+|tags|Allows tracability for lake to storage or datamart. Comma-seperated values within quotation marks.||elxn-qc2022, vitrine_democratique, polqc|
+|type||table, observations||
+|format||table, dataframe||
+|pillars|One or more of the three pillars of the CLESSN|decision_makers, citizens, media||
+|description|Describe the datamart in free text||Fréquence de publication des communiqués de presse par partis politiques|
+|content_type|Describe what's in the table in `snake_case`||political_parties_press_release_freq|
+|storage_class|Storage location|lake, storage, mart||

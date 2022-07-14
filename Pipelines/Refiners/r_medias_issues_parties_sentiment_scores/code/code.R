@@ -380,7 +380,7 @@ main <- function() {
   # }
 
   # Enrich and load tweets into datamart
-  for (i in 139330:nrow(df_tweets)) {
+  for (i in 370888:nrow(df_tweets)) {
     person <- NULL
 
     person <- df_journalists[which(df_journalists$key == df_tweets$data.personKey[i]),]
@@ -444,7 +444,7 @@ main <- function() {
 
     df <- df %>% rbind(row)
 
-    clessnverse::logit(scriptname, paste('committing', df_tweets$key[i], '\n'), logger)
+    clessnverse::logit(scriptname, paste('committing', df_tweets$key[i]), logger)
     clessnverse::commit_mart_row(datamart_table_name, df_tweets$key[i], as.list(row), opt$hub_mode, credentials)
   }
 
@@ -539,7 +539,7 @@ main <- function() {
 
     df <- df %>% rbind(row)
 
-    clessnverse::logit(scriptname, paste('committing', digest::digest(df_headlines$liens[i]), '\n'), logger)
+    clessnverse::logit(scriptname, paste('committing', digest::digest(df_headlines$liens[i])), logger)
     clessnverse::commit_mart_row(datamart_table_name, digest::digest(df_headlines$liens[i]), as.list(row), opt$hub_mode, credentials)
   }
 

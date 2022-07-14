@@ -3,10 +3,10 @@
 ###############################################################################
 #                                                                             #
 #                                                                             #
-#                        <e|l|r_name_of_the_etl_script>                       #
+#                        <r_lifestyle_turnout>                                #
 #                                                                             #
-#  Describe what the script does.  You can copy/paste part of the README.md   #
-#  of the folder which this script resides in                                 #
+#  COmpares the lifestyle of abstentionnists and voters                       #
+#                                                                             #
 #                                                                             #
 ###############################################################################
 
@@ -29,7 +29,8 @@
 ######################  Get Data Sources from DataLake   ######################
 ######################              HUB 3.0              ######################
 ###############################################################################
-
+table <- clessnverse::get_warehouse_table("warehouse_datagotchi_elxncan2021_pilot_1",
+                                          credentials)
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -53,7 +54,11 @@ main <- function() {
     ###########################################################################
     # Define local objects of your core algorithm here
     # Ex: parties_list <- list("CAQ", "PLQ", "QS", "PCQ", "PQ")
-
+    credentials <- hublot::get_credentials(
+      Sys.getenv("HUB3_URL"),
+      Sys.getenv("HUB3_USERNAME"),
+      Sys.getenv("HUB3_PASSWORD")
+    )
 
     ###########################################################################
     # Start your main script here using the best practices in activity logging
@@ -63,42 +68,7 @@ main <- function() {
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #
 
-    warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 
-    warehouse_df$week_num <- strftime(warehouse_df$data.date, format = "%V")
-
-    datamart_df <- warehouse_df %>%
-      dplyr::select(document.id,data.political_party, week_num) %>%
-      dplyr::group_by(data.political_party, week_num) %>%
-      dplyr::summarize(count=n()) %>%
-      dplyr::rename(political_party = data.political_party) %>%
-      dplyr::mutate(key = paste(political_party, week_num, format(Sys.Date(), "%Y"), sep=""))
-
-    clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh", credentials)
-
-    g <- ggplot2::ggplot(datamart_df, ggplot2::aes(x=week_num, y=count, fill = factor(political_party)))
-    g <- g + ggplot2::geom_col(alpha = 0.5, position = "identity")
-    g
-    ggplot2::ggsave("plot_bars_pressreleases_freq.png", plot=g)
-
-    clessnverse::commit_lake_item(
-      data = list(
-        item= "plot_bars_pressreleases_freq.png",
-        path="political_party_press_releases/plots/freq"
-      ),
-      metadata = list(
-        format="pngfile",
-        political_party="all",
-        tags="elxn-2022, polqc, vitrine_democratique"
-      ),
-      mode = "refresh",
-      credentials = credentials
-    )
-
-    file.remove("plot_bars_pressreleases_freq.png")
-
-    g <- ggplot2::ggplot(datamart_df, ggplot2::aes(x=week_num, y=count, group=1, color = factor(political_party)))
-    g + ggplot2::geom_line()
 
 }
 
@@ -130,19 +100,20 @@ tryCatch(
     #
 
 
+
     #########################################################################
     # Define your global variables here
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
-    #     warehouse_table_name <- "political_parties_press_releases"
-    warehouse_table_name <- "political_parties_press_releases"
-    datamart_table_name  <- "political_parties_press_releases_freq"
+    #     warehouse_table <- "political_parties_press_releases"
+
+
 
 
     # scriptname, opt, logger, credentials are mandatory global objects
     # for them we use the <<- assignment so that they are available in
     # all the tryCatch context ("error", "warning", "finally")
-    if (!exists("scriptname")) scriptname <<- "r_pressreleases-freq"
+    if (!exists("scriptname")) scriptname <<- "l_agoraplus-pressreleases-qc"
 
     # Uncomment the line below to hardcode the command line option passed to this script when it runs
     # This is particularly useful while developping your script but it's wiser to use real command-
@@ -153,7 +124,7 @@ tryCatch(
         opt <- clessnverse::processCommandLineOptions()
     }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
