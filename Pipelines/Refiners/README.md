@@ -111,7 +111,7 @@ clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 
 |Parameter|Description|Options|Example|
 |---|---|---|---|
-|tags|Allows tracability for lake to storage or datamart||elxn-qc2022, vitrine_democratique, polqc|
+|tags|Allows tracability for lake to storage or datamart. Comma-seperated values within quotation marks.||elxn-qc2022, vitrine_democratique, polqc|
 |type||table, observations||
 |format||table, dataframe||
 |pillars|One or more of the three pillars of the CLESSN|decision_makers, citizens, media||
