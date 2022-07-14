@@ -137,7 +137,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                 html <- httr::content(r$result, as="text", encoding = "utf-8")
 
                 if (r$result$headers$`content-type` == "application/json") {
-                    # Empiricaly found trick to re-encore to utf-8 for real
+                    # Empiricaly found trick to re-encode to utf-8 for real
                     # Because for a json structure httr::content has a bug for encoding to utf-8
                     #html <- toString(jsonlite::toJSON(tidyjson::spread_all(html)$..JSON))
                     html <- toString(jsonlite::toJSON(tidyjson::spread_all(html)$..JSON, auto_unbox = T))
@@ -152,15 +152,17 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                     format <- if (grepl("text\\/html", r$result$headers$`content-type`)) "html" else if (grepl("application\\/rss\\+xml", r$result$headers$`content-type`)) "xml" else if (grepl("application\\/json", r$result$headers$`content-type`)) "json" else ""
 
                     lake_item_metadata <- list(
+                        object_type = "raw_data",
                         format = format,
                         content_type = "political_party_press_release",
+                        storage_class = "lake",
+                        source_type = "website",
+                        source = url,
                         tags = "elxn-qc2022, vitrine_democratique, polqc",
                         description = "Communiqués de presse des partis politiques",
                         political_party = party_acronym,
-                        province_or_state = "QC",
-                        country = "CAN",
-                        storage_class = "lake",
-                        url = url
+                        country = "CAN"
+                        province_or_state = "QC"
                     )
 
                     lake_item_data <- list(key = key, path = path, item = html)
