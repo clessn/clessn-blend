@@ -150,7 +150,7 @@ tryCatch(
     # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
     if (!exists("opt")) {
-        opt <- clessnverse::processCommandLineOptions()
+        opt <- clessnverse::process_command_line_options()
     }
 
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
