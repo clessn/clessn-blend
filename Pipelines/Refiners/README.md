@@ -41,7 +41,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
   "output": {
     "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
-    "graphic": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
+    "graphics": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
   }
 }
 ```
@@ -62,7 +62,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
   "output": {
     "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca"
-    "graphic": "political_press_releases_freq/plots"
+    "graphics": "political_press_releases_freq/plots"
   }
 }
 ```
