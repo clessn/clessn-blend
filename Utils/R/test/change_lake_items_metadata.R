@@ -6,6 +6,9 @@ credentials <- hublot::get_credentials(
   Sys.getenv("HUB3_PASSWORD")
   )
 
+
+clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+
 # filter for selecting the lakes items to be changed
 filter <- list(
   path = "political_party_press_releases",
@@ -40,3 +43,15 @@ if (length(data$results) > 0) {
 } else {
     warning("no lake item was retrived with this filter")
 }
+
+
+persons <- clessnverse::get_hub2_table('persons', data_filter = NULL, hub_conf = hub_config)
+
+press_releases_freq <- clessnverse::get_mart_table("political_parties_press_releases_freq", data_filter = list(data__political_party = "CAQ"), credentials)
+
+press_releases <- clessnverse::get_warehouse_table("political_parties_press_releases", data_filter = list(data__political_party = "QS"), credentials)
+
+
+
+filter <- list(metadata__content_type = "ces_survey", metadata__storage_class = "lake")
+hublot::filter_lake_items(credentials, filter)
