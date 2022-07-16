@@ -30,83 +30,6 @@
 ######################  Get Data Sources from DataLake   ######################
 ######################              HUB 3.0              ######################
 ###############################################################################
-get_issues_dict <- function() {
-  # Get the issues dictionary in french
-  file_info <- hubr::retrieve_file("dict_enjeux_fr", credentials)
-  issues_dictionary_fr <- read.csv2(file_info$file)
-  issues_dictionary_fr$X <- NULL
-  dict_list <- list()
-  for (i in unique(issues_dictionary_fr$categorie)) {
-      dict_list[[i]] <- issues_dictionary_fr$item[issues_dictionary_fr$categorie == i]
-  }
-  issues_dictionary_fr <- quanteda::dictionary(dict_list)
-
-  # Get the issues dictionary in english
-  file_info <- hubr::retrieve_file("dict_enjeux_en", credentials)
-  issues_dictionary_en <- read.csv2(file_info$file)
-  issues_dictionary_en$X <- NULL
-  dict_list <- list()
-  for (i in unique(issues_dictionary_en$categorie)) {
-      dict_list[[i]] <- issues_dictionary_en$item[issues_dictionary_en$categorie == i]
-  }
-  issues_dictionary_en <- quanteda::dictionary(dict_list)
-
-  #combine the two dictionaries
-  issues_dictionary <- c(issues_dictionary_fr, issues_dictionary_en)
-
-  # remove dups due to en et fr same roots
-  for (i in names(issues_dictionary)) {
-      issues_dictionary[[i]] <- unique(issues_dictionary[[i]])
-  }
-
-  return(issues_dictionary)
-}
-
-
-get_sentiment_dict <- function() {
-  file_info <- hubr::retrieve_file("dict_sentiments", credentials)
-  sentiment_dictionary <- read.csv2(file_info$file)
-  dict_list <- list()
-  for (i in unique(sentiment_dictionary$category)) {
-      dict_list[[i]] <- sentiment_dictionary$item[sentiment_dictionary$category == i]
-  }
-  sentiment_dictionary <- quanteda::dictionary(dict_list)
-
-  return(sentiment_dictionary)
-}
-
-
-get_parties_dict <- function() {
-  file_info <- hubr::retrieve_file("dict_political_parties_can", credentials)
-  polparties_dictionary_can <- read.csv2(file_info$file)
-
-  polparties_dictionary_can$X <- NULL
-  dict_list <- list()
-  for (i in unique(polparties_dictionary_can$category)) {
-      dict_list[[i]] <- polparties_dictionary_can$item[polparties_dictionary_can$category == i]
-  }
-  polparties_dictionary_can <- quanteda::dictionary(dict_list)
-
-
-  file_info <- hubr::retrieve_file("dict_political_parties_qc", credentials)
-  polparties_dictionary_qc <- read.csv2(file_info$file)
-
-  polparties_dictionary_qc$X <- NULL
-  dict_list <- list()
-  for (i in unique(polparties_dictionary_qc$category)) {
-      dict_list[[i]] <- polparties_dictionary_qc$item[polparties_dictionary_qc$category == i]
-  }
-  polparties_dictionary_qc <- quanteda::dictionary(dict_list)
-
-  polparties_dictionary <- c(polparties_dictionary_qc, polparties_dictionary_can)
-  # remove dups due to en et fr same roots
-  for (i in names(polparties_dictionary)) {
-      polparties_dictionary[[i]] <- unique(polparties_dictionary[[i]])
-  }
-
-  return(polparties_dictionary)
-
-}
 
 
 get_radarplus_headlines <- function() {
@@ -222,9 +145,11 @@ main <- function() {
   #      
   
   # Get all dictionaries
-  issues_dict <- get_issues_dict()
-  sentiment_dict <- get_sentiment_dict()
-  parties_dict <- get_parties_dict()
+  issues_dict <- clessnverse::get_dictionary('issues', c("en","fr"), credentials)
+  sentiment_dict <- clessnverse::get_dictionary('sentiments', c("en","fr"), credentials)
+  parties_can_dict <- clessnverse::get_dictionary('political_parties_can', c("en","fr"), credentials)
+  parties_qc_dict <- clessnverse::get_dictionary('political_parties_qc', c("en","fr"), credentials)
+  parties_dict <- c(parties_can_dict,parties_qc_dict)
 
   # Extract our data
 
@@ -315,6 +240,8 @@ main <- function() {
   #                            data.isFemale=df_interventions$data.speakerGender[i], data.currentMedia=df_interventions$data.speakerMedia[i])
   #   }
 
+  #   person <- person[1,]
+
   #   df_issues_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], issues_dict)
   #   df_parties_score <- clessnverse::compute_relevance_score(df_interventions$data.interventionText[i], parties_dict)
   #   df_sentiments <- clessnverse::compute_catergory_sentiment_score(df_interventions$data.interventionText[i], c(issues_dict, parties_dict), sentiment_dict)
@@ -380,7 +307,7 @@ main <- function() {
   # }
 
   # Enrich and load tweets into datamart
-  for (i in 370888:nrow(df_tweets)) {
+  for (i in 554513:nrow(df_tweets)) {
     person <- NULL
 
     person <- df_journalists[which(df_journalists$key == df_tweets$data.personKey[i]),]
@@ -476,6 +403,8 @@ main <- function() {
     if (is.null(person) || nrow(person) == 0) {
         person <- data.frame(key=NA, type=NA, data.fullName=NA, data.isFemale=NA, data.currentMedia=df_headlines$media[i])
     }
+
+    person <- person[1,]
 
     df_issues_score <- clessnverse::compute_relevance_score(df_headlines$content[i], issues_dict)
     df_parties_score <- clessnverse::compute_relevance_score(df_headlines$content[i], parties_dict)
