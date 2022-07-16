@@ -53,8 +53,15 @@ upload_warehouse_globales <- function(input_df) {
 #
 # Return a list of data.frame corresponding to the content of all files of the
 # country subdirectory
-get_lake_items_globales <- function() {
-
+get_lake_items_globales <- function(country) {
+  hublot_list <- hublot::filter_lake_items(credentials, lake_items_selection_metadata)
+  dataframe_list <- list()
+  for (i in seq_len(length(hublot_list[[1]]))){
+    df <- utils::read.csv(hublot_list[[1]][[i]]$file)
+    dataframe_list[[i]] <- df
+    print(i)
+  }
+  return(dataframe_list)
 }
 
 ###############################################################################
@@ -175,10 +182,11 @@ tryCatch(
     # The objects scriptname, opt, logger and credentials *must* be set and
     # used throught your code.
     #
-    lake_items_selection_metadata <- 
+    lake_items_selection_metadata <-
       list(
-        metadata__content_type = "ces_survey",
-        metadata__storage_class = "lake"
+        metadata__content_type = "globales_survey",
+        metadata__storage_class = "lake",
+        metadata__country = "CAN"
       )
     warehouse_table_name <- "globales_canada"
 
