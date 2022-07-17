@@ -55,3 +55,21 @@ press_releases <- clessnverse::get_warehouse_table("political_parties_press_rele
 
 filter <- list(metadata__content_type = "ces_survey", metadata__storage_class = "lake")
 hublot::filter_lake_items(credentials, filter)
+
+
+
+  filter <- list(type="journalist")
+  df_journalists <- clessnverse::get_hub2_table(
+    'persons', 
+    data_filter = filter,
+    max_pages = -1,
+    hub_conf = hub_config
+  )
+
+
+  df_interventions <- clessnverse::get_hub2_table(
+    'agoraplus_interventions', 
+    data_filter = NULL,
+    max_pages = 2,
+    hub_conf = hub_config
+  )
