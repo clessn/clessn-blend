@@ -316,7 +316,7 @@ main <- function() {
   }
 
   # Enrich and load tweets into datamart
-  for (i in 586115:nrow(df_tweets)) {
+  for (i in 612034:nrow(df_tweets)) {
     person <- NULL
 
     person <- df_journalists[which(df_journalists$hub.key == df_tweets$personKey[i]),]
