@@ -89,7 +89,6 @@ In this example, we create a refiner for a datamart that will calculate the numb
 ```r
 # Example
 
-{
 warehouse_table_name <- "political_parties_press_releases"
 datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]"
 
