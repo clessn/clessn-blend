@@ -90,7 +90,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
 # Template
 
 warehouse_table_name <- "[name of table without prefix]"
-datamart_press_release_frequency <- "[name of dynamic without prefix]"
+mart_press_release_frequency <- "[name of dynamic without prefix]"
 
 warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
@@ -99,7 +99,7 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 # Example
 
 warehouse_table_name <- "political_parties_press_releases"
-datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]"
+mart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]"
 
 warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
@@ -111,7 +111,7 @@ warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentia
 11. To write your dataframe into Hublot via R, add the code below
 
 ```r
-clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
+clessnverse::commit_mart_table(df, mart_df, key_column = “key”, mode = “refresh”, credentials)}
 ```
 
 12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
@@ -119,7 +119,7 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 ## Cheatsheet
 
 ```r
-clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
+clessnverse::commit_mart_table(df, mart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
 ## Parameters
