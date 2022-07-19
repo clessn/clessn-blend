@@ -87,6 +87,15 @@ In this example, we create a refiner for a datamart that will calculate the numb
     6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
 
 ```r
+# Template
+
+warehouse_table_name <- "[name of table without prefix]"
+datamart_press_release_frequency <- "[name of dynamic without prefix]"
+
+warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
+```
+
+```r
 # Example
 
 warehouse_table_name <- "political_parties_press_releases"
