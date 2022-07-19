@@ -84,7 +84,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
     3. Change line 111 and put the refiner name in `snake_case`
     4. In the MAIN section, that's where your code will go and where you'll be able to test it.
     5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
-    6. Take the variable name and:
+    6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
 
 ```r
 # Example
