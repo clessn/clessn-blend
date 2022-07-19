@@ -12,7 +12,10 @@ A data refiner takes the information from the data warehouse and prepares it for
 * R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo `clessn/Renviron_tutorial`.
 * Access to clessn repositories on GitHub
 * Access to [Hublot](https://clhub.clessn.cloud/admin/)
-* `clessnverse` R package: download it in R using the code `devtools::install_github("clessn/clessnverse")`
+* CLESSN R packages
+ 	* `hublot` : `devtools::install_github("clessn/hublotr")`
+	* `clessnverse` : download it in R using the code `devtools::install_github("clessn/clessnverse")`
+	* `clessnhub`(temporary, for access to Hub 2)
 
 ### Tutorial
 
@@ -77,16 +80,25 @@ In this example, we create a refiner for a datamart that will calculate the numb
     7. Push your changes made in CLESSN-blend
 6. Start coding
     1. Open the Rprojet in the folder of your refiner.
-    2. Open `code/code.R` to code as it's the code template. It's content is related to automating your refiner.
+    2. Open `code/code.R` to code as it's the code template. Its content is related to automating your refiner.
     3. Change line 111 and put the refiner name in `snake_case`
+    4. In the "Functions to Get Data Sources from DataLake HUB 3.0" section, write the functions that will load the warehouse tables that compose the mart. An 		example of this operation is included in the **Common operations** of this document.   
     4. In the MAIN section, that's where your code will go and where you'll be able to test it.
     5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
-    6. Take the variable name and:
+    6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
+
+```r
+# Template
+
+warehouse_table_name <- "[name of table without prefix]"
+datamart_press_release_frequency <- "[name of dynamic without prefix]"
+
+warehouse_df <- clessnverse::get_warehouse_table(warehouse_table_name, credentials)
+```
 
 ```r
 # Example
 
-{
 warehouse_table_name <- "political_parties_press_releases"
 datamart_press_release_frequency <- "[nom de la dynamic table, enlever préfixe]"
 
@@ -135,3 +147,14 @@ When in doubt, verify the accuracy of the parameters using the [Notion page](htt
 |description|Describe the datamart in free text||Fréquence de publication des communiqués de presse par partis politiques|
 |content_type|Describe what's in the table in `snake_case`||political_parties_press_release_freq|
 |storage_class|Storage location|lake, storage, mart||
+
+
+# Common operations
+TO DO LIST
+- Functions to get data from Hub 3.0
+- Functions to get data from Hub 2.0
+- creating hub 3 filter
+- get_warehouse_table
+- get a dictionary
+- upload a mart table
+- what to put in main
