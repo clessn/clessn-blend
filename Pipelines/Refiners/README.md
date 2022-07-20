@@ -13,9 +13,9 @@ A data refiner takes the information from the data warehouse and prepares it for
 * Access to clessn repositories on GitHub
 * Access to [Hublot](https://clhub.clessn.cloud/admin/)
 * CLESSN R packages
- 	* `hublot` : `devtools::install_github("clessn/hublotr")`
-	* `clessnverse` : download it in R using the code `devtools::install_github("clessn/clessnverse")`
-	* `clessnhub`(temporary, for access to Hub 2)
+  * `hublot` : `devtools::install_github("clessn/hublotr")`
+  * `clessnhub`(temporary, for access to Hub 2) `devtools::install_github("clessn/clessn-hub-r")`
+  * `clessnverse` : download it in R using the code `devtools::install_github("clessn/clessnverse")`
 
 ### Tutorial
 
@@ -72,23 +72,44 @@ In this example, we create a refiner for a datamart that will calculate the numb
 
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
+    2. `git pull` 
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
     3. Copy the ***content*** of `clessn/retl` into your new folder. In the folder `r_name_of_refiner`, delete the files and folders starting with a `.` (a period)  ***Attention DO NOT COPY THE FOLDERS STARTING WITH a `.` (a period)***
     4. In your new folder, delete the `README.md`
     5. Rename `template_README.md` as `README.md`.
     6. Open and modify the `README.md` to describe the refiner in non-technical language.
     7. Push your changes made in CLESSN-blend
-6. Start coding
+    8. Start coding
 
 # Start coding
-Now that the structure of your refiner is setup, it's time to start coding *what* the  
+Now that the structure of your refiner is setup, it's time to start writing in the script that tells the refiner *what* to do. Start by following these simple steps:
 1. Open the Rprojet in the folder of your refiner.
-2. Open `code/code.R` to code as it's the code template. Its content is related to automating your refiner.
-3. Change line 111 and put the refiner name in `snake_case`
-4. In the "Functions to Get Data Sources from DataLake HUB 3.0" section, write the functions that will load the warehouse tables that compose the mart. An 		example of this operation is included in the **Common operations** of this document.   
-4. In the MAIN section, that's where your code will go and where you'll be able to test it.
-5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
-6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
+2. Open `code/code.R` to code. This file is the **code template**. Its additional content and structure are related to **automating** your refiner.
+    
+The refiner template is divided in 6 main sections:
+1. Functions
+2. Functions to get data sources from Hub 3.0
+3. Functions to get data sources from Hub 2.0
+4. Functions to get external data sources
+5. Main
+6. Error handling
+
+Each of these sections and what to write in them will be explained in the following sections.
+
+## Functions
+The *Functions* section is used to define the functions that will be used in the **analysis**.
+
+
+    4. In the "Functions to Get Data Sources from DataLake HUB 3.0" section, write the functions that will load the warehouse tables that compose the mart. An 		example of this operation is included in the **Common operations** of this document.   
+    4. In the MAIN section, that's where your code will go and where you'll be able to test it.
+    5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
+    6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
+
+3. Change line 118 and put the refiner name in `snake_case`
+    
+    ```r
+    if (!exists("scriptname")) scriptname <<- "r_name_of_your_refiner"
+    ```
 
 ```r
 # Template

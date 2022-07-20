@@ -550,7 +550,7 @@ merge_all_ces <- function(list_tables) {
   input_df$issQcDoneALL[is.na(input_df$issQcDoneALL)] <- input_df$issQcDone08[is.na(input_df$issQcDoneALL)]
   input_df$issQcDoneALL[is.na(input_df$issQcDoneALL)] <- input_df$issQcDone11[is.na(input_df$issQcDoneALL)]
   input_df$issQcDoneALL[is.na(input_df$issQcDoneALL)] <- input_df$issDoneQC15[is.na(input_df$issQcDoneALL)]
-  input_df$issQcDoneALL[is.na(input_df$issQcDoneALL)] <- input_df$issDoneQC19[is.na(input_df$issQcDoneALL)]
+  #input_df$issQcDoneALL[is.na(input_df$issQcDoneALL)] <- input_df$issDoneQC19[is.na(input_df$issQcDoneALL)]
 
 
   input_df$issFrgnUsFeelALL <- input_df$issAmericansFeel68
@@ -743,7 +743,7 @@ merge_all_ces <- function(list_tables) {
 
 
   input_df$issHlthVSPrivALL    <- input_df$issHlthVSPriv11
-  input_df$issHlthVSPrivALL[is.na(input_df$issHlthVSPrivALL)] <- input_df$issHlthVSPriv15[is.na(input_df$issHlthVSPrivALL)]
+  #input_df$issHlthVSPrivALL[is.na(input_df$issHlthVSPrivALL)] <- input_df$issHlthVSPriv15[is.na(input_df$issHlthVSPrivALL)]
   input_df$issHlthVSPrivALL[is.na(input_df$issHlthVSPrivALL)] <- input_df$issHlthVSPriv08[is.na(input_df$issHlthVSPrivALL)]
   input_df$issHlthVSPrivALL[is.na(input_df$issHlthVSPrivALL)] <- input_df$issHlthVSPriv04[is.na(input_df$issHlthVSPrivALL)]
   input_df$issHlthVSPrivALL[is.na(input_df$issHlthVSPrivALL)] <- input_df$issHlthVSPriv00[is.na(input_df$issHlthVSPrivALL)]
@@ -811,7 +811,7 @@ get_lake_items_globales <- function(country) {
     list_tables[[i]] <- df
     clessnverse::logit(
       scriptname,
-      paste0(hublot_list[[1]][[i]]$key, " added to list_tables"),
+      paste0("      ", hublot_list[[1]][[i]]$key, " added to list_tables"),
       logger
     )
   }
@@ -1015,7 +1015,7 @@ tryCatch(
       paste("Execution of",  scriptname, "program terminated"),
       logger
     )
-    clessnverse::logclose(logger)
+    clessnverse::log_close(logger)
 
     # Cleanup
     closeAllConnections()
