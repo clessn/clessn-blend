@@ -79,13 +79,16 @@ In this example, we create a refiner for a datamart that will calculate the numb
     6. Open and modify the `README.md` to describe the refiner in non-technical language.
     7. Push your changes made in CLESSN-blend
 6. Start coding
-    1. Open the Rprojet in the folder of your refiner.
-    2. Open `code/code.R` to code as it's the code template. Its content is related to automating your refiner.
-    3. Change line 111 and put the refiner name in `snake_case`
-    4. In the "Functions to Get Data Sources from DataLake HUB 3.0" section, write the functions that will load the warehouse tables that compose the mart. An 		example of this operation is included in the **Common operations** of this document.   
-    4. In the MAIN section, that's where your code will go and where you'll be able to test it.
-    5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
-    6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
+
+# Start coding
+Now that the structure of your refiner is setup, it's time to start coding *what* the  
+1. Open the Rprojet in the folder of your refiner.
+2. Open `code/code.R` to code as it's the code template. Its content is related to automating your refiner.
+3. Change line 111 and put the refiner name in `snake_case`
+4. In the "Functions to Get Data Sources from DataLake HUB 3.0" section, write the functions that will load the warehouse tables that compose the mart. An 		example of this operation is included in the **Common operations** of this document.   
+4. In the MAIN section, that's where your code will go and where you'll be able to test it.
+5. Go back into Hublot, look at the table to identify the intrant. Look for the unique key, timestamp, and body. 
+6. In the section `Functions to get data sources from DataLake Hub 3.0`, take the variable name and:
 
 ```r
 # Template
