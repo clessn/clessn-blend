@@ -83,7 +83,8 @@ In this example, we create a refiner for a datamart that will calculate the numb
     7. Push your changes made in CLESSN-blend
     8. Start coding
 
-# Start coding
+## Start coding your refiner
+
 Now that the structure of your refiner is setup, it's time to start writing in the script that tells the refiner *what* to do. Start by following these simple steps:
 1. Open the Rprojet in the folder of your refiner.
 2. Open `code/code.R` to code. This file is the **code template**. Its additional content and structure are related to **automating** your refiner.
@@ -98,20 +99,20 @@ The refiner template is divided in 6 main sections:
 
 Each of these sections and what to write in them will be explained in the following sections. As you read this, you can follow along with the example in the annex.
 
-## Functions
+### Functions
 The *Functions* section is used to define the functions that will be used in the **analysis**. These functions will be applied on the datasets loaded in the next sections to analyze them. Examples of functions to define in this section are included in the annex.
 
-## Functions to get data sources from Hub 3.0
+### Functions to get data sources from Hub 3.0
 The *Functions to get data sources from Hub 3.0* section is used to define the functions that will fetch the relevant **warehouse tables** and **files** (eg: dictionaries) in [Hublot](https://clhub.clessn.cloud/admin/).  
 Examples of relevant functions from `clessnverse` and `hublot` to use in this section are included in the annex as well as common operations.
 
-## Functions to get data sources from Hub 2.0 (temporary)
+### Functions to get data sources from Hub 2.0 (temporary)
 The *Data management committee* is currently in the process of migrating data and scrapers from the former Hub (Hub 2.0) to Hublot while sticking to the industry standards. Until all the data is properly stored in Hublot, some refiners will need to access datasets stored in Hub 2.0 using functions from the `clessnhub` package. The *Functions to get data sources from Hub 2.0 (temporary)* section is used to define the functions that will fetch data from Hub 2.0. Grouping these functions in the same section will allow for an easier transition when the migration towards Hublot will be done. Examples of relevant functions from `clessnhub` to use in this section are included in the annex as well as common operations.
 
-## Functions to get external data sources (Dropbox)
+### Functions to get external data sources (Dropbox)
 If one of the datasets used to create the mart is from an external data source, a ***really*** good practice would be to advise the *Data management committee* (Patrick Poncet, Judith Bourque, Jeremy Gilbert, Adrien Cloutier or Hubert Cadieux) so the process of integrating this dataset to the Data Lake can begin. A ***bad*** practice would be to ignore this suggestion. When the committee is advised, **temporary** functions to retrieve the external files can be included in the *Functions to get external data sources (Dropbox)*. No example of these types of functions have been made yet because this is a ***bad*** practice.
 
-## Main
+### Main
 The fun part! The *Main* section is basically the section where you analyze or refine the data with the functions defined in *Functions*. These data are loaded **in** the `main()` function using the functions defined in *Functions to get datasources from Hub 3.0*, *Functions to get data sources from Hub 2.0* and *Functions to get external data sources (Dropbox)*.  
 
 ```r
@@ -175,13 +176,13 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 
 12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
 
-## Cheatsheet
+### Cheatsheet
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
-## Parameters
+### Parameters
 
 When in doubt, verify the accuracy of the parameters using the [Notion page](https://www.notion.so/clessn/Metadonn-es-dans-les-pipelines-de-la-CLESSN-f99a8cc4271644b08c4b0ac27ae4d55e). The page on Notion takes priority over information in this README.
 
@@ -207,7 +208,7 @@ When in doubt, verify the accuracy of the parameters using the [Notion page](htt
 |storage_class|Storage location|lake, storage, mart||
 
 
-# Common operations
+## Common operations
 TO DO LIST
 - Functions to get data from Hub 3.0
 - Functions to get data from Hub 2.0
