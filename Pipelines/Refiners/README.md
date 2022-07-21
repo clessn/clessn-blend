@@ -13,7 +13,7 @@ A data refiner takes the information from the data warehouse and prepares it for
 * Access to
 	* clessn repositories on GitHub
 	* [Hublot](https://clhub.clessn.cloud/admin/)
-	* Hub 2.0 (tm
+	* Hub 2.0 (temporary, for access to data in Hub 2.0 not yet in Hublot)
 * Install CLESSN R packages
   * `clessnhub`: `devtools::install_github("clessn/clessn-hub-r")` (temporary, for access to data in Hub 2.0 not yet in Hublot) (Contact: Adrien Cloutier, Olivier Banville)
   * `clessnverse` : `devtools::install_github("clessn/clessnverse")` (Contact: Adrien Cloutier, Hubert Cadieux, Olivier Banville)
