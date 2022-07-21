@@ -14,8 +14,8 @@ A data refiner takes the information from the data warehouse and prepares it for
 * Access to [Hublot](https://clhub.clessn.cloud/admin/)
 * Install temporary Hub 2.0 package: `clessnhub`: `devtools::install_github("clessn/clessn-hub-r")`
 * Install CLESSN R packages
-  * `hublot` : `devtools::install_github("clessn/hublotr")`
   * `clessnverse` : `devtools::install_github("clessn/clessnverse")`
+  * `hublot` : `devtools::install_github("clessn/hublotr")`
 
 ### Tutorial
 
