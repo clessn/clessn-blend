@@ -9,13 +9,15 @@ A data refiner takes the information from the data warehouse and prepares it for
 ### Prerequisites
 
 * R
-* R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo `clessn/Renviron_tutorial`.
-* Access to clessn repositories on GitHub
-* Access to [Hublot](https://clhub.clessn.cloud/admin/)
+* R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo [`clessn/Renviron_tutorial`](https://github.com/clessn/Renviron_tutorial).
+* Access to
+	* clessn repositories on GitHub
+	* [Hublot](https://clhub.clessn.cloud/admin/)
+	* Hub 2.0 (tm
 * Install CLESSN R packages
-  * `clessnhub`: `devtools::install_github("clessn/clessn-hub-r")`
-  * `clessnverse` : `devtools::install_github("clessn/clessnverse")`
-  * `hublot` : `devtools::install_github("clessn/hublotr")`
+  * `clessnhub`: `devtools::install_github("clessn/clessn-hub-r")` (temporary, for access to data in Hub 2.0 not yet in Hublot) (Contact: Adrien Cloutier, Olivier Banville)
+  * `clessnverse` : `devtools::install_github("clessn/clessnverse")` (Contact: Adrien Cloutier, Hubert Cadieux, Olivier Banville)
+  * `hublot` : `devtools::install_github("clessn/hublotr")` (Contact: Adrien Cloutier, Olivier Banville)
 
 ### Tutorial
 
