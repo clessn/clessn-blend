@@ -66,7 +66,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "tags": "elxn-qc2022, vitrine_democratique, polqc",
   "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
   "output": {
-    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca"
+    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca",
     "graphics": "political_press_releases_freq/plots"
   }
 }
