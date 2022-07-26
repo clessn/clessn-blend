@@ -99,7 +99,7 @@ The refiner template is divided in 6 main sections:
 5. Main
 6. Error handling
 
-Each of these sections and what to write in them will be explained in the following sections. As you read this, you can follow along with the example in the annex.
+Each of these sections and what to write in them will be explained in the following sections. As you read this, you can follow along with the example in the annex (coming soon!).
 
 ### Functions
 The *Functions* section is used to define the functions that will be used in the **analysis**. These functions will be applied on the datasets loaded in the next sections to analyze them. Examples of functions to define in this section are included in the annex.
