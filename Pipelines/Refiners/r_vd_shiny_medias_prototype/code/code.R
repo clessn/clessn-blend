@@ -285,7 +285,7 @@ hubr::check_version()
 
 scriptname <- "r_vd_shiny_medias_prototype"
 
-credentials <- hubr::get_credentials(Sys.getenv("HUB3_URL"), 
+credentials <- hublot::get_credentials(Sys.getenv("HUB3_URL"), 
                                      Sys.getenv("HUB3_USERNAME"), 
                                      Sys.getenv("HUB3_PASSWORD"))
 credentials

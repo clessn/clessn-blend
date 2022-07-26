@@ -3,7 +3,7 @@
 ## Purpose
 This refiner is used to determine the tone of parties and candidates on a given issue. It transforms data from the storage to the mart.
 
-It was created in order to blah blah blah.
+It was created in order to have data ready for the Quebec 2022 elections.
 
 ## Input
 ```
