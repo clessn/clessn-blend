@@ -46,7 +46,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "description": <Description en langage naturel du contenu du comptoir et de son utilité>,
   "output": {
     "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
-    "graphics": <Path du lac utilisé pour stocker et rassembler les graphiques issus de ce comptoir pour publication> # si plusieurs, alors csv
+    "graphics": nom_du_mart/plot # toujours écrire le nom du mart, suive d'un / et de «plot» 
   }
 }
 ```
