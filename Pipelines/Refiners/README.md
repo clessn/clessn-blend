@@ -72,9 +72,9 @@ In this example, we create a refiner for a datamart that will calculate the numb
 }
 ```
 
-4. Clic «SAVE». So far so good!!!!!!
+4. Clic «SAVE». So far so good!!!!!! 
 
-5. Populate the table based on the `RETL` repo
+5. Populate the table based on the `[RETL](https://github.com/clessn/retl)` repo
     1. Clone or pull the repository `clessn/retl`
     2. `git pull` 
     2. In `clessn-blend/pipeline/refiners`, create a new folder with the name `r_name_of_refiner`. The prefix `r_` stands for refiner.
