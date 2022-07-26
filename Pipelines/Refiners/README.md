@@ -24,7 +24,7 @@ A data refiner takes the information from the data warehouse and prepares it for
 In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 
 1. On the admin site of [Hublot](https://clhub.clessn.cloud/admin/), open Dynamic table. 
-2. Create a table and fill in the form according to the Dynamic table parameters at the bottom of this document
+2. Clic «Add dynamic table», and create a table by filling in the form according to the Dynamic table parameters at the bottom of this document
 
 3. Create datamart metadata
     1. In the Metadata field, change the view from "Tree" to "Code"
