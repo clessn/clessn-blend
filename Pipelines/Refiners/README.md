@@ -28,7 +28,8 @@ In this example, we create a refiner for a datamart that will calculate the numb
 
 3. Create datamart metadata
     1. In the Metadata field, change the view from "Tree" to "Code"
-    2. Insert the following template and fill in according to the Metadata parameters at the bottom of this document. Press Save.
+    2. Insert the following template and fill in according to the Metadata parameters at the bottom of this document.
+    3. Do not check «Is public».
 
 ```
 # Template
@@ -39,7 +40,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "content_type": <description en_snake_case du contenu d'une observation du comptoir (au singulier = une unité d'observation)>,
   "storage_class": "mart",
   "source_type": <valeurs de la metadonnée content_type de.s table.s d'entrepôt et Files utilisées pour construire ce comptoir>, # provient donc de la méta donnée content_type des tables d'entrepôt et des Files qui constituent cette table.  En règle général, plusieurs tables d'entrepôt + dictionnaires => un comptoir. Si plusieurs, alors séparer les valeurs par une virgule.
-	"source": <noms des tables de l'entrepot et Files du lac (dictionnaires) dont ce comptoir est constitué separés par des virgules>,
+  "source": <noms des tables de l'entrepot et Files du lac (dictionnaires) dont ce comptoir est constitué separés par des virgules>,
   "pillars": ["decision_makers"|"citizens"|"medias"],
   "projects": <nom du.des projets en_snake_case separés par des virgules>,
   "tags": <tags cumulatifs des tables d'entrepôt et/ou Files dont les observations de ce comptoir sont constituées>,
@@ -60,7 +61,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "content_type": "political_parties_press_release_freq",
   "storage_class": "mart",
   "source_type": "lexicoder_topic_dictionary,political_party_press_release",
-	"source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
+  "source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
   "pillars": "decision_makers",
   "projects": "agoraplus,vitrine_democratique",
   "tags": "elxn-qc2022, vitrine_democratique, polqc",
