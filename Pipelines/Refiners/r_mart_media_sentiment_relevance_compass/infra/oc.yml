@@ -1,0 +1,49 @@
+# export NAMESPACE=ul-val-prj-quorum-dv01
+# export DEPLOYMENT=example-pipeline
+# export NAME=example-pipeline
+# export APP=clhub-pipelines
+# export IMAGE=docker.io/clessn/retl:example
+
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+
+metadata:
+  labels:
+    pipeline: "true"
+    app: ${APP}
+  name: ${DEPLOYMENT}
+  namespace: ${NAMESPACE}
+
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    app: ${APP}
+    deploymentconfig: ${DEPLOYMENT}
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: ${APP}
+        deploymentconfig: ${DEPLOYMENT}
+    spec:
+      containers:
+        - name: ${NAME}
+          image: ${IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "0.25"
+              memory: 512Mi
+            requests:
+              cpu: "0.10"
+              memory: 256Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      restartPolicy: Always
+  triggers:
+    - type: ConfigChange
