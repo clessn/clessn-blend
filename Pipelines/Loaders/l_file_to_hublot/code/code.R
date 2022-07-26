@@ -249,7 +249,7 @@ main <- function() {
         file$metadata$imported <- TRUE
 
         # Must update the file here
-        # hublot::update_file(file$slug, file, credentials)
+        hublot::update_file(file$slug, file, credentials)
 
         return(ret)
       }
