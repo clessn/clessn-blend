@@ -72,6 +72,8 @@ In this example, we create a refiner for a datamart that will calculate the numb
 }
 ```
 
+4. Clic «SAVE». So far so good!!!!!!
+
 5. Populate the table based on the `RETL` repo
     1. Clone or pull the repository `clessn/retl`
     2. `git pull` 
