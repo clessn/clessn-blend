@@ -6,6 +6,7 @@ credentials <- hublot::get_credentials(
   Sys.getenv("HUB3_PASSWORD")
   )
 
+table <- clessnverse::get_warehouse_table("globales_canada", credentials = credentials, nbrows = 50)
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 

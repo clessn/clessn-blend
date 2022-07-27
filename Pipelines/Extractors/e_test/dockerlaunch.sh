@@ -17,14 +17,14 @@ while (! docker stats --no-stream ); do
 done
 
 
-cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Loaders/l_agoraplus-pressreleases-qc
+cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Extractors/e_test
 
 if [[ -f "status.json" ]]; then
    result=`cat status.json`
-   echo "$(date) starting l_agoraplus-pressreleases-qc. current job status: " $result
+   echo "$(date) starting e_test. current job status: " $result
 else
    result='"not running"'
-   echo "$(date) starting l_agoraplus-pressreleases-qc. current job status: " $result
+   echo "$(date) starting e_test. current job status: " $result
 fi
 
 
@@ -44,7 +44,7 @@ done
 dock=`docker container ls -f name=pipeline -aq`
 if [[ $dock = "" ]]; then
    echo "$(date) starting container"
-   sudo -u patrick /usr/local/bin/docker-compose up -d pipeline
+   sudo -u patrick /usr/local/bin/docker-compose up -d pipeline 
 else
    echo "$(date) waiting for another pipeline container to terminate..."
    while [[ $dock != ""  ]]
@@ -53,6 +53,7 @@ else
       dock=`docker container ls -f name=pipeline -aq`
       echo "$(date) waiting for another pipeline container to terminate..."
    done
+   echo "$(date) starting container"
    sudo -u patrick /usr/local/bin/docker-compose up -d pipeline
 fi
 
@@ -90,21 +91,21 @@ echo "$(date) job log stderr $(cat stderr.json)"
 ret=`cat return_code.json`
 
 if [[ $ret = '1' ]]; then
-   echo "$(date) job terminated with an error.  Error log generated in /Users/patrick/Logs/l_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
-   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/l_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+   echo "$(date) job terminated with an error.  Error log generated in /Users/patrick/Logs/e_test-$(date +%Y-%m-%d.%H:%M:%S).log"
+   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_test-$(date +%Y-%m-%d.%H:%M:%S).log"
 fi
 
 if [[ $ret = '2' ]]; then
-   echo "$(date) job terminated with warning(s).  Error log generated in /Users/patrick/Logs/l_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
-   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/l_agoraplus-pressreleases-qc-$(date +%Y-%m-%d.%H:%M:%S).log"
+   echo "$(date) job terminated with warning(s).  Error log generated in /Users/patrick/Logs/e_test-$(date +%Y-%m-%d.%H:%M:%S).log"
+   cat return_code.json stderr.json stdout.json > "/Users/patrick/Logs/e_test-$(date +%Y-%m-%d.%H:%M:%S).log"
 fi
 
 if [[ $ret = '0' ]]; then
    echo "$(date) job terminated successfully"
 fi
 
-docker ps --filter name=pipeline -aq | xargs docker stop
-docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
+docker stop e_test-pipeline-1 
+sudo -u patrick /usr/local/bin/docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
 
 rm stdout.json
 rm stderr.json

@@ -104,8 +104,8 @@ if [[ $ret = '0' ]]; then
    echo "$(date) job terminated successfully"
 fi
 
-docker stop e_agoraplus-pressreleases-qc-pipeline-1 
-sudo -u patrick /usr/local/bin/docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
+docker ps --filter name=pipeline -aq | xargs docker stop
+docker ps --filter name=pipeline --filter status=exited -aq | xargs docker rm
 
 rm stdout.json
 rm stderr.json

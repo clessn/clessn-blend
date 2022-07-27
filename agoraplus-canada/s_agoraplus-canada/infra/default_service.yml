@@ -1,0 +1,24 @@
+# export NAMESPACE=ul-val-prj-quorum-dv01
+# export SERVICE=clhub-pipeline-service
+# export APP=clhub-pipelines
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ${APP}
+  name: ${SERVICE}
+  namespace: ${NAMESPACE}
+spec:
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    pipeline: "true"
+  sessionAffinity: None
+  type: ClusterIP
