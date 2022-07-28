@@ -6,7 +6,8 @@ A data refiner takes the information from the data warehouse and prepares it for
 
 ## First and foremost, use the following template to draw your refiner!
 
-![template_raffineur drawio](https://user-images.githubusercontent.com/49455681/181580686-7415ea0c-594b-4e7e-998f-86728e12617a.png)
+<img width="752" alt="Capture d’écran, le 2022-07-28 à 11 21 30" src="https://user-images.githubusercontent.com/49455681/181582125-a3d77bb4-88ee-4df3-bcd0-694ee9a38939.png">
+
 
 You'll find the template [here](https://github.com/clessn/diagrams/tree/master/raffineurs). 
 
