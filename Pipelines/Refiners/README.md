@@ -4,6 +4,10 @@
 
 A data refiner takes the information from the data warehouse and prepares it for a data mart.
 
+## First and foremost, use the following template to draw your refiner!
+
+![template_raffineur drawio](https://user-images.githubusercontent.com/49455681/181580686-7415ea0c-594b-4e7e-998f-86728e12617a.png)
+
 ## Create a refiner
 
 ### Prerequisites
