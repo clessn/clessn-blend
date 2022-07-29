@@ -22,14 +22,52 @@
 ########################           Functions            ######################
 ###############################################################################
 
-# Declare and define all the general-purpose functions specific to this script.
-# If there are functions that are shared between many scripts, you should ask
-# yourself whether they should go to in the clessnverse:: Package
-#
-# Ex:
-#      get_lake_press_releases <- functions(parties_list) {
-#         your function code goes here
-#      }
+    compute_relevance_score <- function(txt_bloc, dictionary) {
+      # Prepare corpus
+      txt <- stringr::str_replace_all(string = txt_bloc, pattern = "M\\.|Mr\\.|Dr\\.", replacement = "")
+      tokens <- quanteda::tokens(txt, remove_punct = TRUE)
+      tokens <- quanteda::tokens_remove(tokens, quanteda::stopwords("french"))
+      tokens <- quanteda::tokens_remove(tokens, quanteda::stopwords("spanish"))
+      tokens <- quanteda::tokens_remove(tokens, quanteda::stopwords("english"))
+
+      tokens <- quanteda::tokens_replace(
+        tokens,
+        quanteda::types(tokens),
+        stringi::stri_replace_all_regex(quanteda::types(tokens), "[lsd]['\\p{Pf}]", ""))
+
+      if (length(tokens[[1]]) == 0) {
+        tokens <- quanteda::tokens("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", remove_punct = TRUE)
+      }
+
+      dfm_corpus <- quanteda::dfm(tokens)
+
+      # Compute Relevance on the entire corpus
+      lookup <- quanteda::dfm_lookup(dfm_corpus, dictionary = dictionary, valuetype = "glob")
+      df_score <- quanteda::convert(lookup, to="data.frame")
+      df_score$doc_id <- NULL
+
+      return(df_score)
+    }
+
+    normalize_variable <- function(vector) {
+      max <- max(vector, na.rm = T)
+      min <- min(vector, na.rm = T)
+      value <- (vector - min)/(max-min)
+      return(value)
+    }
+
+    reduce_outliers <- function(vector) {
+      q1 <- stats::quantile(vector, 0.25)
+      q3 <- stats::quantile(vector, 0.75)
+      eiq <- q3-q1
+      lim_max <- q3 + 1.5*eiq
+      lim_min <- q1 - 1.5*eiq
+      vector[vector > lim_max] <- lim_max
+      vector[vector < lim_min] <- lim_min
+
+      return(vector)
+    }
+
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -51,7 +89,7 @@ load_radarplus_data <- function(){
 
   # on crée une requête avec les paramètres des articles qu'on veut
   # Date de début des données désirées
-  begin_date <- quorum::createDate(01, 05, 2022, 00,00,00)
+  begin_date <- quorum::createDate(20, 07, 2022, 00,00,00)
 
   # # Créer la date de fin (aujourd'hui)
   day2 <- as.numeric(format(Sys.time(), "%d"))
@@ -101,7 +139,6 @@ load_radarplus_data <- function(){
                          ifelse(source %in% c("new-york-times", "cnn", "fox-news", "wall-street-journal"),
                                 "usa", "canada"))) %>%
     filter(area %in% c("canada", "quebec")) %>%
-    left_join(RadarIndex, by = "slug") %>%
     mutate(headline_time = as.numeric(end_date - begin_date))
 
   return(DataRadar)
@@ -110,7 +147,7 @@ load_radarplus_data <- function(){
 get_journalists_tweets <- function(){
   myfilter <- clessnhub::create_filter(
     metadata = list(personType__regex="journalist|media"),
-    data = list(creationDate__gte="2022-05-01",
+    data = list(creationDate__gte="2022-07-20",
                 creationDate__lte=as.character(as.Date(Sys.time()))))
   Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
     mutate(data.likeCount = as.numeric(data.likeCount),
@@ -118,6 +155,12 @@ get_journalists_tweets <- function(){
   return(Tweets)
 }
 
+get_journalists_hub2 <- function(){
+  filter <- clessnhub::create_filter(type = "journalist")
+  Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE) %>%
+    select(handle = data.twitterHandle, fullName = data.fullName, female = data.isFemale, media = data.currentMedia)
+  return(Persons)
+}
 
 ###############################################################################
 ######################            Functions to          ######################
@@ -132,23 +175,86 @@ get_journalists_tweets <- function(){
 ###############################################################################
 
 main <- function() {
+  issue <-  clessnverse::get_dictionary("issues", lang = 'fr', credentials)
+  sentiment <- clessnverse::get_dictionary("sentiments", lang = "fr", credentials)
+  radarplus_data <- load_radarplus_data()
+  journalistes_tweets <- get_journalists_tweets()
+  journalistes <- get_journalists_hub2()
+
+  journalistes_tweets2 <- journalistes_tweets %>%
+    select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle)
 
 
-  clessnverse::get_dictionary("issues", lang = 'fr', credentials)
-    ###########################################################################
-    # Define local objects of your core algorithm here
-    # Ex: parties_list <- list("CAQ", "PLQ", "QS", "PCQ", "PQ")
+tweets <- left_join(journalistes_tweets2, journalistes, by = "handle") %>%
+  mutate(source = "twitter") %>%
+  select(date, text, id = handle, media, source) %>%
+  filter(media %in% c("TVA Nouvelles", "Radio-Canada", "Radio Canada", "La Presse", "Le Devoir")) %>%
+  mutate(media = ifelse(media == "La Presse", "la-presse", media),
+         media = ifelse(media == "Radio-Canada", "radio-canada", media),
+         media = ifelse(media == "Radio Canada", "radio-canada", media),
+         media = ifelse(media == "TVA Nouvelles", "tva-nouvelles", media),
+         media = ifelse(media == "Le Devoir", "le-devoir", media))
+
+radarplus_data2 <- radarplus_data %>%
+  mutate(id = source, media = source, source = "headlines") %>%
+  select(date = cleanDate, text, id, media, source) %>%
+  filter(media %in% c("la-presse", "le-devoir", "radio-canada", "tva-nouvelles"))
+
+data <- rbind(tweets, radarplus_data2)
+
+example <- compute_relevance_score(data$text[1], issue)
+
+df <- data.frame(matrix(nrow = 0, ncol = length(names(example))))
+
+names(df) <- names(example)
+
+nbwords <- c()
+
+for (i in 1:nrow(data)) {
+  row <- compute_relevance_score(data$text[i], issue)
+  nbwords[i] <- clessnverse::compute_nb_words(data$text[i])
+  df <- rbind(df, row)
+  print(i)
+}
+
+df$nbwords <- nbwords
+
+relevance_long <- df %>%
+  mutate(doc_id = 1:nrow(.)) %>%
+  tidyr::pivot_longer(., cols = 1:(length(colnames(.))-2),
+                      names_to = "issue", values_to = "nbwords_issue") %>%
+  mutate(prop = ifelse((nbwords == 0 & nbwords_issue == 0),
+                        0,
+                       (nbwords_issue/nbwords)*100),
+         logprop = log(prop),
+         logprop = ifelse(is.infinite(logprop),
+                       NA,
+                       logprop),
+         relevance = normalize_variable(logprop))
+
+relevance_wide <- relevance_long %>%
+  tidyr::replace_na(list(relevance = 0)) %>%
+  tidyr::pivot_wider(., "doc_id",
+                     names_from = "issue",
+                     values_from = "relevance")
+library(ggplot2)
+ggplot(relevance_long, aes(x = relevance)) +
+  geom_histogram() +
+  facet_wrap(~issue)
+
+ggplot(relevance_long, aes(x = relevance)) +
+  geom_point() +
+  geom_smooth() +
+  facet_grid(rows = vars(issue))
 
 
-    ###########################################################################
-    # Start your main script here using the best practices in activity logging
-    #
-    # Ex: warehouse_items_list <- clessnverse::get_warehouse_table(warehouse_table, credentials, nbrows = 0)
-    #     clessnverse::logit(scriptname, "Getting political parties press releases from the datalake", logger)
-    #     lakes_items_list <- get_lake_press_releases(parties_list)
-    #
+library(ggcorrplot)
+corr_df <- relevance_wide %>%
+  select(-doc_id)
+corr <- round(cor(corr_df), 1)
+ggcorrplot(corr)
 
-
+df2$propnorm <- normalize_variable(df2$prop)
 
 }
 
@@ -168,6 +274,7 @@ tryCatch(
     # All other packages must be invoked by specifying its name
     # in front ot the function to be called
     library(dplyr)
+    clessnhub::login(Sys.getenv("HUB2_USERNAME"), Sys.getenv("HUB2_PASSWORD"))
 
     # Globals
     # Here you must define all objects (variables, arrays, vectors etc that you
