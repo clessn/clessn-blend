@@ -174,22 +174,37 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 
 12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
 
-## Code cheatsheet
+## Useful functions
+
+### Get data from Hub 2.0
+[comming soon]
+
+### Get data from Hub 3.0
+[coming soon]
+
+### Create filter in Hub 3.0
+[coming soon]
+
+### Get warehouse table
+[coming soon]
+
+`get_warehouse_table`
+
+### Get a dictionnary
+[coming soon]
+
+### Upload a mart table
+[coming soon]
+
+### What to put in Main
+[coming soon]
+
+### Other
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
-
-### Common operations
-TO DO LIST
-- Functions to get data from Hub 3.0
-- Functions to get data from Hub 2.0
-- creating hub 3 filter
-- get_warehouse_table
-- get a dictionary
-- upload a mart table
-- what to put in main
 
 ## Parameters
 
