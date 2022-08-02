@@ -38,7 +38,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
     3. Do not check "Is public".
 
 ```
-# Template
+# Datamart metadata
 
 {
   "type": "observations",
@@ -54,27 +54,6 @@ In this example, we create a refiner for a datamart that will calculate the numb
   "output": {
     "webapp": <url de la webapp qui pourrait utiliser les données de ce comptoir (le cac échéant)>,
     "graphics": nom_du_mart/plot # toujours écrire le nom du mart, suive d'un / et de «plot» 
-  }
-}
-```
-
-```
-# Example
-
-{
-  "type": "observations",
-  "format": "table",
-  "content_type": "political_parties_press_release_freq",
-  "storage_class": "mart",
-  "source_type": "lexicoder_topic_dictionary,political_party_press_release",
-  "source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
-  "pillars": "decision_makers",
-  "projects": "agoraplus,vitrine_democratique",
-  "tags": "elxn-qc2022, vitrine_democratique, polqc",
-  "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
-  "output": {
-    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca",
-    "graphics": "political_press_releases_freq/plots"
   }
 }
 ```
@@ -231,3 +210,34 @@ TO DO LIST
 - get a dictionary
 - upload a mart table
 - what to put in main
+
+## Example
+
+## 1. Draw your refiner
+[coming soon]
+
+### 2. Create your refiner
+
+```
+# Datamart metadata
+
+{
+  "type": "observations",
+  "format": "table",
+  "content_type": "political_parties_press_release_freq",
+  "storage_class": "mart",
+  "source_type": "lexicoder_topic_dictionary,political_party_press_release",
+  "source": "dict_sentiment,dict_issues,warehouse_political_parties_press_releases",
+  "pillars": "decision_makers",
+  "projects": "agoraplus,vitrine_democratique",
+  "tags": "elxn-qc2022, vitrine_democratique, polqc",
+  "description": "Fréquence de publication des communiqués de presse par partis politiques par semaine pour faire un graph à barres et le stocker dans le lac en mode public pour que le publier inline sur le site http://vitrinedemocratique.com",
+  "output": {
+    "webapp": "http://agora_plus.ca, http://vitrine-democratique.ca",
+    "graphics": "political_press_releases_freq/plots"
+  }
+}
+```
+
+### 3. Code your refiner
+[coming soon]
