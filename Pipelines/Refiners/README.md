@@ -128,10 +128,10 @@ The refiner template `code/code.R` is divided in the following 6 sections:
 
 Since your script is meant to run automatically, exclude `library(package_name)` and `install.packages("package_name")`.
 
-#### Functions
+### A : Functions
 The *Functions* section is used to define the functions that will be used in the **analysis**. These functions will be applied on the datasets loaded in the next sections to analyze them.
 
-#### Functions to get data sources from Hub 3.0
+### B : Functions to get data sources from Hub 3.0
 The *Functions to get data sources from Hub 3.0* section is used to define the functions that will fetch the relevant **warehouse tables** and **files** (eg: dictionaries) in [Hublot](https://clhub.clessn.cloud/admin/).
 
 Related functions:
@@ -144,7 +144,7 @@ Related functions:
 # [coming soon]
 ```
 
-#### Functions to get data sources from Hub 2.0
+### C : Functions to get data sources from Hub 2.0
 The *Functions to get data sources from Hub 2.0 (temporary)* section is used to define the functions that will fetch data from Hub 2.0. Grouping these functions in the same section will allow for an easier transition when the migration towards Hublot will be done. 
 
 Related functions:
@@ -157,10 +157,10 @@ Related functions:
 
 Note: The *Data management committee* is currently in the process of migrating data and scrapers from the former Hub (Hub 2.0) to Hublot while sticking to the industry standards. Until all the data is properly stored in Hublot, some refiners will need to access datasets stored in Hub 2.0 using functions from the `clessnhub` package.
 
-#### Functions to get external data sources
+### D : Functions to get external data sources
 If one of the datasets used to create the mart is from an external data source, a ***really*** good practice would be to advise the *Data management committee* (Patrick Poncet, Judith Bourque, Jeremy Gilbert, Adrien Cloutier or Hubert Cadieux) so the process of integrating this dataset to the Data Lake can begin. A ***bad*** practice would be to ignore this suggestion. When the committee is advised, **temporary** functions to retrieve the external files can be included in the *Functions to get external data sources (Dropbox)*. No example of these types of functions have been made yet because this is a ***bad*** practice.
 
-#### Main
+### E : Main
 The fun part!
 
 The *Main* section is where you analyze or refine the data with the functions defined in *Functions*. These data are loaded **in** `main()` using the functions defined in *Functions to get datasources from Hub 3.0*, *Functions to get data sources from Hub 2.0* and *Functions to get external data sources (Dropbox)*.
@@ -196,7 +196,7 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 clessn::commit_lake_item()
 ```
 
-### Error handling
+### F : Error handling
 
 ### Other useful functions
 
