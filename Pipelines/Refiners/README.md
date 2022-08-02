@@ -4,16 +4,7 @@
 
 A data refiner takes the information from the data warehouse and prepares it for a data mart.
 
-## 1. Draw your refiner
-
-<img width="752" alt="Capture d’écran, le 2022-07-28 à 11 21 30" src="https://user-images.githubusercontent.com/49455681/181582125-a3d77bb4-88ee-4df3-bcd0-694ee9a38939.png">
-
-
-You'll find the template in [clessn/diagrams](https://github.com/clessn/diagrams/tree/master/raffineurs). 
-
-## 2. Create your refiner
-
-### Prerequisites
+## Prerequisites
 
 * R
 * R environ: it allows you to hide your password and other sensitive information in a project. To configure it, follow the instructions in the repo [`clessn/Renviron_tutorial`](https://github.com/clessn/Renviron_tutorial).
@@ -26,9 +17,13 @@ You'll find the template in [clessn/diagrams](https://github.com/clessn/diagrams
   * `clessnverse` : `devtools::install_github("clessn/clessnverse")` (Contact: Adrien Cloutier, Hubert Cadieux, Olivier Banville)
   * `hublot` : `devtools::install_github("clessn/hublotr")` (Contact: Adrien Cloutier, Olivier Banville)
 
-### Tutorial
+## 1. Draw your refiner
 
-In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
+Using the template in [clessn/diagrams](https://github.com/clessn/diagrams/tree/master/raffineurs), draw your refiner.
+
+<img width="752" alt="Capture d’écran, le 2022-07-28 à 11 21 30" src="https://user-images.githubusercontent.com/49455681/181582125-a3d77bb4-88ee-4df3-bcd0-694ee9a38939.png">
+
+## 2. Create your refiner
 
 1. On the admin site of [Hublot](https://clhub.clessn.cloud/admin/), open Dynamic table. 
 2. Click "Add dynamic table", and fill in the form according to the Dynamic table parameters at the bottom of this document
@@ -212,6 +207,8 @@ TO DO LIST
 - what to put in main
 
 ## Example
+
+In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 
 ## 1. Draw your refiner
 [coming soon]
