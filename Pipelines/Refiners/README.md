@@ -4,14 +4,14 @@
 
 A data refiner takes the information from the data warehouse and prepares it for a data mart.
 
-## First, use the following template to draw your refiner
+## 1. Draw your refiner
 
 <img width="752" alt="Capture d’écran, le 2022-07-28 à 11 21 30" src="https://user-images.githubusercontent.com/49455681/181582125-a3d77bb4-88ee-4df3-bcd0-694ee9a38939.png">
 
 
 You'll find the template in [clessn/diagrams](https://github.com/clessn/diagrams/tree/master/raffineurs). 
 
-## Then, create your refiner
+## 2. Create your refiner
 
 ### Prerequisites
 
@@ -90,7 +90,7 @@ In this example, we create a refiner for a datamart that will calculate the numb
     7. Push your changes made in CLESSN-blend.
     8. Start coding.
 
-## Start coding your refiner
+## 3. Start coding your refiner
 
 Now that the structure of your refiner is setup, it's time to start writing in the script that tells the refiner *what* to do. Start by following these simple steps:
 1. Open the Rprojet in the folder of your refiner.
