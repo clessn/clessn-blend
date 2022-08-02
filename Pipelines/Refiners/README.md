@@ -174,13 +174,24 @@ clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = �
 
 12. **Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
 
-## Cheatsheet
+## Code cheatsheet
 
 ```r
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
-### Parameters
+
+### Common operations
+TO DO LIST
+- Functions to get data from Hub 3.0
+- Functions to get data from Hub 2.0
+- creating hub 3 filter
+- get_warehouse_table
+- get a dictionary
+- upload a mart table
+- what to put in main
+
+## Parameters
 
 When in doubt, verify the accuracy of the parameters using the [Notion page](https://www.notion.so/clessn/Metadonn-es-dans-les-pipelines-de-la-CLESSN-f99a8cc4271644b08c4b0ac27ae4d55e). The page on Notion takes priority over information in this README.
 
@@ -204,17 +215,6 @@ When in doubt, verify the accuracy of the parameters using the [Notion page](htt
 |description|Describe the datamart in free text||Fréquence de publication des communiqués de presse par partis politiques|
 |content_type|Describe what's in the table in `snake_case`||political_parties_press_release_freq|
 |storage_class|Storage location|lake, storage, mart||
-
-
-### Common operations
-TO DO LIST
-- Functions to get data from Hub 3.0
-- Functions to get data from Hub 2.0
-- creating hub 3 filter
-- get_warehouse_table
-- get a dictionary
-- upload a mart table
-- what to put in main
 
 ## Example
 
