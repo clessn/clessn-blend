@@ -77,7 +77,7 @@ Now that the structure of your refiner is setup, it's time to start writing in t
 The refiner template is divided in the following 6 sections:
 
 |Section|Description|Status|
-|---|---||
+|---|---|---|
 |Functions|define the functions that will be used in the **analysis**||
 |Functions to get data sources from Hub 3.0|define the functions that will fetch the relevant **warehouse tables** and **files** (eg: dictionaries) in [Hublot](https://clhub.clessn.cloud/admin/)||
 |Functions to get data sources from Hub 2.0|define the functions that will fetch data from Hub 2.0|temporary|
