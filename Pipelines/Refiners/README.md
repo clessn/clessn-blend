@@ -74,13 +74,16 @@ Now that the structure of your refiner is setup, it's time to start writing in t
 1. Open the Rprojet in the folder of your refiner.
 2. Open `code/code.R` to code. This file is the **code template**. Its additional content and structure are related to **automating** your refiner.
     
-The refiner template is divided in 6 main sections:
-- Functions
-- Functions to get data sources from Hub 3.0
-- Functions to get data sources from Hub 2.0 (temporary)
-- Functions to get external data sources (e.g. Dropbox)
-- Main
-- Error handling
+The refiner template is divided in the following 6 sections:
+
+|Section|Purpose|
+|---|---|
+|Functions|define the functions that will be used in the **analysis**|
+|Functions to get data sources from Hub 3.0|define the functions that will fetch the relevant **warehouse tables** and **files** (eg: dictionaries) in [Hublot](https://clhub.clessn.cloud/admin/)|
+|Functions to get data sources from Hub 2.0 (temporary)|define the functions that will fetch data from Hub 2.0|
+|Functions to get external data sources (e.g. Dropbox, temporary)||
+|Main|analyze or refine the data with the functions defined in Functions|
+|Error handling||
 
 Each of these sections and what to write in them are detailed in the following sections. As you read this, you can follow along with the example in the annex (coming soon!).
 
