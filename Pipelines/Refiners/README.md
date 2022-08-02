@@ -203,7 +203,7 @@ When in doubt, verify the accuracy of the parameters using the [Notion page](htt
 |storage_class|Storage location|lake, storage, mart||
 
 
-## Common operations
+### Common operations
 TO DO LIST
 - Functions to get data from Hub 3.0
 - Functions to get data from Hub 2.0
@@ -217,7 +217,7 @@ TO DO LIST
 
 In this example, we create a refiner for a datamart that will calculate the number of press releases published every week by a party.
 
-## 1. Draw your refiner
+### 1. Draw your refiner
 [coming soon]
 
 ### 2. Create your refiner
