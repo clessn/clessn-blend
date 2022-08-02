@@ -144,7 +144,7 @@ Related functions:
 # [coming soon]
 ```
 
-#### Functions to get data sources from Hub 2.0 (temporary)
+#### Functions to get data sources from Hub 2.0
 The *Functions to get data sources from Hub 2.0 (temporary)* section is used to define the functions that will fetch data from Hub 2.0. Grouping these functions in the same section will allow for an easier transition when the migration towards Hublot will be done. 
 
 Related functions:
@@ -157,7 +157,7 @@ Related functions:
 
 Note: The *Data management committee* is currently in the process of migrating data and scrapers from the former Hub (Hub 2.0) to Hublot while sticking to the industry standards. Until all the data is properly stored in Hublot, some refiners will need to access datasets stored in Hub 2.0 using functions from the `clessnhub` package.
 
-#### Functions to get external data sources (Dropbox)
+#### Functions to get external data sources
 If one of the datasets used to create the mart is from an external data source, a ***really*** good practice would be to advise the *Data management committee* (Patrick Poncet, Judith Bourque, Jeremy Gilbert, Adrien Cloutier or Hubert Cadieux) so the process of integrating this dataset to the Data Lake can begin. A ***bad*** practice would be to ignore this suggestion. When the committee is advised, **temporary** functions to retrieve the external files can be included in the *Functions to get external data sources (Dropbox)*. No example of these types of functions have been made yet because this is a ***bad*** practice.
 
 #### Main
