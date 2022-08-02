@@ -13,11 +13,11 @@ Prerequisites:
 * Access to
 	* clessn repositories on GitHub
 	* [Hublot](https://clhub.clessn.cloud/admin/)
-	* Hub 2.0 (temporary, for access to data in Hub 2.0 not yet in Hublot)
+	* Hub 2.0 (temporary, for access to data in Hub 2.0 not yet in Hublot) (Contact: Adrien Cloutier, Olivier Banville)
 * Install CLESSN R packages
   * `clessnhub`: `devtools::install_github("clessn/clessn-hub-r")` (temporary, for access to data in Hub 2.0 not yet in Hublot) (Contact: Adrien Cloutier, Olivier Banville)
   * `clessnverse` : `devtools::install_github("clessn/clessnverse")` (Contact: Adrien Cloutier, Hubert Cadieux, Olivier Banville)
-  * `hublot` : `devtools::install_github("clessn/hublotr")` (Contact: Adrien Cloutier, Olivier Banville)
+  * `hublot` : `devtools::install_github("clessn/hublotr")` 
 
 ## How to create your refiner
 
@@ -134,16 +134,26 @@ The *Functions* section is used to define the functions that will be used in the
 #### Functions to get data sources from Hub 3.0
 The *Functions to get data sources from Hub 3.0* section is used to define the functions that will fetch the relevant **warehouse tables** and **files** (eg: dictionaries) in [Hublot](https://clhub.clessn.cloud/admin/).
 
-Relevant functions from `clessnverse` and `hublot`
+Related functions:
 
-- [coming soon]
+```r
+# Package clessnverse
+# [coming soon]
+
+# Package hublot
+# [coming soon]
+```
 
 #### Functions to get data sources from Hub 2.0 (temporary)
 The *Functions to get data sources from Hub 2.0 (temporary)* section is used to define the functions that will fetch data from Hub 2.0. Grouping these functions in the same section will allow for an easier transition when the migration towards Hublot will be done. 
 
-Relevant functions from `clessnhub`:
+Related functions:
 
-- [coming soon]
+```r
+# Package clessnhub
+# [coming soon]
+
+```
 
 Note: The *Data management committee* is currently in the process of migrating data and scrapers from the former Hub (Hub 2.0) to Hublot while sticking to the industry standards. Until all the data is properly stored in Hublot, some refiners will need to access datasets stored in Hub 2.0 using functions from the `clessnhub` package.
 
@@ -176,36 +186,38 @@ main <- function() {
 
 ```
 
-Write your dataframe into Hublot via R
+Related functions:
 
 ```r
+# Write your dataframe into Hublot
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)}
+
+# Add your ggplot to the data lake every time the script of the refiner is run
+clessn::commit_lake_item()
 ```
 
-**Optional**: To make the refiner create your graph, add your ggplot to the lake using `clessn::commit_lake_item()`
+### Error handling
 
-## Useful functions
-
-### Get data from Hub 2.0
-[comming soon]
-
-### Create filter in Hub 3.0
-[coming soon]
-
-### Get warehouse table
-[coming soon]
-
-`get_warehouse_table`
-
-### Get a dictionnary
-[coming soon]
-
-### Upload a mart table
-[coming soon]
-
-### Other
+### Other useful functions
 
 ```r
+# Get data from Hub 2.0
+# [comming soon]
+
+# Create filter in Hub 3.0
+# [comming soon]
+
+# Get warehouse table
+# [comming soon]
+# `get_warehouse_table`
+
+# Get a dictionnary
+# [coming soon]
+
+# Upload a mart table
+# [coming soon]
+
+# Other
 clessnverse::commit_mart_table(df, datamart_df, key_column = “key”, mode = “refresh”, credentials)
 clessnverse::get_warehouse_table(warehouse_table_name, credentials)
 ```
