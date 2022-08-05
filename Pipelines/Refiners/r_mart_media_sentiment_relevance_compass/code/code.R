@@ -10,6 +10,9 @@
 #                                                                             #
 ###############################################################################
 
+# package
+library(tidyverse)
+
 # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
 
@@ -67,6 +70,157 @@
 
       return(vector)
     }
+
+    sentiment_nbwords <- function(text_bloc, sentiment_dictionary) {
+      toks <- quanteda::tokens(text_bloc)
+      dfm_corpus <- quanteda::dfm(toks)
+      lookup <- quanteda::dfm_lookup(dfm_corpus, dictionary = sentiment_dictionary, valuetype = "glob")
+      df <- quanteda::convert(lookup, to="data.frame")
+      return(df)
+    }
+
+    inv <- function(x){
+      output <- ((x - max(x)) * -1) + min(x)
+      return(output)
+    }
+
+    # Graphs
+
+  issue_names <-  c("troisieme_lien" = "Troisième lien",
+                   "tramway_quebec" = "Tramway de Québec",
+                   "chsld" = "CHSLD",
+                   "racisme" = "Enjeux raciaux",
+                   "enjeux autochtone" = "Premières Nations",
+                   "groupes" = "Groupes minoritaires",
+                   "bien_etre" = "Santé et bien-être",
+                   "langue_fran" = "Langue française",
+                   "inflation" = "Inflation",
+                   "prix_essence" = "Prix de l'essence",
+                   "salaire_minimum" = "Salaire minimum")
+
+  issue_color <-  c("troisieme_lien" = "#C1E3FE",
+                    "tramway_quebec" = "#CFB6E5",
+                    "chsld" = "#FFD9E0",
+                    "racisme" = "#F1EECD",
+                    "enjeux autochtone" = "#C9DECE",
+                    "groupes" = "#B6CAD6",
+                    "bien_etre" = "#9A98C3",
+                    "langue_fran" = "#EADA9A",
+                    "inflation" = "#C5CB68",
+                    "prix_essence" = "#FF6961",
+                    "salaire_minimum" = "#988270")
+
+  media_color <- c("la-presse" = "#ADF2B5",
+                   "le-devoir" = "#FFD9C0",
+                   "tva-nouvelles" = "#8CC0DE",
+                   "radio-canada" = "#F4BFBF")
+
+  media_names <- c("la-presse" = "La Presse",
+                   "le-devoir" = "Le Devoir",
+                   "tva-nouvelles" = "TVA Nouvelles",
+                   "radio-canada" = "Radio-Canada")
+
+
+  # Graph par enjeux
+
+  graph_issue <- function(dataframe, graph_issue) {
+      title_name <- issue_names[graph_issue]
+      graph <- dataframe %>%
+      filter(relevance != 0) %>%
+      group_by(media, issue) %>%
+      summarise(mean_relevance = mean(relevance),
+                mean_sentiment = mean(sentiment, na.rm = T)) %>%
+      filter(issue == graph_issue) %>%
+      ggplot(., aes(x = mean_relevance, y = mean_sentiment, label = media, color = media)) +
+      # pour modifier la ligne de l'axe horizontal
+      geom_segment(y = 0, x = 0.10, yend = 0, xend = 0.87, color = " light grey") +
+      # pour modifier la ligne de l'axe vertical
+      geom_segment(y = -1.02, x = 0.5, yend = 1.03, xend = 0.5, color = " light grey") +
+      # Ajouter les points sur lignes
+      scale_color_manual(values = media_color) +
+      scale_fill_manual(values = media_color) +
+      geom_point() +
+      ggrepel::geom_label_repel(aes(fill = media, label = media_names[media]), color = "black") +
+      # Ajouter les labels sur les points
+      # geom_text() +
+      # Limites du graphique
+      xlim(0,1) +
+      ylim(-1,1) +
+      # Ajouter les titres des extrémités des axes
+      annotate("text", x = -Inf, y = 0, label = "Peu couvert", hjust = 0, vjust = 0.4) +
+      annotate("text", x = Inf, y = 0, label = "Très couvert    ", hjust = 1, vjust = 0.4) +
+      annotate("text", x = 0.5, y = Inf, label = "Ton positif", hjust = 0.5, vjust = 1) +
+      annotate("text", x = 0.5, y = -Inf, label = "Ton négatif", hjust = 0.5, vjust = -0.5) +
+      # Enlever le titre des axes
+      xlab("") +
+      ylab("") +
+    #  theme_classic() +
+      # Enlever les ticks et l'arrière-plan
+      theme(axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            text = element_text(family="Helvetica"),
+            plot.title = element_text(size = 20, face="bold"),
+            plot.subtitle = element_text(size = 14),
+            legend.position = "none") +
+      labs(title = title_name,
+           subtitle = paste0("Couverture et ton des enjeux saillants depuis le ", format(as.Date(min(dataframe$date)), "%d/%m/%Y"),"\n"))
+  return(graph)
+    }
+
+  # Graph par média
+
+  graph_media <- function(dataframe, graph_media) {
+    title_name <- media_names[graph_media]
+    graph <- dataframe %>%
+      filter(relevance != 0 &    # Ici à réviser. Contrôler pour le nb d'articles qui ne parlent pas de l'enjeu, plutôt que de les éliminer
+               !(issue %in% c("racisme", "groupes", "bien_etre"))) %>%
+      group_by(issue, media) %>%
+      summarise(mean_relevance = mean(relevance),
+                mean_sentiment = mean(sentiment, na.rm = T)) %>%
+      filter(media == graph_media) %>%
+      ggplot(., aes(x = mean_relevance, y = mean_sentiment, label = issue, color = issue)) +
+      # pour modifier la ligne de l'axe horizontal
+      geom_segment(y = 0, x = 0.10, yend = 0, xend = 0.87, color = " light grey") +
+      # pour modifier la ligne de l'axe vertical
+      geom_segment(y = -1.02, x = 0.5, yend = 1.03, xend = 0.5, color = " light grey") +
+      # Ajouter les points sur lignes
+      scale_color_manual(values = issue_color) +
+      scale_fill_manual(values = issue_color) +
+      geom_point() +
+      ggrepel::geom_label_repel(aes(fill = issue, label = issue_names[issue]), color = "black", nudge_y = -0.05, nudge_x = 0.05) +
+      # Ajouter les labels sur les points
+      # geom_text() +
+      # Limites du graphique
+      xlim(0,1) +
+      ylim(-1,1) +
+      # Ajouter les titres des extrémités des axes
+      annotate("text", x = -Inf, y = 0, label = "Peu couvert", hjust = 0, vjust = 0.4) +
+      annotate("text", x = Inf, y = 0, label = "Très couvert    ", hjust = 1, vjust = 0.4) +
+      annotate("text", x = 0.5, y = Inf, label = "Ton positif", hjust = 0.5, vjust = 1) +
+      annotate("text", x = 0.5, y = -Inf, label = "Ton négatif", hjust = 0.5, vjust = -0.5) +
+      # Enlever le titre des axes
+      xlab("") +
+      ylab("") +
+      #  theme_classic() +
+      # Enlever les ticks et l'arrière-plan
+      theme(axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            text = element_text(family="Helvetica"),
+            plot.title = element_text(size = 20, face="bold"),
+            plot.subtitle = element_text(size = 14),
+            legend.position = "none") +
+      labs(title = title_name,
+           subtitle = paste0("Couverture et ton des enjeux saillants depuis le ", format(as.Date(min(dataframe$date)), "%d/%m/%Y"),"\n"))
+    return(graph)
+  }
+
+
 
 
 ###############################################################################
@@ -139,7 +293,8 @@ load_radarplus_data <- function(){
                          ifelse(source %in% c("new-york-times", "cnn", "fox-news", "wall-street-journal"),
                                 "usa", "canada"))) %>%
     filter(area %in% c("canada", "quebec")) %>%
-    mutate(headline_time = as.numeric(end_date - begin_date))
+    mutate(headline_time = as.numeric(end_date - begin_date)) %>%
+    filter(text != "")
 
   return(DataRadar)
 }
@@ -175,17 +330,17 @@ get_journalists_hub2 <- function(){
 ###############################################################################
 
 main <- function() {
-  issue <-  clessnverse::get_dictionary("issues", lang = 'fr', credentials)
+  issue <-  clessnverse::get_dictionary("subcategories", lang = 'fr', credentials)
   sentiment <- clessnverse::get_dictionary("sentiments", lang = "fr", credentials)
   radarplus_data <- load_radarplus_data()
-  journalistes_tweets <- get_journalists_tweets()
-  journalistes <- get_journalists_hub2()
+  journalists_tweets <- get_journalists_tweets()
+  journalists <- get_journalists_hub2()
 
-  journalistes_tweets2 <- journalistes_tweets %>%
+  journalists_tweets2 <- journalists_tweets %>%
     select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle)
 
 
-tweets <- left_join(journalistes_tweets2, journalistes, by = "handle") %>%
+tweets <- left_join(journalists_tweets2, journalists, by = "handle") %>%
   mutate(source = "twitter") %>%
   select(date, text, id = handle, media, source) %>%
   filter(media %in% c("TVA Nouvelles", "Radio-Canada", "Radio Canada", "La Presse", "Le Devoir")) %>%
@@ -217,10 +372,11 @@ for (i in 1:nrow(data)) {
   print(i)
 }
 
-df$nbwords <- nbwords
+names(df) <- paste0("relevance_", names(df))
 
 relevance_long <- df %>%
-  mutate(doc_id = 1:nrow(.)) %>%
+  mutate(nbwords = nbwords,
+         doc_id = 1:nrow(.)) %>%
   tidyr::pivot_longer(., cols = 1:(length(colnames(.))-2),
                       names_to = "issue", values_to = "nbwords_issue") %>%
   mutate(prop = ifelse((nbwords == 0 & nbwords_issue == 0),
@@ -237,24 +393,102 @@ relevance_wide <- relevance_long %>%
   tidyr::pivot_wider(., "doc_id",
                      names_from = "issue",
                      values_from = "relevance")
-library(ggplot2)
-ggplot(relevance_long, aes(x = relevance)) +
-  geom_histogram() +
-  facet_wrap(~issue)
 
-ggplot(relevance_long, aes(x = relevance)) +
-  geom_point() +
-  geom_smooth() +
-  facet_grid(rows = vars(issue))
+df_sentiment <- data.frame(negative = as.numeric(), positive = as.numeric())
+
+for (i in 1:nrow(data)) {
+  row <- sentiment_nbwords(data$text[i], sentiment_dictionary = sentiment) %>%
+    select(-doc_id)
+  df_sentiment <- rbind(df_sentiment, row)
+  print(i)
+}
+
+data2 <- cbind(data, df_sentiment, relevance_wide) %>%
+  mutate(nbwords = nbwords,
+         neutralWords = (nbwords - negative - positive),
+         ratioPos = positive / (negative + positive),
+         ratioPos = ifelse(is.nan(ratioPos), 0.5, ratioPos),
+         pos = ifelse(ratioPos > 0.5, 1, 0),
+         neg = ifelse(ratioPos < 0.5, 1, 0))
+
+positive <- data2 %>%
+  filter(pos == 1) %>%
+  mutate(norm_ratio = normalize_variable(ratioPos))
+
+negative <- data2 %>%
+  filter(neg == 1) %>%
+  mutate(invratio = inv(ratioPos),
+         norm_ratio = normalize_variable(invratio)) %>%
+  select(-invratio)
+
+neutral <- data2 %>% filter(ratioPos == 0.5) %>%
+  mutate(norm_ratio = 0)
 
 
-library(ggcorrplot)
-corr_df <- relevance_wide %>%
-  select(-doc_id)
-corr <- round(cor(corr_df), 1)
-ggcorrplot(corr)
+datamart_df <- rbind(positive, negative, neutral) %>%
+  mutate(connonated_words = nbwords - neutralWords,
+         prop_connwords = connonated_words / nbwords,
+         adj_ratio = log(norm_ratio * prop_connwords),
+         adj_ratio = ifelse(is.infinite(adj_ratio),
+                            NA,
+                            adj_ratio),
+         adj_ratio = normalize_variable(adj_ratio),
+         raw_ratio = 0,
+         raw_ratio = ifelse(neg == 1, adj_ratio*-1, raw_ratio),
+         sentiment = ifelse(pos == 1, adj_ratio, raw_ratio)) %>%
+  select(-c(id, negative, positive, doc_id, nbwords, neutralWords,
+            ratioPos, pos, neg, norm_ratio, connonated_words,
+            prop_connwords, adj_ratio, raw_ratio)) %>%
+  mutate(doc_id = 1:nrow(.)) %>%
+  pivot_longer(cols = starts_with("relevance"),
+               names_to = "issue",
+               values_to = "relevance",
+               names_prefix = "relevance_") %>%
+  mutate(key = 1:nrow(.)) %>%
+  select(key, doc_id, date, text, media, source, sentiment, issue, relevance)
 
-df2$propnorm <- normalize_variable(df2$prop)
+clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh", credentials)
+
+## Enregistrement Graph 1
+
+for (i in names(issue_names)) {
+  graph_issue(datamart_df, i)
+  ggsave(paste0('/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
+                format(Sys.time(), "%d-%m-%Y"),"_enjeux_", i, ".png"),
+         width = 18, height = 18, units = c("cm"))
+}
+
+## Enregistrement Graph 2
+
+for (i in names(media_names)) {
+  graph_media(datamart_df, i)
+  ggsave(paste0('/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
+                format(Sys.time(), "%d-%m-%Y"),"_media_", i, ".png"),
+         width = 18, height = 18, units = c("cm"))
+}
+
+# Enregistrement du csv du graph 2
+
+write_csv(graph, paste0("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
+                        format(Sys.time(), "%d-%m-%Y"),"_media_issue", ".csv"))
+
+write_csv(datamart_df, paste0("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
+                        format(Sys.time(), "%d-%m-%Y"),"_datamart", ".csv"))
+
+
+# library(ggplot2)
+# ggplot(relevance_long, aes(x = relevance)) +
+#   geom_histogram() +
+#   facet_wrap(~issue)
+#
+# library(ggcorrplot)
+# corr_df <- relevance_wide %>%
+#   select(-doc_id)
+# corr <- round(cor(corr_df), 1)
+# ggcorrplot(corr)
+
+
+
 
 }
 
@@ -293,6 +527,8 @@ tryCatch(
     # Ex: lake_path <- "political_party_press_releases"
     #     lake_items_selection_metadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
     #     warehouse_table <- "political_parties_press_releases"
+
+    datamart_table_name  <- "media_sentiment_relevance_compass"
 
 
 
