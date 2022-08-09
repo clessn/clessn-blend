@@ -23,12 +23,12 @@ Prerequisites:
 
 ### 1. Draw your refiner
 
+Using the template in [clessn/diagrams](https://github.com/clessn/diagrams/tree/master/raffineurs), draw your refiner:
+
 1. Draw your desired graph
 2. Draw the table needed
 	1. Determine if your data needs to be aggregated or at the individual level
 3. Make a list of data needed and their location
-
-Using the template in [clessn/diagrams](https://github.com/clessn/diagrams/tree/master/raffineurs), draw your refiner.
 
 <img width="752" alt="Capture d’écran, le 2022-07-28 à 11 21 30" src="https://user-images.githubusercontent.com/49455681/181582125-a3d77bb4-88ee-4df3-bcd0-694ee9a38939.png">
 
