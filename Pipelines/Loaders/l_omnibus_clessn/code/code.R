@@ -188,6 +188,14 @@
       return(ses_educUniv)
     }
 
+    # Functions to clean employment questions
+    clean_educUniv <- function(raw_data_vector){
+      ses_educUniv <- rep(NA, length(raw_data_vector))
+      ses_educUniv[raw_data_vector==3] <- 1
+      ses_educUniv[raw_data_vector!=3&!is.na(raw_data_vector)] <- 0
+      return(ses_educUniv)
+    }
+
 
 
 
