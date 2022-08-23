@@ -71,7 +71,7 @@ get_qc125_df <- function(){
     dplyr::select(riding_id, riding_name, party, pred, moes) %>%
     dplyr::mutate(pred = as.numeric(pred)/100,
            moes = as.numeric(moes)/100,
-           date = as.Date(Sys.time())) %>%
+           date = format(Sys.time(), "%Y-%m-%d")) %>%
     dplyr::select(date, riding_id, riding_name, party, pred, moes)
   return(output)
 }
@@ -116,19 +116,19 @@ main <- function() {
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #
   df <- get_qc125_df()
-  key <- paste0("qc125_", as.Date(Sys.time()))
+  key <- paste0("qc125_", format(Sys.time(), "%Y-%m-%d"))
   path <- "qc125"
-  write.csv2(df, "data.csv")
-  lake_item_data <- list(key = key, path = path, file , item = df)
+  write.csv2(df, "data.csv", row.names = F)
+  lake_item_data <- list(key = key, path = path, file , item = "data.csv")
   lake_item_metadata <- list(
     object_type = "raw_data",
-    format = "csv",
+    format = "csvfile",
     content_type = "qc125_preds",
     storage_class = "lake",
     source_type = "website",
     source = "https://qc125.com/",
     tags = "elxn_qc2022, vitrine_democratique, polqc",
-    description = paste0("Données de Qc125 en date du ", as.Date(Sys.time())),
+    description = paste0("Données de Qc125 en date du ", format(Sys.time(), "%Y-%m-%d")),
     country = "CAN",
     province_or_state = "QC"
   )
@@ -137,7 +137,7 @@ main <- function() {
     metadata = lake_item_metadata,
     mode = "refresh",
     credentials = credentials)
-  clessnverse::logit(scriptname, paste0("qc125_", as.Date(Sys.time()), " committed as a lake item to Hublot"), logger)
+  clessnverse::logit(scriptname, paste0("qc125_", format(Sys.time(), "%Y-%m-%d"), " committed as a lake item to Hublot"), logger)
   return("Done")
 }
 
