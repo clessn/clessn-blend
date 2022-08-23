@@ -189,11 +189,32 @@
     }
 
     # Functions to clean employment questions
-    clean_educUniv <- function(raw_data_vector){
-      ses_educUniv <- rep(NA, length(raw_data_vector))
-      ses_educUniv[raw_data_vector==3] <- 1
-      ses_educUniv[raw_data_vector!=3&!is.na(raw_data_vector)] <- 0
-      return(ses_educUniv)
+    clean_isEmployed <- function(raw_data_vector){
+      ses_isEmployed <- rep(NA, length(raw_data_vector))
+      ses_isEmployed[raw_data_vector==1] <- 1
+      ses_isEmployed[raw_data_vector!=1&!is.na(raw_data_vector)] <- 0
+      return(ses_isEmployed)
+    }
+
+    clean_isSelfEmployed <- function(raw_data_vector){
+      ses_isSelfEmployed <- rep(NA, length(raw_data_vector))
+      ses_isSelfEmployed[raw_data_vector==2] <- 1
+      ses_isSelfEmployed[raw_data_vector!=2&!is.na(raw_data_vector)] <- 0
+      return(ses_isSelfEmployed)
+    }
+
+    clean_isRetired <- function(raw_data_vector){
+      ses_isRetired <- rep(NA, length(raw_data_vector))
+      ses_isRetired[raw_data_vector==4] <- 1
+      ses_isRetired[raw_data_vector!=4&!is.na(raw_data_vector)] <- 0
+      return(ses_isRetired)
+    }
+
+    clean_isUnemployed <- function(raw_data_vector){
+      ses_isUnemployed <- rep(NA, length(raw_data_vector))
+      ses_isUnemployed[raw_data_vector%in%5:6] <- 1
+      ses_isUnemployed[!(raw_data_vector%in%5:6)&!is.na(raw_data_vector)] <- 0
+      return(ses_isUnemployed)
     }
 
 
