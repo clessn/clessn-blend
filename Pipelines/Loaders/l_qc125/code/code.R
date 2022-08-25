@@ -23,6 +23,23 @@
 #         your function code goes here
 #      }
 
+df_to_batch_list <- function(df){
+  final_list <- list()
+  for (i in 1:nrow(df)){
+    data_list <- c(df[i,])
+    listi <- list(
+      key = i,
+      #timestamp = NULL,
+      data = data_list
+    )
+    final_list[[i]] <- listi
+    if (i %% 100 == 0){
+      print(paste0(i, "/", nrow(df)))
+    }
+  }
+  return(final_list)
+}
+
 ###############################################################################
 ######################            Functions to           ######################
 ######################  Get Data Sources from DataLake   ######################
@@ -99,19 +116,22 @@ main <- function() {
     #     clessnverse::logit(scriptname, "Getting political parties press releases from the datalake", logger)
     #     lakes_items_list <- get_lake_press_releases(parties_list)
     #
+  riding_infos <- ridings <- read.csv2(hublot::retrieve_file("prov_ridings_ids", credentials)[["file"]]) %>%
+    mutate(riding_id = as.character(riding_id)) %>%
+    select(riding_name, riding_id)
   list_tables <- get_lake_items_qc125()
   df <- dplyr::bind_rows(list_tables) %>%
     mutate(unique_id = 1:nrow(.)) %>%
-    select(unique_id, names(.))
+    select(unique_id, names(.), - riding_id) %>%
+    left_join(., riding_infos, by = "riding_name")
   clessnverse::logit(
     scriptname,
     paste0("   Qc125 data from all dates are now binded together"),
     logger
   )
-  #body <- jsonlite::toJSON(df)
-  #hublot::batch_create_table_items("warehouse_qc125", body, credentials)
-
-  upload_warehouse_qc125(df)
+  batch_object <- df_to_batch_list(df)
+  hublot::batch_create_table_items("clhub_tables_warehouse_qc125", batch_object, credentials)
+  #upload_warehouse_qc125(df)
   return(df)
 }
 
