@@ -172,8 +172,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                         data = lake_item_data, 
                         metadata = lake_item_metadata, 
                         mode = opt$hub_mode, 
-                        credentials = credentials,
-                        logger = logger)
+                        credentials = credentials)
                 } else {
                     clessnverse::logit(scriptname, paste("no press release from", party_acronym, "at", urls_list[[i]]), logger)
                 } #if (!is.null(html)) 
@@ -256,7 +255,7 @@ tryCatch(
             opt <<- clessnverse::processCommandLineOptions()
         }
 
-        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
         
         # login to hublot
         clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -288,7 +287,7 @@ tryCatch(
   
     finally={
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-        clessnverse::logclose(logger)
+        clessnverse::log_close(logger)
         rm(logger)
         quit(status = status)
     }

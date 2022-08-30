@@ -69,6 +69,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
         date <- trimws(XML::xmlValue(date))
+        date <- gsub("<U\\+00FB>", "û", date)
         date <- gsub("^\u00a0", "", date)
         #14 juin 2022
         
@@ -79,6 +80,14 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         day <- trimws(str_date[[1]][1])
         month_name <- trimws(str_date[[1]][2])
         month <-  trimws(which(match(months, tolower(month_name)) == 1))
+
+print(date)
+print(str_date)
+print(year)
+print(day)
+print(month_name)
+print(month)
+
         if (nchar(month) == 1) month <- paste("0", month, sep='')
         if (nchar(day) == 1) day <- paste("0", day, sep='')
         date <- paste(year, month, day, sep="-")
@@ -321,7 +330,7 @@ tryCatch(
         lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
         warehouse_table <- "political_parties_press_releases"
 
-        if (!exists("scriptname")) scriptname <<- "l_agoraplus-pressreleases-qc"
+        if (!exists("scriptname")) scriptname <<- "l_pressreleases-qc"
 
         opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
@@ -329,7 +338,7 @@ tryCatch(
             opt <- clessnverse::processCommandLineOptions()
         }
 
-        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
         
         # login to hublot
         clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -351,7 +360,9 @@ tryCatch(
         clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
         print(w)
         status <<- 2
-    }),
+    }
+    )
+    ,
   
   # Handle an error or a call to stop function in the code
   error = function(e) {
@@ -364,12 +375,12 @@ tryCatch(
   # Terminate gracefully whether error or not
   finally={
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-    clessnverse::logclose(logger)
+    clessnverse::log_close(logger)
 
     # Cleanup
     closeAllConnections()
     rm(logger)
-    
+    cat(status, "\n")
     #quit(status = status)
   }
 )
