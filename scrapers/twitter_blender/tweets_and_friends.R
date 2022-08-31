@@ -509,7 +509,7 @@ tryCatch(
     }
     
     if (exists("logger")) rm(logger)
-    if (!exists("scriptname")) scriptname <<- paste("tweets-and-friends-",opt$population,sep='')
+    if (!exists("scriptname")) scriptname <<- paste("tweets_and_friends_",opt$population,sep='')
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(opt, collapse = " ")), logger)

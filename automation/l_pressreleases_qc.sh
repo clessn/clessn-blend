@@ -1,7 +1,7 @@
 #!/bin/sh
 
 /usr/local/bin/R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
-/usr/local/bin/R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse")'
+/usr/local/bin/R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T)'
 
 cd ~
 
