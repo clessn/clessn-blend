@@ -85,10 +85,10 @@ load_plq_manifesto <- function(lake_item) {
     
     PLQPlatform <- PLQPlatform |>
       tidyr::fill(group, .direction = "up") |> # group paragraphs with the next
-      group_by(group) |> # paragraph ending with a period
-      summarise(paragraph = paste(paragraph, collapse = " ")) |>
-      select(-group) |>
-      mutate(party = "plq",
+      dplyr::group_by(group) |> # paragraph ending with a period
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PLQ",
              election_year = 2022,
              original_doc_type = "pdf",
              release_date = as.Date("2022-06-11"),
@@ -98,8 +98,8 @@ load_plq_manifesto <- function(lake_item) {
              n_words = stringr::str_count(paragraph, "\\S+"),
              n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
     
-    index_colum <- rep(1:nrow(PLQPlatform))
-    PLQPlatform$index <- index_colum
+    index_column <- rep(1:nrow(PLQPlatform))
+    PLQPlatform$index <- index_column
     
     #clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
     #                                    df = PLQPlatform, 
