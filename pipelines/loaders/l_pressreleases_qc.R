@@ -62,14 +62,13 @@ extract_press_release_info <- function(party_acronym, xml_root) {
 
     if (party_acronym == "CAQ") {
         title <- XML::getNodeSet(xml_root, ".//h1[@class = 'main-title']")
-        title <- trimws(XML::xmlValue(title))
+        title <- trimws(XML::xmlValue(title, encoding="fr_CA.UTF-8"))
 
         body <- XML::getNodeSet(xml_root, ".//div[@class='spacing-jumbo mb-5']")
-        body <- trimws(XML::xmlValue(body))
+        body <- trimws(XML::xmlValue(body, encoding="fr_CA.UTF-8"))
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
-        date <- trimws(XML::xmlValue(date))
-        date <- gsub("<U\\+00FB>", "û", date)
+        date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         date <- gsub("^\u00a0", "", date)
         #14 juin 2022
         
@@ -81,13 +80,6 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         month_name <- trimws(str_date[[1]][2])
         month <-  trimws(which(match(months, tolower(month_name)) == 1))
 
-print(date)
-print(str_date)
-print(year)
-print(day)
-print(month_name)
-print(month)
-
         if (nchar(month) == 1) month <- paste("0", month, sep='')
         if (nchar(day) == 1) day <- paste("0", day, sep='')
         date <- paste(year, month, day, sep="-")
@@ -97,20 +89,20 @@ print(month)
         title <- xml_root$name
         body <- XML::htmlTreeParse(xml_root$description, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE, encoding = "UTF-8")
         body <- XML::xmlRoot(body, skip = TRUE, addFinalizer = TRUE)
-        body <- XML::xmlValue(body)
+        body <- XML::xmlValue(body, encoding="fr_CA.UTF-8")
         date <- as.Date(as.numeric(xml_root$date/86400), origin = "1970-01-01")
         date <- trimws(date)
     }
 
     if (party_acronym == "PLQ") {
         title <- XML::getNodeSet(xml_root, ".//h1")
-        title <- trimws(XML::xmlValue(title))
+        title <- trimws(XML::xmlValue(title, encoding="fr_CA.UTF-8"))
 
         body <- XML::getNodeSet(xml_root, ".//article")
-        body <- trimws(XML::xmlValue(body))
+        body <- trimws(XML::xmlValue(body, encoding="fr_CA.UTF-8"))
         
         date <- XML::getNodeSet(xml_root, ".//span[@class='date']")[[1]]
-        date <- trimws(XML::xmlValue(date))
+        date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         #23 Juin 2022
         
         months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
@@ -133,7 +125,7 @@ print(month)
         body <- trimws(XML::xmlValue(body))
 
         date <- XML::getNodeSet(xml_root, ".//div[@class='byline text-muted small']")[[1]]
-        date <- trimws(XML::xmlValue(date))
+        date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         date <- stringr::str_extract(date, "\\d\\d\\-\\d\\d\\-\\d\\d\\d\\d")
         date <- trimws(date)
         #30-05-2022
@@ -145,7 +137,7 @@ print(month)
 
     if (party_acronym == "PQ") {
         title <- XML::getNodeSet(xml_root, ".//title")
-        title <- trimws(XML::xmlValue(title))
+        title <- trimws(XML::xmlValue(title, encoding="fr_CA.UTF-8"))
 
         body <- XML::getNodeSet(xml_root, ".//div[@id='nouvelle-box']")
         body <- trimws(XML::xmlValue(body))
@@ -156,7 +148,7 @@ print(month)
         }
 
         date <- XML::getNodeSet(xml_root, ".//span[@class='date updated']")
-        date <- trimws(XML::xmlValue(date))
+        date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         #avril 28, 2022
         
         months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
@@ -173,7 +165,7 @@ print(month)
             date <- paste(year, month, day, sep="-")
         } else {
             date <- XML::getNodeSet(xml_root, ".//span[@class='elementor-icon-list-text elementor-post-info__item elementor-post-info__item--type-date']")
-            date <- trimws(XML::xmlValue(date))    
+            date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))    
             str_date <- gsub(",", "", date)
             str_date <- strsplit(str_date, " ")
             year <- str_date[[1]][4]
@@ -325,20 +317,20 @@ tryCatch(
     {
         # Package
         library(dplyr) 
-
+        
         # Globals : scriptname, opt, logger, credentials
         lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
         warehouse_table <- "political_parties_press_releases"
 
-        if (!exists("scriptname")) scriptname <<- "l_pressreleases-qc"
+        if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
 
-        opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
         if (!exists("opt")) {
             opt <- clessnverse::processCommandLineOptions()
         }
 
-        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
         
         # login to hublot
         clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -381,7 +373,7 @@ tryCatch(
     closeAllConnections()
     rm(logger)
     cat(status, "\n")
-    #quit(status = status)
+    quit(status = status)
   }
 )
 
