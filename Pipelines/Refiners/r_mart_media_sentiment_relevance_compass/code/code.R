@@ -84,6 +84,16 @@ library(lubridate)
       return(output)
     }
 
+    ggsave_twitter <- function(filename, plot = ggplot2::last_plot(),
+                               device = NULL, path = NULL, scale = 1,
+                               width = 1600, height = 900, units = "px",
+                               dpi = 300, limitsize = TRUE, bg = NULL, ...) {
+      ggplot2::ggsave(filename, plot = ggplot2::last_plot(),
+                      device = device, path = path, scale = scale,
+                      width = width, height = height, units = units,
+                      dpi = dpi, limitsize = limitsize, bg = bg, ...)
+    }
+
     # Graphs
 
   issue_names <-  c("troisieme_lien" = "Troisième lien",
@@ -121,6 +131,11 @@ library(lubridate)
                    "le-devoir" = "Le Devoir",
                    "tva-nouvelles" = "TVA Nouvelles",
                    "radio-canada" = "Radio-Canada")
+
+  issue_color2 <- c("#FF624D", # red
+  "#88ADFF", # blue
+  "#BA8FFF", # purple
+  "#FEEC20") # yellow
 
   # thermometre <- c("red",
   #                  "white",
@@ -273,29 +288,36 @@ library(lubridate)
 
   # Graph par média
 
+  data_ends <- relevanceProp %>%
+    group_by(issue) %>%
+    filter(n == max(n))
+
+  sysfonts::font_add_google("Roboto", "roboto")
+  showtext_auto()
 
   ggplot(relevanceProp, aes(x = date, y = n)) +
     geom_line(aes(group = issue, color = issue, alpha = polarisation),
               show.legend = F, size = 1) +
-    geom_point(aes(group = issue, color = issue, alpha = polarisation)) +
+    geom_point(aes(group = issue, color = issue, alpha = polarisation), show.legend = F) +
     # geom_vline(xintercept = as.Date("2022-08-27"),
     #            linetype="dashed", color = "grey") +
-    clessnverse::theme_clean_light() +
-    scale_x_date(limits = c(as.Date("2022-08-15"),
-                            as.Date("2022-08-28")),
-                 expand = c(0,0),
-                 breaks = as.Date(c("2022-08-15", "2022-08-20",
-                                    "2022-08-25", "2022-08-27")),
-                 labels = c("15 août\n2022", "20 août\n2022",
-                            "25 août\n2022", "Début de\nla campagne")) +
-    scale_color_manual(values = fills) +
-    scale_y_continuous(limits = c(0,35)) +
-    xlab("") +
-    ylab("\nProportion de tweets\nabordant le parti (%)\n") +
-    ggtitle("\nÉvolution des partis en tant que sujet dans\nles tweets des journalistes et médias\n") +
-    theme(plot.background = element_rect(fill = "white"))
+    clessnverse::theme_clean_dark(base_size = 13) +
+    theme(text = element_text(family = "roboto")) +
+    # Ajouter les points sur lignes
+    scale_color_manual(values = issue_color2) +
+    scale_fill_manual(values = issue_color2) +
+    scale_alpha_continuous(range = c(0.3, 1)) +
+    scale_x_datetime("",
+                     date_labels = "%d/%m",
+                     date_breaks =  "1 day") +
+    ggrepel::geom_label_repel(aes(fill = issue, label = issue_names[issue], alpha = polarisation), data = data_ends, color = "black", nudge_y = 0.5, nudge_x = 0.05, show.legend = F) +
+    ylab("Nombre d'articles par jour à la Une\n") +
+    labs(title = "Nombre d'articles abordant la polarisation des idéologies",
+         subtitle = "À la Une des grands médias québécois\n")
 
-###############################################################################
+  ggsave_twitter("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/_graphs/2022-09-05/radar.png")
+
+ ###############################################################################
 ######################            Functions to           ######################
 ######################  Get Data Sources from DataLake   ######################
 ######################              HUB 3.0              ######################
@@ -481,7 +503,8 @@ relevanceProp <- relevance_long %>%
   summarise(n = sum(talking)) %>%
   mutate(issue = gsub("relevance_", "", issue),
          polarisation = ifelse(issue == "polarisation", 1, 0)) %>%
-  filter(issue %in% c("inflation", "polarisation", "chsld", "troisieme_lien", "tramway_quebec", "langue_fran"))
+  filter(issue %in% c("inflation", "polarisation", "troisieme_lien", "tramway_quebec")) %>%
+  mutate(date = as.POSIXct(date))
 
 df_sentiment <- data.frame(negative = as.numeric(), positive = as.numeric())
 
