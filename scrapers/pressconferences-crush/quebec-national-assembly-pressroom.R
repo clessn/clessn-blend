@@ -80,7 +80,7 @@ installPackages <- function() {
 installPackages()
 library(dplyr)
 
-if (!exists("scriptname")) scriptname <- "agoraplus-confpresse-v2.R"
+if (!exists("scriptname")) scriptname <- "pressconference_crush_quebecnationalassembly"
 
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
@@ -94,7 +94,7 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", opt$log_output, Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 # Download HUB v1 data 
 #clessnverse::loadAgoraplusHUBDatasets("quebec", opt, 
@@ -226,7 +226,7 @@ list_urls <- rvest::html_attr(urls, 'href')
 # in it, or from the assnat website and start parsing it o extract the
 # press conference content
 #
-for (i in 94:length(list_urls)) {
+for (i in 1:length(list_urls)) {
   
   event_url <- paste(base_url,list_urls[i],sep="")
   #event_url <- list_urls[i]

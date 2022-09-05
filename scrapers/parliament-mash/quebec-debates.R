@@ -80,7 +80,7 @@ installPackages <- function() {
 installPackages()
 library(dplyr)
 
-if (!exists("scriptname")) scriptname <- "agoraplus-debats-v2.R"
+if (!exists("scriptname")) scriptname <- "parliament_mash_quebec"
 
 # Script command line options:
 # Possible values : update, refresh, rebuild or skip
@@ -94,7 +94,7 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", c("file", "hub"), Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {

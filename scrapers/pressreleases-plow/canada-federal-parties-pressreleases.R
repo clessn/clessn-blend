@@ -599,9 +599,21 @@ tryCatch(
   {
     installPackages()
     library(dplyr)
+
+    # Script command line options:
+    # Possible values : update, refresh, rebuild or skip
+    # - update : updates the dataframe by adding only new observations to it
+    # - refresh : refreshes existing observations and adds new observations to the dataframe
+    # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
+    # - skip : does not make any change to the dataframe
+    #opt <- list(dataframe_mode = "refresh", hub_mode = "refresh", log_output = "file,console,hub", download_data = TRUE)
+
+    if (!exists("opt")) {
+      opt <- clessnverse::processCommandLineOptions()
+    }
     
-    if (!exists("scriptname")) scriptname <<- "agoraplus-pressrelease"
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, c("file","console","hub"), Sys.getenv("LOG_PATH"))
+    if (!exists("scriptname")) scriptname <<- "pressreleases_plow_canadafederalparties"
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to the hub
     clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
