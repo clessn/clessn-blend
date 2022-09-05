@@ -12,16 +12,16 @@
 
 # package
 library(tidyverse)
+library(lubridate)
 
 # login to hublot
-    clessnverse::logit(scriptname, "connecting to hub", logger)
-
     credentials <- hublot::get_credentials(
         Sys.getenv("HUB3_URL"),
         Sys.getenv("HUB3_USERNAME"),
         Sys.getenv("HUB3_PASSWORD"))
 
- ###############################################################################
+
+###############################################################################
 ########################           Functions            ######################
 ###############################################################################
 
@@ -96,7 +96,8 @@ library(tidyverse)
                    "langue_fran" = "Langue française",
                    "inflation" = "Inflation",
                    "prix_essence" = "Prix de l'essence",
-                   "salaire_minimum" = "Salaire minimum")
+                   "salaire_minimum" = "Salaire minimum",
+                   "polarisation" = "Polarisation")
 
   issue_color <-  c("troisieme_lien" = "#C1E3FE",
                     "tramway_quebec" = "#CFB6E5",
@@ -108,7 +109,8 @@ library(tidyverse)
                     "langue_fran" = "#EADA9A",
                     "inflation" = "#C5CB68",
                     "prix_essence" = "#FF6961",
-                    "salaire_minimum" = "#988270")
+                    "salaire_minimum" = "#988270",
+                    "polarisation" = "red")
 
   media_color <- c("la-presse" = "#ADF2B5",
                    "le-devoir" = "#FFD9C0",
@@ -119,6 +121,10 @@ library(tidyverse)
                    "le-devoir" = "Le Devoir",
                    "tva-nouvelles" = "TVA Nouvelles",
                    "radio-canada" = "Radio-Canada")
+
+  # thermometre <- c("red",
+  #                  "white",
+  #                  "green")
 
 
   # Graph par enjeux
@@ -133,9 +139,9 @@ library(tidyverse)
       filter(issue == graph_issue) %>%
       ggplot(., aes(x = mean_relevance, y = mean_sentiment, label = media, color = media)) +
       # pour modifier la ligne de l'axe horizontal
-      geom_segment(y = 0, x = 0.10, yend = 0, xend = 0.87, color = " light grey") +
+      geom_segment(y = 0, x = 0.10, yend = 0, xend = 0.87, color = "light grey") +
       # pour modifier la ligne de l'axe vertical
-      geom_segment(y = -1.02, x = 0.5, yend = 1.03, xend = 0.5, color = " light grey") +
+      geom_segment(y = -1.02, x = 0.5, yend = 1.03, xend = 0.5, color = "light grey") +
       # Ajouter les points sur lignes
       scale_color_manual(values = media_color) +
       scale_fill_manual(values = media_color) +
@@ -222,6 +228,72 @@ library(tidyverse)
 
 
 
+  # # Graph par enjeux #2
+  # graph_issue2 <- function(dataframe, graph_issue) {
+  #   title_name <- issue_names[graph_issue]
+  #   graph <- dataframe %>%
+  #     filter(relevance != 0) %>%
+  #     group_by(media, issue) %>%
+  #     summarise(mean_relevance = mean(relevance),
+  #               mean_sentiment = mean(sentiment, na.rm = T)) %>%
+  #     filter(issue == graph_issue)
+  #
+  #     output <- ggplot(graph, aes(x = mean_sentiment, y = media, size = mean_relevance, fill = mean_sentiment)) +
+  #     geom_point(shape = 21, stroke = 1) +
+  #     scale_size(range = c(10, 30),
+  #                  guide="none") +
+  #     scale_fill_gradientn(colors = thermometre,
+  #                            breaks=c(min(graph$mean_sentiment), mean(graph$mean_sentiment), max(graph$mean_sentiment)),
+  #                            labels=c("Négative",  "Couverture neutre","Positive"),
+  #                            limits=c(min(graph$mean_sentiment), max(graph$mean_sentiment)),
+  #                            name = "") +
+  #     scale_y_discrete(labels = c("TVA Nouvelles", "Radio-Canada", "Le Devoir", "La Presse"),
+  #                      breaks = c("tva-nouvelles", "radio-canada", "le-devoir", "la-presse")) +
+  #     # Enlever le titre des axes
+  #     xlab("") +
+  #     ylab("") +
+  #     ggthemes::theme_hc() +
+  #     # Enlever les ticks et l'arrière-plan
+  #     theme(axis.text.x = element_blank(),
+  #           axis.text.y = element_text(size = 12),
+  #           axis.ticks = element_blank(),
+  #           panel.grid.major = element_blank(),
+  #           panel.grid.minor = element_blank(),
+  #           text = element_text(family="Helvetica"),
+  #           plot.title = element_text(size = 20, face="bold"),
+  #           plot.subtitle = element_text(size = 14),
+  #           legend.position = "bottom",
+  #           legend.key.width = unit(5, "cm"),
+  #           legend.text = element_text(size = 12)) +
+  #     labs(title = title_name,
+  #          subtitle = paste0("Intensité de la couverture et ton dans les médias depuis le ", format(as.Date(min(datamart_df$date)), "%d/%m/%Y"),"\n"),
+  #          caption = "\nNote: La grosseur des points est indicatif de l'intensité de la couverture médiatique")
+  #     return(output)
+  # }
+
+  # Graph par média
+
+
+  ggplot(relevanceProp, aes(x = date, y = n)) +
+    geom_line(aes(group = issue, color = issue, alpha = polarisation),
+              show.legend = F, size = 1) +
+    geom_point(aes(group = issue, color = issue, alpha = polarisation)) +
+    # geom_vline(xintercept = as.Date("2022-08-27"),
+    #            linetype="dashed", color = "grey") +
+    clessnverse::theme_clean_light() +
+    scale_x_date(limits = c(as.Date("2022-08-15"),
+                            as.Date("2022-08-28")),
+                 expand = c(0,0),
+                 breaks = as.Date(c("2022-08-15", "2022-08-20",
+                                    "2022-08-25", "2022-08-27")),
+                 labels = c("15 août\n2022", "20 août\n2022",
+                            "25 août\n2022", "Début de\nla campagne")) +
+    scale_color_manual(values = fills) +
+    scale_y_continuous(limits = c(0,35)) +
+    xlab("") +
+    ylab("\nProportion de tweets\nabordant le parti (%)\n") +
+    ggtitle("\nÉvolution des partis en tant que sujet dans\nles tweets des journalistes et médias\n") +
+    theme(plot.background = element_rect(fill = "white"))
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -241,9 +313,15 @@ auth <- quorum::createRadarplusAuth(Sys.getenv("RADARPLUS_USERNAME"), Sys.getenv
 
 load_radarplus_data <- function(){
 
+  #Créer la date de début
+  # Depuis 2 semaine
+  day <- as.numeric(format(lubridate::today() - days(14), "%d"))
+  month <- as.numeric(format(lubridate::today() - days(14), "%m"))
+  year <- as.numeric(format(lubridate::today() - days(14), "%Y"))
+
   # on crée une requête avec les paramètres des articles qu'on veut
   # Date de début des données désirées
-  begin_date <- quorum::createDate(20, 07, 2022, 00,00,00)
+  begin_date <- quorum::createDate(day, month, year, 00,00,00)
 
   # # Créer la date de fin (aujourd'hui)
   day2 <- as.numeric(format(Sys.time(), "%d"))
@@ -299,23 +377,23 @@ load_radarplus_data <- function(){
   return(DataRadar)
 }
 
-get_journalists_tweets <- function(){
-  myfilter <- clessnhub::create_filter(
-    metadata = list(personType__regex="journalist|media"),
-    data = list(creationDate__gte="2022-07-20",
-                creationDate__lte=as.character(as.Date(Sys.time()))))
-  Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
-    mutate(data.likeCount = as.numeric(data.likeCount),
-           data.retweetCount = as.numeric(data.retweetCount))
-  return(Tweets)
-}
-
-get_journalists_hub2 <- function(){
-  filter <- clessnhub::create_filter(type = "journalist")
-  Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE) %>%
-    select(handle = data.twitterHandle, fullName = data.fullName, female = data.isFemale, media = data.currentMedia)
-  return(Persons)
-}
+# get_journalists_tweets <- function(){
+#   myfilter <- clessnhub::create_filter(
+#     metadata = list(personType__regex="journalist|media"),
+#     data = list(creationDate__gte="2022-07-20",
+#                 creationDate__lte=as.character(as.Date(Sys.time()))))
+#   Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
+#     mutate(data.likeCount = as.numeric(data.likeCount),
+#            data.retweetCount = as.numeric(data.retweetCount))
+#   return(Tweets)
+# }
+#
+# get_journalists_hub2 <- function(){
+#   filter <- clessnhub::create_filter(type = "journalist")
+#   Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE) %>%
+#     select(handle = data.twitterHandle, fullName = data.fullName, female = data.isFemale, media = data.currentMedia)
+#   return(Persons)
+# }
 
 ###############################################################################
 ######################            Functions to          ######################
@@ -333,29 +411,29 @@ main <- function() {
   issue <-  clessnverse::get_dictionary("subcategories", lang = 'fr', credentials)
   sentiment <- clessnverse::get_dictionary("sentiments", lang = "fr", credentials)
   radarplus_data <- load_radarplus_data()
-  journalists_tweets <- get_journalists_tweets()
-  journalists <- get_journalists_hub2()
+#  journalists_tweets <- get_journalists_tweets()
+ # journalists <- get_journalists_hub2()
 
-  journalists_tweets2 <- journalists_tweets %>%
-    select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle)
+  # journalists_tweets2 <- journalists_tweets %>%
+  #   select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle)
 
-
-tweets <- left_join(journalists_tweets2, journalists, by = "handle") %>%
-  mutate(source = "twitter") %>%
-  select(date, text, id = handle, media, source) %>%
-  filter(media %in% c("TVA Nouvelles", "Radio-Canada", "Radio Canada", "La Presse", "Le Devoir")) %>%
-  mutate(media = ifelse(media == "La Presse", "la-presse", media),
-         media = ifelse(media == "Radio-Canada", "radio-canada", media),
-         media = ifelse(media == "Radio Canada", "radio-canada", media),
-         media = ifelse(media == "TVA Nouvelles", "tva-nouvelles", media),
-         media = ifelse(media == "Le Devoir", "le-devoir", media))
+# tweets <- left_join(journalists_tweets2, journalists, by = "handle") %>%
+#   mutate(source = "twitter") %>%
+#   select(date, text, id = handle, media, source) %>%
+#   filter(media %in% c("TVA Nouvelles", "Radio-Canada", "Radio Canada", "La Presse", "Le Devoir")) %>%
+#   mutate(media = ifelse(media == "La Presse", "la-presse", media),
+#          media = ifelse(media == "Radio-Canada", "radio-canada", media),
+#          media = ifelse(media == "Radio Canada", "radio-canada", media),
+#          media = ifelse(media == "TVA Nouvelles", "tva-nouvelles", media),
+#          media = ifelse(media == "Le Devoir", "le-devoir", media))
 
 radarplus_data2 <- radarplus_data %>%
   mutate(id = source, media = source, source = "headlines") %>%
   select(date = cleanDate, text, id, media, source) %>%
-  filter(media %in% c("la-presse", "le-devoir", "radio-canada", "tva-nouvelles"))
+  filter(media %in% c("la-presse", "le-devoir", "radio-canada", "tva-nouvelles")) %>%
+  mutate(doc_id = 1:nrow(.))
 
-data <- rbind(tweets, radarplus_data2)
+data <- rbind(radarplus_data2)
 
 example <- compute_relevance_score(data$text[1], issue)
 
@@ -393,6 +471,17 @@ relevance_wide <- relevance_long %>%
   tidyr::pivot_wider(., "doc_id",
                      names_from = "issue",
                      values_from = "relevance")
+
+#Pour graph de n enjeux
+relevanceProp <- relevance_long %>%
+  select(-c(logprop, relevance, prop)) %>%
+  mutate(talking = ifelse(nbwords_issue > 1, 1, 0)) %>%
+  left_join(., radarplus_data2, by="doc_id") %>%
+  group_by(date, issue) %>%
+  summarise(n = sum(talking)) %>%
+  mutate(issue = gsub("relevance_", "", issue),
+         polarisation = ifelse(issue == "polarisation", 1, 0)) %>%
+  filter(issue %in% c("inflation", "polarisation", "chsld", "troisieme_lien", "tramway_quebec", "langue_fran"))
 
 df_sentiment <- data.frame(negative = as.numeric(), positive = as.numeric())
 
@@ -445,7 +534,7 @@ datamart_df <- rbind(positive, negative, neutral) %>%
                values_to = "relevance",
                names_prefix = "relevance_") %>%
   mutate(key = 1:nrow(.)) %>%
-  select(key, doc_id, date, text, media, source, sentiment, issue, relevance)
+  select(key, doc_id, date, media, source, sentiment, issue, relevance)
 
 clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh", credentials)
 
@@ -453,7 +542,7 @@ clessnverse::commit_mart_table(datamart_table_name, datamart_df, "key", "refresh
 
 for (i in names(issue_names)) {
   graph_issue(datamart_df, i)
-  ggsave(paste0('/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
+  ggsave(paste0('_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
                 format(Sys.time(), "%d-%m-%Y"),"_enjeux_", i, ".png"),
          width = 18, height = 18, units = c("cm"))
 }
@@ -462,17 +551,26 @@ for (i in names(issue_names)) {
 
 for (i in names(media_names)) {
   graph_media(datamart_df, i)
-  ggsave(paste0('/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
+  ggsave(paste0('_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
                 format(Sys.time(), "%d-%m-%Y"),"_media_", i, ".png"),
          width = 18, height = 18, units = c("cm"))
 }
 
+## Enregistrement Graph 3
+
+# for (i in names(media_names)) {
+#   graph_issue2(datamart_df, i)
+#   ggsave(paste0('_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/',
+#                 format(Sys.time(), "%d-%m-%Y"),"_media_", i, ".png"),
+#          width = 26, height = 14, units = c("cm"))
+# }
+
 # Enregistrement du csv du graph 2
 
-write_csv(graph, paste0("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
+write_csv(graph, paste0("_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
                         format(Sys.time(), "%d-%m-%Y"),"_media_issue", ".csv"))
 
-write_csv(datamart_df, paste0("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
+write_csv(datamart_df, paste0("_SharedFolder_elxn-qc2022/presse_canadienne/2022_08_05/",
                         format(Sys.time(), "%d-%m-%Y"),"_datamart", ".csv"))
 
 
