@@ -3,11 +3,9 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>clessn.e_pressreleases_qc</string>
+  <string>clessn.twitter_blender_mp_can</string>
   <key>UserName</key>
   <string>patrick</string>
-  <key>EnableGlobbing</key>
-  <true/>
   <key>EnvironmentVariables</key>
     <dict>
       <key>PATH</key>
@@ -18,19 +16,21 @@
       <string>fr_CA.UTF-8</string>
     </dict>
   <key>StandardOutPath</key>
-  <string>/Users/patrick/Logs/e_pressreleases_qc.log</string>
+  <string>/Users/patrick/Logs/twitter_blender_mp.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/patrick/Logs/e_pressreleases_qc.log</string>
+  <string>/Users/patrick/Logs/twitter_blender_mp.log</string>
   <key>Debug</key>
+  <true/>
+  <key>EnableGlobbing</key>
   <true/>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string>
     <string>-c</string>
-    <string>$CLESSN_ROOT_DIR/clessn-blend/automation/e_pressreleases_qc.sh</string>
+    <string>$CLESSN_ROOT_DIR/clessn-blend/automation/twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="House%20of%20Commons%20of%20Canada")'</string>
   </array>
   <key>StartInterval</key> 
-  <integer>7200</integer>
+  <integer>43200</integer>
   <key>KeepAlive</key>
   <false/>
   <key>RunAtLoad</key>

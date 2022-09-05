@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>clessn.e_pressreleases_qc</string>
+  <string>clessn.parliament_mash_quebec</string>
   <key>UserName</key>
   <string>patrick</string>
   <key>EnableGlobbing</key>
@@ -18,19 +18,19 @@
       <string>fr_CA.UTF-8</string>
     </dict>
   <key>StandardOutPath</key>
-  <string>/Users/patrick/Logs/e_pressreleases_qc.log</string>
+  <string>/Users/patrick/Logs/parliament_mash_quebec.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/patrick/Logs/e_pressreleases_qc.log</string>
+  <string>/Users/patrick/Logs/parliament_mash_quebec.log</string>
   <key>Debug</key>
   <true/>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string>
     <string>-c</string>
-    <string>$CLESSN_ROOT_DIR/clessn-blend/automation/e_pressreleases_qc.sh</string>
+    <string>$CLESSN_ROOT_DIR/clessn-blend/automation/parliament_mash.sh "quebec" "file" "update" "update" FALSE FALSE</string>
   </array>
   <key>StartInterval</key> 
-  <integer>7200</integer>
+  <integer>43200</integer>
   <key>KeepAlive</key>
   <false/>
   <key>RunAtLoad</key>
