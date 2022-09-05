@@ -49,7 +49,14 @@
 #         your function code goes here
 #      }
 
-load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, refresh_data) {
+
+batch_load <- function(table_name, df, key_column, key_encoding, mode, credentials) {
+
+}
+
+
+
+load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, non_null_constraint, refresh_data) {
 
   if (is.null(df) || is.na(df) || nrow(df) == 0) {
     clessnverse::logit(scriptname, "invalid df given to load_df_to_hub2.0")
@@ -59,28 +66,57 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
   metadata_colnames <- colnames(df)[which(grepl("^metadata.", colnames(df)))]
   data_colnames <- colnames(df)[which(grepl("^data.", colnames(df)))]
 
-  key_column <- gsub(" ", "", key_column)
-  key_column <- strsplit(key_column, ",")
+  key_column_mode <- "one"
+
+  if (stringr::str_detect(key_column, ",")) {
+    key_column <- gsub(" ", "", key_column)
+    key_column <- strsplit(key_column, ",")
+    key_column_mode <- "one"
+  }
+
+  if (stringr::str_detect(key_column, "\\+")) {
+    key_column <- gsub(" ", "", key_column)
+    key_column <- strsplit(key_column, "\\+")
+    key_column_mode <- "combined"
+  }
+
 
   if (content_type == "people") content_type <- "persons"
 
   for (i in 1:nrow(df)) {
     df_row <- df[i,]
 
+    if (is.null(df[[non_null_constraint[[1]][1]]][i]) || is.na(df[[non_null_constraint[[1]][1]]][i]) || length(df[[non_null_constraint[[1]][1]]][i]) == 0 || nchar(df[[non_null_constraint[[1]][1]]][i]) == 0) {
+      clessnverse::logit(scriptname, paste("Non null constraint not met on record", i, paste(df[i,], collapse=" ")), logger)
+      next
+    }
+
     metadata <- as.list(
       df_row[c(metadata_colnames)]
     )
     names(metadata) <- gsub("^metadata.", "", names(metadata))
+    metadata[metadata==""] <- NA
 
     data <- as.list(
       df_row[c(data_colnames)]
     )
     names(data) <- gsub("^data.", "", names(data))
+    data[data==""] <- NA
 
-    key <- df[[key_column[[1]][1]]][i]
+    if (key_column_mode == "one") {
+      key <- df[[key_column[[1]][1]]][i]
 
-    if (is.null(key) || is.na(key) || length(key) == 0) {
-          key <- df[[key_column[[1]][2]]][i]
+      if (is.null(key) || is.na(key) || length(key) == 0) {
+            key <- df[[key_column[[1]][2]]][i]
+      }
+    }
+
+    if (key_column_mode == "combined") {
+      key <- paste(df[[key_column[[1]][1]]][i], df[[key_column[[1]][2]]][i], sep="")
+
+      if (is.null(key) || is.na(key) || length(key) == 0) {
+            key <- df[[key_column[[1]][2]]][i]
+      }
     }
 
     if (is.null(key) || is.na(key) || length(key) == 0) {
@@ -102,6 +138,8 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
     tryCatch(
       {
         clessnverse::logit(scriptname, paste("about to add item to hub2.0: key=", key), logger)
+        metadata$twitterAccountHasBeenScraped <- 0
+
         clessnhub::create_item(table = content_type, key = key, type = records_type, schema = records_schema, 
                               metadata = metadata, 
                               data = data
@@ -109,6 +147,7 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
       },
       error= function(e) {
         if (refresh_data) {
+          clessnverse::logit(scriptname, paste("modifying item in hub2.0: key=", key, "because it already exists"), logger)
           clessnhub::edit_item(table = content_type, key = key, type = records_type, schema = records_schema, 
                                metadata = metadata, 
                                data = data
@@ -197,7 +236,7 @@ main <- function() {
     file_list <- hublot::filter_files(credentials, files_filter)
 
     if (length(file_list$results) == 0) {
-      clessnverse::logit(scriptname, "no file candidate for import.  exitting script normally", logger)
+      clessnverse::logit(scriptname, "no file found for import.  exitting script normally", logger)
       quit(status)
     }
 
@@ -237,19 +276,21 @@ main <- function() {
 
       if (file$metadata$destination == "hub2.0") {
         ret <- load_df_to_hub2.0(
-          df = df, 
-          content_type   = file$metadata$content_type,
-          records_type   = file$metadata$records_type,
-          records_schema = file$metadata$records_schema,
-          key_encoding   = file$metadata$key_encoding,
-          key_column     = file$metadata$key_column,
-          refresh_data   = file$metadata$refresh
+          df = df,
+          content_type        = file$metadata$content_type,
+          records_type        = file$metadata$records_type,
+          records_schema      = file$metadata$records_schema,
+          key_encoding        = file$metadata$key_encoding,
+          key_column          = file$metadata$key_column,
+          non_null_constraint = file$metadata$non_null_constraint,
+          refresh_data        = file$metadata$refresh
         )
 
         file$metadata$imported <- TRUE
 
         # Must update the file here
-        hublot::update_file(file$slug, file, credentials)
+        # NOT IMPLEMENTED IN HUBLOT YET:
+        # hublot::update_file(file$slug, file, credentials)
 
         return(ret)
       }
@@ -316,16 +357,15 @@ tryCatch(
     # This is particularly useful while developping your script but it's wiser to use real command-
     # line options when puting your script in production in an automated container.
     opt <- list(
-        filename = filename,
         dataframe_mode = "refresh", hub_mode = "refresh",  
-        log_output = c("file", "console"), download_data = FALSE, translate=FALSE
+        log_output = c("file"), download_data = FALSE, translate=FALSE
         )
 
     if (!exists("opt")) {
         opt <- clessnverse::processCommandLineOptions()
     }
 
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hublot", logger)
