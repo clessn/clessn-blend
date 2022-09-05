@@ -21,7 +21,7 @@ get_lake_press_releases <- function (parties_list) {
     press_releases_lake_items_list <- list()
 
     for (party in parties_list) {
-        filter <- c(list(metadata__political_party = party), lake_items_selection_matadata)
+        filter <- c(list(path = "political_party_press_releases", metadata__political_party = party), lake_items_selection_matadata)
 
         data <- hublot::filter_lake_items(credentials, filter = filter)
 
