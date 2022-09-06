@@ -84,7 +84,7 @@ safe_GET <- purrr::safely(httr::GET)
 installPackages()
 library(dplyr)
 
-if (!exists("scriptname")) scriptname <- "agorapluscanada-debats.R"
+if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
@@ -95,7 +95,7 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", opt$log_output, Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 
 # Download HUB v2 data

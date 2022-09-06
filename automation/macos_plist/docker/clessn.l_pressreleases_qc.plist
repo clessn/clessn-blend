@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>clessn.l_pressreleases_qc</string>
+  <key>UserName</key>
+  <string>patrick</string>
+  <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin</string>
+    </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/patrick/Logs/clessn.l_pressreleases_qc.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/patrick/Logs/clessn.l_pressreleases_qc.log</string>
+  <key>Debug</key>
+  <true/>
+  <key>ProgramArguments</key>
+  <array>
+    <!--<string>/bin/bash</string>-->
+    <!--<string>-c</string>-->
+    <!--<string>cd /Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Loaders/l_pressreleases_qc;-->
+    <!--        R -e 'remotes::install_github("clessn/clessnverse")';-->
+    <!--        R -e 'source("/Users/patrick/Dev/CLESSN/clessn-blend/Pipelines/Loaders/l_pressreleases_qc/code/code.R")'-->
+    <!--</string>-->
+    
+    <string>/bin/bash</string>
+    <string>-c</string>
+    <string>echo `pwd`</string>
+  </array>
+  <key>StartInterval</key> 
+  <integer>7200</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

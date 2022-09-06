@@ -66,7 +66,7 @@ extract_urls_list <- function(party_acronym, xml_root, scriptname, logger) {
         nodes_list <- XML::getNodeSet(xml_root, ".//item")
         for (node in nodes_list) {
             url_node <- XML::getNodeSet(node, "link")
-            urls_list <- c(urls_list, XML::xmlValue(url_node[[1]]))
+            urls_list <- c(urls_list, XML::xmlValue(url_node[[1]], encoding="fr_CA.UTF-8"))
         }
         return(urls_list)
     }
@@ -247,15 +247,15 @@ tryCatch(
     {
         library(dplyr)
         
-        if (!exists("scriptname")) scriptname <<- "e_agoraplus-pressreleases-qc"
+        if (!exists("scriptname")) scriptname <<- "e_pressreleases_qc"
 
-        opt <<- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <<- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
 
         if (!exists("opt")) {
             opt <<- clessnverse::processCommandLineOptions()
         }
 
-        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, c("file","console"), Sys.getenv("LOG_PATH"))
+        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
         
         # login to hublot
         clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -289,7 +289,7 @@ tryCatch(
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
         clessnverse::log_close(logger)
         rm(logger)
-        quit(status = status)
+        #quit(status = status)
     }
 )
 
