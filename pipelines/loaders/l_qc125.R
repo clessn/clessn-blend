@@ -29,7 +29,6 @@ df_to_batch_list <- function(df){
     data_list <- c(df[i,])
     listi <- list(
       key = i,
-      #timestamp = NULL,
       data = data_list
     )
     final_list[[i]] <- listi
@@ -129,6 +128,17 @@ main <- function() {
     paste0("   Qc125 data from all dates are now binded together"),
     logger
   )
+<<<<<<< HEAD
+  clessnverse::logit(
+    scriptname,
+    paste0("Checking to see if the qc125 warehouse table already exists"),
+    logger
+  )
+  current_warehouse <- clessnverse::get_warehouse_table("qc125", credentials)
+  ids_to_delete <- current_warehouse$hub.id
+  hublot::batch_delete_table_items("clhub_tables_warehouse_qc125", ids_to_delete, credentials)
+=======
+>>>>>>> 4a39f0df1ffedacaa0440946a97294d6360475f4
   batch_object <- df_to_batch_list(df)
   hublot::batch_create_table_items("clhub_tables_warehouse_qc125", batch_object, credentials)
   #upload_warehouse_qc125(df)
