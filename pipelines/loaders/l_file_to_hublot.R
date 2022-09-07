@@ -3,7 +3,7 @@
 ###############################################################################
 #                                                                             #
 #                                                                             #
-#                              l_file_to_hub2.0                               #
+#                              l_file_to_hublot                               #
 #                                                                             #
 # This script takles a csv or xlsx file from hublot and loads it to hub2.0    #
 # In the appropriate table.   Currently supported tables are                  #
@@ -49,11 +49,17 @@
 #         your function code goes here
 #      }
 
+commit_warehouse_table <- function(table_name, df, key_column, key_encoding, non_null_constraint, mode, credentials) {
+    my_table <- paste("clhub_tables_warehouse_", table_name, sep="")
+    
+    # Check if table exists
+    table_check <- hublot::filter_tables(credentials, list(verbose_name = paste("warehouse_",table_name,sep="")))
+    if (length(table_check$results) == 0 ) stop(paste("The warehouse table specified in clessnverse::commit_warehouse_table() does not exist:", table_name))
 
-batch_load <- function(table_name, df, key_column, key_encoding, mode, credentials) {
+    hublot::batch_create_table_items("clhub_tables_warehouse_test_batch_load", my_list, credentials)
 
+    stop("not implemented yet")
 }
-
 
 
 load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, non_null_constraint, refresh_data) {
@@ -80,8 +86,9 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
     key_column_mode <- "combined"
   }
 
-
   if (content_type == "people") content_type <- "persons"
+
+  my_list <- list()
 
   for (i in 1:nrow(df)) {
     df_row <- df[i,]
@@ -91,31 +98,50 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
       next
     }
 
+    #Structure the metadata
     metadata <- as.list(
       df_row[c(metadata_colnames)]
     )
     names(metadata) <- gsub("^metadata.", "", names(metadata))
     metadata[metadata==""] <- NA
+    metadata[metadata=="NA"] <- NA
 
+    # Structure the data
     data <- as.list(
       df_row[c(data_colnames)]
     )
     names(data) <- gsub("^data.", "", names(data))
     data[data==""] <- NA
+    data[data=="NA"] <- NA
 
+
+    # Compute the key
     if (key_column_mode == "one") {
       key <- df[[key_column[[1]][1]]][i]
 
-      if (is.null(key) || is.na(key) || length(key) == 0) {
-            key <- df[[key_column[[1]][2]]][i]
+      j <- j
+
+      while (is.null(key) || is.na(key) || length(key) == 0) {
+            key <- df[[key_column[[1]][j]]][i]
+            j <- j + 1
       }
     }
 
     if (key_column_mode == "combined") {
-      key <- paste(df[[key_column[[1]][1]]][i], df[[key_column[[1]][2]]][i], sep="")
+      j <- 1
+      key <- ""
 
-      if (is.null(key) || is.na(key) || length(key) == 0) {
-            key <- df[[key_column[[1]][2]]][i]
+      while (j <= length(key_column[[1]])) {
+        if (grepl("^_", key_column[[1]][j])) {
+          if (grepl("^_records_schema", key_column[[1]][j])) {
+            key <- paste(key, records_schema, sep="")
+          } else {
+            stop(paste("unsupported key column:", key_column[[1]][j]))
+          }
+        } else {
+          key <- paste(key, df[[key_column[[1]][j]]][i], sep="")
+        }
+        j <- j + 1
       }
     }
 
@@ -135,25 +161,35 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
       key <- digest::digest(key)
     }
 
+    # Commit to hub2
     tryCatch(
       {
         clessnverse::logit(scriptname, paste("about to add item to hub2.0: key=", key), logger)
-        metadata$twitterAccountHasBeenScraped <- 0
+
+        new_item_metadata <- metadata
+        new_item_data <- data
+        new_item_metadata$twitterAccountHasBeenScraped <- 0
 
         clessnhub::create_item(table = content_type, key = key, type = records_type, schema = records_schema, 
-                              metadata = metadata, 
-                              data = data
+                              metadata = new_item_metadata, 
+                              data = new_item_data
                               )
       },
       error= function(e) {
         if (refresh_data) {
           clessnverse::logit(scriptname, paste("modifying item in hub2.0: key=", key, "because it already exists"), logger)
-          clessnhub::edit_item(table = content_type, key = key, type = records_type, schema = records_schema, 
-                               metadata = metadata, 
-                               data = data
+          item <- clessnhub::get_item(table = content_type, key = key)
+
+          # Here we must merge the data and metadata
+          existing_item_metadata <- rlist::list.merge(item$metadata, metadata)
+          existing_item_data <- rlist::list.merge(item$data, data)
+
+          clessnhub::edit_item(table = content_type, key = item$key, type = records_type, schema = records_schema, 
+                               metadata = existing_item_metadata, 
+                               data = existing_item_data
                               )
         } else {
-          clessnverse::logit(scriptname, paste("item with key=", key, "probably already exists.  Actual error is"), logger)
+          clessnverse::logit(scriptname, paste("item with key=", key, "already exists.  Skipping.  Actual error is"), logger)
           clessnverse::logit(scriptname, e, logger)
         }  
       },
@@ -162,12 +198,18 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
 
       }
     )
+
+    # names(df_row) <- gsub("^data.","",names(df_row))
+    # names(df_row) <- gsub("^metadata.","",names(df_row))
+    # my_list[[i]] <- list(key = key, timestamp = as.character(Sys.time()), data = as.list(df_row))
+    #my_list[[i]] <- list(key = key, timestamp = as.character(Sys.time()), data = jsonlite::toJSON(df_row, auto_unbox = T))
   }
 
   return(0)
 
 }
 
+#hublot::batch_create_table_items("clhub_tables_warehouse_test_batch_load", my_list, credentials)
 
 
 
@@ -267,6 +309,7 @@ main <- function() {
         header_line <- readLines(file$file, n = 1)
         numfields <- count.fields(textConnection(header_line), sep = ";")
         df <- if (numfields == 1) read.csv(file$file, encoding="UTF-8") else read.csv2(file$file, encoding="UTF-8")
+        #df <- if (numfields == 1) read.csv(file$file) else read.csv2(file$file)
         if ("X" %in% names(df)) df$X <- NULL
       }
 
@@ -297,7 +340,7 @@ main <- function() {
 
       if (file$metadata$destination == "hublot") {
         ret <- load_df_to_hublot(
-          df = df, 
+          df = df,
           content_type   = file$metadata$content_type,
           records_type   = file$metadata$records_type,
           records_schema = file$metadata$records_schema,
@@ -395,7 +438,7 @@ tryCatch(
       clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
       print(w)
       status <<- 2
-  }),
+  },
   
   # Handle an error or a call to stop function in the code
   error = function(e) {
@@ -407,13 +450,13 @@ tryCatch(
   # Terminate gracefully whether error or not
   finally={
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-    clessnverse::logclose(logger)
+    clessnverse::log_close(logger)
 
     # Cleanup
     closeAllConnections()
     rm(logger)
 
-    quit(status=status)
+    #quit(status=status)
   }
 )
 
