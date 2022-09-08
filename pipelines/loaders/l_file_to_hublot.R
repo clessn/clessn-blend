@@ -50,7 +50,7 @@
 #      }
 
 
-load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, refresh_data) {
+load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_columns, refresh_data) {
 
   if (is.null(df) || is.na(df) || nrow(df) == 0) {
     clessnverse::logit(scriptname, "invalid df given to load_df_to_hub2.0")
@@ -60,18 +60,18 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
   metadata_colnames <- colnames(df)[which(grepl("^metadata.", colnames(df)))]
   data_colnames <- colnames(df)[which(grepl("^data.", colnames(df)))]
 
-  key_column_mode <- "one"
+  key_columns <- "one"
 
-  if (stringr::str_detect(key_column, ",")) {
-    key_column <- gsub(" ", "", key_column)
-    key_column <- strsplit(key_column, ",")
-    key_column_mode <- "one"
+  if (stringr::str_detect(key_columns, ",")) {
+    key_columns <- gsub(" ", "", key_columns)
+    key_columns <- strsplit(key_columns, ",")
+    key_columns_mode <- "one"
   }
 
-  if (stringr::str_detect(key_column, "\\+")) {
-    key_column <- gsub(" ", "", key_column)
-    key_column <- strsplit(key_column, "\\+")
-    key_column_mode <- "combined"
+  if (stringr::str_detect(key_columns, "\\+")) {
+    key_columns <- gsub(" ", "", key_columns)
+    key_columns <- strsplit(key_columns, "\\+")
+    key_columns_mode <- "combined"
   }
 
   if (content_type == "people") content_type <- "persons"
@@ -99,30 +99,30 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
 
 
     # Compute the key
-    if (key_column_mode == "one") {
-      key <- df[[key_column[[1]][1]]][i]
+    if (key_columns_mode == "one") {
+      key <- df[[key_columns[[1]][1]]][i]
 
       j <- j
 
       while (is.null(key) || is.na(key) || length(key) == 0) {
-            key <- df[[key_column[[1]][j]]][i]
+            key <- df[[key_columns[[1]][j]]][i]
             j <- j + 1
       }
     }
 
-    if (key_column_mode == "combined") {
+    if (key_columns_mode == "combined") {
       j <- 1
       key <- ""
 
-      while (j <= length(key_column[[1]])) {
-        if (grepl("^_", key_column[[1]][j])) {
-          if (grepl("^_records_schema", key_column[[1]][j])) {
+      while (j <= length(key_columns[[1]])) {
+        if (grepl("^_", key_columns[[1]][j])) {
+          if (grepl("^_records_schema", key_columns[[1]][j])) {
             key <- paste(key, records_schema, sep="")
           } else {
-            stop(paste("unsupported key column:", key_column[[1]][j]))
+            stop(paste("unsupported key column:", key_columns[[1]][j]))
           }
         } else {
-          key <- paste(key, df[[key_column[[1]][j]]][i], sep="")
+          key <- paste(key, df[[key_columns[[1]][j]]][i], sep="")
         }
         j <- j + 1
       }
@@ -316,7 +316,6 @@ main <- function() {
         )
 
         file$metadata$imported <- TRUE
-
         # Must update the file here
         # NOT IMPLEMENTED IN HUBLOT YET:
         # hublot::update_file(file$slug, file, credentials)
