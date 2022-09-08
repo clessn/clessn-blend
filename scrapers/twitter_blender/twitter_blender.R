@@ -292,17 +292,18 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       metadata_to_commit[sapply(metadata_to_commit,is.na.char)] <- NA_character_
       
       #clessnverse::logit(scriptname, t_key, logger)
- 
+      tweet_commit_type <- "added"
+
       tryCatch(
         {
-          clessnverse::logit(scriptname, paste("modifying tweet", t_key), logger)
+          tweet_commit_type <- "modified"
           clessnhub::edit_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
         },
 
         error = function(e) {
           tryCatch(
             {
-              clessnverse::logit(scriptname, paste("adding tweet", t_key), logger)
+              tweet_commit_type <- "added"
               clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
             },
             
@@ -318,7 +319,9 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
           )
         },
 
-        finally={}
+        finally={
+          clessnverse::logit(scriptname, paste(tweet_commit_type, "tweet", t_key), logger)
+        }
       )
      
     }#for (i in 1:nrow(df_to_commit))

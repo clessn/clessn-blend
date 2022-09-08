@@ -60,7 +60,7 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
   metadata_colnames <- colnames(df)[which(grepl("^metadata.", colnames(df)))]
   data_colnames <- colnames(df)[which(grepl("^data.", colnames(df)))]
 
-  key_columns <- "one"
+  key_columns_mode <- "one"
 
   if (stringr::str_detect(key_columns, ",")) {
     key_columns <- gsub(" ", "", key_columns)
@@ -77,6 +77,8 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
   if (content_type == "people") content_type <- "persons"
 
   my_list <- list()
+
+  clessnverse::logit(scriptname, paste("about to add", nrow(df), "persons to hub2.0 with key_columns_mode = ", key_columns_mode), logger)
 
   for (i in 1:nrow(df)) {
     df_row <- df[i,]
