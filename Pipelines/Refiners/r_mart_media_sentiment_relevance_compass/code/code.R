@@ -293,31 +293,38 @@ library(lubridate)
     filter(n == max(n))
 
   sysfonts::font_add_google("Roboto", "roboto")
-  showtext_auto()
+  showtext::showtext_auto()
 
-  ggplot(relevanceProp, aes(x = date, y = n)) +
+  ggplot(relevanceProp, aes(x = as.character(date), y = n)) +
     geom_line(aes(group = issue, color = issue, alpha = polarisation),
               show.legend = F, size = 1) +
     geom_point(aes(group = issue, color = issue, alpha = polarisation), show.legend = F) +
     # geom_vline(xintercept = as.Date("2022-08-27"),
     #            linetype="dashed", color = "grey") +
-    clessnverse::theme_clean_dark(base_size = 13) +
+    clessnverse::theme_clean_dark(base_size = 25) +
     theme(text = element_text(family = "roboto")) +
     # Ajouter les points sur lignes
     scale_color_manual(values = issue_color2) +
     scale_fill_manual(values = issue_color2) +
     scale_alpha_continuous(range = c(0.3, 1)) +
-    scale_x_datetime("",
-                     date_labels = "%d/%m",
-                     date_breaks =  "1 day") +
-    ggrepel::geom_label_repel(aes(fill = issue, label = issue_names[issue], alpha = polarisation), data = data_ends, color = "black", nudge_y = 0.5, nudge_x = 0.05, show.legend = F) +
-    ylab("Nombre d'articles par jour à la Une\n") +
-    labs(title = "Nombre d'articles abordant la polarisation des idéologies",
-         subtitle = "À la Une des grands médias québécois\n")
+    scale_x_discrete("",
+                     labels = c("24 août", "30 août", "5 septembre"),
+                     breaks =  c("2022-08-24", "2022-08-30", "2022-09-05")) +
+    ggrepel::geom_label_repel(aes(fill = issue, label = issue_names[issue], alpha = polarisation),
+                              data = data_ends, color = "black", nudge_y = 0.5, nudge_x = 0.05,
+                              show.legend = F, size = 10) +
+    ylab("Nombre d'articles par jour à la Une") +
+    labs(title = "La polarisation à la Une",
+         subtitle = "En comparaison à trois autres enjeux de la campagne électorale 2022\n",
+         caption = "Données: 453 Unes publiées sur les sites Web des grands médias québécois")
 
-  ggsave_twitter("/Users/adrien/Dropbox/Travail/Universite_Laval/CLESSN/elxn-qc2022/_SharedFolder_elxn-qc2022/_graphs/2022-09-05/radar.png")
+  ggsave("plotRadar.png", width = 6.7, height = 4.5)
 
- ###############################################################################
+  relevanceProp2 <- relevanceProp %>%
+    select(-polarisation)
+
+write.csv(relevanceProp2, "unesPolarisation.csv")
+  ###############################################################################
 ######################            Functions to           ######################
 ######################  Get Data Sources from DataLake   ######################
 ######################              HUB 3.0              ######################
