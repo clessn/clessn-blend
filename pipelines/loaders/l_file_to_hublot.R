@@ -49,20 +49,8 @@
 #         your function code goes here
 #      }
 
-commit_warehouse_table <- function(table_name, df, key_column, key_encoding, non_null_constraint, mode, credentials) {
-    my_table <- paste("clhub_tables_warehouse_", table_name, sep="")
-    
-    # Check if table exists
-    table_check <- hublot::filter_tables(credentials, list(verbose_name = paste("warehouse_",table_name,sep="")))
-    if (length(table_check$results) == 0 ) stop(paste("The warehouse table specified in clessnverse::commit_warehouse_table() does not exist:", table_name))
 
-    hublot::batch_create_table_items("clhub_tables_warehouse_test_batch_load", my_list, credentials)
-
-    stop("not implemented yet")
-}
-
-
-load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, non_null_constraint, refresh_data) {
+load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, key_encoding, key_column, refresh_data) {
 
   if (is.null(df) || is.na(df) || nrow(df) == 0) {
     clessnverse::logit(scriptname, "invalid df given to load_df_to_hub2.0")
@@ -92,11 +80,6 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
 
   for (i in 1:nrow(df)) {
     df_row <- df[i,]
-
-    if (is.null(df[[non_null_constraint[[1]][1]]][i]) || is.na(df[[non_null_constraint[[1]][1]]][i]) || length(df[[non_null_constraint[[1]][1]]][i]) == 0 || nchar(df[[non_null_constraint[[1]][1]]][i]) == 0) {
-      clessnverse::logit(scriptname, paste("Non null constraint not met on record", i, paste(df[i,], collapse=" ")), logger)
-      next
-    }
 
     #Structure the metadata
     metadata <- as.list(
@@ -198,29 +181,33 @@ load_df_to_hub2.0 <- function(df, content_type, records_type, records_schema, ke
 
       }
     )
-
-    # names(df_row) <- gsub("^data.","",names(df_row))
-    # names(df_row) <- gsub("^metadata.","",names(df_row))
-    # my_list[[i]] <- list(key = key, timestamp = as.character(Sys.time()), data = as.list(df_row))
-    #my_list[[i]] <- list(key = key, timestamp = as.character(Sys.time()), data = jsonlite::toJSON(df_row, auto_unbox = T))
   }
 
   return(0)
 
 }
 
-#hublot::batch_create_table_items("clhub_tables_warehouse_test_batch_load", my_list, credentials)
 
+load_df_to_hublot <- function(df, content_type, key_encoding, key_columns, refresh_data) {
 
+  my_table <- "test_batch_load"
 
+  ret <- clessnverse::commit_warehouse_table(
+    table_name = my_table,
+    df = df,
+    key_columns = key_columns, 
+    key_encoding = key_encoding,
+    mode = refresh_data, 
+    credentials = credentials
+  )
 
-load_df_to_hublot <- function(df, content_type, records_type, key_encoding, key_column) {
+  if (is.null(ret$created)) ret$created <- 0
+  if (is.null(ret$errors)) ret$errors <- 0
+
+  clessnverse::logit(scriptname, paste("added", ret$created, "records to", my_table, "and got", ret$errors, "errors"), logger)
 
 }
-
-
-
-
+          
 
 ###############################################################################
 ######################            Functions to           ######################
@@ -324,8 +311,7 @@ main <- function() {
           records_type        = file$metadata$records_type,
           records_schema      = file$metadata$records_schema,
           key_encoding        = file$metadata$key_encoding,
-          key_column          = file$metadata$key_column,
-          non_null_constraint = file$metadata$non_null_constraint,
+          key_columns         = file$metadata$key_columns,
           refresh_data        = file$metadata$refresh
         )
 
@@ -342,10 +328,8 @@ main <- function() {
         ret <- load_df_to_hublot(
           df = df,
           content_type   = file$metadata$content_type,
-          records_type   = file$metadata$records_type,
-          records_schema = file$metadata$records_schema,
           key_encoding   = file$metadata$key_encoding,
-          key_column     = file$metadata$key_column,
+          key_columns    = file$metadata$key_columns,
           refresh_data   = file$metadata$refresh
         )
 
