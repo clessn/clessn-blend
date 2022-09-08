@@ -74,8 +74,8 @@ get_confpress_journalists_interventions <- function() {
     type = "press_conference",
     metadata__location = "CA-QC",
     data__speakerType = "journalist",
-    data__eventDate__gte = "2021-01-01",
-    data__eventDate__lte = "2022-06-23"
+    data__eventDate__gte = "2022-08-28",
+    data__eventDate__lte = "2022-09-08"
   )
 
   #df <- clessnhub::get_items('agoraplus_interventions', filter)
@@ -95,8 +95,8 @@ get_confpress_journalists_interventions <- function() {
 get_journalists_tweets <- function() {
     filter = list(
     metadata__personType="journalist",
-    data__creationDate__gte="2021-01-01",
-    data__creationDate__lte="2022-06-23"
+    data__creationDate__gte="2022-08-28",
+    data__creationDate__lte="2022-09-08"
     # most field lookups here should work
     # https://docs.djangoproject.com/en/4.0/ref/models/querysets/#field-lookups
   )
