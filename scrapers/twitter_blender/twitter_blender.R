@@ -176,7 +176,9 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
           finally = {}
         )
       },
-      finally = {}
+      finally = {
+        clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+      }
     )
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
@@ -197,7 +199,9 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
         )
       },
       
-      finally = {}
+      finally = {
+        clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+      }
     )
   }
   
