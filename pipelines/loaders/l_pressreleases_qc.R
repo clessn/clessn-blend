@@ -274,7 +274,7 @@ main <- function() {
     warehouse_items_list <- clessnverse::get_warehouse_table(warehouse_table, credentials, nbrows = 0) 
     lakes_items_list <- get_lake_press_releases(parties_list)
 
-    if (opt$hub_mode == "refresh") {
+    if (opt$refresh_date == TRUE) {
         # update the entire warehouse with the entire lake items set
         items_list <- lakes_items_list
     } else {
@@ -298,7 +298,7 @@ main <- function() {
 
         if (length(press_release_structured) > 0) {
             clessnverse::logit(scriptname,  paste("committing item #", i, "key = ", items_list$key[i], sep=" "), logger)
-            clessnverse::commit_warehouse_row(warehouse_table, key, press_release_structured, mode = opt$hub_mode, credentials)
+            clessnverse::commit_warehouse_row(warehouse_table, key, press_release_structured, refresh_data = opt$refresh_data, credentials)
         } else {
             clessnverse::logit(scriptname,  paste("could not parse item #", i, "key = ", items_list$key[i], sep=" "), logger)
         }
@@ -324,10 +324,10 @@ tryCatch(
 
         if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
 
-        opt <- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE, refresh_data=TRUE)
 
         if (!exists("opt")) {
-            opt <- clessnverse::processCommandLineOptions()
+            opt <- clessnverse::process_command_line_options()
         }
 
         if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))

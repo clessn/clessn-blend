@@ -776,7 +776,7 @@ upload_warehouse_globales <- function(input_df) {
       table = warehouse_table_name,
       key = input_df$unique_id[i], ### Clé des données GlobalES
       row,
-      mode = "refresh",
+      refresh_data = TRUE,
       credentials
     )
   }
