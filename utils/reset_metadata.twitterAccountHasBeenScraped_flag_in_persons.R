@@ -8,7 +8,7 @@ clessnhub::login(
 clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
 
 
-filter <- clessnhub::create_filter(type="journalist", schema="journalist_v3", metadata=NULL, data=NULL)
+filter <- clessnhub::create_filter(type="journalist", schema="v2", metadata=NULL, data=NULL)
 
 df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
 
