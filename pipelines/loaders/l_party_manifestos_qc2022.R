@@ -101,12 +101,12 @@ load_plq_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PLQPlatform))
     PLQPlatform$index <- index_column
     
-    #clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
-    #                                    df = PLQPlatform, 
-    #                                    key_column = c("paragraph", "party", "index"), 
-    #                                    key_encoding = "digest",
-    #                                    mode = "refresh", 
-    #                                    credentials = credentials)
+    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+                                        df = PLQPlatform, 
+                                        key_columns = c("paragraph", "party", "index"), 
+                                        key_encoding = "digest",
+                                        mode = "refresh", 
+                                        credentials = credentials)
   } else {
     clessnverse::logit(scriptname, 
                        paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
