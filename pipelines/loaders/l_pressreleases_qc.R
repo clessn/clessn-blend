@@ -274,7 +274,7 @@ main <- function() {
     warehouse_items_list <- clessnverse::get_warehouse_table(warehouse_table, credentials, nbrows = 0) 
     lakes_items_list <- get_lake_press_releases(parties_list)
 
-    if (opt$refresh_date == TRUE) {
+    if (opt$refresh_data == TRUE) {
         # update the entire warehouse with the entire lake items set
         items_list <- lakes_items_list
     } else {

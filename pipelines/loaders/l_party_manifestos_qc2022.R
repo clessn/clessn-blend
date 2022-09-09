@@ -81,7 +81,7 @@ load_qs_manifesto <- function(lake_item) {
                                         df = QSPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
-                                        mode = "refresh", 
+                                        refresh_data = TRUE, 
                                         credentials = credentials)
   } else {
     clessnverse::logit(scriptname, 
@@ -160,7 +160,7 @@ load_pcq_manifesto <- function(lake_item) {
                                         df = PCQPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
-                                        mode = "refresh", 
+                                        refresh_data = TRUE, 
                                         credentials = credentials)
   } else {
     clessnverse::logit(scriptname, 
@@ -234,7 +234,7 @@ load_plq_manifesto <- function(lake_item) {
                                         df = PLQPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
-                                        mode = "refresh", 
+                                        refresh_data = TRUE, 
                                         credentials = credentials)
   } else {
     clessnverse::logit(scriptname, 
