@@ -156,10 +156,12 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
 
   #if (handle %in% dfTweets$metadata.twitterHandle) {
   env$newtweets <- data.frame()
-    
+  twitter_account_fresh <- TRUE
+
   #if (!is.null(env$dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
   if (!is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
+    twitter_account_fresh <- FALSE
     clessnverse::logit(scriptname, paste("getting new tweets from",person$data$fullName,"(",handle,")"), logger)
     tryCatch(
       { env$newtweets <- rtweet::search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token) },
@@ -182,6 +184,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
     )
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
+    twitter_account_fresh <- TRUE
     clessnverse::logit(scriptname, paste("getting full twitter timeline from",person$data$fullName,"(",handle,") witn n =", opt$max_timeline), logger)
     tryCatch (
       { env$newtweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token) },
@@ -270,7 +273,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
     df_to_commit$data.originalTweetText[which(env$newtweets$is_retweet==TRUE)] = env$newtweets$retweet_text[env$newtweets$is_retweet==TRUE]
     df_to_commit$data.originalTweetFrom[which(env$newtweets$is_retweet==TRUE)] = env$newtweets$retweet_screen_name[env$newtweets$is_retweet==TRUE]
     
-    df_to_commit <- df_to_commit %>% filter(difftime(paste(df_to_commit$data.creationDate, df_to_commit$data.creationTime), latest_twitter_update, units = "hours") >= 24)
+    if (!twitter_account_fresh) df_to_commit <- df_to_commit %>% filter(difftime(paste(df_to_commit$data.creationDate, df_to_commit$data.creationTime), latest_twitter_update, units = "hours") >= 24)
 
     clessnverse::logit(scriptname, paste("committing",nrow(df_to_commit),"tweets to HUB"), logger)
     
