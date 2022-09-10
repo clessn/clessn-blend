@@ -240,6 +240,11 @@ commit_warehouse_table <- function(table_name, df, key_columns, key_encoding, re
 
   if (key_encoding == "digest") key <- unlist(lapply(X = as.list(key), FUN = digest::digest))
 
+  # check if there are keys that already exist in the table directly on hublot
+  if (refresh_data) {
+
+  }
+
   if (TRUE %in% duplicated(key)) {
     stop(
       paste(
@@ -275,9 +280,9 @@ load_df_to_hublot <- function(df, content_type, key_encoding, key_columns, refre
   ret <- commit_warehouse_table(
     table_name = my_table,
     df = df,
-    key_columns = key_columns, 
+    key_columns = key_columns,
     key_encoding = key_encoding,
-    refresh_data = refresh_data, 
+    refresh_data = refresh_data,
     credentials = credentials
   )
 
