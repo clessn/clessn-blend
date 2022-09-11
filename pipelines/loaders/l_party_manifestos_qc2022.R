@@ -16,6 +16,22 @@
 ########################           Functions            ######################
 ###############################################################################
 
+df_to_batch_list <- function(df){
+  final_list <- list()
+  for (i in 1:nrow(df)){
+    data_list <- c(df[i,])
+    listi <- list(
+      key = i,
+      data = data_list
+    )
+    final_list[[i]] <- listi
+    if (i %% 100 == 0){
+      print(paste0(i, "/", nrow(df)))
+    }
+  }
+  return(final_list)
+}
+
 load_qs_manifesto <- function(lake_item) {
   
   pdf_doc <- NULL
