@@ -233,7 +233,7 @@ load_plq_manifesto <- function(lake_item) {
       dplyr::group_by(group) |> # paragraph ending with a period
       dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
       dplyr::select(-group) |>
-      dplyr::mutate(political_party = "PLQ",
+      dplyr::mutate(political_party = "plq",
                     election_year = 2022,
                     original_doc_type = "pdf",
                     release_date = as.Date("2022-06-11"),
