@@ -20,21 +20,23 @@ InflationPledgesByLegislature <- PledgeLabelsHistorical |>
   dplyr::group_by(legislature) |>
   dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
 InflationPledgesByLegislature$years <- c(
-  "Parizeau/Bouchard 1994-1998 (n = 97)",
-  "Bouchard/Landry 1998-2003 (n = 127)",
-  "Charest 2003-2007 (n = 106)",
-  "Charest 2007-2008 (n = 98)",
-  "Charest 2008-2012 (n = 62)",
-  "Marois 2012-2014 (n = 113)",
-  "Couillard 2014-2018 (n = 158)",
-  "Legault 2018-2022 (n = 251)")
+  "Parizeau/Bouchard\n1994-1998 (n = 97)",
+  "Bouchard/Landry\n1998-2003 (n = 127)",
+  "Charest\n2003-2007 (n = 106)",
+  "Charest\n2007-2008 (n = 98)",
+  "Charest\n2008-2012 (n = 62)",
+  "Marois\n2012-2014 (n = 113)",
+  "Couillard\n2014-2018 (n = 158)",
+  "Legault\n2018-2022 (n = 251)")
 ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
   x = legislature, y = cost_life)) +
   ggplot2::geom_line(ggplot2::aes(group = 1)) +
   ggplot2::scale_x_discrete("",
                             labels = InflationPledgesByLegislature$years) +
-  ggplot2::ylab("Nombre de promesses abordant le coût de la vie") +
+  ggplot2::ylab("Nombre de mentions du coût de la vie") +
   clessnverse::theme_clean_dark() +
+  ggplot2::ggtitle("Promesses sur le\ncoût de la vie",
+                   subtitle = "par le parti au pouvoir au Québec") +
   ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90))
 ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses",
