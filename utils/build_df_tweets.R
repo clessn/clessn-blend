@@ -39,5 +39,3 @@ for (i in 1:nrow(df_persons)) {
         df_tweets <- df_tweets %>% dplyr::rbind(new_tweets)
     }
 }
-
-# More test
