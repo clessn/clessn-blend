@@ -13,7 +13,7 @@ df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_
 
 df_tweets <- data.frame()
 
-for (i in 3:nrow(df_persons)) {
+for (i in 1:nrow(df_persons)) {
     filter <- clessnhub::create_filter(data=list(personKey = df_persons$key[i]))
 
     new_tweets <- clessnhub::get_items('tweets', filter, download_data = T)
