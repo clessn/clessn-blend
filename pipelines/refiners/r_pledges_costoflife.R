@@ -41,7 +41,8 @@ ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
   clessnverse::theme_clean_dark(base_size = 30) +
   ggplot2::ggtitle("Un enjeu autrefois absent?",
                    subtitle = "Le coût de la vie dans les promesses du parti au pouvoir au Québec depuis 1994") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90))
+  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90,
+                                                     lineheight = 0.35))
 ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses",
                        ".png"), width = 8, height = 5.5)
@@ -108,8 +109,9 @@ ggplot2::ggplot(EconomicVerdictsData, ggplot2::aes(
   ggplot2::scale_fill_manual("Verdict",
     values = c("#228B22", "#F3C349", "#AE0101"),
     labels = c("Réalisée", "Partiellement réalisée", "Rompue")) +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(
-    hjust = 0.5, vjust = 0.5, angle = 90)) +
+  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35),
+                 axis.text.x = ggplot2::element_text(
+    hjust = 0.5, vjust = 0.5, angle = 90, lineheight = 0.35)) +
   ggplot2::ggtitle(paste("Les gouvernements québécois respectent-ils\nleurs",
                          "promesses sur l'économie?"),
                    subtitle = paste("État de réalisation des promesses en",
@@ -165,6 +167,7 @@ ggplot2::ggplot(NumberPledgesCostoflifeLong,
   ggplot2::scale_y_continuous("Nombre de promesses sur le coût de la vie") +
   ggplot2::scale_fill_manual(values = c("#00B0F0", "#3D5889", "#E61B2E",
                                         "#ED8528"), guide = "none") +
+  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35)) +
   ggplot2::ggtitle(paste0("Le coût de la vie dans les plateformes des\n",
                           "grands partis"),
                    subtitle = paste("Comparaison des principaux partis",
