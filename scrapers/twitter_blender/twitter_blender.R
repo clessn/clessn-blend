@@ -485,7 +485,7 @@ main <- function(opt, scriptname, logger) {
 
 tryCatch( 
   {
-    installPackages()
+    #installPackages()
     library(dplyr)
     #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "all")
     #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "politicians")
@@ -502,6 +502,8 @@ tryCatch(
     if (exists("logger")) rm(logger)
     if (!exists("scriptname")) scriptname <<- paste("twitter_blender_",opt$type,sep='')
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+
+    scriptname <<- paste(scriptname, opt$schema, sep='_')
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(names(opt), "=", opt, collapse = " ")), logger)
     
