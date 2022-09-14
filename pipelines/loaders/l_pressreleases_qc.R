@@ -70,6 +70,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
         date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         date <- gsub("^\u00a0", "", date)
+        if (length(date) == 0) date <- format(Sys.Date(), "%d %B %Y")
         #14 juin 2022
         
         months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
@@ -318,6 +319,8 @@ tryCatch(
         # Package
         library(dplyr) 
         
+        Sys.setlocale("LC_TIME", "fr_CA.utf8")
+
         # Globals : scriptname, opt, logger, credentials
         lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
         warehouse_table <- "political_parties_press_releases"
