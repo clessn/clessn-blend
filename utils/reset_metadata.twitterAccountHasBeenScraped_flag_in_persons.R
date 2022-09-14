@@ -14,6 +14,7 @@ df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_
 
 
 for (i in 1:nrow(df_persons)) {
+
     item <- clessnhub::get_item('persons', df_persons$key[i])
 
     data <- item$data
