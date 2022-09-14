@@ -2,10 +2,12 @@ credentials <- hublot::get_credentials(
   Sys.getenv("HUB3_URL"), 
   Sys.getenv("HUB3_USERNAME"), 
   Sys.getenv("HUB3_PASSWORD"))
+
+#### Graph 1 ####
 PledgeLabelsHistorical <- clessnverse::get_warehouse_table(
   "pledge_labels_historical", credentials) |>
   dplyr::filter(province_or_state == "QC")
-PledgeLabelsHistorical$french_label <- PledgeLabelsHistorical$french_label |>
+PledgeLabelsHistorical$promise_tolower <- PledgeLabelsHistorical$french_label |>
   tolower() |>
   stringr::str_remove_all("\\[|\\]") |>
   stringr::str_replace_all("[[:punct:]]", "  ")
@@ -14,7 +16,7 @@ Dictionaries <- clessnverse::get_dictionary("subcategories", lang = "fr",
 Dictionaries$cost_life <- Dictionaries$cost_life |>
   stringr::str_replace_all("'", "*")
 PledgeLabelsDictionaries <- clessnverse::run_dictionary(
-  PledgeLabelsHistorical, french_label, Dictionaries)
+  PledgeLabelsHistorical, promise_tolower, Dictionaries)
 PledgeLabelsHistorical$cost_life <- PledgeLabelsDictionaries$cost_life
 InflationPledgesByLegislature <- PledgeLabelsHistorical |>
   dplyr::group_by(legislature) |>
@@ -28,32 +30,41 @@ InflationPledgesByLegislature$years <- c(
   "Marois\n2012-2014 (n = 113)",
   "Couillard\n2014-2018 (n = 158)",
   "Legault\n2018-2022 (n = 251)")
+sysfonts::font_add_google("Roboto", "roboto")
+showtext::showtext_auto()
 ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
   x = legislature, y = cost_life)) +
   ggplot2::geom_line(ggplot2::aes(group = 1)) +
   ggplot2::scale_x_discrete("",
                             labels = InflationPledgesByLegislature$years) +
-  ggplot2::ylab("Nombre de mentions du coût de la vie") +
-  clessnverse::theme_clean_dark() +
-  ggplot2::ggtitle("Promesses sur le\ncoût de la vie",
-                   subtitle = "par le parti au pouvoir au Québec") +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90))
+  ggplot2::ylab("Nombre de promesses sur le coût de la vie") +
+  clessnverse::theme_clean_dark(base_size = 30) +
+  ggplot2::ggtitle("Un enjeu autrefois absent?",
+                   subtitle = "Le coût de la vie dans les promesses du parti au pouvoir au Québec depuis 1994") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90,
+                                                     lineheight = 0.35))
 ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses",
-                       ".png"))
+                       ".png"), width = 8, height = 5.5)
 
+#### Graph 2 ####
 PartyPlatforms2022 <- clessnverse::get_warehouse_table(
   "political_parties_manifestos_qc2022", credentials)
-PartyPlatforms2022$paragraph <- PartyPlatforms2022$paragraph |>
+PartyPlatforms2022$paragraph_tolower <- PartyPlatforms2022$paragraph |>
   tolower() |>
   stringr::str_replace_all("[[:punct:]]", "  ")
 PartyPlatforms2022Dictionaries <- clessnverse::run_dictionary(
-  PartyPlatforms2022, paragraph, Dictionaries)
+  PartyPlatforms2022, paragraph_tolower, Dictionaries)
 PartyPlatforms2022$cost_life <- PartyPlatforms2022Dictionaries$cost_life
-InflationPledgesByParty <- PartyPlatforms2022 |>
-  dplyr::group_by(political_party) |>
-  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
+openxlsx::write.xlsx(PartyPlatforms2022,
+                     paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
+                            "presse_canadienne/2022_09_16/",
+                            "CoutdelaviePromesses.xlsx"))
+#InflationPledgesByParty <- PartyPlatforms2022 |>
+#  dplyr::group_by(political_party) |>
+#  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
 
+#### Graph 3 ####
 PolimeterHistorical <- clessnverse::get_warehouse_table(
   "polimeter_historical", credentials) |>
   dplyr::filter(province_or_state == "QC")
@@ -83,10 +94,12 @@ EconomicVerdictsDataYears <- c(
          EconomicVerdictsDataShort$number_pledges[7], ")"),
   paste0("Legault\n2018-2022 (n = ",
          EconomicVerdictsDataShort$number_pledges[8], ")"))
+sysfonts::font_add_google("Roboto", "roboto")
+showtext::showtext_auto()
 ggplot2::ggplot(EconomicVerdictsData, ggplot2::aes(
   x = legislature, y = number_pledges, group = verdict,
   fill = as.factor(verdict))) +
-  clessnverse::theme_clean_dark() +
+  clessnverse::theme_clean_dark(base_size = 30) +
   ggplot2::geom_col(position = "fill") +
   ggplot2::scale_x_discrete("", labels = EconomicVerdictsDataYears) +
   ggplot2::scale_y_continuous(
@@ -96,8 +109,70 @@ ggplot2::ggplot(EconomicVerdictsData, ggplot2::aes(
   ggplot2::scale_fill_manual("Verdict",
     values = c("#228B22", "#F3C349", "#AE0101"),
     labels = c("Réalisée", "Partiellement réalisée", "Rompue")) +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 0.5, vjust = 0.5,
-                                                     angle = 90))
+  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35),
+                 axis.text.x = ggplot2::element_text(
+    hjust = 0.5, vjust = 0.5, angle = 90, lineheight = 0.35)) +
+  ggplot2::ggtitle(paste("Les gouvernements québécois respectent-ils\nleurs",
+                         "promesses sur l'économie?"),
+                   subtitle = paste("État de réalisation des promesses en",
+                                    "économie et employabilité depuis 1994"))
 ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses2",
-                       ".png"))
+                       ".png"), width = 8, height = 5.5)
+
+#### Graph 4 ####
+PressReleases <- clessnverse::get_warehouse_table(
+  "political_parties_press_releases", credentials) |>
+  dplyr::filter(date >= "2022-08-28")
+PressReleasesSplit <- strsplit(PressReleases$body, "\n\n+|\t\t+|\n \n+")
+PressReleasesSplitDF <- data.frame(
+  hub.id = rep(PressReleases$hub.id, lapply(PressReleasesSplit, length)),
+  date = rep(PressReleases$date, lapply(PressReleasesSplit, length)),
+  title = rep(PressReleases$title, lapply(PressReleasesSplit, length)),
+  country = rep(PressReleases$country, lapply(PressReleasesSplit, length)),
+  political_party = rep(PressReleases$political_party,
+                        lapply(PressReleasesSplit, length)),
+  province_or_state = rep(PressReleases$province_or_state,
+                          lapply(PressReleasesSplit, length)),
+  body = unlist(PressReleasesSplit))
+PressReleasesSplitDF$body_tolower <- PressReleasesSplitDF$body |>
+  tolower() |>
+  stringr::str_replace_all("[[:punct:]]", "  ")
+PressReleasesDictionaries <- clessnverse::run_dictionary(
+  PressReleasesSplitDF, body_tolower, Dictionaries)
+PressReleasesSplitDF$cost_life <- PressReleasesDictionaries$cost_life
+openxlsx::write.xlsx(PressReleasesSplitDF,
+                     paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
+                            "presse_canadienne/2022_09_16/",
+                            "CoutdelaviePromesses2.xlsx"))
+#CostoflifePressReleases <- PressReleases |>
+#  dplyr::group_by(political_party) |>
+#  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
+
+#### Graph 5 ####
+NumberPledgesCostoflife <- openxlsx::read.xlsx(paste0(
+  "../elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_09_16/",
+  "CoutdelaviePromesses-Modified.xlsx"))
+NumberPledgesCostoflifeLong <- NumberPledgesCostoflife |>
+  dplyr::group_by(political_party) |>
+  dplyr::summarise(number_pledges = sum(number_pledges, na.rm = T))
+sysfonts::font_add_google("Roboto", "roboto")
+showtext::showtext_auto()
+ggplot2::ggplot(NumberPledgesCostoflifeLong,
+                ggplot2::aes(x = political_party, y = number_pledges,
+                             fill = political_party)) +
+  clessnverse::theme_clean_dark(base_size = 30) +
+  ggplot2::geom_bar(stat = "identity") +
+  ggplot2::scale_x_discrete("") +
+  ggplot2::scale_y_continuous("Nombre de promesses sur le coût de la vie") +
+  ggplot2::scale_fill_manual(values = c("#00B0F0", "#3D5889", "#E61B2E",
+                                        "#ED8528"), guide = "none") +
+  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35)) +
+  ggplot2::ggtitle(paste0("Le coût de la vie dans les plateformes des\n",
+                          "grands partis"),
+                   subtitle = paste("Comparaison des principaux partis",
+                                    "provinciaux québécois qui ont dévoilé",
+                                    "publiquement leur plateforme 2022"))
+ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
+                       "presse_canadienne/2022_09_16/CoutdelaviePromesses3",
+                       ".png"), width = 8, height = 5.5)
