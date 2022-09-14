@@ -1,8 +1,10 @@
 #!/bin/sh
 
-/usr/local/bin/R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
-/usr/local/bin/R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T)'
+R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
+R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T)'
 
 cd ~
 
 Rscript --no-save --no-restore $CLESSN_ROOT_DIR/clessn-blend/pipelines/extractors/e_pressreleases_qc.R
+
+echo $?
