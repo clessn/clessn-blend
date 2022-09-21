@@ -3,34 +3,35 @@ credentials <- hublot::get_credentials(
   Sys.getenv("HUB3_USERNAME"), 
   Sys.getenv("HUB3_PASSWORD"))
 
-#### Graph 1 ####
+#### Cost of life pledges by legislature ####
 PledgeLabelsHistorical <- clessnverse::get_warehouse_table(
   "pledge_labels_historical", credentials) |>
-  dplyr::filter(province_or_state == "QC")
-PledgeLabelsHistorical$promise_tolower <- PledgeLabelsHistorical$french_label |>
-  tolower() |>
+  dplyr::filter(province_or_state == "QC") # load Quebec government pledge labels
+PledgeLabelsHistorical$promise_tolower <-
+  PledgeLabelsHistorical$french_label |>
+  tolower() |> # prepare pledge labels for dictionary analysis (lowercase, no punctuation)
   stringr::str_remove_all("\\[|\\]") |>
   stringr::str_replace_all("[[:punct:]]", "  ")
 Dictionaries <- clessnverse::get_dictionary("subcategories", lang = "fr",
-                                            credentials = credentials)
+                                            credentials = credentials) # get cost of life dictionary
 Dictionaries$cost_life <- Dictionaries$cost_life |>
-  stringr::str_replace_all("'", "*")
+  stringr::str_replace_all("'", "*") # adapt dictionary for mistakes
 PledgeLabelsDictionaries <- clessnverse::run_dictionary(
-  PledgeLabelsHistorical, promise_tolower, Dictionaries)
+  PledgeLabelsHistorical, promise_tolower, Dictionaries) # calculate number of cost of life pledges
 PledgeLabelsHistorical$cost_life <- PledgeLabelsDictionaries$cost_life
 InflationPledgesByLegislature <- PledgeLabelsHistorical |>
-  dplyr::group_by(legislature) |>
+  dplyr::group_by(legislature) |> # group pledge totals by mandate
   dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
 InflationPledgesByLegislature$years <- c(
   "Parizeau/Bouchard\n1994-1998 (n = 97)",
   "Bouchard/Landry\n1998-2003 (n = 127)",
-  "Charest\n2003-2007 (n = 106)",
+  "Charest\n2003-2007 (n = 106)", # give labels to each mandate
   "Charest\n2007-2008 (n = 98)",
   "Charest\n2008-2012 (n = 62)",
   "Marois\n2012-2014 (n = 113)",
   "Couillard\n2014-2018 (n = 158)",
   "Legault\n2018-2022 (n = 251)")
-sysfonts::font_add_google("Roboto", "roboto")
+sysfonts::font_add_google("Roboto", "roboto") # font for graphs
 showtext::showtext_auto()
 ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
   x = legislature, y = cost_life)) +
@@ -43,39 +44,39 @@ ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
                    subtitle = "Le coût de la vie dans les promesses du parti au pouvoir au Québec depuis 1994") +
   ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90,
                                                      lineheight = 0.35))
-ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
+ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/", # in this Excel file, count manually number of pledges in each paragraph in a new column
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses",
                        ".png"), width = 8, height = 5.5)
 
-#### Graph 2 ####
+#### Cost of life pledges by 2022 manifesto ####
 PartyPlatforms2022 <- clessnverse::get_warehouse_table(
-  "political_parties_manifestos_qc2022", credentials)
+  "political_parties_manifestos_qc2022", credentials) # get 2022 manifestos
 PartyPlatforms2022$paragraph_tolower <- PartyPlatforms2022$paragraph |>
-  tolower() |>
+  tolower() |> # prepare manifestos for analysis (lowercase, remove punctuation)
   stringr::str_replace_all("[[:punct:]]", "  ")
 PartyPlatforms2022Dictionaries <- clessnverse::run_dictionary(
-  PartyPlatforms2022, paragraph_tolower, Dictionaries)
+  PartyPlatforms2022, paragraph_tolower, Dictionaries) # calculate number of cost of life mentions
 PartyPlatforms2022$cost_life <- PartyPlatforms2022Dictionaries$cost_life
 openxlsx::write.xlsx(PartyPlatforms2022,
                      paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                             "presse_canadienne/2022_09_16/",
                             "CoutdelaviePromesses.xlsx"))
-#InflationPledgesByParty <- PartyPlatforms2022 |>
-#  dplyr::group_by(political_party) |>
-#  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
+InflationPledgesByParty <- PartyPlatforms2022 |>
+  dplyr::group_by(political_party) |> # group cost of life mentions by party
+  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
 
-#### Graph 3 ####
+#### Economy pledges by legislature ####
 PolimeterHistorical <- clessnverse::get_warehouse_table(
   "polimeter_historical", credentials) |>
-  dplyr::filter(province_or_state == "QC")
+  dplyr::filter(province_or_state == "QC") # load Quebec government pledge totals
 EconomicVerdictsData <- PolimeterHistorical |>
   dplyr::filter(policy_domain == "Économie et employabilité") |>
-  dplyr::group_by(legislature, verdict) |>
+  dplyr::group_by(legislature, verdict) |> # group number of economic pledges by fulfillment status by mandate
   dplyr::summarise(number_pledges = sum(as.numeric(number_pledges)),
                    verdict = factor(verdict, levels = c(
                      "kept", "partially_kept", "broken")))
 EconomicVerdictsDataShort <- EconomicVerdictsData |>
-  dplyr::group_by(legislature) |>
+  dplyr::group_by(legislature) |> # group number of economic pledges by mandate
   dplyr::summarise(number_pledges = sum(number_pledges, na.rm = T))
 EconomicVerdictsDataYears <- c(
   paste0("Parizeau/Bouchard\n1994-1998 (n = ",
@@ -120,12 +121,12 @@ ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                        "presse_canadienne/2022_09_16/CoutdelaviePromesses2",
                        ".png"), width = 8, height = 5.5)
 
-#### Graph 4 ####
+#### Cost of life pledges by press release ####
 PressReleases <- clessnverse::get_warehouse_table(
   "political_parties_press_releases", credentials) |>
-  dplyr::filter(date >= "2022-08-28")
+  dplyr::filter(date >= "2022-08-28") # get political party press releases since the campaign launch
 PressReleasesSplit <- strsplit(PressReleases$body, "\n\n+|\t\t+|\n \n+")
-PressReleasesSplitDF <- data.frame(
+PressReleasesSplitDF <- data.frame( # rearrange press releases to have 1 observation par paragraph (not 1 per press release)
   hub.id = rep(PressReleases$hub.id, lapply(PressReleasesSplit, length)),
   date = rep(PressReleases$date, lapply(PressReleasesSplit, length)),
   title = rep(PressReleases$title, lapply(PressReleasesSplit, length)),
@@ -136,25 +137,25 @@ PressReleasesSplitDF <- data.frame(
                           lapply(PressReleasesSplit, length)),
   body = unlist(PressReleasesSplit))
 PressReleasesSplitDF$body_tolower <- PressReleasesSplitDF$body |>
-  tolower() |>
+  tolower() |> # prepare press releases for analysis (lowercase, remove punctuation)
   stringr::str_replace_all("[[:punct:]]", "  ")
 PressReleasesDictionaries <- clessnverse::run_dictionary(
-  PressReleasesSplitDF, body_tolower, Dictionaries)
+  PressReleasesSplitDF, body_tolower, Dictionaries) # calculate number of cost of life mentions
 PressReleasesSplitDF$cost_life <- PressReleasesDictionaries$cost_life
-openxlsx::write.xlsx(PressReleasesSplitDF,
+openxlsx::write.xlsx(PressReleasesSplitDF, # in this Excel file, count manually number of pledges in each paragraph in a new column
                      paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
                             "presse_canadienne/2022_09_16/",
                             "CoutdelaviePromesses2.xlsx"))
-#CostoflifePressReleases <- PressReleases |>
-#  dplyr::group_by(political_party) |>
-#  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
+CostoflifePressReleases <- PressReleasesSplitDF |>
+  dplyr::group_by(political_party) |> # group cost of life mentions by party
+  dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
 
 #### Graph 5 ####
 NumberPledgesCostoflife <- openxlsx::read.xlsx(paste0(
   "../elxn-qc2022/_SharedFolder_elxn-qc2022/presse_canadienne/2022_09_16/",
   "CoutdelaviePromesses-Modified.xlsx"))
 NumberPledgesCostoflifeLong <- NumberPledgesCostoflife |>
-  dplyr::group_by(political_party) |>
+  dplyr::group_by(political_party) |> # group number of pledges by party to calculate party totals
   dplyr::summarise(number_pledges = sum(number_pledges, na.rm = T))
 sysfonts::font_add_google("Roboto", "roboto")
 showtext::showtext_auto()
