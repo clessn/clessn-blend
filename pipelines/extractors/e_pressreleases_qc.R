@@ -185,6 +185,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
         } #for (url in press_releases_urls_list)
 
         clessnverse::logit(scriptname, paste(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site"), logger)
+        cat(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site", "\n")
 
     } else {
         clessnverse::logit(scriptname, paste("Error getting", party_acronym, "main press release page"), logger)

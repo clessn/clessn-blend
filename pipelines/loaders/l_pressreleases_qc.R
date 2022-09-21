@@ -290,6 +290,7 @@ main <- function() {
     clessnverse::logit(scriptname,  paste("loading", length(items_list$key) , "items to the data warehouse",  sep=" "), logger)
 
     for (i in 1:length(items_list$key)) {
+    #for (i in 1:10) {
         key <- items_list$key[i]
         lake_file_url <- items_list$file[i]
         party_acronym <- items_list$party_acronym[i]
@@ -307,6 +308,7 @@ main <- function() {
     }
 
     clessnverse::logit(scriptname, paste(i, "press releases were loaded to the data warehouse"), logger)
+    cat(i, "press releases were loaded to the data warehouse", "\n")
 
 }
 
@@ -375,7 +377,6 @@ tryCatch(
     # Cleanup
     closeAllConnections()
     rm(logger)
-    cat(status, "\n")
     quit(status = status)
   }
 )

@@ -557,9 +557,10 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
           
         } else {
           clessnverse::logit(scriptname, paste("error accessing", party, "press release page", urls_list[[i]]), logger)
-        }
       } #for (i in 1:length(urls_list))
+        }
       clessnverse::logit(scriptname, paste(i, "press releases were scraped from the", party, "web site"), logger)
+      cat(i, "press releases were scraped from the", party, "web site", "\n")
     }#if (length(urls_list) > 0)
   } else {
     clessnverse::logit(scriptname, "Error getting", party, "main press release page", logger)
@@ -597,8 +598,10 @@ main <- function(scriptname, logger) {
 
 tryCatch( 
   {
-    installPackages()
+    #installPackages()
     library(dplyr)
+
+    if (!exists("scriptname")) scriptname <<- "pressreleases_plow_canadafederalparties"
 
     # Script command line options:
     # Possible values : update, refresh, rebuild or skip
@@ -612,7 +615,6 @@ tryCatch(
       opt <- clessnverse::processCommandLineOptions()
     }
     
-    if (!exists("scriptname")) scriptname <<- "pressreleases_plow_canadafederalparties"
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     
     # login to the hub
