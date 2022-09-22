@@ -54,6 +54,9 @@ RUN Rscript /home/clessn/dev/packages.R
 COPY automation/docker/more_packages.R /home/clessn/dev
 RUN Rscript /home/clessn/dev/more_packages.R
 
+COPY automation/docker/qc125_packages.R /home/clessn/dev
+RUN Rscript /home/clessn/dev/qc125_packages.R
+
 ADD pipelines/   /home/clessn/dev/clessn/clessn-blend/pipelines
 ADD scrapers/    /home/clessn/dev/clessn/clessn-blend/scrapers
 ADD automation/  /home/clessn/dev/clessn/clessn-blend/automation

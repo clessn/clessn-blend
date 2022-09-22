@@ -22,7 +22,7 @@ ret=$?
 
 sed 's/\"/\\"/g' -i $scriptname.out
 sed 's/^M//g ' -i $scriptname.out
-output=`cat $scriptname.out`
+output=`tail -n 5 $scriptname.out`
 
 if [ $ret -eq 0 ]; then
   status="SUCCESS"
@@ -45,6 +45,6 @@ else
   curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${status}: ${scriptname} ${output_msg} on $(date)\n\"}" https://hooks.slack.com/services/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
 fi
 
-if [ -f "$scriptname.out" ]; then
-  rm -f "$scriptname.out"
-fi
+#if [ -f "$scriptname.out" ]; then
+#  rm -f "$scriptname.out"
+#fi
