@@ -20,20 +20,28 @@ PledgeLabelsHistorical$education <- PledgeLabelsDictionaries$education
 EducationPledgesByLegislature <- PledgeLabelsHistorical |>
   dplyr::group_by(legislature) |> # group pledge totals by mandate
   dplyr::summarise(education = sum(education, na.rm = T))
-EducationPledgesByLegislature$years <- c(
-  "Parizeau/Bouchard\n1994-1998 (n = 97)",
-  "Bouchard/Landry\n1998-2003 (n = 127)",
-  "Charest\n2003-2007 (n = 106)", # give labels to each mandate
-  "Charest\n2007-2008 (n = 98)",
-  "Charest\n2008-2012 (n = 62)",
-  "Marois\n2012-2014 (n = 113)",
-  "Couillard\n2014-2018 (n = 158)",
-  "Legault\n2018-2022 (n = 251)")
-EducationPledgesByLegislature$percent <-
-  EducationPledgesByLegislature$education / as.numeric(substr(
-    EducationPledgesByLegislature$years, start = nchar(
-      EducationPledgesByLegislature$years) - 3, stop = nchar(
-        EducationPledgesByLegislature$years) - 1)) * 100
+EducationPledgesByLegislature$years <- c( # give labels to each mandate
+  paste0("Parizeau/Bouchard\n1994-1998 (n = ",
+         EducationPledgesByLegislature$education[1], ")"),
+  paste0("Bouchard/Landry\n1998-2003 (n = ",
+         EducationPledgesByLegislature$education[2], ")"),
+  paste0("Charest\n2003-2007 (n = ",
+         EducationPledgesByLegislature$education[3], ")"),
+  paste0("Charest\n2007-2008 (n = ",
+         EducationPledgesByLegislature$education[4], ")"),
+  paste0("Charest\n2008-2012 (n = ",
+         EducationPledgesByLegislature$education[5], ")"),
+  paste0("Marois\n2012-2014 (n = ",
+         EducationPledgesByLegislature$education[6], ")"),
+  paste0("Couillard\n2014-2018 (n = ",
+         EducationPledgesByLegislature$education[7], ")"),
+  paste0("Legault\n2018-2022 (n = ",
+         EducationPledgesByLegislature$education[8], ")"))
+EducationPledgesByLegislature$number_pledges <- c(97, 127, 106, 98, 62, 113,
+                                                  158, 251)
+EducationPledgesByLegislature$percent <- 100 *
+  EducationPledgesByLegislature$education /
+  EducationPledgesByLegislature$number_pledges
 EducationPledgesByLegislature$party = c("PQ", "PQ", "PLQ", "PLQ", "PLQ",
                                         "PQ", "PLQ", "CAQ")
 EducationPledgesByLegislature$party <- factor(
@@ -43,13 +51,19 @@ showtext::showtext_auto()
 ggplot2::ggplot(EducationPledgesByLegislature, ggplot2::aes(
   x = legislature, y = percent)) +
   ggplot2::geom_col(ggplot2::aes(fill = party)) +
+  ggplot2::geom_text(ggplot2::aes(label = round(percent, 2)),
+                     position = ggplot2::position_fill(vjust = 20)) +
   ggplot2::scale_fill_manual("Gouvernement", values = c("#E61B2E", "#3D5889",
                                                         "#00B0F0")) +
   ggplot2::scale_x_discrete("",
                             labels = EducationPledgesByLegislature$years) +
   ggplot2::scale_y_continuous("% de promesses sur l'éducation") +
   clessnverse::theme_clean_dark(base_size = 15) +
-  ggplot2::ggtitle("L'éducation, un enjeu en croissance?",
+  ggplot2::labs(caption = paste0("Source: Polimètre du Québec.\n",
+                                 "Note: Analyse textuelle automatisée à",
+                                 " partir de mots liés à l'éducation.\nPour",
+                                 " plus d'informations: polimetre.org")) +
+  ggplot2::ggtitle("L'éducation, priorité des partis ou enjeu négligé?",
                    subtitle = "Présence de l'éducation dans les promesses du parti au pouvoir au Québec depuis 1994") +
   ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.5, angle = 45,
                                                      lineheight = 0.35),
@@ -57,6 +71,7 @@ ggplot2::ggplot(EducationPledgesByLegislature, ggplot2::aes(
                    lineheight = 0.35, margin = ggplot2::margin(0, 0, 0, 0)),
                  plot.subtitle = ggplot2::element_text(
                    lineheight = 0.35, margin = ggplot2::margin(2.5, 0, 0, 0)),
+                 plot.caption = ggplot2::element_text(lineheight = 0.35),
                  legend.key.size = ggplot2::unit(0.2, "lines"),
                  legend.text = ggplot2::element_text(lineheight = 0.35),
                  legend.position = "top",
@@ -115,20 +130,26 @@ ggplot2::ggplot(EducationVerdictsData, ggplot2::aes(
                      position = ggplot2::position_stack(vjust = 0.5)) +
   ggplot2::scale_x_discrete("", labels = EducationVerdictsDataYears) +
   ggplot2::scale_y_continuous("% des promesses en éducation et recherche") +
+  ggplot2::labs(caption = paste0("Source: Polimètre du Québec.\n",
+                                 "Note: Codage manuel de l'état de ",
+                                 "réalisation des promesses.\nPour",
+                                 " plus d'informations: polimetre.org")) +
   ggplot2::scale_fill_manual("Verdict",
                              values = c("#228B22", "#F3C349", "#AE0101"),
                              labels = c("Réalisée", "Partiellement réalisée",
                                         "Rompue")) +
-  ggplot2::theme(axis.text.x = ggplot2::element_text(
-    angle = 45, vjust = 0.5, lineheight = 0.35),
-                 legend.key.size = ggplot2::unit(0.2, "lines"),
-                 plot.title = ggplot2::element_text(
-                   lineheight = 0.35, margin = ggplot2::margin(0, -20, 0, 0)),
-                 plot.subtitle = ggplot2::element_text(
-                   lineheight = 0.35, margin = ggplot2::margin(2.5, 0, 0, 0)),
-                 legend.text = ggplot2::element_text(lineheight = 0.35),
-                 legend.position = "top",
-                 legend.box.margin = ggplot2::margin(0, 0, -15, 0)) +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, vjust = 0.5,
+                                        lineheight = 0.35),
+    legend.key.size = ggplot2::unit(0.2, "lines"),
+    plot.title = ggplot2::element_text(
+      lineheight = 0.35, margin = ggplot2::margin(0, -20, 0, 0)),
+    plot.subtitle = ggplot2::element_text(
+      lineheight = 0.35, margin = ggplot2::margin(2.5, 0, 0, 0)),
+    plot.caption = ggplot2::element_text(lineheight = 0.35),
+    legend.text = ggplot2::element_text(lineheight = 0.35),
+    legend.position = "top",
+    legend.box.margin = ggplot2::margin(0, 0, -15, 0)) +
   ggplot2::ggtitle("Des promesses surtout réalisées en éducation",
                    subtitle = paste("État de réalisation des promesses en",
                                     "éducation et recherche depuis 1994"))
@@ -166,11 +187,19 @@ ggplot2::ggplot(ManifestoPledgesEducationLong,
                              fill = political_party)) +
   clessnverse::theme_clean_dark(base_size = 15) +
   ggplot2::geom_bar(stat = "identity") +
+  ggplot2::geom_text(ggplot2::aes(label = number_pledges), size = 10,
+                     position = ggplot2::position_fill(vjust = 10)) +
   ggplot2::scale_x_discrete("") +
   ggplot2::scale_y_continuous("Nombre de promesses sur l'éducation") +
+  ggplot2::labs(caption = paste0("Source: Plateformes électorales 2022 des",
+                                 " partis politiques québécois.\n",
+                                 "Note: Analyse textuelle automatisée à",
+                                 " partir de mots liés à l'éducation.\nPour",
+                                 " plus d'informations: info@clessn.com")) +
   ggplot2::scale_fill_manual(values = c("#00B0F0", "#3D5889", "#E61B2E",
                                         "#ED8528"), guide = "none") +
-  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35)) +
+  ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35),
+                 plot.caption = ggplot2::element_text(lineheight = 0.35)) +
   ggplot2::ggtitle(paste("L'éducation dans les plateformes des",
                          "grands partis"),
                    subtitle = paste("Comparaison des principaux partis",
