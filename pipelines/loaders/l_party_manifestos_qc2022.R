@@ -56,7 +56,7 @@ load_qs_manifesto <- function(lake_item) {
       stringr::str_split("\n\n") |> # unmerge separate paragraphs
       unlist() |> # transform list into one big vector
       stringr::str_squish() |> # remove white spaces
-      stringr::str_remove_all("_") |> # remove white spaces
+      stringr::str_remove_all("_") |> # remove underscores
       data.frame() # transform into data frame
     colnames(QSPlatform) <- "paragraph"
     QSPlatform[QSPlatform == ""] <- NA
