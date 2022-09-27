@@ -15,7 +15,7 @@ PledgeLabelsHistorical$promise_tolower <-
 Dictionaries <- clessnverse::get_dictionary("subcategories", lang = "fr",
                                             credentials = credentials) # get education dictionary
 PledgeLabelsDictionaries <- clessnverse::run_dictionary(
-  PledgeLabelsHistorical, promise_tolower, Dictionaries) # calculate number of education pledges
+  PledgeLabelsHistorical, promise_tolower, Dictionaries["education"]) # calculate number of education pledges
 PledgeLabelsHistorical$education <- PledgeLabelsDictionaries$education
 EducationPledgesByLegislature <- PledgeLabelsHistorical |>
   dplyr::group_by(legislature) |> # group pledge totals by mandate
@@ -47,9 +47,7 @@ ggplot2::ggplot(EducationPledgesByLegislature, ggplot2::aes(
                                                         "#00B0F0")) +
   ggplot2::scale_x_discrete("",
                             labels = EducationPledgesByLegislature$years) +
-  ggplot2::scale_y_continuous("% de promesses sur l'éducation",
-                              limits = c(0, 60),
-                              breaks = seq(0, 60, by = 10)) +
+  ggplot2::scale_y_continuous("% de promesses sur l'éducation") +
   clessnverse::theme_clean_dark(base_size = 15) +
   ggplot2::ggtitle("L'éducation, un enjeu en croissance?",
                    subtitle = "Présence de l'éducation dans les promesses du parti au pouvoir au Québec depuis 1994") +
@@ -145,7 +143,7 @@ PartyPlatforms2022$paragraph_tolower <- PartyPlatforms2022$paragraph |>
   tolower() |> # prepare manifestos for analysis (lowercase, remove punctuation)
   stringr::str_replace_all("[[:punct:]]", "  ")
 PartyPlatforms2022Dictionaries <- clessnverse::run_dictionary(
-  PartyPlatforms2022, paragraph_tolower, Dictionaries) # calculate number of education mentions
+  PartyPlatforms2022, paragraph_tolower, Dictionaries["education"]) # calculate number of education mentions
 PartyPlatforms2022$education <- PartyPlatforms2022Dictionaries$education
 openxlsx::write.xlsx(PartyPlatforms2022,
                      paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
