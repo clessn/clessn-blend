@@ -56,13 +56,11 @@ load_qs_manifesto <- function(lake_item) {
       stringr::str_split("\n\n") |> # unmerge separate paragraphs
       unlist() |> # transform list into one big vector
       stringr::str_squish() |> # remove white spaces
+      stringr::str_remove_all("_") |> # remove white spaces
       data.frame() # transform into data frame
     colnames(QSPlatform) <- "paragraph"
     QSPlatform[QSPlatform == ""] <- NA
     QSPlatform <- na.omit(QSPlatform)
-    QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[ # remove
-      stringr::str_detect(QSPlatform$paragraph, # footer
-                          "PLATEFORME ÉLECTORALE 2022") == F])
     QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[
       stringr::str_detect(QSPlatform$paragraph, "^\\d+$") == F])
     QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[
