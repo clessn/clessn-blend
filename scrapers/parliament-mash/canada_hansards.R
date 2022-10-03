@@ -81,7 +81,7 @@ safe_GET <- purrr::safely(httr::GET)
 #   scriptname
 #   logger
 #
-installPackages()
+#installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
@@ -172,7 +172,8 @@ if (scraping_method == "Latest") {
   i_get_attempt <- 1
   while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
 
-  source_page_html <- httr::content(source_page$result)
+  #source_page_html <- httr::content(source_page$result)
+  source_page_html <- httr::content(source_page)
 
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
   root_xml <- XML::xmlRoot(source_page_xml)

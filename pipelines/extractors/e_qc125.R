@@ -42,13 +42,14 @@ get_qc125_df <- function(){
     projection <- rvest::read_html(urls[i]) %>%
       rvest::html_nodes("script:contains('var moyennes')")
 
-    rawNames <- qdapRegex::ex_between(projection, "parties = [", ",]")[[1]]
+    projection_txt <- xml2::xml_text(projection)
+    rawNames <- qdapRegex::ex_between(projection_txt, "parties = [", ",]")[[1]]
     cleanNames <- gsub('^.|.$', '', strsplit(rawNames, ",")[[1]])
 
-    rawMeans <- qdapRegex::ex_between(projection, "moyennes = [", ",]")[[1]]
+    rawMeans <- qdapRegex::ex_between(projection_txt, "moyennes = [", ",]")[[1]]
     cleanMeans <- strsplit(rawMeans, ",")[[1]]
 
-    rawMoes <- qdapRegex::ex_between(projection, "moes = [", ",]")[[1]]
+    rawMoes <- qdapRegex::ex_between(projection_txt, "moes = [", ",]")[[1]]
     cleanMoes <- strsplit(rawMoes, ",")[[1]]
     if (i == 1) {
       DataQC125 <- data.frame(riding_id=ridings_ids[i],

@@ -77,7 +77,7 @@ installPackages <- function() {
 #   scriptname
 #   logger
 #
-installPackages()
+#installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "pressconference_crush_quebecnationalassembly"
