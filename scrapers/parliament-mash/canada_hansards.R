@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-#opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "skip", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "skip", download_data = FALSE, translate=FALSE)
 
 
 if (!exists("opt")) {
@@ -170,12 +170,11 @@ if (scraping_method == "Latest") {
   source_page <- NULL
 
   i_get_attempt <- 1
-  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
-
-  #source_page_html <- httr::content(source_page$result)
-  source_page_html <- httr::content(source_page)
-
+  
+  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- httr::GET(paste(base_url,content_url,sep='')) }
+  source_page_html <- httr::content(source_page$result)
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
+
   root_xml <- XML::xmlRoot(source_page_xml)
   head_xml <- root_xml[[1]]
   core_xml <- root_xml[[2]]
@@ -259,19 +258,18 @@ for (i_url in 1:length(urls_list_fr)) {
   }
 
   # Read and parse HTML from the URL directly
-  #doc_html_fr <- getURL(current_url_fr)
   r_fr <- NULL
   r_en <- NULL
 
   i_get_attempt <- 1
-  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+  
+  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- rvest::session(current_url_fr) }
 
   if (r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
     while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
-
     if (r_en$result$status_code == 200) {
       doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
       doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
