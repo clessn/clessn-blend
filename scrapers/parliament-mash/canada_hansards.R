@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "skip", download_data = FALSE, translate=FALSE)
+opt <- list(dataframe_mode = "rebuild", log_output = "file,console", hub_mode = "skip", download_data = FALSE, translate=FALSE)
 
 
 if (!exists("opt")) {
@@ -172,7 +172,7 @@ if (scraping_method == "Latest") {
   i_get_attempt <- 1
   
   while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- httr::GET(paste(base_url,content_url,sep='')) }
-  source_page_html <- httr::content(source_page$result)
+  source_page_html <- httr::content(source_page)
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
 
   root_xml <- XML::xmlRoot(source_page_xml)
@@ -263,7 +263,7 @@ for (i_url in 1:length(urls_list_fr)) {
 
   i_get_attempt <- 1
   
-  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- rvest::session(current_url_fr) }
+  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
 
   if (r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
@@ -316,7 +316,7 @@ for (i_url in 1:length(urls_list_fr)) {
   event_date <- substr(event_date_time,1,10)
   event_start_time <- substr(event_date_time,12,19)
 
-  event_end_time <- str_match(XML::xmlValue(hansard_body_xml_fr[[hansard_body_xml_fr_length]]), "\\(La séance est levée à\\s(.*)?\\.\\)$")[2]
+  event_end_time <- stringr::str_match(XML::xmlValue(hansard_body_xml_fr[[hansard_body_xml_fr_length]]), "\\(La séance est levée à\\s(.*)?\\.\\)$")[2]
   event_end_time <- gsub("\u00a0", " ", event_end_time)
   event_end_time <- gsub(" h ", ":", event_end_time)
   if (length(event_end_time) < 8 ) event_end_time <- paste(event_end_time, ":00", sep = "")
@@ -819,8 +819,8 @@ for (i_url in 1:length(urls_list_fr)) {
             intervention_text_en <- trimws(intervention_text_en, "both")
 
 
-            intervention_word_count <- nrow(unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
-            intervention_sentence_count <- nrow(unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
+            intervention_word_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
+            intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
             intervention_paragraph_count <- length(which(names(intervention_content_node) == "ParaText"))
 
             sob_procedural_text <- trimws(sob_procedural_text, "both")
