@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-opt <- list(dataframe_mode = "rebuild", log_output = "file,console", hub_mode = "skip", download_data = FALSE, translate=FALSE)
+opt <- list(dataframe_mode = "rebuild", log_output = "file,console", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
