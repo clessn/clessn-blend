@@ -188,7 +188,7 @@ tryCatch(
     # Uncomment the line below to hardcode the command line option passed to this script when it runs
     # This is particularly useful while developping your script but it's wiser to use real command-
     # line options when puting your script in production in an automated container.
-    # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+    opt <- list(log_output = c("file", "console"))
 
     if (!exists("opt")) {
         opt <- clessnverse::process_command_line_options()

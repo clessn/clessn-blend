@@ -16,7 +16,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-    "text": "\n.\n${scriptname}\n============ start of message ============\n${status}: ${scriptname} ${output_msg} on $(date)\nEXIT CODE: ${ret}\n${output}\n============ end of message ============\n.\n.\n"
+  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\nEXIT CODE: ${ret}\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
   }
 EOF
 }
@@ -31,7 +31,7 @@ if [ $scriptname != "badbadbad" ]; then
   ret=$?
   sed 's/\"/\\"/g' -i $scriptname.out
   sed 's///g ' -i $scriptname.out
-  output=`tail $scriptname.out -n 5`
+  output=`tail -n 5 $scriptname.out`
 fi
 
 
@@ -50,11 +50,11 @@ if [ $ret -eq 2 ]; then
   output_msg="generated one or more warnings"
 fi
 
-if [ $ret -ne 0 ]; then
+#if [ $ret -ne 0 ]; then
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
-else
-  curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${status}: ${scriptname} ${output_msg} on $(date)\n\"}" https://hooks.slack.com/services/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
-fi
+#else
+#  curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${status}: ${scriptname} ${output_msg} on $(date)\n\"}" https://hooks.slack.com/services/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
+#fi
 
 if [ -f "$scriptname.out" ]; then
   rm -f "$scriptname.out"
