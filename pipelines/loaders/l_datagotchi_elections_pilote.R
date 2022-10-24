@@ -70,7 +70,7 @@ main <- function() {
         table = warehouse_table_name, 
         key = input_df$CASEID[i], 
         row,
-        mode = "refresh",
+        refresh_data = TRUE,
         credentials
       )
     } #for (i in 1:nrow(input_df))

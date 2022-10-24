@@ -79,10 +79,10 @@ installPackages <- function() {
 #   scriptname
 #   logger
 #
-installPackages()
+#installPackages()
 library(dplyr)
 
-if (!exists("scriptname")) scriptname <- "agorapluseurope-debats.R"
+if (!exists("scriptname")) scriptname <- "parliament_mash_europe"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
@@ -93,14 +93,14 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 #opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
-opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
+#opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit("scraper", opt$log_output, Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
@@ -180,7 +180,7 @@ if (scraping_method == "FrontPage") {
   content_url <- "/plenary/en/debates-video.html#sidesForm"
   
   source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
-  source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
+  source_page_html <- XML::htmlParse(source_page, useInternalNodes = TRUE)
   
   urls <- rvest::html_nodes(source_page, 'a')
   urls <- urls[grep("\\.xml", urls)]

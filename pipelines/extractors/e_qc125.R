@@ -42,13 +42,14 @@ get_qc125_df <- function(){
     projection <- rvest::read_html(urls[i]) %>%
       rvest::html_nodes("script:contains('var moyennes')")
 
-    rawNames <- qdapRegex::ex_between(projection, "parties = [", ",]")[[1]]
+    projection_txt <- xml2::xml_text(projection)
+    rawNames <- qdapRegex::ex_between(projection_txt, "parties = [", ",]")[[1]]
     cleanNames <- gsub('^.|.$', '', strsplit(rawNames, ",")[[1]])
 
-    rawMeans <- qdapRegex::ex_between(projection, "moyennes = [", ",]")[[1]]
+    rawMeans <- qdapRegex::ex_between(projection_txt, "moyennes = [", ",]")[[1]]
     cleanMeans <- strsplit(rawMeans, ",")[[1]]
 
-    rawMoes <- qdapRegex::ex_between(projection, "moes = [", ",]")[[1]]
+    rawMoes <- qdapRegex::ex_between(projection_txt, "moes = [", ",]")[[1]]
     cleanMoes <- strsplit(rawMoes, ",")[[1]]
     if (i == 1) {
       DataQC125 <- data.frame(riding_id=ridings_ids[i],
@@ -187,7 +188,7 @@ tryCatch(
     # Uncomment the line below to hardcode the command line option passed to this script when it runs
     # This is particularly useful while developping your script but it's wiser to use real command-
     # line options when puting your script in production in an automated container.
-    # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+    opt <- list(log_output = c("file", "console"))
 
     if (!exists("opt")) {
         opt <- clessnverse::process_command_line_options()

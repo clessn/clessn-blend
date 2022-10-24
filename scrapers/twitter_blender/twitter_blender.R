@@ -156,10 +156,12 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
 
   #if (handle %in% dfTweets$metadata.twitterHandle) {
   env$newtweets <- data.frame()
-    
+  twitter_account_fresh <- TRUE
+
   #if (!is.null(env$dfTweets) && !is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
   if (!is.null(person$metadata$twitterAccountHasBeenScraped) && !is.na(person$metadata$twitterAccountHasBeenScraped) && (person$metadata$twitterAccountHasBeenScraped == "1" || person$metadata$twitterAccountHasBeenScraped == 1)) {
     # we already scraped the tweets of this person => let's get only the last few tweets
+    twitter_account_fresh <- FALSE
     clessnverse::logit(scriptname, paste("getting new tweets from",person$data$fullName,"(",handle,")"), logger)
     tryCatch(
       { env$newtweets <- rtweet::search_tweets(q = paste("from:",handle,sep=''), retryonratelimit=T, token = token) },
@@ -176,10 +178,14 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
           finally = {}
         )
       },
-      finally = {}
+      finally = {
+        clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+        total_retrieved <- total_retrieved + nrow(env$newtweets)
+      }
     )
   } else {
     # we never scraped the tweets of this person => let's get the full timeline
+    twitter_account_fresh <- TRUE
     clessnverse::logit(scriptname, paste("getting full twitter timeline from",person$data$fullName,"(",handle,") witn n =", opt$max_timeline), logger)
     tryCatch (
       { env$newtweets <- rtweet::get_timeline(handle,n=opt$max_timeline, token = token) },
@@ -197,7 +203,10 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
         )
       },
       
-      finally = {}
+      finally = {
+        clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+        total_retrieved <- total_retrieved + nrow(env$newtweets)
+      }
     )
   }
   
@@ -266,7 +275,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
     df_to_commit$data.originalTweetText[which(env$newtweets$is_retweet==TRUE)] = env$newtweets$retweet_text[env$newtweets$is_retweet==TRUE]
     df_to_commit$data.originalTweetFrom[which(env$newtweets$is_retweet==TRUE)] = env$newtweets$retweet_screen_name[env$newtweets$is_retweet==TRUE]
     
-    df_to_commit <- df_to_commit %>% filter(difftime(paste(df_to_commit$data.creationDate, df_to_commit$data.creationTime), latest_twitter_update, units = "hours") >= 24)
+    if (!twitter_account_fresh) df_to_commit <- df_to_commit %>% filter(difftime(paste(df_to_commit$data.creationDate, df_to_commit$data.creationTime), latest_twitter_update, units = "hours") >= 24)
 
     clessnverse::logit(scriptname, paste("committing",nrow(df_to_commit),"tweets to HUB"), logger)
     
@@ -292,17 +301,18 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       metadata_to_commit[sapply(metadata_to_commit,is.na.char)] <- NA_character_
       
       #clessnverse::logit(scriptname, t_key, logger)
- 
+      tweet_commit_type <- "added"
+
       tryCatch(
         {
-          clessnverse::logit(scriptname, paste("modifying tweet", t_key), logger)
+          tweet_commit_type <- "modified"
           clessnhub::edit_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
         },
 
         error = function(e) {
           tryCatch(
             {
-              clessnverse::logit(scriptname, paste("adding tweet", t_key), logger)
+              tweet_commit_type <- "added"
               clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
             },
             
@@ -318,7 +328,9 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
           )
         },
 
-        finally={}
+        finally={
+          clessnverse::logit(scriptname, paste(tweet_commit_type, "tweet", t_key), logger)
+        }
       )
      
     }#for (i in 1:nrow(df_to_commit))
@@ -475,7 +487,7 @@ main <- function(opt, scriptname, logger) {
 
 tryCatch( 
   {
-    installPackages()
+    #installPackages()
     library(dplyr)
     #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "all")
     #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "politicians")
@@ -484,6 +496,9 @@ tryCatch(
     #opt <- list(max_timeline = 100, log_output = "file", type = "mp", schema = "all", filter = 'list(metadata.institution="National Assembly of Quebec")')
     #opt <- list(max_timeline = 100, log_output = "file", type = "all", schema = "all", filter = 'all')
     #opt <- list(max_timeline = 100, log_output = "file", type = "political_party", schema = "all", filter = 'all')
+    total_retrieved <- 0
+    total_committed <- 0
+    total_account_scraped <- 0
     
     if (!exists("opt")) {
       opt <- processCommandLineOptions()
@@ -492,6 +507,8 @@ tryCatch(
     if (exists("logger")) rm(logger)
     if (!exists("scriptname")) scriptname <<- paste("twitter_blender_",opt$type,sep='')
     if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+
+    scriptname <<- paste(scriptname, opt$schema, sep='_')
     
     clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(names(opt), "=", opt, collapse = " ")), logger)
     

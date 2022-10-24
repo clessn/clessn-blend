@@ -70,6 +70,7 @@ extract_press_release_info <- function(party_acronym, xml_root) {
         date <- XML::getNodeSet(xml_root, ".//span[@class='']")
         date <- trimws(XML::xmlValue(date, encoding="fr_CA.UTF-8"))
         date <- gsub("^\u00a0", "", date)
+        if (length(date) == 0) date <- format(Sys.Date(), "%d %B %Y")
         #14 juin 2022
         
         months <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
@@ -227,7 +228,12 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
                     index_xml <- tidyjson::spread_all(index_html)
                     xml_root <- index_xml
                 } else {
-                    stop("not an xml nor an html document")
+                    warning(paste(
+                        "not an xml nor an html document, press realease",
+                        key,
+                        "was probably deleted.  Skipping to prevent data loss")
+                    )
+                    return(1)
                 }     
             }
         }
@@ -274,7 +280,7 @@ main <- function() {
     warehouse_items_list <- clessnverse::get_warehouse_table(warehouse_table, credentials, nbrows = 0) 
     lakes_items_list <- get_lake_press_releases(parties_list)
 
-    if (opt$hub_mode == "refresh") {
+    if (opt$refresh_data == TRUE) {
         # update the entire warehouse with the entire lake items set
         items_list <- lakes_items_list
     } else {
@@ -289,6 +295,7 @@ main <- function() {
     clessnverse::logit(scriptname,  paste("loading", length(items_list$key) , "items to the data warehouse",  sep=" "), logger)
 
     for (i in 1:length(items_list$key)) {
+    #for (i in 1:10) {
         key <- items_list$key[i]
         lake_file_url <- items_list$file[i]
         party_acronym <- items_list$party_acronym[i]
@@ -298,7 +305,7 @@ main <- function() {
 
         if (length(press_release_structured) > 0) {
             clessnverse::logit(scriptname,  paste("committing item #", i, "key = ", items_list$key[i], sep=" "), logger)
-            clessnverse::commit_warehouse_row(warehouse_table, key, press_release_structured, mode = opt$hub_mode, credentials)
+            clessnverse::commit_warehouse_row(warehouse_table, key, press_release_structured, refresh_data = opt$refresh_data, credentials)
         } else {
             clessnverse::logit(scriptname,  paste("could not parse item #", i, "key = ", items_list$key[i], sep=" "), logger)
         }
@@ -306,6 +313,7 @@ main <- function() {
     }
 
     clessnverse::logit(scriptname, paste(i, "press releases were loaded to the data warehouse"), logger)
+    cat(i, "press releases were loaded to the data warehouse", "\n")
 
 }
 
@@ -318,16 +326,18 @@ tryCatch(
         # Package
         library(dplyr) 
         
+        Sys.setlocale("LC_TIME", "fr_CA.utf8")
+
         # Globals : scriptname, opt, logger, credentials
         lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
         warehouse_table <- "political_parties_press_releases"
 
         if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
 
-        opt <- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <- list(log_output = c("file,console"), refresh_data=TRUE)
 
         if (!exists("opt")) {
-            opt <- clessnverse::processCommandLineOptions()
+            opt <- clessnverse::process_command_line_options()
         }
 
         if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
@@ -372,7 +382,6 @@ tryCatch(
     # Cleanup
     closeAllConnections()
     rm(logger)
-    cat(status, "\n")
     quit(status = status)
   }
 )

@@ -16,30 +16,238 @@
 ########################           Functions            ######################
 ###############################################################################
 
+df_to_batch_list <- function(df){
+  final_list <- list()
+  for (i in 1:nrow(df)){
+    data_list <- c(df[i,])
+    listi <- list(
+      key = i,
+      data = data_list
+    )
+    final_list[[i]] <- listi
+    if (i %% 100 == 0){
+      print(paste0(i, "/", nrow(df)))
+    }
+  }
+  return(final_list)
+}
+
 load_qs_manifesto <- function(lake_item) {
-  clessnverse::logit(scriptname, 
-                     "Function load_qs_manifesto not implemented yet!",
-                     logger)
-  status <<- 2
-  return()
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  
+  if (!is.null(pdf_doc)) {
+    QSPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\n\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_squish() |> # remove white spaces
+      stringr::str_remove_all("_") |> # remove underscores
+      data.frame() # transform into data frame
+    colnames(QSPlatform) <- "paragraph"
+    QSPlatform[QSPlatform == ""] <- NA
+    QSPlatform <- na.omit(QSPlatform)
+    QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[
+      stringr::str_detect(QSPlatform$paragraph, "^\\d+$") == F])
+    QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[
+      stringr::str_detect(QSPlatform$paragraph, "^GABRIEL") == F])
+    QSPlatform <- data.frame(paragraph = QSPlatform$paragraph[
+      stringr::str_detect(QSPlatform$paragraph, "^MANON") == F])
+    QSPlatform$dot_end <- stringr::str_detect( # identify paragraphs ending with a
+      QSPlatform$paragraph, "\\.$") # period
+    QSPlatform$group <- NA
+    QSPlatform$group[QSPlatform$dot_end == T] <- 1:length(
+      QSPlatform$group[QSPlatform$dot_end == T])
+    QSPlatform <- QSPlatform |>
+      tidyr::fill(group, .direction = "up") |> # group paragraphs with the next
+      dplyr::group_by(group) |> # paragraph ending with a period
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "QS",
+                    election_year = 2022,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2022-08-19"),
+                    title = "Changer d'ère",
+                    country = "CAN",
+                    province_or_state = "QC",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(QSPlatform))
+    QSPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+                                        df = QSPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
 }
 
 
 load_caq_manifesto <- function(lake_item) {
-  clessnverse::logit(scriptname, 
-                     "Function load_caq_manifesto not implemented yet!",
-                     logger)
-  status <<- 2
-  return()
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  
+  if (!is.null(pdf_doc)) {
+    CAQPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\n\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(CAQPlatform) <- "paragraph"
+    CAQPlatform[CAQPlatform == ""] <- NA
+    CAQPlatform <- na.omit(CAQPlatform)
+    CAQPlatform <- data.frame(paragraph = CAQPlatform$paragraph[ # remove
+      stringr::str_detect(
+        CAQPlatform$paragraph, # footer
+        "Plateforme électorale de la Coalition Avenir Québec") == F])
+    CAQPlatform <- data.frame(paragraph = CAQPlatform$paragraph[
+      stringr::str_detect(CAQPlatform$paragraph, "^\\d+$") == F])
+    CAQPlatform$dot_end <- stringr::str_detect( # identify paragraphs ending with a
+      CAQPlatform$paragraph, "\\.$") # period
+    CAQPlatform$group <- NA
+    CAQPlatform$group[CAQPlatform$dot_end == T] <- 1:length(
+      CAQPlatform$group[CAQPlatform$dot_end == T])
+    CAQPlatform <- CAQPlatform |>
+      tidyr::fill(group, .direction = "up") |> # group paragraphs with the next
+      dplyr::group_by(group) |> # paragraph ending with a period
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "CAQ",
+                    election_year = 2022,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2022-09-10"),
+                    title = "Continuons",
+                    country = "CAN",
+                    province_or_state = "QC",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(CAQPlatform))
+    CAQPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+                                        df = CAQPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
 }
 
 
 load_pcq_manifesto <- function(lake_item) {
-  clessnverse::logit(scriptname, 
-                     "Function load_pcq_manifesto not implemented yet!",
-                     logger)
-  status <<- 2
-  return()
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  
+  if (!is.null(pdf_doc)) {
+    PCQPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\n\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(PCQPlatform) <- "paragraph"
+    PCQPlatform[PCQPlatform == ""] <- NA
+    PCQPlatform <- na.omit(PCQPlatform)
+    PCQPlatform <- data.frame(paragraph = PCQPlatform$paragraph[ # remove
+      stringr::str_detect(PCQPlatform$paragraph, # footer
+                          "PLATEFORME DU PARTI CONSERVATEUR DU QUÉBEC") == F])
+    PCQPlatform$dot_end <- stringr::str_detect( # identify paragraphs ending with a
+      PCQPlatform$paragraph, "\\.$") # period
+    PCQPlatform$group <- NA
+    PCQPlatform$group[PCQPlatform$dot_end == T] <- 1:length(
+      PCQPlatform$group[PCQPlatform$dot_end == T])
+    PCQPlatform <- PCQPlatform |>
+      tidyr::fill(group, .direction = "up") |> # group paragraphs with the next
+      dplyr::group_by(group) |> # paragraph ending with a period
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PCQ",
+                    election_year = 2022,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2022-08-14"),
+                    title = "Liberté 22",
+                    country = "CAN",
+                    province_or_state = "QC",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    index_column <- rep(1:nrow(PCQPlatform))
+    PCQPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+                                        df = PCQPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
 }
 
 
@@ -89,24 +297,24 @@ load_plq_manifesto <- function(lake_item) {
       dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
       dplyr::select(-group) |>
       dplyr::mutate(political_party = "PLQ",
-             election_year = 2022,
-             original_doc_type = "pdf",
-             release_date = as.Date("2022-06-11"),
-             title = "Le livre libéral",
-             country = "CAN",
-             province_or_state = "QC",
-             n_words = stringr::str_count(paragraph, "\\S+"),
-             n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+                    election_year = 2022,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2022-06-11"),
+                    title = "Le livre libéral",
+                    country = "CAN",
+                    province_or_state = "QC",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
     
     index_column <- rep(1:nrow(PLQPlatform))
     PLQPlatform$index <- index_column
     
-    #clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
-    #                                    df = PLQPlatform, 
-    #                                    key_column = c("paragraph", "party", "index"), 
-    #                                    key_encoding = "digest",
-    #                                    mode = "refresh", 
-    #                                    credentials = credentials)
+    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+                                        df = PLQPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
   } else {
     clessnverse::logit(scriptname, 
                        paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
@@ -215,10 +423,10 @@ tryCatch(
       # opt <- list(dataframe_mode = "refresh", log_output = c("file", "console"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
       
       if (!exists("opt")) {
-        opt <- clessnverse::processCommandLineOptions()
+        opt <- clessnverse::process_command_line_options()
       }
       
-      if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+      if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
       
       
       # login to hublot

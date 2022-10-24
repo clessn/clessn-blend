@@ -1,0 +1,14 @@
+version: "3"
+services:
+  clessn-blend:
+    build:
+      context: ../../
+      dockerfile: automation/docker/Dockerfile
+    image: clessnblend
+    container_name: clessnblend
+    env_file:
+      - .env
+    volumes:
+      - "~/logs:/home/clessn/logs"
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
