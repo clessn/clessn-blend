@@ -1,3 +1,4 @@
+library(clessnverse)
 scriptname <- "convertthesisfiles"
 log_output <- "console"
 log_path <- "."
@@ -6,7 +7,7 @@ token <- Sys.getenv("DROPBOX_TOKEN")
 
 logger <- clessnverse::loginit(scriptname, log_output, log_path)
 
-file.list <- clessnverse::dbxListDir("/_sharedFolder_TheseSaillancePromesses/data/EnjeuxPhysio/tobii/", token)
+file.list <- clessnverse::dbxListDir("/Academique/theseSaillancePromesses/_sharedFolder_TheseSaillancePromesses/data/EnjeuxPhysio/tobii/", token)
 
 for (i in 1:nrow(file.list)) {
   file <- file.list[i,]
