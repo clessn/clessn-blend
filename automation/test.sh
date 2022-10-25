@@ -4,7 +4,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\nEXIT CODE: ${ret}\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
+  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
   }
 EOF
 }
