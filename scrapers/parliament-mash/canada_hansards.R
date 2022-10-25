@@ -164,6 +164,7 @@ hansard_url3 <- "/HAN"
 hansard_url4fr <- "-F.XML"
 hansard_url4en <- "-E.XML"
 
+
 if (scraping_method == "Latest") {
   content_url <- "/PublicationSearch/fr/?PubType=37&xml=1"
 
