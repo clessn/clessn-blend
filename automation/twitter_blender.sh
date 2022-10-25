@@ -6,7 +6,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\nEXIT CODE: ${ret}\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
+  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
   }
 EOF
 }
@@ -20,13 +20,12 @@ R --no-save --no-restore -e 'remotes::install_url("https://cran.r-project.org/sr
 
 cd ~
 
-Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname -m $1 -o $2 -t $3 -s $4 -f $5 1> "$scriptname.out"
+Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname -m $1 -o $2 -t $3 -s $4 -f $5 2>&1 | tee "$scriptname.out"
 
 ret=$?
 
 sed 's/\"/\\"/g' -i $scriptname.out
 sed 's/^M//g ' -i $scriptname.out
-output=`tail -n 5 $scriptname.out`
 
 if [ $ret -eq 0 ]; then
   status="SUCCESS"
@@ -43,11 +42,13 @@ if [ $ret -eq 2 ]; then
   output_msg="generated one or more warnings"
 fi
 
-#if [ $ret -ne 0 ]; then
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
-#else
-#  curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${status}: ${scriptname} $3 ${output_msg} on $(date)\n\"}" https://hooks.slack.com/services/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
-#fi
+if [ $ret -ne 0 ]; then
+  output=`tail -n 10 $scriptname.out`
+else
+  output=`tail -n 2 $scriptname.out`
+fi
+
+curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 
 if [ -f "$scriptname.out" ]; then
   rm -f "$scriptname.out"

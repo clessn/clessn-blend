@@ -12,3 +12,4 @@ remotes::install_url("https://cran.r-project.org/src/contrib/Archive/rtweet/rtwe
 remotes::install_github("clessn/hublotr")
 remotes::install_github("clessn/clessn-hub-r")
 remotes::install_github("clessn/clessnverse")
+remotes::install_github("clessn/clessnverse", ref="v1")
