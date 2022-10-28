@@ -1,7 +1,5 @@
 library(dplyr)
 
-cat("This script will convert txt files to csv files\n")
-
 # Connecting to hub 2.0
 clessnhub::login(
    Sys.getenv("HUB_USERNAME"),
