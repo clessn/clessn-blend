@@ -36,6 +36,6 @@ for (i in 1:nrow(df_persons)) {
     new_tweets <- clessnhub::get_items('tweets', filter, download_data = T)
 
     if (!is.null(new_tweets) && nrow(new_tweets) > 0 ) {
-        df_tweets <- df_tweets %>% dplyr::rbind(new_tweets)
+        df_tweets <- df_tweets %>% rbind(new_tweets)
     }
 }
