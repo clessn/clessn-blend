@@ -6,6 +6,8 @@ clessnhub::login(
    Sys.getenv("HUB_PASSWORD"),
    Sys.getenv("HUB_URL"))
 
+cat("hello")
+
 # Below are a lot of examples on how to filter populations
 
 # Example 1 : all the candidates of the qc election 2022
