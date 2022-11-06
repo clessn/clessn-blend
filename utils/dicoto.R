@@ -19,3 +19,5 @@ df <- data.frame(
 
 
 new_df <- df %>% cbind(textshape::mtabulate(strsplit(df$survey_answer, ',',fixed=TRUE)))
+
+cat(nrow(new_df))
