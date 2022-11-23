@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-opt <- list(dataframe_mode = "rebuild", log_output = "file,console", hub_mode = "update", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -102,7 +102,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
   dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
-                                                               location = "EU", format = "html",
+                                                               location = "CA", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   
@@ -673,6 +673,12 @@ for (i_url in 1:length(urls_list_fr)) {
                 else
                   if (length(grep("^L.?hon.\\s(.*)", speaker_value)) > 0)
                     name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+                  else
+                    if (length(grep("^L.?hon(.*))\\s(.*)\\s()", speaker_value)) > 0)
+                      name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+                    else
+                      if (length(grep("^L.?hon(.*)\\s(.*)\\s()", speaker_value)) > 0)
+                        name_matches <- stringr::str_match(gsub("rable ","",speaker_value), "^L.?hon.(.*)\\s()")
 
               #name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
               speaker_full_name <- name_matches[2]
