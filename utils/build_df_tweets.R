@@ -33,7 +33,19 @@ df_tweets <- data.frame()
 for (i in 1:nrow(df_persons)) {
     filter <- clessnhub::create_filter(data=list(personKey = df_persons$key[i]))
 
-    new_tweets <- clessnhub::get_items('tweets', filter, download_data = T)
+    success <- 0
+    while(success == 0) {
+        new_tweets <- data.frame()
+
+        tryCatch(
+            { new_tweets <- clessnhub::get_items('tweets', filter, download_data = T) },
+            error = function(e) {
+                cat ("Error accessing hub - trying again...")
+            },
+            finally = { if (!is.null(df_tweets)) success <- 1 }
+        )
+    }
+
 
     if (!is.null(new_tweets) && nrow(new_tweets) > 0 ) {
         df_tweets <- df_tweets %>% rbind(new_tweets)
