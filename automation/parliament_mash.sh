@@ -24,7 +24,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-    "text": "\n.\n${scriptname}\n============ start of message ============\n${status}: ${scriptname} ${output_msg} on $(date)\nEXIT CODE: ${ret}\n${output}\n============ end of message ============\n.\n.\n"
+   "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
   }
 EOF
 }
@@ -35,11 +35,10 @@ R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="
 cd ~
 
 if [ $scriptname != "badbadbad" ]; then
-  Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 1> "$scriptname.out"
+  Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 2>&1 | tee "$scriptname.out"
   ret=$?
   sed 's/\"/\\"/g' -i $scriptname.out
   sed 's///g ' -i $scriptname.out
-  output=`tail $scriptname.out -n 5`
 fi
 
 
@@ -59,10 +58,12 @@ if [ $ret -eq 2 ]; then
 fi
 
 if [ $ret -ne 0 ]; then
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  output=`tail -n 10 $scriptname.out`
 else
-  curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${status}: ${scriptname} ${output_msg} on $(date)\n\"}" https://hooks.slack.com/services/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
+  output=`tail -n 2 $scriptname.out`
 fi
+
+curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 
 if [ -f "$scriptname.out" ]; then
   rm -f "$scriptname.out"

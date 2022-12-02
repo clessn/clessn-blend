@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-#opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "skip", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -102,7 +102,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
   dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
-                                                               location = "EU", format = "html",
+                                                               location = "CA", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
   
@@ -164,18 +164,18 @@ hansard_url3 <- "/HAN"
 hansard_url4fr <- "-F.XML"
 hansard_url4en <- "-E.XML"
 
+
 if (scraping_method == "Latest") {
   content_url <- "/PublicationSearch/fr/?PubType=37&xml=1"
 
   source_page <- NULL
 
   i_get_attempt <- 1
-  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- safe_GET(paste(base_url,content_url,sep='')) }
-
-  #source_page_html <- httr::content(source_page$result)
+  
+  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- httr::GET(paste(base_url,content_url,sep='')) }
   source_page_html <- httr::content(source_page)
-
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
+
   root_xml <- XML::xmlRoot(source_page_xml)
   head_xml <- root_xml[[1]]
   core_xml <- root_xml[[2]]
@@ -259,11 +259,11 @@ for (i_url in 1:length(urls_list_fr)) {
   }
 
   # Read and parse HTML from the URL directly
-  #doc_html_fr <- getURL(current_url_fr)
   r_fr <- NULL
   r_en <- NULL
 
   i_get_attempt <- 1
+  
   while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
 
   if (r_fr$result$status_code == 200) {
@@ -271,7 +271,6 @@ for (i_url in 1:length(urls_list_fr)) {
 
     i_get_attempt <- 1
     while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
-
     if (r_en$result$status_code == 200) {
       doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
       doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
@@ -318,7 +317,7 @@ for (i_url in 1:length(urls_list_fr)) {
   event_date <- substr(event_date_time,1,10)
   event_start_time <- substr(event_date_time,12,19)
 
-  event_end_time <- str_match(XML::xmlValue(hansard_body_xml_fr[[hansard_body_xml_fr_length]]), "\\(La séance est levée à\\s(.*)?\\.\\)$")[2]
+  event_end_time <- stringr::str_match(XML::xmlValue(hansard_body_xml_fr[[hansard_body_xml_fr_length]]), "\\(La séance est levée à\\s(.*)?\\.\\)$")[2]
   event_end_time <- gsub("\u00a0", " ", event_end_time)
   event_end_time <- gsub(" h ", ":", event_end_time)
   if (length(event_end_time) < 8 ) event_end_time <- paste(event_end_time, ":00", sep = "")
@@ -674,6 +673,12 @@ for (i_url in 1:length(urls_list_fr)) {
                 else
                   if (length(grep("^L.?hon.\\s(.*)", speaker_value)) > 0)
                     name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+                  else
+                    if (length(grep("^L.?hon(.*))\\s(.*)\\s()", speaker_value)) > 0)
+                      name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)")
+                    else
+                      if (length(grep("^L.?hon(.*)\\s(.*)\\s()", speaker_value)) > 0)
+                        name_matches <- stringr::str_match(gsub("rable ","",speaker_value), "^L.?hon.(.*)\\s()")
 
               #name_matches <- stringr::str_match(speaker_value, "^L.?hon.\\s(.*)\\s\\((.*)\\)")
               speaker_full_name <- name_matches[2]
@@ -821,8 +826,8 @@ for (i_url in 1:length(urls_list_fr)) {
             intervention_text_en <- trimws(intervention_text_en, "both")
 
 
-            intervention_word_count <- nrow(unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
-            intervention_sentence_count <- nrow(unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
+            intervention_word_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
+            intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
             intervention_paragraph_count <- length(which(names(intervention_content_node) == "ParaText"))
 
             sob_procedural_text <- trimws(sob_procedural_text, "both")

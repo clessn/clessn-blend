@@ -250,7 +250,7 @@ tryCatch(
         
         if (!exists("scriptname")) scriptname <<- "e_pressreleases_qc"
 
-        opt <<- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE)
+        opt <<- list(log_output = c("file,console"), hub_mode = "refresh")
 
         if (!exists("opt")) {
             opt <<- clessnverse::processCommandLineOptions()

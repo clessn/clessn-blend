@@ -180,6 +180,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       },
       finally = {
         clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+        total_retrieved <- total_retrieved + nrow(env$newtweets)
       }
     )
   } else {
@@ -204,6 +205,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       
       finally = {
         clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
+        total_retrieved <- total_retrieved + nrow(env$newtweets)
       }
     )
   }
@@ -494,6 +496,9 @@ tryCatch(
     #opt <- list(max_timeline = 100, log_output = "file", type = "mp", schema = "all", filter = 'list(metadata.institution="National Assembly of Quebec")')
     #opt <- list(max_timeline = 100, log_output = "file", type = "all", schema = "all", filter = 'all')
     #opt <- list(max_timeline = 100, log_output = "file", type = "political_party", schema = "all", filter = 'all')
+    total_retrieved <- 0
+    total_committed <- 0
+    total_account_scraped <- 0
     
     if (!exists("opt")) {
       opt <- processCommandLineOptions()

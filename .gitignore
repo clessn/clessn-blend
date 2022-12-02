@@ -10,6 +10,7 @@ _privatefolder*
 journaux*.html
 *rds
 *projet-korum
+*csv
 # Pour Banville
 table.csv
 # Autre
@@ -164,3 +165,5 @@ env
 .env
 clessn-blend.code-workspace
 output.json
+*.wav
+*.m4a

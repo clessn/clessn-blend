@@ -126,7 +126,7 @@ rm_accent <- function(str,pattern="all") {
 #   scriptname
 #   logger
 #
-installPackages()
+#installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "agorapluseurope-debats-html.R"
@@ -139,7 +139,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", log_output = "file,console", download_data = FALSE, translate = FALSE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", log_output = "console", download_data = FALSE, translate = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -211,11 +211,11 @@ dfCountryLanguageCodes <- clessnverse::loadCountryLanguageCodes(token  = Sys.get
 scraping_method <- "DateRange"
 #scraping_method <- "FrontPage"
 
-start_date <- "2020-01-01"
+start_date <- "2016-12-01"
 #start_date <- "2014-01-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
-num_days <- 16
-start_parliament <- 9
+num_days <- 1
+start_parliament <- 8
 num_parliaments <- 1
 
 if (scraping_method == "frontpage") {
@@ -345,7 +345,7 @@ for (i in 1:length(urls_list)) {
   last_chapter <- grep("Closure of the sitting", lapply(core_xml_chapters, XML::xmlValue))[2]
   
   if (is.na(last_chapter)) last_chapter <- grep("Interruption of the sitting", lapply(core_xml_chapters, XML::xmlValue))[2]
-  if (is.na(last_chapter)) last_chapter <- grep("End of session", lapply(core_xml_chapters, xmlValue))[2]
+  if (is.na(last_chapter)) last_chapter <- grep("End of session", lapply(core_xml_chapters, XML::xmlValue))[2]
   if (is.na(last_chapter)) last_chapter <- grep("Adjournment of the session", lapply(core_xml_chapters, XML::xmlValue))[2]
   
   event_end_time <- XML::xmlAttrs(XML::getNodeSet(core_xml_chapters[[last_chapter]][["tr"]][["td"]], ".//a")[[3]])
@@ -488,459 +488,461 @@ for (i in 1:length(urls_list)) {
         chapter_container_node <- chapter_node[chapter_nodes_list[[k]]+2]
         
         content_node <- XML::getNodeSet(chapter_container_node$table, ".//p[@class='contents']")
+
         
         if (length(content_node) > 0) {
-        for (l in 1:length(content_node)) {
-          content_type <- XML::xmlAttrs(content_node[[l]][[1]])
-          next_content_type <- if (l < length(content_node)) XML::xmlAttrs(content_node[[l+1]][[1]]) else NULL
-          
-          first_parag <- NULL
-          
-          # We have a new speaker taking the stand - first thing : get his info and then his first paragraph
-          if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type ) {
-            speaker_first_name <- NA
-            speaker_last_name <- NA
-            speaker_full_name <- NA
-            speaker_gender <- NA
-            speaker_is_minister <- NA
-            speaker_type <- NA
-            speaker_mepid <- NA
-            speaker_party <- NA
-            speaker_polgroup <- NA
-            speaker_district <- NA
-            speaker_country <- NA
-            speaker_media <- NA
-            chapter_tabled_docid <- NA
-            chapter_adopted_docid <- NA
-            intervention_type <- NA
-            intervention_lang <- NA
-            intervention_word_count <- NA
-            intervention_sentence_count <- NA
-            intervention_paragraph_count <- NA
-            intervention_text <- ""
-            intervention_translated_text <- NA
-            
-            dfSpeaker <- data.frame()
-            
-            hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), " – | − | - | — | - | - | – ")[1]            
-            
-            if ( is.na(hyphen_pos) ) {
-               hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), "\\)\\. ")[1] + 1
-            }
-            
-            if (!is.na(hyphen_pos)) {
-              speaker_text <- stringi::stri_remove_empty(trimws(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,hyphen_pos)))
-              speaker_text <- gsub("\\.", "", speaker_text)
-              speaker_text <- gsub('^(\u00a0*)','', speaker_text)
-              #speaker_text <- gsub("\\((.*)", "", speaker_text)
-              #speaker_text <- trimws(speaker_text)
-            } else {
-              speaker_text <- previous_speaker_full_name
-            }
-            
-            
-            if ( !is.na(speaker_text) && nchar(speaker_text) == 0 ) next
-            
-            # if ( length(which(dfInterventions$key == paste(event_id,"-",intervention_seqnum,sep=''))) > 0 ) 
-            # {
-            #   intervention_seqnum <- intervention_seqnum + 1
-            #   next
-            # }
-
-            if (stringr::str_detect(speaker_text, ", ")) {
-              
-              if (length(stringr::str_split(speaker_text,",")[[1]]) == 2) {
-                speaker_full_name <- stringr::str_split(speaker_text,",")[[1]][1]
-                speaker_full_name <- trimws(speaker_full_name, "both")
-                
-                intervention_type <- stringr::str_split(speaker_text,",")[[1]][2:length(stringr::str_split(speaker_text,",")[[1]])]
-                intervention_type <- trimws(intervention_type)
-                intervention_type <- paste(intervention_type, collapse = ', ')
-                intervention_type <- trimws(intervention_type)                
-              } else {
-                speaker_full_name <- paste(stringr::str_split(speaker_text,",")[[1]][2], stringr::str_split(speaker_text,",")[[1]][1])
-                speaker_full_name <- trimws(speaker_full_name, "both")
-                
-                intervention_type <- stringr::str_split(speaker_text,",")[[1]][3:length(stringr::str_split(speaker_text,",")[[1]])]
-                intervention_type <- trimws(intervention_type)
-                intervention_type <- paste(intervention_type, collapse = ', ')
-                intervention_type <- trimws(intervention_type)
-              }
-              
-
-              
-              if ( !is.na(intervention_type) && intervention_type != "" && tolower(intervention_type) != "president" &&
-                   !stringr::str_detect(tolower(intervention_type), "on behalf") &&
-                   !stringr::str_detect(tolower(intervention_type), "member of") &&
-                   (is.na(textcat::textcat(tolower(intervention_type))) ||
-                   textcat::textcat(tolower(intervention_type)) != "english")
-                   ) {
-
-                if (opt$translate) { 
-                  intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
-                }
-
-              }
-              
-              
-              if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
-                                                 stringr::str_detect(tolower(intervention_type), "reporter")) ) {
-                intervention_type <- NA
-                speaker_type <- "Reporter"
-              }
-              
-              if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "auteur") ||
-                                                 stringr::str_detect(tolower(intervention_type), "author")) ) {
-                intervention_type <- NA
-                speaker_type <- "Author"
-              }
-                
-              if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
-                                                 stringr::str_detect(tolower(intervention_type), "member")) ) {
-                speaker_type <- intervention_type
-                intervention_type <- NA
-              }
-              
-              if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary|king") ) {
-                speaker_type <- intervention_type
-                intervention_type <- "Speech"
-              }
-              
-              if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
-                intervention_type <- "moderation"
-                speaker_type <- "President"
-              } 
-              
-              if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
-              
-            } else {
-              speaker_full_name <- speaker_text 
-            }
-            
-            speaker_text <- NA    
-            
-            speaker_full_name <- gsub(":", "", speaker_full_name)
-            
-            if ( stringr::str_detect(tolower(speaker_full_name), tolower(president_title)) || stringr::str_detect(tolower(speaker_full_name), tolower("ident")) ) {
-              speaker_full_name <- president_name
-              speaker_type <- "President"
-            } else {
-              speaker_full_name <- trimws(stringr::str_remove(speaker_full_name, "\\|\\s"))
-            }
-            
-            if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)") ) {
-                speaker_party <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
-                speaker_full_name <- stringr::str_replace(speaker_full_name, "\\((.*)\\)", "")
-                speaker_full_name <- stringr::str_replace(gsub("\\s+", " ", stringr::str_trim(speaker_full_name)), "B", "b")
-            }
-            
-            speaker_full_name <- trimws(speaker_full_name)
-            speaker_full_name <- gsub('^(\u00a0*)','', speaker_full_name)
-            
-            speaker_full_name <- stringr::str_to_title(speaker_full_name)
-            
-            speaker_full_name_native  <- speaker_full_name
-            
-            # Get the speaker data from hub 2.0.  If absent try to get it from the parliament.
-            # If parliament successful and not in hub, then write in hub for next time
-            if ( !is.null(dfPersons) ) {
-              dfSpeaker <- dfPersons[which(dfPersons$data.fullName == speaker_full_name),]
-              if (nrow(dfSpeaker) == 0) {
-                dfSpeaker <- dfPersons[which(dfPersons$data.fullNameNative == speaker_full_name_native),]
-                if (nrow(dfSpeaker) == 0) {
-                  dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name_native)),]
-                  if (nrow(dfSpeaker) == 0) {
-                    dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name_native)),]
-                  }
-                }
-              }
-            } else {
-              dfSpeaker <- data_frame()
-            }
-            
-            if (nrow(dfSpeaker) == 0 && !stringr::str_detect(rm_accent(tolower(speaker_full_name)), "president")) {
-              # We could not find the speaker in the hub based on his/her full name.
-              # Get it from the europe parliament web site
-              # And then store it in the hub for next time
-              dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name_native)
-              
-              if (!is.na(dfSpeaker$mepid)) {
-                # Found it on the europe parliament web site
-                speaker_full_name <- trimws(stringr::str_to_title(dfSpeaker$fullname))
-                speaker_first_name <- trimws(stringr::str_to_title(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]]))
-                speaker_last_name <- trimws(stringr::str_to_title(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2]))
-                speaker_mepid <- dfSpeaker$mepid
-                speaker_party <- dfSpeaker$party
-                speaker_polgroup <- dfSpeaker$polgroup
-                speaker_country <- dfSpeaker$country
-                skip_person_hub_write <- FALSE
-              } else {
-                # Not found in hub NOR in parliament web site => translate
-                if (opt$translate == TRUE) {
-                  speaker_full_name <- clessnverse::translateText(speaker_full_name_native, engine="azure", target_lang="en", fake=!opt$translate)[2]
-                }
-                
-                #cat("\ntranslating", speaker_full_name_native, "\n") #to", speaker_full_name, "\n")
-                speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]])
-                speaker_last_name <- trimws(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2])
-                
-                if (rm_accent(speaker_first_name) == "President") {
-                  speaker_full_name <- president_name
-                  speaker_first_name <- trimws(stringr::str_to_title(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]]))
-                  speaker_last_name <- trimws(stringr::str_to_title(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2]))
-                  skip_person_hub_write <- TRUE
-                } else {
-                  skip_person_hub_write <- FALSE
-                }
-                
-              }
-              
-
-              speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
-              if ( speaker_gender == "" ) speaker_gender <- NA
-              
-              speaker_is_minister <- NA
-              speaker_district <- NA
-              speaker_media <- NA
-              
-              
-              if (!skip_person_hub_write) {
-                # Write it to the hub for next time
-                person_metadata_row <- list("source"="https://www.europarl.europa.eu/meps/fr/download/advanced/xml?name=",
-                                        "country"=speaker_country,
-                                        "institution"="European Parliament",
-                                        "province_or_state"=speaker_country,
-                                        "twitterAccountHasBeenScraped"="0"
-                                        )
-                
-                person_data_row <- list("fullName"=speaker_full_name,
-                                        "fullNameNative" = speaker_full_name_native,
-                                        "isFemale"= if (!is.na(speaker_gender) && !is.null(speaker_gender) && speaker_gender=="female") as.character(1) else as.character(0),
-                                        "lastName"=speaker_last_name,
-                                        "firstName"=speaker_first_name,
-                                        "twitterID"=NA_character_,
-                                        "isMinister"="0",
-                                        "twitterName"=NA_character_,
-                                        "currentParty"=speaker_party,
-                                        "twitterHandle"=NA_character_,
-                                        "currentMinister"=NA_character_,
-                                        "currentPolGroup"=speaker_polgroup,
-                                        "twitterLocation"=NA_character_,
-                                        "twitterPostsCount"=NA_character_,
-                                        "twitterProfileURL"=NA_character_,
-                                        "twitterListedCount"=NA_character_,
-                                        "twitterFriendsCount"=NA_character_,
-                                        "currentFunctionsList"=NA_character_,
-                                        "twitterFollowersCount"=NA_character_,
-                                        "currentProvinceOrState"=speaker_country,
-                                        "twitterAccountVerified"=NA_character_,
-                                        "twitterProfileImageURL"=NA_character_,
-                                        "twitterAccountCreatedAt"=NA_character_,
-                                        "twitterAccountCreatedOn"=NA_character_,
-                                        "twitterAccountProtected"=NA_character_,
-                                        "twitterProfileBannerURL"=NA_character_,
-                                        "twitterUpdateDateStamps"=NA_character_,
-                                        "twitterUpdateTimeStamps"=NA_character_
-                                        )
-                
-                if ( is.na(speaker_mepid) ) speaker_mepid <- digest::digest(speaker_full_name)
-                
-                clessnverse::logit(scriptname=scriptname, message=paste("adding", speaker_full_name, "-", speaker_full_name_native, "to the hub"), logger = logger)
-                
-                tryCatch(
-                  {
-                    #clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
-                  },
-                  error= function(e) {
-                    #clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
-                  },
-                  finally={}
-                )
-                
-                person_metadata_dfrow <- as.data.frame(person_metadata_row)
-                names(person_metadata_dfrow) <- paste("metadata.", names(person_metadata_dfrow),sep='')
-                person_data_dfrow <- as.data.frame(person_data_row)
-                names(person_data_dfrow) <- paste("data.", names(person_data_dfrow),sep='')
-                dfRow <- tibble::tibble(key=paste("EU-",speaker_mepid,sep=''), type="mp", schema="v3", uuid="") %>% cbind(person_metadata_dfrow) %>% cbind(person_data_dfrow)
-  
-                if ( is.null(dfPersons) ) {
-                  dfPersons <- dfRow
-                  #dfPersons <- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
-                } else {
-                  dfPersons <- dfPersons %>% rbind(dfRow)# %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " "))
-                }
-              }    
-            } else {
-              # Found the speaker in the hub, use it!
-              speaker_mepid <- dfSpeaker$key
-              speaker_full_name <- dfSpeaker$data.fullName
-              speaker_first_name <- dfSpeaker$data.firstName
-              speaker_last_name <- dfSpeaker$data.lastName
-              speaker_party <- dfSpeaker$data.currentParty
-              speaker_polgroup <- dfSpeaker$data.currentPolGroup
-              speaker_country <- dfSpeaker$metadata.country
-              speaker_gender <- if (dfSpeaker$data.isFemale == 1) "female" else "male"
-              speaker_is_minister <- NA
-              speaker_district <- NA
-              speaker_media <- NA
-            }
-            
-            #cat(speaker_full_name, speaker_full_name_native, "\n")
-            
-            if (!is.na(hyphen_pos)) {
-              first_parag <- stringi::stri_remove_empty(trimws(stringr::str_sub(XML::xmlValue(content_node[[l]]),hyphen_pos+2,nchar(XML::xmlValue(content_node[[l]])))))
-              first_parag <- gsub("\\.", "", first_parag)
-              first_parag <- gsub('^(\u00a0*)','', first_parag)
-            } else {
-              first_parag <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3]
-              if (is.na(first_parag)) first_parag <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)−(\\s*)(.*)$")))[3]
-            }
-            
-            
-            if (length(first_parag) == 0) first_parag <- ""
-            
-            intervention_text <- ""
-            
-            #cat("first parag:",stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
-          } # if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type ) {
-          
-          # Here we have an intervention - it is either  a new intervention (if first_parag is not null) or the continuation of the same intervention
-          if ( is.null(content_type) || !is.null(first_parag) ) {
-
-            if ( !is.null(first_parag) ) {
-              #New
-              intervention_text <- first_parag
-            } else {
-              #Continuation
-              intervention_text <- paste(intervention_text, XML::xmlValue(content_node[[l]][[1]]), sep="\n\n")
-            }
-            
-            if ( !is.na(intervention_text) && (intervention_text == "\n\n ") ) intervention_text <- ""
+          for (l in 1:length(content_node)) {
+            content_type <- XML::xmlAttrs(content_node[[l]][[1]])
+            next_content_type <- if (l < length(content_node)) XML::xmlAttrs(content_node[[l+1]][[1]]) else NULL
             
             first_parag <- NULL
-          }
-          
-          if ( !is.null(intervention_type) && !is.na(intervention_type) ) {
-            intervention_type <- gsub("\\(", "", intervention_type)
-            intervention_type <- gsub("\\)", "", intervention_type)
-            intervention_type <- gsub("\"", "", intervention_type)
-            intervention_type <- gsub("\\\\u2012", "", intervention_type)
-            intervention_type <- gsub("\\\\ U2012", "", intervention_type)
-            intervention_type <- stringr::str_squish(intervention_type)
-            intervention_type <- trimws(intervention_type)
-            intervention_type <- stringr::str_to_title(intervention_type)
-          }
-          
-          if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
-            speaker_type <- trimws(speaker_type)
-          }
-          
-          # Here it's only procedural text
-          #if (!is.null(content_type) && content_type == "italic") {
-          #  cat("procedural text: ",XML::xmlValue(content_node[[l]][[1]]),"\n")
-          #  next
-          #}
-          
-          # Look at the next paragraph to see if it is a new intervention
-          #if ( (is.null(next_content_type) || "/doceo/data/img/arrow_summary.gif" %in% next_content_type) &&  !is.na(intervention_text) ) {
-          if ( "/doceo/data/img/arrow_summary.gif" %in% next_content_type || l == length(content_node) && !is.na(intervention_text) && intervention_text != "" ) {
-            # next is new
-            #if (stringr::str_detect(speaker_full_name, "sreekanth")) stop("bingo")
             
-            intervention_seqnum <- intervention_seqnum + 1
-            intervention_text <- trimws(intervention_text, "left")
-            intervention_word_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), word, txt, token="words",format="text"))
-            intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
-            intervention_paragraph_count <- stringr::str_count(intervention_text, "\n\n") + 1
-            
+            # We have a new speaker taking the stand - first thing : get his info and then his first paragraph
+            if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type ) {
+              speaker_first_name <- NA
+              speaker_last_name <- NA
+              speaker_full_name <- NA
+              speaker_gender <- NA
+              speaker_is_minister <- NA
+              speaker_type <- NA
+              speaker_mepid <- NA
+              speaker_party <- NA
+              speaker_polgroup <- NA
+              speaker_district <- NA
+              speaker_country <- NA
+              speaker_media <- NA
+              chapter_tabled_docid <- NA
+              chapter_adopted_docid <- NA
+              intervention_type <- NA
+              intervention_lang <- NA
+              intervention_word_count <- NA
+              intervention_sentence_count <- NA
+              intervention_paragraph_count <- NA
+              intervention_text <- ""
+              intervention_translated_text <- NA
+              
+              dfSpeaker <- data.frame()
+              
+              hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), " – | − | - | — | - | - | – | ‒ ")[1]            
+              
+              if (is.na(hyphen_pos)) {
+                hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), "\\)\\. ")[1] + 1
+              }
+              
+              if (!is.na(hyphen_pos)) {
+                speaker_text <- stringi::stri_remove_empty(trimws(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,hyphen_pos)))
+                speaker_text <- gsub("\\.", "", speaker_text)
+                speaker_text <- gsub('^(\u00a0*)','', speaker_text)
+                #speaker_text <- gsub("\\((.*)", "", speaker_text)
+                #speaker_text <- trimws(speaker_text)
+              } else {
+                speaker_text <- previous_speaker_full_name
+              }
+              
+              
+              if ( !is.na(speaker_text) && nchar(speaker_text) == 0 ) next
+              
+              # if ( length(which(dfInterventions$key == paste(event_id,"-",intervention_seqnum,sep=''))) > 0 ) 
+              # {
+              #   intervention_seqnum <- intervention_seqnum + 1
+              #   next
+              # }
 
-            # Translation
-            if (grepl("\\\\", intervention_text)) intervention_text <- gsub("\\\\"," ", intervention_text)
-            intervention_text <- gsub("^NA\n\n", "", intervention_text)
-            intervention_text <- gsub("^\n\n", "", intervention_text)
+              if (stringr::str_detect(speaker_text, ", ")) {
+                
+                if (length(stringr::str_split(speaker_text,",")[[1]]) == 2) {
+                  speaker_full_name <- stringr::str_split(speaker_text,",")[[1]][1]
+                  speaker_full_name <- trimws(speaker_full_name, "both")
+                  
+                  intervention_type <- stringr::str_split(speaker_text,",")[[1]][2:length(stringr::str_split(speaker_text,",")[[1]])]
+                  intervention_type <- trimws(intervention_type)
+                  intervention_type <- paste(intervention_type, collapse = ', ')
+                  intervention_type <- trimws(intervention_type)                
+                } else {
+                  speaker_full_name <- paste(stringr::str_split(speaker_text,",")[[1]][2], stringr::str_split(speaker_text,",")[[1]][1])
+                  speaker_full_name <- trimws(speaker_full_name, "both")
+                  
+                  intervention_type <- stringr::str_split(speaker_text,",")[[1]][3:length(stringr::str_split(speaker_text,",")[[1]])]
+                  intervention_type <- trimws(intervention_type)
+                  intervention_type <- paste(intervention_type, collapse = ', ')
+                  intervention_type <- trimws(intervention_type)
+                }
+                
+
+                
+                if ( !is.na(intervention_type) && intervention_type != "" && tolower(intervention_type) != "president" &&
+                    !stringr::str_detect(tolower(intervention_type), "on behalf") &&
+                    !stringr::str_detect(tolower(intervention_type), "member of") &&
+                    (is.na(textcat::textcat(tolower(intervention_type))) ||
+                    textcat::textcat(tolower(intervention_type)) != "english")
+                    ) {
+
+                  if (opt$translate) { 
+                    intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
+                  }
+
+                }
+                
+                
+                if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteur") || 
+                                                  stringr::str_detect(tolower(intervention_type), "reporter")) ) {
+                  intervention_type <- NA
+                  speaker_type <- "Reporter"
+                }
+                
+                if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "auteur") ||
+                                                  stringr::str_detect(tolower(intervention_type), "author")) ) {
+                  intervention_type <- NA
+                  speaker_type <- "Author"
+                }
+                  
+                if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "membre") ||
+                                                  stringr::str_detect(tolower(intervention_type), "member")) ) {
+                  speaker_type <- intervention_type
+                  intervention_type <- NA
+                }
+                
+                if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "chancellor|president\\sof|minister|his\\sholiness|secretary|king") ) {
+                  speaker_type <- intervention_type
+                  intervention_type <- "Speech"
+                }
+                
+                if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
+                  intervention_type <- "moderation"
+                  speaker_type <- "President"
+                } 
+                
+                if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
+                
+              } else {
+                speaker_full_name <- speaker_text 
+              }
+              
+              speaker_text <- NA    
+              
+              speaker_full_name <- gsub(":", "", speaker_full_name)
+              
+              if ( stringr::str_detect(tolower(speaker_full_name), tolower(president_title)) || stringr::str_detect(tolower(speaker_full_name), tolower("ident")) ) {
+                speaker_full_name <- president_name
+                speaker_type <- "President"
+              } else {
+                speaker_full_name <- trimws(stringr::str_remove(speaker_full_name, "\\|\\s"))
+              }
+              
+              if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)") ) {
+                  speaker_party <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
+                  speaker_full_name <- stringr::str_replace(speaker_full_name, "\\((.*)\\)", "")
+                  speaker_full_name <- stringr::str_replace(gsub("\\s+", " ", stringr::str_trim(speaker_full_name)), "B", "b")
+              }
+              
+              speaker_full_name <- trimws(speaker_full_name)
+              speaker_full_name <- gsub('^(\u00a0*)','', speaker_full_name)
+              
+              speaker_full_name <- stringr::str_to_title(speaker_full_name)
+              
+              speaker_full_name_native  <- speaker_full_name
+              
+              # Get the speaker data from hub 2.0.  If absent try to get it from the parliament.
+              # If parliament successful and not in hub, then write in hub for next time
+              if ( !is.null(dfPersons) ) {
+                dfSpeaker <- dfPersons[which(dfPersons$data.fullName == speaker_full_name),]
+                if (nrow(dfSpeaker) == 0) {
+                  dfSpeaker <- dfPersons[which(dfPersons$data.fullNameNative == speaker_full_name_native),]
+                  if (nrow(dfSpeaker) == 0) {
+                    dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name_native)),]
+                    if (nrow(dfSpeaker) == 0) {
+                      dfSpeaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name_native)),]
+                    }
+                  }
+                }
+              } else {
+                dfSpeaker <- data_frame()
+              }
+              
+              if (nrow(dfSpeaker) == 0 && !stringr::str_detect(rm_accent(tolower(speaker_full_name)), "president")) {
+                # We could not find the speaker in the hub based on his/her full name.
+                # Get it from the europe parliament web site
+                # And then store it in the hub for next time
+                dfSpeaker <- clessnverse::getEuropeMepData(speaker_full_name_native)
+                
+                if (!is.na(dfSpeaker$mepid)) {
+                  # Found it on the europe parliament web site
+                  speaker_full_name <- trimws(stringr::str_to_title(dfSpeaker$fullname))
+                  speaker_first_name <- trimws(stringr::str_to_title(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]]))
+                  speaker_last_name <- trimws(stringr::str_to_title(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2]))
+                  speaker_mepid <- dfSpeaker$mepid
+                  speaker_party <- dfSpeaker$party
+                  speaker_polgroup <- dfSpeaker$polgroup
+                  speaker_country <- dfSpeaker$country
+                  skip_person_hub_write <- FALSE
+                } else {
+                  # Not found in hub NOR in parliament web site => translate
+                  if (opt$translate == TRUE) {
+                    speaker_full_name <- clessnverse::translateText(speaker_full_name_native, engine="azure", target_lang="en", fake=!opt$translate)[2]
+                  }
+                  
+                  #cat("\ntranslating", speaker_full_name_native, "\n") #to", speaker_full_name, "\n")
+                  speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]])
+                  speaker_last_name <- trimws(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2])
+                  
+                  if (rm_accent(speaker_first_name) == "President") {
+                    speaker_full_name <- president_name
+                    speaker_first_name <- trimws(stringr::str_to_title(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]]))
+                    speaker_last_name <- trimws(stringr::str_to_title(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2]))
+                    skip_person_hub_write <- TRUE
+                  } else {
+                    skip_person_hub_write <- FALSE
+                  }
+                  
+                }
+                
+
+                speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
+                if ( speaker_gender == "" ) speaker_gender <- NA
+                
+                speaker_is_minister <- NA
+                speaker_district <- NA
+                speaker_media <- NA
+                
+                
+                if (!skip_person_hub_write) {
+                  # Write it to the hub for next time
+                  person_metadata_row <- list("source"="https://www.europarl.europa.eu/meps/fr/download/advanced/xml?name=",
+                                          "country"=speaker_country,
+                                          "institution"="European Parliament",
+                                          "province_or_state"=speaker_country,
+                                          "twitterAccountHasBeenScraped"="0"
+                                          )
+                  
+                  person_data_row <- list("fullName"=speaker_full_name,
+                                          "fullNameNative" = speaker_full_name_native,
+                                          "isFemale"= if (!is.na(speaker_gender) && !is.null(speaker_gender) && speaker_gender=="female") as.character(1) else as.character(0),
+                                          "lastName"=speaker_last_name,
+                                          "firstName"=speaker_first_name,
+                                          "twitterID"=NA_character_,
+                                          "isMinister"="0",
+                                          "twitterName"=NA_character_,
+                                          "currentParty"=speaker_party,
+                                          "twitterHandle"=NA_character_,
+                                          "currentMinister"=NA_character_,
+                                          "currentPolGroup"=speaker_polgroup,
+                                          "twitterLocation"=NA_character_,
+                                          "twitterPostsCount"=NA_character_,
+                                          "twitterProfileURL"=NA_character_,
+                                          "twitterListedCount"=NA_character_,
+                                          "twitterFriendsCount"=NA_character_,
+                                          "currentFunctionsList"=NA_character_,
+                                          "twitterFollowersCount"=NA_character_,
+                                          "currentProvinceOrState"=speaker_country,
+                                          "twitterAccountVerified"=NA_character_,
+                                          "twitterProfileImageURL"=NA_character_,
+                                          "twitterAccountCreatedAt"=NA_character_,
+                                          "twitterAccountCreatedOn"=NA_character_,
+                                          "twitterAccountProtected"=NA_character_,
+                                          "twitterProfileBannerURL"=NA_character_,
+                                          "twitterUpdateDateStamps"=NA_character_,
+                                          "twitterUpdateTimeStamps"=NA_character_
+                                          )
+                  
+                  if ( is.na(speaker_mepid) ) speaker_mepid <- digest::digest(speaker_full_name)
+                  
+                  clessnverse::logit(scriptname=scriptname, message=paste("adding", speaker_full_name, "-", speaker_full_name_native, "to the hub"), logger = logger)
+                  
+                  tryCatch(
+                    {
+                      #clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
+                    },
+                    error= function(e) {
+                      #clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
+                    },
+                    finally={}
+                  )
+                  
+                  person_metadata_dfrow <- as.data.frame(person_metadata_row)
+                  names(person_metadata_dfrow) <- paste("metadata.", names(person_metadata_dfrow),sep='')
+                  person_data_dfrow <- as.data.frame(person_data_row)
+                  names(person_data_dfrow) <- paste("data.", names(person_data_dfrow),sep='')
+                  dfRow <- tibble::tibble(key=paste("EU-",speaker_mepid,sep=''), type="mp", schema="v3", uuid="") %>% cbind(person_metadata_dfrow) %>% cbind(person_data_dfrow)
+    
+                  if ( is.null(dfPersons) ) {
+                    dfPersons <- dfRow
+                    #dfPersons <- dfPersons %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " ")
+                  } else {
+                    dfPersons <- dfPersons %>% rbind(dfRow)# %>% tidyr::separate(data.lastName, c("data.lastName1", "data.lastName2"), " "))
+                  }
+                }    
+              } else {
+                # Found the speaker in the hub, use the one that has the most non NAs!
+                dfSpeaker <- dfSpeaker[which(rowSums(is.na(dfSpeaker)) == min(rowSums(is.na(dfSpeaker))))[1],]
+
+                speaker_mepid <- dfSpeaker$key
+                speaker_full_name <- dfSpeaker$data.fullName
+                speaker_first_name <- dfSpeaker$data.firstName
+                speaker_last_name <- dfSpeaker$data.lastName
+                speaker_party <- dfSpeaker$data.currentParty
+                speaker_polgroup <- dfSpeaker$data.currentPolGroup
+                speaker_country <- dfSpeaker$metadata.country
+                speaker_gender <- if (dfSpeaker$data.isFemale == 1) "female" else "male"
+                speaker_is_minister <- NA
+                speaker_district <- NA
+                speaker_media <- NA
+              }
+              
+              #cat(speaker_full_name, speaker_full_name_native, "\n")
+              
+              if (!is.na(hyphen_pos)) {
+                first_parag <- stringi::stri_remove_empty(trimws(stringr::str_sub(XML::xmlValue(content_node[[l]]),hyphen_pos+2,nchar(XML::xmlValue(content_node[[l]])))))
+                first_parag <- gsub("\\.", "", first_parag)
+                first_parag <- gsub('^(\u00a0*)','', first_parag)
+              } else {
+                first_parag <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3]
+                if (is.na(first_parag)) first_parag <- stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)−(\\s*)(.*)$")))[3]
+              }
+              
+              
+              if (length(first_parag) == 0) first_parag <- ""
+              
+              intervention_text <- ""
+              
+              #cat("first parag:",stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
+            } # if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type ) {
             
-            
-            intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", target_lang="en", fake=!opt$translate)
-            intervention_lang <- stringr::str_to_upper(intervention_translation[1])
-            intervention_translated_text <- intervention_translation[2]
-            
-            if ( is.na(intervention_lang) ) {
-              intervention_lang <- textcat::textcat(intervention_text)
-              intervention_lang <- stringr::str_to_upper(stringr::str_sub(dfCountryLanguageCodes$Two.Letter[which(tolower(dfCountryLanguageCodes$Language) == tolower(intervention_lang))[1]],1,2))
-              intervention_lang <- toupper(intervention_lang)
+            # Here we have an intervention - it is either  a new intervention (if first_parag is not null) or the continuation of the same intervention
+            if ( is.null(content_type) || !is.null(first_parag) ) {
+
+              if ( !is.null(first_parag) ) {
+                #New
+                intervention_text <- first_parag
+              } else {
+                #Continuation
+                intervention_text <- paste(intervention_text, XML::xmlValue(content_node[[l]][[1]]), sep="\n\n")
+              }
+              
+              if ( !is.na(intervention_text) && (intervention_text == "\n\n ") ) intervention_text <- ""
+              
+              first_parag <- NULL
             }
             
-            if (is.null(intervention_translated_text)) intervention_translated_text <- NA
+            if ( !is.null(intervention_type) && !is.na(intervention_type) ) {
+              intervention_type <- gsub("\\(", "", intervention_type)
+              intervention_type <- gsub("\\)", "", intervention_type)
+              intervention_type <- gsub("\"", "", intervention_type)
+              intervention_type <- gsub("\\\\u2012", "", intervention_type)
+              intervention_type <- gsub("\\\\ U2012", "", intervention_type)
+              intervention_type <- stringr::str_squish(intervention_type)
+              intervention_type <- trimws(intervention_type)
+              intervention_type <- stringr::str_to_title(intervention_type)
+            }
             
-            # commit to dfDeep and the Hub
-            v2_row_to_commit <- data.frame(eventID = event_id,
-                                           eventDate = event_date,
-                                           eventStartTime = event_start_time,
-                                           eventEndTime = event_end_time,
-                                           eventTitle = event_title,
-                                           eventSubTitle = event_subtitle,
-                                           interventionSeqNum = intervention_seqnum,
-                                           objectOfBusinessID = NA,
-                                           objectOfBusinessRubric = NA,
-                                           objectOfBusinessTitle = NA,
-                                           objectOfBusinessSeqNum = NA,
-                                           subjectOfBusinessID = chapter_number,
-                                           subjectOfBusinessTitle = chapter_title,
-                                           subjectOfBusinessHeader = NA,
-                                           subjectOfBusinessSeqNum = NA,
-                                           subjectOfBusinessProceduralText = NA,
-                                           subjectOfBusinessTabledDocID = chapter_tabled_docid,
-                                           subjectOfBusinessTabledDocTitle = NA,
-                                           subjectOfBusinessAdoptedDocID = chapter_adopted_docid,
-                                           subjectOfBusinessAdoptedDocTitle = NA,
-                                           speakerID = NA,
-                                           speakerFirstName = speaker_first_name,
-                                           speakerLastName = speaker_last_name,
-                                           speakerFullName = speaker_full_name,
-                                           speakerGender = speaker_gender,
-                                           speakerType = speaker_type,
-                                           speakerCountry = speaker_country,
-                                           speakerIsMinister = speaker_is_minister,
-                                           speakerParty = speaker_party,
-                                           speakerPolGroup = speaker_polgroup,
-                                           speakerDistrict = speaker_district,
-                                           speakerMedia = speaker_media,
-                                           interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
-                                           interventionDocID = NA,
-                                           interventionDocTitle = NA,
-                                           interventionType = intervention_type,
-                                           interventionLang = intervention_lang,
-                                           interventionWordCount = intervention_word_count,
-                                           interventionSentenceCount = intervention_sentence_count,
-                                           interventionParagraphCount = intervention_paragraph_count,
-                                           interventionText = intervention_text,
-                                           interventionTextFR = NA,
-                                           interventionTextEN = intervention_translated_text,
-                                           stringsAsFactors = FALSE)
+            if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
+              speaker_type <- trimws(speaker_type)
+            }
+            
+            # Here it's only procedural text
+            #if (!is.null(content_type) && content_type == "italic") {
+            #  cat("procedural text: ",XML::xmlValue(content_node[[l]][[1]]),"\n")
+            #  next
+            #}
+            
+            # Look at the next paragraph to see if it is a new intervention
+            #if ( (is.null(next_content_type) || "/doceo/data/img/arrow_summary.gif" %in% next_content_type) &&  !is.na(intervention_text) ) {
+            if ( "/doceo/data/img/arrow_summary.gif" %in% next_content_type || l == length(content_node) && !is.na(intervention_text) && intervention_text != "" ) {
+              # next is new
+              #if (stringr::str_detect(speaker_full_name, "sreekanth")) stop("bingo")
+              
+              intervention_seqnum <- intervention_seqnum + 1
+              intervention_text <- trimws(intervention_text, "left")
+              intervention_word_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), word, txt, token="words",format="text"))
+              intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
+              intervention_paragraph_count <- stringr::str_count(intervention_text, "\n\n") + 1
+              
 
-            v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
+              # Translation
+              if (grepl("\\\\", intervention_text)) intervention_text <- gsub("\\\\"," ", intervention_text)
+              intervention_text <- gsub("^NA\n\n", "", intervention_text)
+              intervention_text <- gsub("^\n\n", "", intervention_text)
+              
+              
+              intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", target_lang="en", fake=!opt$translate)
+              intervention_lang <- stringr::str_to_upper(intervention_translation[1])
+              intervention_translated_text <- intervention_translation[2]
+              
+              if ( is.na(intervention_lang) ) {
+                intervention_lang <- textcat::textcat(intervention_text)
+                intervention_lang <- stringr::str_to_upper(stringr::str_sub(dfCountryLanguageCodes$Two.Letter[which(tolower(dfCountryLanguageCodes$Language) == tolower(intervention_lang))[1]],1,2))
+                intervention_lang <- toupper(intervention_lang)
+              }
+              
+              if (is.null(intervention_translated_text)) intervention_translated_text <- NA
+              
+              # commit to dfDeep and the Hub
+              v2_row_to_commit <- data.frame(eventID = event_id,
+                                            eventDate = event_date,
+                                            eventStartTime = event_start_time,
+                                            eventEndTime = event_end_time,
+                                            eventTitle = event_title,
+                                            eventSubTitle = event_subtitle,
+                                            interventionSeqNum = intervention_seqnum,
+                                            objectOfBusinessID = NA,
+                                            objectOfBusinessRubric = NA,
+                                            objectOfBusinessTitle = NA,
+                                            objectOfBusinessSeqNum = NA,
+                                            subjectOfBusinessID = chapter_number,
+                                            subjectOfBusinessTitle = chapter_title,
+                                            subjectOfBusinessHeader = NA,
+                                            subjectOfBusinessSeqNum = NA,
+                                            subjectOfBusinessProceduralText = NA,
+                                            subjectOfBusinessTabledDocID = chapter_tabled_docid,
+                                            subjectOfBusinessTabledDocTitle = NA,
+                                            subjectOfBusinessAdoptedDocID = chapter_adopted_docid,
+                                            subjectOfBusinessAdoptedDocTitle = NA,
+                                            speakerID = NA,
+                                            speakerFirstName = speaker_first_name,
+                                            speakerLastName = speaker_last_name,
+                                            speakerFullName = speaker_full_name,
+                                            speakerGender = speaker_gender,
+                                            speakerType = speaker_type,
+                                            speakerCountry = speaker_country,
+                                            speakerIsMinister = speaker_is_minister,
+                                            speakerParty = speaker_party,
+                                            speakerPolGroup = speaker_polgroup,
+                                            speakerDistrict = speaker_district,
+                                            speakerMedia = speaker_media,
+                                            interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
+                                            interventionDocID = NA,
+                                            interventionDocTitle = NA,
+                                            interventionType = intervention_type,
+                                            interventionLang = intervention_lang,
+                                            interventionWordCount = intervention_word_count,
+                                            interventionSentenceCount = intervention_sentence_count,
+                                            interventionParagraphCount = intervention_paragraph_count,
+                                            interventionText = intervention_text,
+                                            interventionTextFR = NA,
+                                            interventionTextEN = intervention_translated_text,
+                                            stringsAsFactors = FALSE)
 
-            v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="EU",
-                                          "parliament_number"=parliament_number, "parliament_session"=NA_character_)
+              v2_row_to_commit <- v2_row_to_commit %>% mutate(across(everything(), as.character))
 
-            dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions,
-                                                                         type = "parliament_debate", schema = "v2",
-                                                                         metadata = v2_metadata_to_commit,
-                                                                         data = v2_row_to_commit,
-                                                                         opt$dataframe_mode, opt$hub_mode)
+              v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="EU",
+                                            "parliament_number"=parliament_number, "parliament_session"=NA_character_)
+
+              dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions,
+                                                                          type = "parliament_debate", schema = "v2",
+                                                                          metadata = v2_metadata_to_commit,
+                                                                          data = v2_row_to_commit,
+                                                                          opt$dataframe_mode, opt$hub_mode)
 
 
 
-            previous_speaker_full_name <- speaker_full_name
-            intervention_text <- ""
-          } else {
-            # Next is same speaker
-          } #if ( "/doceo/data/img/arrow_summary.gif" %in% next_content_type || l == length(content_node) && !is.na(intervention_text) ) {
-          
-        } #for (l in 1:length(content_node))
-        
+              previous_speaker_full_name <- speaker_full_name
+              intervention_text <- ""
+            } else {
+              # Next is same speaker
+            } #if ( "/doceo/data/img/arrow_summary.gif" %in% next_content_type || l == length(content_node) && !is.na(intervention_text) ) {
+            
+          } #for (l in 1:length(content_node))
+        } #if (length(content_node) > 0)
       } # for (k in 1:length(chapter_nodes_list))
-      }
     } # if ("a" %in% chapter_nodes_list)
   
   } #for (j in 2:core_xml_nbchapters)

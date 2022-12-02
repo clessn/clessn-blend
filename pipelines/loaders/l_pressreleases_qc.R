@@ -228,7 +228,12 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
                     index_xml <- tidyjson::spread_all(index_html)
                     xml_root <- index_xml
                 } else {
-                    stop("not an xml nor an html document")
+                    warning(paste(
+                        "not an xml nor an html document, press realease",
+                        key,
+                        "was probably deleted.  Skipping to prevent data loss")
+                    )
+                    return(1)
                 }     
             }
         }
@@ -329,7 +334,7 @@ tryCatch(
 
         if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
 
-        opt <- list(dataframe_mode = "refresh", log_output = c("file"), hub_mode = "refresh", download_data = FALSE, translate=FALSE, refresh_data=TRUE)
+        opt <- list(log_output = c("file,console"), refresh_data=TRUE)
 
         if (!exists("opt")) {
             opt <- clessnverse::process_command_line_options()
