@@ -423,8 +423,8 @@ for (i in 1:length(list_urls)) {
       intervention_type <- NA
       intervention_text <- NA
       
-      parliament_number <- stringr::str_sub(event_url,71,72)
-      parliament_session <- stringr::str_sub(event_url,74,74)
+      parliament_number <- stringr::str_sub(event_url,72,73)
+      parliament_session <- stringr::str_sub(event_url,75,75)
       
       gender_femme <- 0
       speaker <- data.frame()
