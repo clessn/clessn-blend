@@ -88,7 +88,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_quebec"
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-#opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "file,console,hub", download_data = FALSE)
+opt <- list(dataframe_mode = "skip", hub_mode = "skip", log_output = "console", download_data = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -180,7 +180,7 @@ clessnverse::loadETLRefData()
 # to extract those URLS and get them individually in order to parse
 # each debate
 #
-base_url <- "http://www.assnat.qc.ca"
+base_url <- "https://www.assnat.qc.ca"
 content_url <- "/fr/travaux-parlementaires/journaux-debats.html"
 
 # Pour rouler le script sur une base quotidienne et aller chercher les débats récents Utiliser le ligne ci-dessous
