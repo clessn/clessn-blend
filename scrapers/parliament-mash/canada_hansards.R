@@ -174,9 +174,16 @@ if (scraping_method == "Latest") {
   
   while (is.null(source_page)  && i_get_attempt <= 20) {
     tryCatch(
-      {source_page <- httr::GET(paste(base_url,content_url,sep=''))},
-      error = function(e) {stop(paste("error getting page ", base_url, content_url, sep=''))}, 
-      finally = {}
+      {
+        source_page <- httr::GET(paste(base_url,content_url,sep=''))
+      },
+      error = function(e) {
+        print(paste("error getting hansard page ", base_url, content_url, sep=''))
+        print(e)
+        quit(status=1)
+      }, 
+      finally = {
+      }
     )
   }
 
@@ -280,8 +287,14 @@ for (i_url in 1:length(urls_list_fr)) {
 
     while(is.null(r_en) && i_get_attempt <= 20) { 
       tryCatch(
-        {r_en <- safe_GET(current_url_en)},
-        error = function(e) {stop(paste("error getting page ", base_url, content_url, sep=''))}, 
+        {
+          r_en <- safe_GET(current_url_en)
+        },
+        error = function(e) {
+          print(paste("error getting hansard page ", base_url, content_url, sep=''))
+          print(e)
+          quit(status=1)
+        }, 
         finally = {}
       ) 
     }

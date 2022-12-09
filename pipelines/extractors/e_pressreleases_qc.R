@@ -290,7 +290,7 @@ tryCatch(
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
         clessnverse::log_close(logger)
         rm(logger)
-        #quit(status = status)
+        quit(status = status)
     }
 )
 
