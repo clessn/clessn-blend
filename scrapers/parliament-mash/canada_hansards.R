@@ -172,7 +172,14 @@ if (scraping_method == "Latest") {
 
   i_get_attempt <- 1
   
-  while (is.null(source_page)  && i_get_attempt <= 20) { source_page <- httr::GET(paste(base_url,content_url,sep='')) }
+  while (is.null(source_page)  && i_get_attempt <= 20) {
+    tryCatch(
+      {source_page <- httr::GET(paste(base_url,content_url,sep=''))},
+      error = function(e) {stop(paste("error getting page ", base_url, content_url, sep=''))}, 
+      finally = {}
+    )
+  }
+
   source_page_html <- httr::content(source_page)
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
 
@@ -270,7 +277,15 @@ for (i_url in 1:length(urls_list_fr)) {
     current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
-    while(is.null(r_en) && i_get_attempt <= 20) { r_en <- safe_GET(current_url_en) }
+
+    while(is.null(r_en) && i_get_attempt <= 20) { 
+      tryCatch(
+        {r_en <- safe_GET(current_url_en)},
+        error = function(e) {stop(paste("error getting page ", base_url, content_url, sep=''))}, 
+        finally = {}
+      ) 
+    }
+
     if (r_en$result$status_code == 200) {
       doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
       doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
