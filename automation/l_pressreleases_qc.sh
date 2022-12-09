@@ -21,7 +21,7 @@ Rscript --no-save --no-restore $CLESSN_ROOT_DIR/clessn-blend/pipelines/loaders/$
 ret=$?
 
 sed 's/\"/\\"/g' -i $scriptname.out
-sed 's/\,/\\,/g' -i $scriptname.out
+#sed 's/\,/\\,/g' -i $scriptname.out
 sed 's/^M//g ' -i $scriptname.out
 
 if [ $ret -eq 0 ]; then
@@ -41,9 +41,13 @@ fi
 
 if [ $ret -ne 0 ]; then
   output=`tail -n 10 $scriptname.out`
+  echo "output : " $output
+  echo "message: " $(generate_post_data)
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
   output=`tail -n 2 $scriptname.out`
+  echo "output : " $output
+  echo "message: " $(generate_post_data)
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi
 
