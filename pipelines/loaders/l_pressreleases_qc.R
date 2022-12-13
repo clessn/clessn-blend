@@ -295,7 +295,7 @@ main <- function() {
     clessnverse::logit(scriptname,  paste("loading", length(items_list$key) , "items to the data warehouse",  sep=" "), logger)
 
     for (i in 1:length(items_list$key)) {
-    #for (i in 1:10) {
+    #for (i in 1:80) {
         key <- items_list$key[i]
         lake_file_url <- items_list$file[i]
         party_acronym <- items_list$party_acronym[i]
@@ -322,66 +322,70 @@ main <- function() {
 
 tryCatch( 
     withCallingHandlers(
-    {
-        # Package
-        library(dplyr) 
-        
-        Sys.setlocale("LC_TIME", "fr_CA.utf8")
+        {
+            # Package
+            library(dplyr) 
+            
+            Sys.setlocale("LC_TIME", "fr_CA.utf8")
 
-        # Globals : scriptname, opt, logger, credentials
-        lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
-        warehouse_table <- "political_parties_press_releases"
+            # Globals : scriptname, opt, logger, credentials
+            lake_items_selection_matadata <- list(metadata__province_or_state="QC", metadata__country="CAN", metadata__storage_class="lake")
+            warehouse_table <- "political_parties_press_releases"
 
-        if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
+            if (!exists("scriptname")) scriptname <<- "l_pressreleases_qc"
 
-        opt <- list(log_output = c("file,console"), refresh_data=TRUE)
+            opt <- list(log_output = c("file"), refresh_data=TRUE)
 
-        if (!exists("opt")) {
-            opt <- clessnverse::process_command_line_options()
+            if (!exists("opt")) {
+                opt <- clessnverse::process_command_line_options()
+            }
+
+            if (exists("logger")) rm(logger)
+            if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+            
+            # login to hublot
+            clessnverse::logit(scriptname, "connecting to hub", logger)
+
+            credentials <- hublot::get_credentials(
+                Sys.getenv("HUB3_URL"), 
+                Sys.getenv("HUB3_USERNAME"), 
+                Sys.getenv("HUB3_PASSWORD"))
+            
+            
+            clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+
+            status <<- 0
+            final_message <<- ""
+            
+            # Call main script    
+            main()
+        },
+        warning = function(w) {
+            clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+            print(w)
+            final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
+            status <<- 2
         }
+    ),  
 
-        if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
-        
-        # login to hublot
-        clessnverse::logit(scriptname, "connecting to hub", logger)
-
-        credentials <- hublot::get_credentials(
-            Sys.getenv("HUB3_URL"), 
-            Sys.getenv("HUB3_USERNAME"), 
-            Sys.getenv("HUB3_PASSWORD"))
-        
-        
-        clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
-
-        status <<- 0
-        
-        # Call main script    
-        main()
-    },
-     warning = function(w) {
-        clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
-        print(w)
-        status <<- 2
-    }
-    )
-    ,
-  
   # Handle an error or a call to stop function in the code
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
-    
+    final_message <<- if (final_message == "") e else paste(final_message, "\n", e, sep="")    
     status <<- 1
   },
 
   # Terminate gracefully whether error or not
   finally={
+    clessnverse::logit(scriptname, final_message, logger)
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::log_close(logger)
 
     # Cleanup
     closeAllConnections()
     rm(logger)
+    print(paste("exiting with status", status))
     quit(status = status)
   }
 )
