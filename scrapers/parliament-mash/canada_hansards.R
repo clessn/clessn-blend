@@ -280,7 +280,7 @@ for (i_url in 1:length(urls_list_fr)) {
   
   while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
 
-  if (r_fr$result$status_code == 200) {
+  if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
@@ -307,7 +307,11 @@ for (i_url in 1:length(urls_list_fr)) {
       header_xml_en <- top_xml_en[["ExtractedInformation"]]
       hansard_body_xml_en <- top_xml_en[["HansardBody"]]
     } else {
-      clessnverse::logit(scriptname, paste("Could not GET", current_url_en, "error code", r_fr$result$status_code, sep = " "), logger)
+      if (!is.null(r_en$result)) {
+        clessnverse::logit(scriptname, paste("Could not GET", current_url_en, "error code", r_en$result$status_code, sep = " "), logger)
+      } else {
+        clessnverse::logit(scriptname, paste("Could not GET", current_url_en, sep = " "), logger)
+      }
       next  
     }
     doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
@@ -318,7 +322,11 @@ for (i_url in 1:length(urls_list_fr)) {
     hansard_body_xml_fr <- top_xml_fr[["HansardBody"]]
     cached_html <- FALSE
   } else {
-    clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, "error code", r_fr$result$status_code, sep = " "), logger)
+    if (!is.null(r_fr$result)) {
+      clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, "error code", r_fr$result$status_code, sep = " "), logger)
+    } else {
+      clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, sep = " "), logger)
+    }
     next
   }
 
@@ -934,7 +942,7 @@ for (i_url in 1:length(urls_list_fr)) {
   clessnverse::logit(scriptname, 
                      paste("Commited", intervention_seqnum, "interventions to the hub for debate", event_id, "at URL", current_url_fr, sep = " "), 
                      logger)
-                     
+  Sys.sleep(60)
 } #for (i_url in 1:length(urls_list))
 
 
