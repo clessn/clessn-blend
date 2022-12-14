@@ -180,7 +180,7 @@ if (scraping_method == "Latest") {
       error = function(e) {
         print(paste("error getting hansard page ", base_url, content_url, sep=''))
         print(e)
-        quit(status=1)
+        #quit(status=1)
       }, 
       finally = {
       }
@@ -293,7 +293,7 @@ for (i_url in 1:length(urls_list_fr)) {
         error = function(e) {
           print(paste("error getting hansard page ", base_url, content_url, sep=''))
           print(e)
-          quit(status=1)
+          #quit(status=1)
         }, 
         finally = {}
       ) 
