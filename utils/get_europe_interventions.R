@@ -107,10 +107,10 @@ content(response, "text")
 
 
 
-# Text Translator : fonctionne pas
+# Text Translator 
 library(httr)
 url <- "https://text-translator2.p.rapidapi.com/translate"
-payload <- paste("source_language=sk&target_language=en&text=",gsub(" ", "%20", dfInterventions$data.interventionText[135483])), 
+payload <- paste("source_language=en&target_language=fr&text=",gsub(" ", "%20", substring(dfInterventions$data.interventionText[99709],1, 2900)))
 encode <- "form"
 response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'text-translator2.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
 content(response, "text")
