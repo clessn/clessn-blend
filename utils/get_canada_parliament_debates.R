@@ -18,7 +18,10 @@ my_filter <- clessnhub::create_filter(
   schema="v2", 
   metadata=list(
     institution="House of Commons of Canada", 
-    format="xml")
+    format="xml"),
+  data=list(
+    eventID="421153HAN153"
+  )
 )
 
 df <- clessnhub::get_items(
