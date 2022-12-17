@@ -155,8 +155,8 @@ clessnverse::loadETLRefData()
 # each debate
 #
 
-#scraping_method <- "SessionRange"
-scraping_method <- "Latest"
+scraping_method <- "SessionRange"
+#scraping_method <- "Latest"
 base_url <- "https://www.noscommunes.ca"
 hansard_url1 <- "/Content/House"
 hansard_url2 <- "/Debates"
@@ -180,7 +180,7 @@ if (scraping_method == "Latest") {
       error = function(e) {
         print(paste("error getting hansard page ", base_url, content_url, sep=''))
         print(e)
-        #quit(status=1)
+        quit(status=1)
       }, 
       finally = {
       }
@@ -218,10 +218,10 @@ if (scraping_method == "SessionRange") {
   content_url <- "Content/House"
   start_parliam <- 43
   nb_parliam <- 1
-  start_session <- 2
+  start_session <- 1
   nb_session <- 1
-  start_seance <- 90
-  nb_seance <- 10
+  start_seance <- 041
+  nb_seance <- 1
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -293,7 +293,7 @@ for (i_url in 1:length(urls_list_fr)) {
         error = function(e) {
           print(paste("error getting hansard page ", base_url, content_url, sep=''))
           print(e)
-          #quit(status=1)
+          quit(status=1)
         }, 
         finally = {}
       ) 

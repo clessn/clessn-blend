@@ -186,7 +186,7 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
 
         clessnverse::logit(scriptname, paste(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site"), logger)
         cat(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site", "\n")
-
+        total_press_releases_scraped <<- total_press_releases_scraped + length(press_releases_urls_list)
     } else {
         clessnverse::logit(scriptname, paste("Error getting", party_acronym, "main press release page"), logger)
         warning(paste(r$error, paste("Error getting", party_acronym, "main press release page"), sep="\n"))
@@ -250,7 +250,7 @@ tryCatch(
         
         if (!exists("scriptname")) scriptname <<- "e_pressreleases_qc"
 
-        opt <<- list(log_output = c("file,console"), hub_mode = "refresh")
+        opt <<- list(log_output = c("file"), hub_mode = "refresh")
 
         if (!exists("opt")) {
             opt <<- clessnverse::processCommandLineOptions()
@@ -270,6 +270,8 @@ tryCatch(
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
         status <<- 0
+        final_message <<- ""
+        total_press_releases_scraped <<- 0
         
         main(scriptname, logger, credentials)
     },
@@ -277,20 +279,25 @@ tryCatch(
     warning = function(w) {
         clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
         print(w)
+        final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
         status <<- 2
     }),
     
     error = function(e) {
         clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
         print(e)
+        final_message <<- if (final_message == "") e else paste(final_message, "\n", e, sep="")    
         status <<- 1
     },
   
     finally={
+        clessnverse::logit(scriptname, final_message, logger)
+        clessnverse::logit(scriptname, paste(total_press_releases_scraped, "QC press releases were extracted from the web"), logger)
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
         clessnverse::log_close(logger)
         rm(logger)
-        #quit(status = status)
+        print(paste("exiting with status", status))
+        quit(status = status)
     }
 )
 

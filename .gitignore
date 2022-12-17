@@ -167,3 +167,4 @@ clessn-blend.code-workspace
 output.json
 *.wav
 *.m4a
+.swp

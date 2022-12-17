@@ -24,7 +24,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-   "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
+   "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n${output}\n"
   }
 EOF
 }
@@ -37,6 +37,7 @@ cd ~
 if [ $scriptname != "badbadbad" ]; then
   Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 2>&1 | tee "$scriptname.out"
   ret=$?
+  echo $ret
   sed 's/\"/\\"/g' -i $scriptname.out
   sed 's///g ' -i $scriptname.out
 fi
@@ -59,11 +60,12 @@ fi
 
 if [ $ret -ne 0 ]; then
   output=`tail -n 10 $scriptname.out`
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
   output=`tail -n 2 $scriptname.out`
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi
 
-curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 
 if [ -f "$scriptname.out" ]; then
   rm -f "$scriptname.out"

@@ -6,12 +6,12 @@ generate_post_data()
 {
   cat <<EOF
   {
-  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n============ tail of logs ============\n${output}\n============ end of logs ============\n "
+  "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n${output}\n"
   }
 EOF
 }
 
-scriptname="twitter_blender.R"
+scriptname="twitter_blender"
 
 R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
 R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="v1", force=T)'
@@ -20,12 +20,13 @@ R --no-save --no-restore -e 'remotes::install_url("https://cran.r-project.org/sr
 
 cd ~
 
-Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname -m $1 -o $2 -t $3 -s $4 -f $5 2>&1 | tee "$scriptname.out"
-
+Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname.R -m $1 -o $2 -t $3 -s $4 -f $5 2>&1 
 ret=$?
 
-sed 's/\"/\\"/g' -i $scriptname.out
-sed 's/^M//g ' -i $scriptname.out
+sed 's/\"/\\"/g' -i ~/logs/$scriptname"_"$3.log
+sed 's/^M//g ' -i ~/logs/$scriptname"_"$3.log
+sed 's/--:--/     /g ' -i ~/logs/$scriptname"_"$3.log
+sed 's/:--/   /g ' -i ~/logs/$scriptname"_"$3.log
 
 if [ $ret -eq 0 ]; then
   status="SUCCESS"
@@ -43,13 +44,13 @@ if [ $ret -eq 2 ]; then
 fi
 
 if [ $ret -ne 0 ]; then
-  output=`tail -n 10 $scriptname.out`
+  output=`tail -n 10 ~/logs/$scriptname"_"$3.log`
+  echo $output
+  echo $(generate_post_data)
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
-  output=`tail -n 2 $scriptname.out`
-fi
-
-curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
-
-if [ -f "$scriptname.out" ]; then
-  rm -f "$scriptname.out"
+  output=`tail -n 2 ~/logs/$scriptname"_"$3.log`
+  echo $output
+  echo $(generate_post_data)
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi

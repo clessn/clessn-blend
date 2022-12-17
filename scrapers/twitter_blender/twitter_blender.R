@@ -180,7 +180,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       },
       finally = {
         clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
-        total_retrieved <- total_retrieved + nrow(env$newtweets)
+        total_retrieved <<- total_retrieved + nrow(env$newtweets)
       }
     )
   } else {
@@ -205,7 +205,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
       
       finally = {
         clessnverse::logit(scriptname, paste("retrieved", nrow(env$newtweets), "from twitter"), logger)
-        total_retrieved <- total_retrieved + nrow(env$newtweets)
+        total_retrieved <<- total_retrieved + nrow(env$newtweets)
       }
     )
   }
@@ -307,6 +307,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
         {
           tweet_commit_type <- "modified"
           clessnhub::edit_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+          total_committed <<- total_committed + 1
         },
 
         error = function(e) {
@@ -314,6 +315,7 @@ getTweets <- function(handle, key, opt, token, scriptname, logger) {
             {
               tweet_commit_type <- "added"
               clessnhub::create_item('tweets', key = t_key, type = type, schema = schema, metadata = metadata_to_commit, data = data_to_commit)
+              total_committed <<- total_committed + 1
             },
             
             error = function(e) {
@@ -475,7 +477,10 @@ main <- function(opt, scriptname, logger) {
                     opt = opt, token = token, scriptname = scriptname, logger = logger)
         }
       }
-    } #for (i_person in 1:nrow(dfPersons))
+
+      total_account_scraped <<- total_account_scraped + 1
+
+    } #for (i_person in index) {
   } else {
     clessnverse::logit(scriptname, "no persons matching filter criteria were found in hub2", logger)
   }
@@ -483,50 +488,81 @@ main <- function(opt, scriptname, logger) {
 
 
 
-
+final_message <<- ""
+total_retrieved <<- 0
+total_committed <<- 0
+total_account_scraped <<- 0
 
 tryCatch( 
-  {
-    #installPackages()
-    library(dplyr)
-    #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "all")
-    #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "politicians")
-    #opt <- opt <- list(max_timeline = 200, log_output = "file,console", population = "medias")
-    #opt <- opt <- list(max_timeline = 100, log_output = "console", population = "small_sample")
-    #opt <- list(max_timeline = 100, log_output = "file", type = "mp", schema = "all", filter = 'list(metadata.institution="National Assembly of Quebec")')
-    #opt <- list(max_timeline = 100, log_output = "file", type = "all", schema = "all", filter = 'all')
-    #opt <- list(max_timeline = 100, log_output = "file", type = "political_party", schema = "all", filter = 'all')
-    total_retrieved <- 0
-    total_committed <- 0
-    total_account_scraped <- 0
-    
-    if (!exists("opt")) {
-      opt <- processCommandLineOptions()
-    }
-    
-    if (exists("logger")) rm(logger)
-    if (!exists("scriptname")) scriptname <<- paste("twitter_blender_",opt$type,sep='')
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+  
+  withCallingHandlers(
+    {
+      #installPackages()
+      library(dplyr)
+      #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "all")
+      #opt <- opt <- list(max_timeline = 3200, log_output = "file,console", population = "politicians")
+      #opt <- opt <- list(max_timeline = 200, log_output = "file,console", population = "medias")
+      #opt <- opt <- list(max_timeline = 100, log_output = "console", population = "small_sample")
+      #opt <- list(max_timeline = 100, log_output = "file", type = "mp", schema = "all", filter = 'list(metadata.institution="National Assembly of Quebec")')
+      #opt <- list(max_timeline = 100, log_output = "file", type = "all", schema = "all", filter = 'all')
+      #opt <- list(max_timeline = 100, log_output = "file", type = "political_party", schema = "all", filter = 'all')
 
-    scriptname <<- paste(scriptname, opt$schema, sep='_')
-    
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(names(opt), "=", opt, collapse = " ")), logger)
-    
-    # login to the hub
-    clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
-    clessnverse::logit(scriptname, "connecting to hub", logger)
-    
-    main(opt, scriptname, logger)
-  },
+      if (!exists("opt")) {
+        opt <- processCommandLineOptions()
+      }
+      
+      if (exists("logger")) rm(logger)
+      if (!exists("scriptname")) scriptname <<- paste("twitter_blender_",opt$type,sep='')
+      if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+
+      scriptname <<- paste(scriptname, opt$schema, sep='_')
+      
+      clessnverse::logit(scriptname, paste("Execution of",  scriptname, "starting with options", paste(names(opt), "=", opt, collapse = " ")), logger)
+      
+      # login to the hub
+      clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
+      clessnverse::logit(scriptname, "connecting to hub", logger)
+
+      status <<- 0
+      final_message <<- ""
+      
+      main(opt, scriptname, logger)
+    },
+    warning = function(w) {
+      clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+      print(w)
+      if (final_message == "") {
+        final_message <<- paste(w, collapse = " ")
+      } else {
+        final_message <<- paste(final_message, "\n", paste(w, collapse = " "), sep="")
+      }
+      status <<- 2
+    }
+  ),
   
   error = function(e) {
-    clessnverse::logit(scriptname, paste(e, collapse=''), logger)
+    clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
+    if (final_message == ""){
+      final_message <<- paste(e, collapse = " ") 
+    } else {
+      final_message <<- paste(final_message, "\n", paste(e, collapse = " "), sep="")
+    }
+    status <<- 1
   },
   
   finally={
+    if (final_message == "") {
+      final_message <<- paste(total_account_scraped,"accounts scraped",total_retrieved,"tweets retrieved",total_committed,"tweets committed to data warehouse")
+    } else {
+      final_message <<- paste(final_message, "\n", total_account_scraped,"accounts scraped",total_retrieved,"tweets retrieved",total_committed,"tweets committed to data warehouse")
+    }
+    clessnverse::logit(scriptname, final_message, logger)
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::logclose(logger)
+
+    closeAllConnections()
     rm(logger)
+    quit(status = status)
   }
 )
