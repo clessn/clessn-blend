@@ -86,7 +86,7 @@ load_plcen_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PLCENPlatform))
     PLCENPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_can2021", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = PLCENPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -123,8 +123,8 @@ load_plcfr_manifesto <- function(lake_item) {
     PLCFRPlatform <-
       pdf_doc |>
       pdftools::pdf_text() |> # transform PDF into text
-      unlist() |> # transform list into one big vector
       stringr::str_split("\\.\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
       stringr::str_replace_all("\n", " ") |> # replace line breaks by spaces
       stringr::str_remove_all("Avançons ensemble \\d+ ") |>
       stringr::str_squish() |> # remove white spaces
@@ -156,7 +156,7 @@ load_plcfr_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PLCFRPlatform))
     PLCFRPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_can2021", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = PLCFRPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -225,7 +225,7 @@ load_pccen_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PCCENPlatform))
     PCCENPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_can2021", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = PCCENPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -266,6 +266,7 @@ load_pccfr_manifesto <- function(lake_item) {
       unlist() |> # transform list into one big vector
       stringr::str_replace_all("\n", " ") |> # replace line breaks by spaces
       stringr::str_remove_all("\\d+ ([A-Z]+ )+") |>
+      stringr::str_remove_all("^\\d+$") |>
       stringr::str_squish() |> # remove white spaces
       data.frame() # transform into data frame
     colnames(PCCFRPlatform) <- "paragraph"
@@ -295,7 +296,7 @@ load_pccfr_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PCCFRPlatform))
     PCCFRPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_can2021", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = PCCFRPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -351,13 +352,13 @@ load_bq_manifesto <- function(lake_item) {
       dplyr::group_by(group) |> # previous paragraph starting with uppercase
       dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
       dplyr::select(-group) |>
-      dplyr::mutate(political_party = "PCC",
+      dplyr::mutate(political_party = "BQ",
                     election_year = 2021,
                     original_doc_type = "pdf",
-                    release_date = as.Date("2021-08-16"),
-                    title = "Canada's Recovery Plan",
+                    release_date = as.Date("2021-08-22"),
+                    title = "Québécois",
                     country = "CAN",
-                    language = "EN",
+                    language = "FR",
                     n_words = stringr::str_count(paragraph, "\\S+"),
                     n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
     
@@ -365,8 +366,438 @@ load_bq_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(BQPlatform))
     BQPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_can2021", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = BQPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_npden_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[17]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    NPDENPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("_") |> # remove underscores
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(NPDENPlatform) <- "paragraph"
+    NPDENPlatform[NPDENPlatform == ""] <- NA
+    NPDENPlatform <- na.omit(NPDENPlatform)
+    NPDENPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      NPDENPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    NPDENPlatform$group <- NA
+    NPDENPlatform$group[NPDENPlatform$uppercase_first == T] <- 1:length(
+      NPDENPlatform$group[NPDENPlatform$uppercase_first == T])
+    NPDENPlatform <- NPDENPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "NPD",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-08-12"),
+                    title = "Ready for Better",
+                    country = "CAN",
+                    language = "EN",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(NPDENPlatform))
+    NPDENPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = NPDENPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_npdfr_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[18]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    NPDFRPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("_") |> # remove underscores
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(NPDFRPlatform) <- "paragraph"
+    NPDFRPlatform[NPDFRPlatform == ""] <- NA
+    NPDFRPlatform <- na.omit(NPDFRPlatform)
+    NPDFRPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      NPDFRPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    NPDFRPlatform$group <- NA
+    NPDFRPlatform$group[NPDFRPlatform$uppercase_first == T] <- 1:length(
+      NPDFRPlatform$group[NPDFRPlatform$uppercase_first == T])
+    NPDFRPlatform <- NPDFRPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "NPD",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-08-12"),
+                    title = "Oser mieux",
+                    country = "CAN",
+                    language = "FR",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(NPDFRPlatform))
+    NPDFRPlatform$index <- index_column
+    NPDFRPlatform <- subset(NPDFRPlatform, stringr::str_detect(
+      NPDFRPlatform$paragraph, "^\\d+$") == FALSE)
+    
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = NPDFRPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_pvcen_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[7]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    PVCENPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("\\n") |>
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(PVCENPlatform) <- "paragraph"
+    PVCENPlatform[PVCENPlatform == ""] <- NA
+    PVCENPlatform <- na.omit(PVCENPlatform)
+    PVCENPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      PVCENPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    PVCENPlatform$group <- NA
+    PVCENPlatform$group[PVCENPlatform$uppercase_first == T] <- 1:length(
+      PVCENPlatform$group[PVCENPlatform$uppercase_first == T])
+    PVCENPlatform <- PVCENPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PVC",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-09-07"),
+                    title = "Green Future, Life with Dignity, Just Society",
+                    country = "CAN",
+                    language = "EN",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(PVCENPlatform))
+    PVCENPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = PVCENPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_pvcfr_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[6]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    PVCFRPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("\\n") |>
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_remove_all("|") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(PVCFRPlatform) <- "paragraph"
+    PVCFRPlatform[PVCFRPlatform == ""] <- NA
+    PVCFRPlatform <- na.omit(PVCFRPlatform)
+    PVCFRPlatform$paragraph <- PVCFRPlatform$paragraph |>
+      stringr::str_remove_all("\\|\\s?") |>
+      stringr::str_remove_all("✗")
+    PVCFRPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      PVCFRPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    PVCFRPlatform$group <- NA
+    PVCFRPlatform$group[PVCFRPlatform$uppercase_first == T] <- 1:length(
+      PVCFRPlatform$group[PVCFRPlatform$uppercase_first == T])
+    PVCFRPlatform <- PVCFRPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PVC",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-09-07"),
+                    title = paste("Un avenir vert, Vivre dans la dignité,",
+                                  "Une société juste"),
+                    country = "CAN",
+                    language = "FR",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(PVCFRPlatform))
+    PVCFRPlatform$index <- index_column
+    PVCFRPlatform$paragraph <- stringr::str_replace_all(
+      PVCFRPlatform$paragraph, " ", " ")
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = PVCFRPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_ppcen_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[11]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    PPCENPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("\\n") |>
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(PPCENPlatform) <- "paragraph"
+    PPCENPlatform[PPCENPlatform == ""] <- NA
+    PPCENPlatform <- na.omit(PPCENPlatform)
+    PPCENPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      PPCENPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    PPCENPlatform$group <- NA
+    PPCENPlatform$group[PPCENPlatform$uppercase_first == T] <- 1:length(
+      PPCENPlatform$group[PPCENPlatform$uppercase_first == T])
+    PPCENPlatform <- PPCENPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PPC",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-09-04"),
+                    title = "Our Platform",
+                    country = "CAN",
+                    language = "EN",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(PPCENPlatform))
+    PPCENPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = PPCENPlatform, 
+                                        key_columns = "paragraph+political_party+index", 
+                                        key_encoding = "digest",
+                                        refresh_data = TRUE, 
+                                        credentials = credentials)
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to parse the", lake_item$metadata$political_party, "manifesto document at", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+}
+
+
+load_ppcfr_manifesto <- function(lake_item) {
+  
+  pdf_doc <- NULL
+  
+  lake_file_url <- lake_item$file
+  r <- httr::GET(lake_file_url)
+  
+  if (r$status_code == 200) {
+    pdf_doc <- httr::content(r, as="raw")
+  } else {
+    clessnverse::logit(scriptname, 
+                       paste("There was an error trying to fetch the", lake_item$metadata$political_party, "manifesto at URL", lake_file_url),
+                       logger)
+    status <<- 1
+    return()
+  }
+  # for tests: pdf_doc <- httr::content(httr::GET(data$results[[10]]$file), as="raw")
+  if (!is.null(pdf_doc)) {
+    PPCFRPlatform <-
+      pdf_doc |>
+      pdftools::pdf_text() |> # transform PDF into text
+      stringr::str_split("\\n\\n") |> # unmerge separate paragraphs
+      unlist() |> # transform list into one big vector
+      stringr::str_remove_all("\\n") |>
+      stringr::str_remove_all("^\\d+$") |>
+      stringr::str_squish() |> # remove white spaces
+      data.frame() # transform into data frame
+    colnames(PPCFRPlatform) <- "paragraph"
+    PPCFRPlatform[PPCFRPlatform == ""] <- NA
+    PPCFRPlatform <- na.omit(PPCFRPlatform)
+    PPCFRPlatform$uppercase_first <- stringr::str_detect( # identify paragraphs
+      PPCFRPlatform$paragraph, "^[a-z]") == FALSE # starting with a lowercase
+    PPCFRPlatform$group <- NA
+    PPCFRPlatform$group[PPCFRPlatform$uppercase_first == T] <- 1:length(
+      PPCFRPlatform$group[PPCFRPlatform$uppercase_first == T])
+    PPCFRPlatform <- PPCFRPlatform |>
+      tidyr::fill(group, .direction = "down") |> # group paragraphs with the
+      dplyr::group_by(group) |> # previous paragraph starting with uppercase
+      dplyr::summarise(paragraph = paste(paragraph, collapse = " ")) |>
+      dplyr::select(-group) |>
+      dplyr::mutate(political_party = "PPC",
+                    election_year = 2021,
+                    original_doc_type = "pdf",
+                    release_date = as.Date("2021-09-04"),
+                    title = "Plateforme électorale",
+                    country = "CAN",
+                    language = "FR",
+                    n_words = stringr::str_count(paragraph, "\\S+"),
+                    n_sentences = 1 + stringr::str_count(paragraph, "\\.\\s"))
+    
+    
+    index_column <- rep(1:nrow(PPCFRPlatform))
+    PPCFRPlatform$index <- index_column
+    
+    clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
+                                        df = PPCFRPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
                                         refresh_data = TRUE, 
@@ -408,24 +839,24 @@ main <- function() {
         data$results[[i]]$metadata$clean == "yes") load_pccfr_manifesto(data$results[[i]])
     if (data$results[[i]]$metadata$political_party == "BQ" &
         data$results[[i]]$metadata$clean == "yes") load_bq_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "NPD" &
-    #    data$results[[i]]$metadata$language == "EN" &
-    #    data$results[[i]]$metadata$clean == "yes") load_npden_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "NPD" &
-    #    data$results[[i]]$metadata$language == "FR" &
-    #    data$results[[i]]$metadata$clean == "yes") load_npdfr_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "PVC" &
-    #    data$results[[i]]$metadata$language == "EN" &
-    #    data$results[[i]]$metadata$clean == "yes") load_pvcen_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "PVC" &
-    #    data$results[[i]]$metadata$language == "FR" &
-    #    data$results[[i]]$metadata$clean == "yes") load_pvcfr_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "PPC" &
-    #    data$results[[i]]$metadata$language == "EN" &
-    #    data$results[[i]]$metadata$clean == "yes") load_ppcen_manifesto(data$results[[i]])
-    #if (data$results[[i]]$metadata$political_party == "PPC" &
-    #    data$results[[i]]$metadata$language == "FR" &
-    #    data$results[[i]]$metadata$clean == "yes") load_ppcfr_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "NPD" &
+        data$results[[i]]$metadata$language == "EN" &
+        data$results[[i]]$metadata$clean == "yes") load_npden_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "NPD" &
+        data$results[[i]]$metadata$language == "FR" &
+        data$results[[i]]$metadata$clean == "yes") load_npdfr_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "PVC" &
+        data$results[[i]]$metadata$language == "EN" &
+        data$results[[i]]$metadata$clean == "yes") load_pvcen_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "PVC" &
+        data$results[[i]]$metadata$language == "FR" &
+        data$results[[i]]$metadata$clean == "yes") load_pvcfr_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "PPC" &
+        data$results[[i]]$metadata$language == "EN" &
+        data$results[[i]]$metadata$clean == "yes") load_ppcen_manifesto(data$results[[i]])
+    if (data$results[[i]]$metadata$political_party == "PPC" &
+        data$results[[i]]$metadata$language == "FR" &
+        data$results[[i]]$metadata$clean == "yes") load_ppcfr_manifesto(data$results[[i]])
   }
 }
 

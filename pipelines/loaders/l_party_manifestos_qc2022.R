@@ -91,7 +91,7 @@ load_qs_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(QSPlatform))
     QSPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_qc2022", 
                                         df = QSPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -165,7 +165,7 @@ load_caq_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(CAQPlatform))
     CAQPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_qc2022", 
                                         df = CAQPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -235,7 +235,7 @@ load_pcq_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PCQPlatform))
     PCQPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_qc2022", 
                                         df = PCQPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
@@ -309,7 +309,7 @@ load_plq_manifesto <- function(lake_item) {
     index_column <- rep(1:nrow(PLQPlatform))
     PLQPlatform$index <- index_column
     
-    clessnverse::commit_warehouse_table(table_name = "political_parties_manifestos_qc2022", 
+    clessnverse::commit_warehouse_table(table_name = "manifestos_qc2022", 
                                         df = PLQPlatform, 
                                         key_columns = "paragraph+political_party+index", 
                                         key_encoding = "digest",
