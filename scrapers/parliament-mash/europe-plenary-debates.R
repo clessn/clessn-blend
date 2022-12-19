@@ -73,6 +73,10 @@ installPackages <- function() {
 } # </function installPackages>
 
 
+safe_GET <- purrr::safely(httr::GET)
+
+
+
 ###############################################################################
 #   Globals
 #
@@ -93,7 +97,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 #opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
-#opt <- list(dataframe_mode = "rebuild", log_output = c("file", "hub", "console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = c("console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -179,15 +183,32 @@ if (scraping_method == "FrontPage") {
   base_url <- "https://www.europarl.europa.eu"
   content_url <- "/plenary/en/debates-video.html#sidesForm"
   
-  source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
+  #source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
+  source_page <- NULL
+  i_get_attempt <- 1
+
+  while (i_get_attempt < 20 && is.null(source_page)){
+    tryCatch(
+      {source_page <- httr::GET(paste(base_url,content_url,sep=""))},
+      error = function(e){
+        clessnverse::logit(scriptname, paste("cannot get", paste(base_url,content_url,sep=""), "index web page"), logger)
+      },
+      finally={
+        i_get_attempt <- i_get_attempt + 1
+      }
+    )
+  }
   source_page_html <- XML::htmlParse(source_page, useInternalNodes = TRUE)
+
+  urls <- XML::xpathSApply(source_page_html, "//a/@href")
+  #urls <- rvest::html_nodes(source_page, 'a')
   
-  urls <- rvest::html_nodes(source_page, 'a')
   urls <- urls[grep("\\.xml", urls)]
   urls <- urls[grep("https", urls)]
   
-  urls_list <- rvest::html_attr(urls, 'href')
-  urls_list <- as.list(urls_list)
+  #urls_list <- rvest::html_attr(urls, 'href')
+
+  urls_list <- as.list(urls)
 }
 
 if (scraping_method == "DateRange") {
@@ -234,7 +255,6 @@ if (length(urls_list) == 0) stop("Exiting normally because no new debate has bee
 # start parsing it to extract the debates content
 #
 for (i in 1:length(urls_list)) {
-#for (i in 1:3) {
   event_url <- urls_list[[i]]
   event_id <- stringr::str_match(event_url, "\\CRE-(.*)\\.")[2]
   event_id <- stringr::str_replace_all(event_id, "[[:punct:]]", "")
@@ -258,17 +278,33 @@ for (i in 1:length(urls_list)) {
   }
 
 
-    r <- httr::GET(event_url)
-    if (r$status_code == 200) {
-      doc_html <- httr::content(r)
-      doc_xml <- XML::xmlTreeParse(doc_html, useInternalNodes = TRUE)
-      top_xml <- XML::xmlRoot(doc_xml)
-      head_xml <- top_xml[[1]]
-      core_xml <- top_xml[[2]]
-      clessnverse::logit(scriptname, event_id, logger)
-    } else {
-      next
-    }
+  i_get_attempt <- 1
+  r <- NULL
+  while(i_get_attempt < 20 && is.null(r)) {
+    tryCatch(
+      {
+        r <- httr::GET(event_url)
+      },
+      error = function(e) {
+        clessnverse::logit(scriptname,paste("cannot get", event_url, "event web page", logger))
+      },
+      finally = {
+        i_get_attempt <- i_get_attempt + 1
+      }
+    )
+  }
+
+  if (r$status_code == 200) {
+    doc_html <- httr::content(r)
+    doc_xml <- XML::xmlTreeParse(doc_html, useInternalNodes = TRUE)
+    top_xml <- XML::xmlRoot(doc_xml)
+    head_xml <- top_xml[[1]]
+    core_xml <- top_xml[[2]]
+    clessnverse::logit(scriptname, event_id, logger)
+  } else {
+    clessnverse::logit(scriptname,paste("error", r$status_code, "getting", event_url, "event web page", logger))
+    next
+  }
 
   # Get the length of all branches of the XML document
   core_xml_nbchapters <- length(names(core_xml))
