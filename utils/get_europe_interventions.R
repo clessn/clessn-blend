@@ -4,20 +4,34 @@ scriptname <- "get_europe_interventions"
 opt <- list(dataframe_mode = "update", log_output = c("console"), hub_mode = "skip", download_data = TRUE, translate=TRUE)
 logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
-clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
+clessnhub::login(
+   Sys.getenv("HUB_USERNAME"),
+   Sys.getenv("HUB_PASSWORD"),
+   Sys.getenv("HUB_URL"))
 
 
-# Download v3 MPs information
-metadata_filter <- list(institution="European Parliament")
-filter <- clessnhub::create_filter(type="mp", schema="v3", metadata=metadata_filter)  
-dfPersons <- clessnhub::get_items('persons', filter=filter, download_data = TRUE)
+my_filter <- clessnhub::create_filter(
+  type="parliament_debate", 
+  #schema="v2", 
+  metadata=list(
+    location="EU", 
+    format="xml"),
+  data=list(
+    eventID = "920221213EN"
+  )
+)
 
-# Download all interventions
-clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
-dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
-                                                            location = "EU", format = "html",
-                                                            download_data = opt$download_data,
-                                                            token = Sys.getenv('HUB_TOKEN'))
+df <- clessnhub::get_items(
+  table = 'agoraplus_interventions',
+  filter = my_filter,
+  download_data = TRUE,
+  max_pages = -1
+)
+
+
+for (i in 1:nrow(df)) {
+  clessnhub::delete_item('agoraplus_interventions', df$key[i])
+}
 
 
 #df <- data.frame(full_name=dfInterventions$data.speakerFullName, party = dfInterventions$data.speakerParty, pol_group = dfInterventions$data

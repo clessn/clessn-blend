@@ -95,7 +95,7 @@ if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger)) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 
 # Download HUB v2 data
@@ -183,6 +183,7 @@ if (scraping_method == "Latest") {
         quit(status=1)
       }, 
       finally = {
+        i_get_attempt <- i_get_attempt + 1
       }
     )
   }
@@ -216,12 +217,12 @@ if (scraping_method == "Latest") {
 
 if (scraping_method == "SessionRange") {
   content_url <- "Content/House"
-  start_parliam <- 43
+  start_parliam <- 39
   nb_parliam <- 1
   start_session <- 1
-  nb_session <- 1
-  start_seance <- 041
-  nb_seance <- 1
+  nb_session <- 2
+  start_seance <- 1
+  nb_seance <- 175
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -278,7 +279,10 @@ for (i_url in 1:length(urls_list_fr)) {
 
   i_get_attempt <- 1
   
-  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+  while(is.null(r_fr) && i_get_attempt <= 20) { 
+    r_fr <- safe_GET(current_url_fr) 
+    i_get_attempt <- i_get_attempt + 1
+  }
 
   if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
@@ -295,7 +299,9 @@ for (i_url in 1:length(urls_list_fr)) {
           print(e)
           quit(status=1)
         }, 
-        finally = {}
+        finally = {
+          i_get_attempt <- i_get_attempt + 1
+        }
       ) 
     }
 
@@ -513,6 +519,8 @@ for (i_url in 1:length(urls_list_fr)) {
 
         for (i_sob_content in 1:length(names(sob_content_node))) {
 
+          if (nchar(XML::xmlValue(sob_content_node)) == 0) next
+
           # First we might have a header
           if (XML::xmlName(sob_content_node[[i_sob_content]]) == "ParaText") {
             sob_header <- XML::xmlValue(sob_content_node[[i_sob_content]])
@@ -520,7 +528,12 @@ for (i_url in 1:length(urls_list_fr)) {
             if ("Document" %in% names(sob_content_node[[i_sob_content]])) {
               sob_doc_title <- trimws(XML::xmlValue(sob_content_node[[i_sob_content]][["Document"]]))
               sob_doc_id <- XML::xmlGetAttr(sob_content_node[[i_sob_content]][["Document"]], "DbId")
+            } else {
+              sob_doc_id <- NA
             }
+          } else {
+            sob_header <- NA
+            sob_doc_id <- NA
           }
 
           # we might have a language change
@@ -581,36 +594,43 @@ for (i_url in 1:length(urls_list_fr)) {
 
             # Identify the speaker and speaker type
             speaker_node <- intervention_node[["PersonSpeaking"]]
-            speaker_type <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "Type")
-            if (!is.null(speaker_type)) {
-              speaker_type <- dplyr::case_when(speaker_type == "18" ~ "Secrétaire parlementaire",
-                                               speaker_type == "2"  ~ "Député(e)",
-                                               speaker_type == "13" ~ "Député(e)",
-                                               speaker_type == "1"  ~ "Premier ministre",
-                                               speaker_type == "15" ~ "Président",
-                                               speaker_type == "9"  ~ "Chef de l'opposition",
-                                               speaker_type == "10"  ~ "Chef de l'opposition",
-                                               speaker_type == "4"  ~ "Ministre",
-                                               speaker_type == "20" ~ "Ministre",
-                                               speaker_type == "96" ~ "Ministre",
-                                               speaker_type == "7"  ~ "Leader parlementaire de l'opposition",
-                                               speaker_type == "93" ~ "Vice-président(e) adjoint(e)",
-                                               speaker_type == "92" ~ "Vice-président(e) adjoint(e)",
-                                               speaker_type == "22" ~ "Vice-président(e)",
-                                               speaker_type == "12" ~ "Whip en chef du gouvernement",
-                                               speaker_type == "60056" ~ "Leader adjoint(e) du gouvernement à la Chambre des communes",
-                                               TRUE ~ speaker_type) 
-            } else {
-              speaker_type <- NA
-            }
+
+            if (nchar(XML::xmlValue(speaker_node)) > 0) {
+              speaker_type  <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "Type")
+              speaker_id <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "DbId")
+              speaker_value <- XML::xmlValue(speaker_node[["Affiliation"]])
+
+              if (!is.null(speaker_type)) {
+                speaker_type <- dplyr::case_when(speaker_type == "18" ~ "Secrétaire parlementaire",
+                                                speaker_type == "2"  ~ "Député(e)",
+                                                speaker_type == "13" ~ "Député(e)",
+                                                speaker_type == "1"  ~ "Premier ministre",
+                                                speaker_type == "15" ~ "Président",
+                                                speaker_type == "9"  ~ "Chef de l'opposition",
+                                                speaker_type == "10"  ~ "Chef de l'opposition",
+                                                speaker_type == "4"  ~ "Ministre",
+                                                speaker_type == "20" ~ "Ministre",
+                                                speaker_type == "96" ~ "Ministre",
+                                                speaker_type == "7"  ~ "Leader parlementaire de l'opposition",
+                                                speaker_type == "93" ~ "Vice-président(e) adjoint(e)",
+                                                speaker_type == "92" ~ "Vice-président(e) adjoint(e)",
+                                                speaker_type == "22" ~ "Vice-président(e)",
+                                                speaker_type == "12" ~ "Whip en chef du gouvernement",
+                                                speaker_type == "60056" ~ "Leader adjoint(e) du gouvernement à la Chambre des communes",
+                                                TRUE ~ speaker_type) 
+              } else {
+                speaker_type <- NA
+              }
 
 
             #if (!is.na(speaker_type)) {
             #  if (!is.na(speaker_type) && (speaker_type == "Ministre" || speaker_type == "Premier ministre")) speaker_is_minister <- 1
             #}
-
-            speaker_id <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "DbId")
-            speaker_value <- XML::xmlValue(speaker_node[["Affiliation"]])
+            } else {
+              speaker_type <- NA
+              speaker_id <- NA
+              speaker_value <- "Unspecified Speaker"
+            }
 
             #title_patterns <- stringr::str_match(tolower(speaker_value), tolower(patterns_titres))
 
@@ -787,75 +807,77 @@ for (i_url in 1:length(urls_list_fr)) {
             intervention_text_en <- ""
             para_text_id <- ""
 
-            for (i_intervention_subnode in 1:length(names(intervention_content_node))) {
+            if (nchar(XML::xmlValue(intervention_content_node)) > 0) {
+              for (i_intervention_subnode in 1:length(names(intervention_content_node))) {
 
-              if (i_intervention_subnode == 1 &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText" &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode+1]]) == "ParaText") {
+                if (i_intervention_subnode == 1 &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText" &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode+1]]) == "ParaText") {
 
-                sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
-              }
-
-              if (i_intervention_subnode > 1 && 
-                  i_intervention_subnode < length(names(intervention_content_node)) &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode-1]]) == "ParaText" &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText" &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode+1]]) == "ParaText") {
-
-                if ( is.na(sob_procedural_text) || sob_procedural_text == "" )
                   sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
-                else
-                  sob_procedural_text <- paste(sob_procedural_text, "\nDuring the intervention: ", XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='')
-              }
-
-
-              if (XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ParaText") {
-
-                para_text_id <- XML::xmlGetAttr(intervention_node[["Content"]][[i_intervention_subnode]], "id")
-
-                if (intervention_lang == "fr") {
-                  intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
                 }
 
-                if (intervention_lang == "en") {
-                  intervention_text <- paste(intervention_text, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
-                  intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
-                  intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
+                if (i_intervention_subnode > 1 && 
+                    i_intervention_subnode < length(names(intervention_content_node)) &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode-1]]) == "ParaText" &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText" &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode+1]]) == "ParaText") {
+
+                  if ( is.na(sob_procedural_text) || sob_procedural_text == "" )
+                    sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
+                  else
+                    sob_procedural_text <- paste(sob_procedural_text, "\nDuring the intervention: ", XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='')
                 }
 
-                para_node <- intervention_node[["Content"]][[i_intervention_subnode]]
 
-                if ("Document" %in% names(para_node)) {
-                  tmp_doc_id <- XML::xmlGetAttr(para_node[["Document"]], "DbId")
+                if (XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ParaText") {
 
-                  if (!is.na(sob_doc_id) && !stringr::str_detect(sob_doc_id, tmp_doc_id)) {
-                    sob_doc_id <- paste(sob_doc_id, XML::xmlGetAttr(para_node[["Document"]], "DbId"), sep = ' | ')
-                    sob_doc_title <- paste(sob_doc_title, trimws(XML::xmlValue(para_node[["Document"]])), sep = ' | ')
-                  }
-                  else {
-                    sob_doc_id <- XML::xmlGetAttr(para_node[["Document"]], "DbId")
-                    sob_doc_title <- trimws(XML::xmlValue(para_node[["Document"]]))
+                  para_text_id <- XML::xmlGetAttr(intervention_node[["Content"]][[i_intervention_subnode]], "id")
+
+                  if (intervention_lang == "fr") {
+                    intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
+                    intervention_text_fr <- paste(intervention_text, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
+                    intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
                   }
 
+                  if (intervention_lang == "en") {
+                    intervention_text <- paste(intervention_text, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
+                    intervention_text_fr <- paste(intervention_text_fr, XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='\n\n')
+                    intervention_text_en <- paste(intervention_text_en, XML::xpathApply(hansard_body_xml_en,paste("//ParaText[@id='", para_text_id,"']",sep=''),XML::xmlValue), sep='\n\n')
+                  }
 
-                  tmp_doc_id <- NA
+                  para_node <- intervention_node[["Content"]][[i_intervention_subnode]]
+
+                  if ("Document" %in% names(para_node)) {
+                    tmp_doc_id <- XML::xmlGetAttr(para_node[["Document"]], "DbId")
+
+                    if (!is.null(tmp_doc_id) && !is.null(sob_doc_id) && !is.na(sob_doc_id) && !stringr::str_detect(sob_doc_id, tmp_doc_id)) {
+                      sob_doc_id <- paste(sob_doc_id, XML::xmlGetAttr(para_node[["Document"]], "DbId"), sep = ' | ')
+                      sob_doc_title <- paste(sob_doc_title, trimws(XML::xmlValue(para_node[["Document"]])), sep = ' | ')
+                    }
+                    else {
+                      sob_doc_id <- XML::xmlGetAttr(para_node[["Document"]], "DbId")
+                      sob_doc_title <- trimws(XML::xmlValue(para_node[["Document"]]))
+                    }
+
+
+                    tmp_doc_id <- NA
+                  }
+
                 }
 
-              }
+                if (i_intervention_subnode > 1 &&
+                    i_intervention_subnode == length(names(intervention_content_node)) &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode-1]]) == "ParaText" &&
+                    XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText") {
 
-              if (i_intervention_subnode > 1 &&
-                  i_intervention_subnode == length(names(intervention_content_node)) &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode-1]]) == "ParaText" &&
-                  XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText") {
-
-                if ( is.na(sob_procedural_text) || sob_procedural_text == "" )
-                  sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
-                else
-                  sob_procedural_text <- paste(sob_procedural_text,"\nAt the end of intervention: ", XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='')
-              }
-            }
+                  if ( is.na(sob_procedural_text) || sob_procedural_text == "" )
+                    sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
+                  else
+                    sob_procedural_text <- paste(sob_procedural_text,"\nAt the end of intervention: ", XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]]), sep='')
+                }
+              } #for (i_intervention_subnode in 1:length(names(intervention_content_node))) {
+            } #if (nchar(XML::xmlValue(intervention_content_node)) > 0) {
 
             intervention_text <- trimws(intervention_text, "both")
             intervention_text_fr <- trimws(intervention_text_fr, "both")
@@ -918,17 +940,37 @@ for (i_url in 1:length(urls_list_fr)) {
             
             v2_metadata_to_commit <- list("url"=event_url, "format"="xml", "location"="CA", "institution"="House of Commons of Canada",
                                           "parliament_number"=event_parliam_number, "parliament_session"=event_session_number)
-            
-            dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
-                                                                        type = "parliament_debate", schema = "v2",
-                                                                        metadata = v2_metadata_to_commit,
-                                                                        data = v2_row_to_commit,
-                                                                        opt$dataframe_mode, opt$hub_mode)
 
+            commit_success <- FALSE
+            i_commit_attempt <- 1
+
+            while(!commit_success && i_commit_attempt <= 10) {
+              tryCatch(
+                {
+                  dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
+                                                                              type = "parliament_debate", schema = "v2",
+                                                                              metadata = v2_metadata_to_commit,
+                                                                              data = v2_row_to_commit,
+                                                                              opt$dataframe_mode, opt$hub_mode)
+                  commit_success <- TRUE
+                },
+                error = function(e) {
+                  clessnverse::logit(
+                    scriptname, 
+                    paste("failed to commit item ", v2_row_to_commit$eventID, "-", v2_row_to_commit$interventionSeqNum, sep=""), 
+                    logger)
+                  Sys.sleep(10)
+                },
+                finaly = {
+                  i_commit_attempt <- i_commit_attempt + 1
+                }
+              )
+            }
+
+            Sys.sleep(1)
             current_speaker_full_name <- speaker_full_name
 
             intervention_id <- NA
-
           } #if (XML::xmlName(sob_content_node[[i_sob_content]]) == "Intervention")
 
         } #for (i_sob_content in 1::length(names(sob_content_node)))
