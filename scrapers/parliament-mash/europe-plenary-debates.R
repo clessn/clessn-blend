@@ -86,6 +86,9 @@ safe_GET <- purrr::safely(httr::GET)
 #installPackages()
 library(dplyr)
 
+status <- 0
+final_message <- ""
+
 if (!exists("scriptname")) scriptname <- "parliament_mash_europe"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
@@ -192,6 +195,12 @@ if (scraping_method == "FrontPage") {
       {source_page <- httr::GET(paste(base_url,content_url,sep=""))},
       error = function(e){
         clessnverse::logit(scriptname, paste("cannot get", paste(base_url,content_url,sep=""), "index web page"), logger)
+        status <- 1
+        if (final_message == "") {
+          final_message <- paste("cannot get", paste(base_url,content_url,sep=""), "index web page")
+        } else {
+          final_message <- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
+        }
       },
       finally={
         i_get_attempt <- i_get_attempt + 1
@@ -286,7 +295,13 @@ for (i in 1:length(urls_list)) {
         r <- httr::GET(event_url)
       },
       error = function(e) {
-        clessnverse::logit(scriptname,paste("cannot get", event_url, "event web page", logger))
+        clessnverse::logit(scriptname,paste("cannot get", event_url, "event web page"), logger)
+        status <- 1
+        if (final_message == "") {
+          final_message <- paste("cannot get", event_url, "event web page")
+        } else {
+          final_message <- paste(final_message, "\n", paste("cannot get", event_url, "event web page"))
+        }
       },
       finally = {
         i_get_attempt <- i_get_attempt + 1
@@ -303,6 +318,12 @@ for (i in 1:length(urls_list)) {
     clessnverse::logit(scriptname, event_id, logger)
   } else {
     clessnverse::logit(scriptname,paste("error", r$status_code, "getting", event_url, "event web page", logger))
+    status <- 2
+    if (final_message == "") {
+      final_message <- paste("cannot get", event_url, "event web page")
+    } else {
+      final_message <- paste(final_message, "\n", paste("cannot get", event_url, "event web page"))
+    }
     next
   }
 
@@ -929,5 +950,7 @@ for (i in 1:length(urls_list)) {
   
 } #for (i in 1:length(urls_list))
 
+clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
+quit(status)
