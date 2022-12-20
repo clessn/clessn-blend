@@ -87,6 +87,8 @@ safe_GET <- purrr::safely(httr::GET)
 library(dplyr)
 
 status <- 0
+debate_count <- 0
+intervention_count <- 0
 final_message <- ""
 
 if (!exists("scriptname")) scriptname <- "parliament_mash_europe"
@@ -281,9 +283,11 @@ for (i in 1:length(urls_list)) {
   )
 
   if (!is.null(event_check) && stringr::str_detect(event_check$key, event_id) ||
-      TRUE %in% stringr::str_detect(dfInterventions$key, event_id)) {
-      clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list), "event_id=", event_id, "ALREADY EXISTS.  Skipping...", sep = " "), logger)
-      next
+    TRUE %in% stringr::str_detect(dfInterventions$key, event_id)) {
+    clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list), "event_id=", event_id, "ALREADY EXISTS.  Skipping...", sep = " "), logger)
+    next
+  } else {
+    debate_count <- debate_count + 1 
   }
 
 
@@ -937,8 +941,8 @@ for (i in 1:length(urls_list)) {
                                                                       metadata = v2_metadata_to_commit,
                                                                       data = v2_row_to_commit,
                                                                       opt$dataframe_mode, opt$hub_mode)
-          
-      
+
+          intervention_count <- intervention_count + 1
           
           current_speaker_full_name <- speaker_full_name
   
@@ -951,6 +955,7 @@ for (i in 1:length(urls_list)) {
 } #for (i in 1:length(urls_list))
 
 clessnverse::logit(scriptname, final_message, logger)
+clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
 quit(save="no", status = status)
