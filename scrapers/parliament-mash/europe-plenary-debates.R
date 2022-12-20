@@ -953,4 +953,4 @@ for (i in 1:length(urls_list)) {
 clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
-quit(status)
+quit(save="n", status = status)
