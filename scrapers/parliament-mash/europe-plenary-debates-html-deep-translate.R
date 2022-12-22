@@ -17,96 +17,121 @@
 
 detect_language <- function(text) {
   url <- "https://deep-translate1.p.rapidapi.com/language/translate/v2/detect"
-  response <- VERB(
+
+  text <- gsub("\\\"","'", text)
+  text <- gsub("\\n\\n","  ",text)
+
+  if (is.null(text)) return(NA_character_) 
+  if (is.na(text)) return(NA_character_) 
+  if (nchar(trimws(text)) == 0) return(NA_character_)
+
+  df <- tidytext::unnest_tokens(
+      data.frame(txt=text), 
+      input = txt, 
+      output = "Sentence", 
+      token = "regex",
+      pattern = "(?<!\\b\\p{L}r)\\.|\\n\\n", to_lower=F)
+
+  clessnverse::logit(scriptname, "detecting language", logger)
+
+  response <- httr::VERB(
     "POST", 
     url, 
-    body = paste("{\"q\":\"", text,"\"}", sep=''),
-    add_headers(
+    body = paste("{\"q\":\"", df$Sentence[1],"\"}", sep=''),
+    httr::add_headers(
         'X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775',
         'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'),
-        content_type("application/octet-stream"))
-  r <- jsonlite::fromJSON(content(response, "text"))
+        httr::content_type("application/octet-stream"))
+  r <- jsonlite::fromJSON(httr::content(response, "text"))
+
+  clessnverse::logit(scriptname, "detecting language done", logger)
+
   return(r$data$detections$language)
 }
 
 
 translate_language <- function(text, source, dest) {
   url <- "https://deep-translate1.p.rapidapi.com/language/translate/v2"
-  payload <- paste("{\"q\":\"", text,"\",\"source\": \"",source,"\",\"target\": \"",dest,"\"}", sep='')
-  encode <- "json"
-  response <- VERB(
-    "POST", 
-    url, 
-    body = payload,
-    add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 
-    'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'), 
-    content_type("application/json"), 
-    encode = encode)
-  
-  r <- jsonlite::fromJSON(content(response, "text"))
 
-  return(r$data$translations$translatedText)
-}
+  text <- gsub("\\\"","'", text)
+  text <- gsub("\\n\\n","  ",text)
 
+  if (is.null(text)) return(NA_character_) 
+  if (is.na(text)) return(NA_character_) 
+  if (nchar(trimws(text)) == 0) return(NA_character_)
 
-###############################################################################
-# Function : installPackages
-# This function installs all packages requires in this script and all the
-# scripts called by this one
-#
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr", 
-                         "tidyr",
-                         "optparse",
-                         "RCurl", 
-                         "httr",
-                         "jsonlite",
-                         "dplyr", 
-                         "XML", 
-                         "tm",
-                         "tidytext", 
-                         "tibble",
-                         "devtools",
-                         "countrycode",
-                         "textcat",
-                         "translateR",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r",
-                         "ropensci/gender",
-                         "lmullen/genderdata")
-  
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
+  if (nchar(text) > 5000) {
+    df <- tidytext::unnest_tokens(
+      data.frame(txt=text), 
+      input = txt, 
+      output = "Sentence", 
+      token = "regex",
+      pattern = "(?<!\\b\\p{L}r)\\.|\\n\\n", to_lower=F)
+
+    result <- ""
+    payload_txt <- ""
+
+    for (i in 1:nrow(df)) {
+      if (is.null(df$Sentence[i])) next 
+      if (is.na(df$Sentence[i])) next 
+      if (nchar(trimws(df$Sentence[i])) == 0) next
+
+      if (payload_txt == "") {
+        payload_txt <- df$Sentence[i]
       } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }  
-  }
-  
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
+        if (nchar(payload_txt) + nchar(df$Sentence[i]) < 5000 && i < nrow(df)) {
+          payload_txt <- paste(payload_txt, df$Sentence[i], sep = ".  ") 
+        } else {
+          payload <- paste("{\"q\":\"", payload_txt,"\",\"source\": \"",source,"\",\"target\": \"",dest,"\"}", sep='')
+          encode <- "json"
+
+          clessnverse::logit(scriptname, paste("translating language - pass", i), logger)
+
+          response <- httr::VERB(
+            "POST", 
+            url, 
+            body = payload,
+            httr::add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 
+            'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'), 
+            httr::content_type("application/json"), 
+            encode = encode)
+      
+          clessnverse::logit(scriptname, paste("translating language done - pass", i), logger)
+
+          r <- jsonlite::fromJSON(httr::content(response, "text"))
+
+          result <- paste(result,r$data$translations$translatedText, sep=" ")
+
+          payload_txt <- ""
+        }
       }
     }
+
+  } else {
+
+    payload <- paste("{\"q\":\"", text,"\",\"source\": \"",source,"\",\"target\": \"",dest,"\"}", sep='')
+    encode <- "json"
+
+    clessnverse::logit(scriptname, "translating language", logger)
+
+    response <- httr::VERB(
+      "POST", 
+      url, 
+      body = payload,
+      httr::add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 
+      'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'), 
+      httr::content_type("application/json"), 
+      encode = encode)
+
+    clessnverse::logit(scriptname, "translating language done", logger)
+  
+    r <- jsonlite::fromJSON(httr::content(response, "text"))
+
+    result <- r$data$translations$translatedText
   }
-} # </function installPackages>
+
+  return(trimws(result))
+}
 
 
 
@@ -173,7 +198,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "skip", log_output = "console", download_data = FALSE, translate = TRUE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "update", log_output = "console", download_data = FALSE, translate = TRUE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -185,7 +210,7 @@ if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
   clessnverse::logit(scriptname, "Retreiving interventions from hub with download data = FALSE", logger)
-  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2", 
+  dfInterventions <- clessnverse::loadAgoraplusInterventionsDf(type = "parliament_debate", schema = "v3beta", 
                                                                location = "EU", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
@@ -323,6 +348,7 @@ for (i in 1:length(urls_list)) {
   clessnverse::logit(scriptname, paste("Debate", i, "of", length(urls_list),sep = " "), logger)
   cat("\nDebat", i, "de", length(urls_list),"\n")
   
+    clessnverse::logit(scriptname, "getting event_url", logger)
 
     r <- httr::GET(event_url)
     if (r$status_code == 200) {
@@ -474,7 +500,7 @@ for (i in 1:length(urls_list)) {
   ########################################################
   # Go through the xml document chapter by chapter
   # and strip out any relevant info
-  intervention_seqnum <- 0
+  intervention_seqnum <- 1
   
   # pb_chap <- txtProgressBar(min = 0,      # Minimum value of the progress bar
   #                         max = core_xml_nbchapters, # Maximum value of the progress bar
@@ -582,7 +608,35 @@ for (i in 1:length(urls_list)) {
               #   next
               # }
 
-              if (stringr::str_detect(speaker_text, ", ")) {
+              if (opt$hub_mode != "refresh") {
+                tryCatch(
+                  {
+                    item_check <<- clessnhub::get_item(
+                      'agoraplus_interventions', 
+                      paste(event_id, "-", intervention_seqnum, "beta", sep="")
+                    )
+
+                    if (!is.null(item_check)) {
+                      clessnverse::logit(
+                        scriptname, 
+                        paste(
+                          "item ", 
+                          event_id, "-", intervention_seqnum, "beta",
+                          " already exists, skipping...", 
+                          sep=""),
+                        logger)
+
+                      intervention_seqnum <- intervention_seqnum + 1
+                      next
+                    }
+                  },
+                  error=function(e) {},
+                  finally={}
+                )
+
+              }
+
+              #if (stringr::str_detect(speaker_text, ", ")) {
                 
                 if (length(stringr::str_split(speaker_text,",")[[1]]) == 2) {
                   speaker_full_name <- stringr::str_split(speaker_text,",")[[1]][1]
@@ -593,16 +647,20 @@ for (i in 1:length(urls_list)) {
                   intervention_type <- paste(intervention_type, collapse = ', ')
                   intervention_type <- trimws(intervention_type)                
                 } else {
-                  speaker_full_name <- paste(stringr::str_split(speaker_text,",")[[1]][2], stringr::str_split(speaker_text,",")[[1]][1])
-                  speaker_full_name <- trimws(speaker_full_name, "both")
-                  
-                  intervention_type <- stringr::str_split(speaker_text,",")[[1]][3:length(stringr::str_split(speaker_text,",")[[1]])]
-                  intervention_type <- trimws(intervention_type)
-                  intervention_type <- paste(intervention_type, collapse = ', ')
-                  intervention_type <- trimws(intervention_type)
+                  if (length(stringr::str_split(speaker_text,",")[[1]]) == 1) {
+                    speaker_full_name <- speaker_text
+                    intervention_type <- speaker_text 
+                  } else {
+                    speaker_full_name <- paste(stringr::str_split(speaker_text,",")[[1]][2], stringr::str_split(speaker_text,",")[[1]][1])
+                    speaker_full_name <- trimws(speaker_full_name, "both")
+                    
+                    intervention_type <- stringr::str_split(speaker_text,",")[[1]][3:length(stringr::str_split(speaker_text,",")[[1]])]
+                    intervention_type <- trimws(intervention_type)
+                    intervention_type <- paste(intervention_type, collapse = ', ')
+                    intervention_type <- trimws(intervention_type)
+                  }
                 }
                 
-
                 
                 if ( !is.na(intervention_type) && intervention_type != "" && tolower(intervention_type) != "president" &&
                     !stringr::str_detect(tolower(intervention_type), "on behalf") &&
@@ -611,10 +669,17 @@ for (i in 1:length(urls_list)) {
                     textcat::textcat(tolower(intervention_type)) != "english")
                     ) {
 
-                  if (opt$translate) { 
+                  if (opt$translate && !is.null(intervention_type) && !is.na(intervention_type)) { 
                     #intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
                     detected_lang <- detect_language(intervention_type)
-                    intervention_type <- translate_language(intervention_type, detected_lang, "en")
+                    if (detected_lang != "en") {
+                      intervention_type_translated <- translate_language(intervention_type, detected_lang, "en")
+                    } else {
+                      intervention_type_translated <- intervention_type
+                    }
+                    if (!is.na(intervention_type_translated)) intervention_type <- intervention_type_translated
+                  } else {
+                    if (is.null(intervention_type) || is.na(intervention_type)) intervention_type <- NA_character_
                   }
 
                 }
@@ -643,16 +708,20 @@ for (i in 1:length(urls_list)) {
                   intervention_type <- "Speech"
                 }
                 
-                if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
+                if ( !is.na(intervention_type) && (tolower(intervention_type) == "president" || tolower(intervention_type) == "chairman" )) {
                   intervention_type <- "moderation"
                   speaker_type <- "President"
+                  speaker_full_name <- president_name
                 } 
                 
-                if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
+                if ( is.na(speaker_type) ) {
+                  speaker_type <- intervention_type
+                  intervention_type <- "Speech"
+                }
                 
-              } else {
-                speaker_full_name <- speaker_text 
-              }
+              #} else {
+              #  speaker_full_name <- speaker_text 
+              #}
               
               speaker_text <- NA    
               
@@ -713,11 +782,16 @@ for (i in 1:length(urls_list)) {
                   skip_person_hub_write <- FALSE
                 } else {
                   # Not found in hub NOR in parliament web site => translate
-                  if (opt$translate == TRUE) {
+                  if (opt$translate == TRUE && !is.null(speaker_full_name) && !is.na(speaker_full_name)) {                    
                     detected_lang <- detect_language(speaker_full_name)
-                    speaker_full_name <- translate_language(speaker_full_name, detected_lang, "en")
+                    if (detect_lang != "en") {
+                      speaker_full_name_translated <- translate_language(speaker_full_name, detected_lang, "en")
+                    } else {
+                      speaker_full_name_translated <- speaker_full_name
+                    }
+                    if (!is.na(speaker_full_name_translated)) speaker_full_name <- speaker_full_name_translated
                     #speaker_full_name <- clessnverse::translateText(speaker_full_name_native, engine="azure", target_lang="en", fake=!opt$translate)[2]
-                  }
+                  } 
                   
                   #cat("\ntranslating", speaker_full_name_native, "\n") #to", speaker_full_name, "\n")
                   speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]])
@@ -888,7 +962,6 @@ for (i in 1:length(urls_list)) {
               # next is new
               #if (stringr::str_detect(speaker_full_name, "sreekanth")) stop("bingo")
               
-              intervention_seqnum <- intervention_seqnum + 1
               intervention_text <- trimws(intervention_text, "left")
               intervention_word_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), word, txt, token="words",format="text"))
               intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble::tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
@@ -900,10 +973,24 @@ for (i in 1:length(urls_list)) {
               intervention_text <- gsub("^NA\n\n", "", intervention_text)
               intervention_text <- gsub("^\n\n", "", intervention_text)
               
-              if (opt$translate) {
+              if (opt$translate && !is.null(intervention_text) && !is.na(intervention_text)) {
                 detected_lang <- detect_language(substring(intervention_text,1,500))
                 intervention_lang <- detected_lang
-                intervention_translated_text <- translate_language(intervention_text, detected_lang, "fr")
+                if (detected_lang != "en") {
+                  intervention_translated_text <- translate_language(intervention_text, detected_lang, "en")
+                } else {
+                  intervention_translated_text <- intervention_text
+                }
+                clessnverse::logit(
+                  scriptname, 
+                  paste(
+                    "translated\n", 
+                    substring(intervention_text, 1, 20), 
+                    "\nto\n", 
+                    substring(intervention_translated_text, 1, 20)
+                  ), 
+                  logger
+                )
               } else {
                 detected_lang <- "xx"
                 intervention_translated_text <- "not transpated because translation if turned offs"
@@ -930,7 +1017,7 @@ for (i in 1:length(urls_list)) {
                                             eventEndTime = event_end_time,
                                             eventTitle = event_title,
                                             eventSubTitle = event_subtitle,
-                                            interventionSeqNum = intervention_seqnum,
+                                            interventionSeqNum = paste(intervention_seqnum, "beta", sep=""),
                                             objectOfBusinessID = NA,
                                             objectOfBusinessRubric = NA,
                                             objectOfBusinessTitle = NA,
@@ -948,6 +1035,7 @@ for (i in 1:length(urls_list)) {
                                             speakerFirstName = speaker_first_name,
                                             speakerLastName = speaker_last_name,
                                             speakerFullName = speaker_full_name,
+                                            speakerFullNameNative = speaker_full_name_native,
                                             speakerGender = speaker_gender,
                                             speakerType = speaker_type,
                                             speakerCountry = speaker_country,
@@ -974,13 +1062,19 @@ for (i in 1:length(urls_list)) {
               v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="EU",
                                             "parliament_number"=parliament_number, "parliament_session"=NA_character_)
 
+              clessnverse::logit(scriptname, "committing row", logger)
+
               dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions,
-                                                                          type = "parliament_debate", schema = "v2",
+                                                                          type = "parliament_debate", schema = "v3beta",
                                                                           metadata = v2_metadata_to_commit,
                                                                           data = v2_row_to_commit,
                                                                           opt$dataframe_mode, opt$hub_mode)
 
 
+
+              clessnverse::logit(scriptname, "committing row done", logger)
+              intervention_seqnum <- intervention_seqnum + 1
+              stop()
 
               previous_speaker_full_name <- speaker_full_name
               intervention_text <- ""

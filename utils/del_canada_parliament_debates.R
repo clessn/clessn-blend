@@ -20,7 +20,7 @@ my_filter <- clessnhub::create_filter(
     institution="House of Commons of Canada", 
     format="xml"),
   data=list(
-    eventID="392002HAN002"
+    eventID="402084HAN084"
   )
 )
 

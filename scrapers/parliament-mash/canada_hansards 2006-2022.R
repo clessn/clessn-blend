@@ -16,66 +16,6 @@
 
 
 ###############################################################################
-# Function : installPackages
-# This function installs all packages requires in this script and all the
-# scripts called by this one
-#
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr",
-                         "tidyr",
-                         "optparse",
-                         "RCurl",
-                         "httr",
-                         "jsonlite",
-                         "dplyr",
-                         "XML",
-                         "tm",
-                         "tidytext",
-                         "tibble",
-                         "devtools",
-                         "countrycode",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r",
-                         "ropensci/gender",
-                         "lmullen/genderdata")
-
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
-      } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }
-  }
-
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
-      }
-    }
-  }
-} # </function installPackages>
-
-
-safe_GET <- purrr::safely(httr::GET)
-
-###############################################################################
 #   Globals
 #
 #   scriptname
@@ -188,7 +128,7 @@ if (scraping_method == "Latest") {
     )
   }
 
-  source_page_html <- httr::content(source_page)
+  source_page_html <- httr::content(source_page, encoding = "UTF-8")
   source_page_xml <- XML::xmlParse(source_page_html, useInternalNodes = TRUE)
 
   root_xml <- XML::xmlRoot(source_page_xml)
@@ -217,10 +157,10 @@ if (scraping_method == "Latest") {
 
 if (scraping_method == "SessionRange") {
   content_url <- "Content/House"
-  start_parliam <- 39
+  start_parliam <- 40
   nb_parliam <- 1
   start_session <- 1
-  nb_session <- 2
+  nb_session <- 3
   start_seance <- 1
   nb_seance <- 175
 
@@ -280,11 +220,12 @@ for (i_url in 1:length(urls_list_fr)) {
   i_get_attempt <- 1
   
   while(is.null(r_fr) && i_get_attempt <= 20) { 
-    r_fr <- safe_GET(current_url_fr) 
+    clessnverse::logit(scriptname, paste("HTTP GET", current_url_fr), logger)
+    r_fr <- httr::GET(current_url_fr) 
     i_get_attempt <- i_get_attempt + 1
   }
 
-  if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
+  if (!is.null(httr::content(r_fr, encoding = "UTF-8")) && httr::status_code(r_fr) == 200) {
     current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
@@ -292,7 +233,8 @@ for (i_url in 1:length(urls_list_fr)) {
     while(is.null(r_en) && i_get_attempt <= 20) { 
       tryCatch(
         {
-          r_en <- safe_GET(current_url_en)
+          clessnverse::logit(scriptname, paste("HTTP GET", current_url_en), logger)
+          r_en <- httr::GET(current_url_en)
         },
         error = function(e) {
           print(paste("error getting hansard page ", base_url, content_url, sep=''))
@@ -305,8 +247,8 @@ for (i_url in 1:length(urls_list_fr)) {
       ) 
     }
 
-    if (r_en$result$status_code == 200) {
-      doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
+    if (!is.null(httr::content(r_en, encoding = "UTF-8")) && httr::status_code(r_en) == 200) {
+      doc_html_en <- httr::content(r_en, encoding = "UTF-8")
       doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
       top_xml_en <- XML::xmlRoot(doc_xml_en)
       title_xml_en <- top_xml_en[["DocumentTitle"]]
@@ -320,7 +262,7 @@ for (i_url in 1:length(urls_list_fr)) {
       }
       next  
     }
-    doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
+    doc_html_fr <- httr::content(r_fr, encoding = "UTF-8")
     doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
     top_xml_fr <- XML::xmlRoot(doc_xml_fr)
     title_xml_fr <- top_xml_fr[["DocumentTitle"]]
@@ -947,6 +889,7 @@ for (i_url in 1:length(urls_list_fr)) {
             while(!commit_success && i_commit_attempt <= 10) {
               tryCatch(
                 {
+                  clessnverse::logit(scriptname, paste("writing", v2_row_to_commit$key), logger)
                   dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
                                                                               type = "parliament_debate", schema = "v2",
                                                                               metadata = v2_metadata_to_commit,
@@ -967,7 +910,7 @@ for (i_url in 1:length(urls_list_fr)) {
               )
             }
 
-            Sys.sleep(1)
+            Sys.sleep(0.5)
             current_speaker_full_name <- speaker_full_name
 
             intervention_id <- NA

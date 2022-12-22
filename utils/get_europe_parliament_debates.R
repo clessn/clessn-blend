@@ -12,16 +12,16 @@ clessnhub::login(
 
 my_filter <- clessnhub::create_filter(
   type="parliament_debate", 
-  #schema="v2", 
+  schema="v3beta", 
   metadata=list(
     location="EU", 
-    format="xml"),
+    format="html"),
   data=list(
-    eventID = "920221213EN"
+    #eventID__contains="beta"
   )
 )
 
-df <- clessnhub::get_items(
+df1 <- clessnhub::get_items(
   table = 'agoraplus_interventions',
   filter = my_filter,
   download_data = TRUE,
@@ -29,9 +29,9 @@ df <- clessnhub::get_items(
 )
 
 
-for (i in 1:nrow(df)) {
-  clessnhub::delete_item('agoraplus_interventions', df$key[i])
-}
+# for (i in 1:nrow(df)) {
+#   clessnhub::delete_item('agoraplus_interventions', df$key[i])
+# }
 
 
 #df <- data.frame(full_name=dfInterventions$data.speakerFullName, party = dfInterventions$data.speakerParty, pol_group = dfInterventions$data
@@ -136,7 +136,7 @@ url <- "https://deep-translate1.p.rapidapi.com/language/translate/v2/detect"
 response <- VERB(
     "POST", 
     url, 
-    body= "{\"q\":\"a utečencov. Včasným vyčlenením umožňujeme  Komisii pružnejšie reagovať a riešiť tieto problémy.\"}",
+    body= paste("{\"q\":\"",df$data.interventionText[1],"\"}"),
     add_headers(
         'X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775',
         'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'),
@@ -147,8 +147,8 @@ library(httr)
 url <- "https://deep-translate1.p.rapidapi.com/language/translate/v2"
 payload <- paste(
     "{
-    \"q\":\"", dfInterventions$data.interventionText[135483],
-    "\",\"source\": \"sk\",
+    \"q\":\"", df$data.interventionText[1],
+    "\",\"source\": \"de\",
     \"target\": \"en\"
 }")
 encode <- "json"
