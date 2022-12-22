@@ -784,7 +784,7 @@ for (i in 1:length(urls_list)) {
                   # Not found in hub NOR in parliament web site => translate
                   if (opt$translate == TRUE && !is.null(speaker_full_name) && !is.na(speaker_full_name)) {                    
                     detected_lang <- detect_language(speaker_full_name)
-                    if (detect_lang != "en") {
+                    if (detected_lang != "en") {
                       speaker_full_name_translated <- translate_language(speaker_full_name, detected_lang, "en")
                     } else {
                       speaker_full_name_translated <- speaker_full_name
