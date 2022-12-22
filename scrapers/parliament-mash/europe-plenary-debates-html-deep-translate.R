@@ -1074,7 +1074,6 @@ for (i in 1:length(urls_list)) {
 
               clessnverse::logit(scriptname, "committing row done", logger)
               intervention_seqnum <- intervention_seqnum + 1
-              stop()
 
               previous_speaker_full_name <- speaker_full_name
               intervention_text <- ""
