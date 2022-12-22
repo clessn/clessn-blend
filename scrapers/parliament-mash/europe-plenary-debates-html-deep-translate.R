@@ -198,7 +198,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "rebuild", hub_mode = "update", log_output = "console", download_data = FALSE, translate = TRUE)
+opt <- list(dataframe_mode = "rebuild", hub_mode = "update", log_output = "file,console", download_data = FALSE, translate = TRUE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
