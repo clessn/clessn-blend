@@ -175,14 +175,15 @@ if (scraping_method == "Latest") {
   while (is.null(source_page)  && i_get_attempt <= 20) {
     tryCatch(
       {
-        source_page <- httr::GET(paste(base_url,content_url,sep=''))
+        source_page <- httr::GET(paste(base_url,content_url,sep='') )
       },
       error = function(e) {
         print(paste("error getting hansard page ", base_url, content_url, sep=''))
         print(e)
-        #quit(status=1)
+        quit(status=1)
       }, 
       finally = {
+        i_get_attempt <- i_get_attempt + 1
       }
     )
   }
@@ -278,7 +279,11 @@ for (i_url in 1:length(urls_list_fr)) {
 
   i_get_attempt <- 1
   
-  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+  while(is.null(r_fr) && i_get_attempt <= 20) { 
+    clessnverse::logit(scriptname, paste("HTTP GET", current_url_fr), logger)
+    r_fr <- httr::GET(current_url_fr) 
+    i_get_attempt <- i_get_attempt + 1
+  }
 
   if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
@@ -288,14 +293,17 @@ for (i_url in 1:length(urls_list_fr)) {
     while(is.null(r_en) && i_get_attempt <= 20) { 
       tryCatch(
         {
-          r_en <- safe_GET(current_url_en)
+          clessnverse::logit(scriptname, paste("HTTP GET", current_url_en), logger)
+          r_en <- httr::GET(current_url_en)
         },
         error = function(e) {
           print(paste("error getting hansard page ", base_url, content_url, sep=''))
           print(e)
-          #quit(status=1)
+          quit(status=1)
         }, 
-        finally = {}
+        finally = {
+          i_get_attempt <- i_get_attempt + 1
+        }
       ) 
     }
 
