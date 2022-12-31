@@ -194,15 +194,18 @@ if (scraping_method == "FrontPage") {
 
   while (i_get_attempt < 20 && is.null(source_page)){
     tryCatch(
-      {source_page <- httr::GET(paste(base_url,content_url,sep=""))},
-      error = function(e){
+      {
+        source_page <- httr::GET(paste(base_url,content_url,sep=""))
+      },
+      error = function(e) {
         clessnverse::logit(scriptname, paste("cannot get", paste(base_url,content_url,sep=""), "index web page"), logger)
-        status <- 1
+        status <<- 1
         if (final_message == "") {
           final_message <- paste("cannot get", paste(base_url,content_url,sep=""), "index web page")
         } else {
           final_message <- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
         }
+        quit(status=status)
       },
       finally={
         i_get_attempt <- i_get_attempt + 1
