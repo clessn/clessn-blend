@@ -20,7 +20,7 @@ my_filter <- clessnhub::create_filter(
     institution="House of Commons of Canada", 
     format="xml"),
   data=list(
-    eventID="402084HAN084"
+    eventID="432026HAN026"
   )
 )
 
@@ -29,7 +29,10 @@ df <- clessnhub::get_items(
   filter = my_filter,
   download_data = TRUE,
   max_pages = -1
-)
+) 
+
+df$data.interventionSeqNum <- as.numeric(df$data.interventionSeqNum)
+df <- df %>% arrange(data.interventionSeqNum)
 
 for (i in 1:nrow(df)) {
   clessnhub::delete_item('agoraplus_interventions', df$key[i])
