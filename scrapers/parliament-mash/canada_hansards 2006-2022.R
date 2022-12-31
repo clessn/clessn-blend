@@ -157,12 +157,12 @@ if (scraping_method == "Latest") {
 
 if (scraping_method == "SessionRange") {
   content_url <- "Content/House"
-  start_parliam <- 43
+  start_parliam <- 44
   nb_parliam <- 1
-  start_session <- 2
+  start_session <- 1
   nb_session <- 1
-  start_seance <- 26
-  nb_seance <- 124
+  start_seance <- 1
+  nb_seance <- 148
 
   urls_list_fr <- c()
   urls_list_en <- c()
