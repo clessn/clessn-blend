@@ -133,7 +133,6 @@ if (scraping_method == "Latest") {
         } else {
           final_message <- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
         }
-        #quit(status=status)
       }, 
       finally = {
         i_get_attempt <- i_get_attempt + 1
@@ -934,4 +933,4 @@ clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
-#quit(save="no", status = status)
+quit(save="no", status = status)
