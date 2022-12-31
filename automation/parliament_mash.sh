@@ -5,14 +5,14 @@ foldername="clessn-blend/scrapers/parliament-mash"
 if [ $1 = "quebec" ]
 then
   echo "Scraping quebec national assembly"
-  scriptname="quebec-debates.R"
+  scriptname="quebec-debates"
 elif [ $1 = "canada" ]
 then
   echo "Scraping canada house of commons"
-  scriptname="canada_hansards.R"
+  scriptname="canada_hansards"
 elif [ $1 = "europe" ]
 then
-  scriptname="europe-plenary-debates.R"
+  scriptname="europe-plenary-debates"
   echo "Scraping european parliament"
 else
   scriptname="badbadbad"
@@ -35,11 +35,12 @@ R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="
 cd ~
 
 if [ $scriptname != "badbadbad" ]; then
-  Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 2>&1 | tee "$scriptname.out"
+  Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname.R --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 2>&1
   ret=$?
-  echo $ret
-  sed 's/\"/\\"/g' -i $scriptname.out
-  sed 's///g ' -i $scriptname.out
+  sed 's/\"/\\"/g' -i ~/logs/parliament_mash"_"$1.log
+  sed 's///g ' -i ~/logs/parliament_mash"_"$1.log
+  sed 's/--:--/     /g ' -i ~/logs/parliament_mash"_"$1.log
+  sed 's/:--/   /g ' -i ~/logs/parliament_mash"_"$1.log
 fi
 
 
@@ -59,14 +60,9 @@ if [ $ret -eq 2 ]; then
 fi
 
 if [ $ret -ne 0 ]; then
-  output=`tail -n 10 $scriptname.out`
+  output=`tail -n 10 ~/logs/parliament_mash"_"$1.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
-  output=`tail -n 2 $scriptname.out`
+  output=`tail -n 2 ~/logs/parliament_mash"_"$1.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
-fi
-
-
-if [ -f "$scriptname.out" ]; then
-  rm -f "$scriptname.out"
 fi

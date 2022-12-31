@@ -48,17 +48,17 @@ RUN useradd clessn \
 
 WORKDIR /home/clessn/dev
 
-COPY automation/docker/packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/packages.R
+COPY automation/docker/packages_1.R /home/clessn/dev
+RUN Rscript /home/clessn/dev/packages_1.R
 
-COPY automation/docker/more_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/more_packages.R
+COPY automation/docker/packages_2.R /home/clessn/dev
+RUN Rscript /home/clessn/dev/packages_2.R
 
-COPY automation/docker/qc125_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/qc125_packages.R
+COPY automation/docker/packages_3.R /home/clessn/dev
+RUN Rscript /home/clessn/dev/packages_3.R
 
-COPY automation/docker/clessnverse_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/clessnverse_packages.R
+COPY automation/docker/packages_clessnverse.R /home/clessn/dev
+RUN Rscript /home/clessn/dev/packages_clessnverse.R
 
 ADD pipelines/   /home/clessn/dev/clessn/clessn-blend/pipelines
 ADD scrapers/    /home/clessn/dev/clessn/clessn-blend/scrapers
