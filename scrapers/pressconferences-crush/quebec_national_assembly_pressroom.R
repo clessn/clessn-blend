@@ -15,61 +15,6 @@
 ###############################################################################
 
 
-###############################################################################
-# Function : installPackages
-# This function installs all packages requires in this script and all the
-# scripts called by this one
-#
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr", 
-                         "tidyr",
-                         "optparse",
-                         "RCurl", 
-                         "httr",
-                         "jsonlite",
-                         "dplyr", 
-                         "XML", 
-                         "tm",
-                         "textcat",
-                         "tidytext", 
-                         "tibble",
-                         "devtools",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r")
-  
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
-      } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }  
-  }
-
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
-      }
-    }
-  }
-} # </function installPackages>
-
 
 ###############################################################################
 #   Globals
@@ -77,7 +22,6 @@ installPackages <- function() {
 #   scriptname
 #   logger
 #
-#installPackages()
 library(dplyr)
 
 if (!exists("scriptname")) scriptname <- "pressconference_crush_quebecnationalassembly"
@@ -88,7 +32,7 @@ if (!exists("scriptname")) scriptname <- "pressconference_crush_quebecnationalas
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-#opt <- list(dataframe_mode = "refresh", hub_mode = "refresh", log_output = "file,console,hub", download_data = TRUE)
+opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "console", download_data = TRUE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
@@ -190,7 +134,7 @@ clessnverse::loadETLRefData()
 # to extract those URLS and get them individually in order to parse
 # each press conference
 #
-base_url <- "http://www.assnat.qc.ca"
+base_url <- "https://www.assnat.qc.ca"
 content_url <- "/fr/actualites-salle-presse/conferences-points-presse/index.html"
 
 # Pour rouler le script sur une base quotidienne et aller chercher les débats récents Utiliser le ligne ci-dessous
