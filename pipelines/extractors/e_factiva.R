@@ -5,7 +5,7 @@
 #                                                                             
 #                                  e_factiva                                  
 #                                                                             
-#     This script will import all the rtf files info the Files section        
+#     This script will import all the rtf files info the Lake section        
 #     of the CLESSN DataLake With metadata as follows                         
 #
 #     {
@@ -57,14 +57,10 @@ main <- function() {
   
     file_list <- clessnverse::dbxListDir("/AxelDery_M-ARancourt/FilesRTF/Factiva", dbx_token)
 
-    for (i in 1:length(file_list)) {
+    #for (i in 1:length(file_list)) {
+    for (i in 1:10) {
         clessnverse::logit(scriptname, paste("processing", file_list$objectName[i]), logger)
 
-        # scrape_press_article(
-        #     file_list[i,],
-        #     scriptname,
-        #     logger,
-        #     credentials)
         successful_rtf_read <- clessnverse::dbxDownloadFile(
             paste(file_list$objectPath[i], file_list$objectName[i], sep="/"),
             "./",
@@ -99,7 +95,7 @@ main <- function() {
             existing_item <- hublot::filter_lake_items(credentials, list(key = lake_item_data$key))
 
             if (length(existing_item$results) == 0) {
-                #clessnverse::log_activity(message = paste("creating new item", data$key, "in data lake", data$path), logger = logger)
+                clessnverse::logit(scriptname, message = paste("creating new item", lake_item_data$key, "in data lake", lake_item_data$path), logger = logger)
                 hublot::add_lake_item(
                 body = list(
                     key = lake_item_data$key,
@@ -108,6 +104,7 @@ main <- function() {
                     metadata = jsonlite::toJSON(lake_item_metadata, auto_unbox = T)),
                     credentials)
             } else {
+                clessnverse::logit(scriptname, message = paste("updating existing item", lake_item_data$key, "in data lake", lake_item_data$path), logger = logger)
                 hublot::update_lake_item(
                     id = existing_item$results[[1]]$id,
                     body = list(
@@ -117,8 +114,13 @@ main <- function() {
                     metadata = jsonlite::toJSON(lake_item_metadata, auto_unbox = T)),
                     credentials)
             } #if (length(existing_item$results) == 0)
+
+            if(file.exists(paste("./", file_list$objectName[i], sep=""))) file.remove(paste("./", file_list$objectName[i], sep="")) 
+
+            total_files_scraped <<- total_files_scraped + 1
         } else {
             clessnverse::logit(scriptname, paste("could not read rtf file from dropbox", file_list$objectName[i]), logger)
+            final_message <<- paste("could not read rtf file from dropbox", file_list$objectName[i])
         } #if (successful_rtf_read)
     } #for (i in 1:length(file_list))
 }
@@ -176,10 +178,10 @@ tryCatch(
         clessnverse::logit(scriptname, final_message, logger)
         clessnverse::logit(scriptname, paste(total_files_scraped, "Factiva file were extracted from the web"), logger)
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
-        clessnverse::log_close(logger)
+        clessnverse::logclose(logger)
         rm(logger)
         print(paste("exiting with status", status))
-        quit(status = status)
+        #quit(status = status)
     }
 )
 
