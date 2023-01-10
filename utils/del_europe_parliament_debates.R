@@ -28,7 +28,7 @@ df1 <- clessnhub::get_items(
 )
 
 #df1$data.interventionSeqNum <- as.numeric(df1$data.interventionSeqNum)
-df1 <- df1 %>% arrange(data.interventionSeqNum)
+df <- df1 %>% arrange(data.interventionSeqNum)
 
 # for (i in 1:nrow(df1)) {
 #   clessnhub::delete_item('agoraplus_interventions', df1$key[i])
