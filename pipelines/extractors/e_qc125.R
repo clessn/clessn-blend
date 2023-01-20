@@ -42,7 +42,11 @@ get_qc125_df <- function(){
     projection <- rvest::read_html(urls[i]) %>%
       rvest::html_nodes("script:contains('var moyennes')")
 
+    print(urls[i])
+    print(projection)
+
     projection_txt <- xml2::xml_text(projection)
+
     rawNames <- qdapRegex::ex_between(projection_txt, "parties = [", ",]")[[1]]
     cleanNames <- gsub('^.|.$', '', strsplit(rawNames, ",")[[1]])
 
@@ -188,7 +192,7 @@ tryCatch(
     # Uncomment the line below to hardcode the command line option passed to this script when it runs
     # This is particularly useful while developping your script but it's wiser to use real command-
     # line options when puting your script in production in an automated container.
-    opt <- list(log_output = c("file", "console"))
+    opt <- list(log_output = c("file"))
 
     if (!exists("opt")) {
         opt <- clessnverse::process_command_line_options()

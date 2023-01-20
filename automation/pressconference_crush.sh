@@ -22,7 +22,7 @@ EOF
 }
 
 R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
-R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="v1", force=T)'
+R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="v1", force=T, upgrade="never")'
 
 cd ~
 

@@ -56,8 +56,6 @@ RUN useradd clessn \
     && mkdir /home/clessn/dev/clessn/clessn-blend \
     && mkdir /home/clessn/logs \
     && chmod 777 /home/clessn/logs
-    #\
-    #&& echo "CipherString = DEFAULT@SECLEVEL=1" >> /etc/ssl/openssl.cnf 
 
 WORKDIR /home/clessn/dev
 
@@ -70,7 +68,7 @@ RUN chown -R clessn:staff /home/clessn \
 
 COPY automation/docker/.rtweet_token.rds /home/clessn/.rtweet_token.rds
 
-RUN chmod 750 -R /home/clessn/
+RUN chmod 755 -R /home/clessn/
 
 USER clessn
 

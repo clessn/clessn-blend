@@ -12,7 +12,7 @@ EOF
 scriptname="e_qc125.R"
 
 R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
-R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T)'
+R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T, upgrade="never")'
 
 cd ~
 
