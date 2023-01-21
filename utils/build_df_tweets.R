@@ -30,7 +30,7 @@ df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_
 # And finally build out tweets dataframe
 df_tweets <- data.frame()
 
-for (i in 1:5) {
+for (i in 1:nrow(df_persons)) {
     filter <- clessnhub::create_filter(data=list(personKey = df_persons$key[i]))
 
     success <- 0
