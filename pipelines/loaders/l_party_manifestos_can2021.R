@@ -658,7 +658,7 @@ load_pvcfr_manifesto <- function(lake_item) {
     
     clessnverse::commit_warehouse_table(table_name = "manifestos_can2021", 
                                         df = PVCFRPlatform, 
-                                        key_columns = "paragraph+political_party+index", 
+                                        key_columns = "paragraph+political_party+index+language", 
                                         key_encoding = "digest",
                                         refresh_data = TRUE, 
                                         credentials = credentials)
