@@ -35,41 +35,40 @@ RUN python3 -m pip install --upgrade \
     dropbox \
     matplotlib
 
+COPY automation/docker/packages_1.R /tmp
+RUN Rscript /tmp/packages_1.R
+
+COPY automation/docker/packages_2.R /tmp
+RUN Rscript /tmp/packages_2.R
+
+COPY automation/docker/packages_3.R /tmp
+RUN Rscript /tmp/packages_3.R
+
+COPY automation/docker/packages_clessnverse.R /tmp
+RUN Rscript /tmp/packages_clessnverse.R
+
 
 RUN useradd clessn \
-    && addgroup clessn staff \
+    && adduser clessn staff \
     && mkdir /home/clessn \
     && mkdir /home/clessn/dev \
     && mkdir /home/clessn/dev/clessn \
     && mkdir /home/clessn/dev/clessn/clessn-blend \
-    && mkdir /home/clessn/logs 
-    #\
-    #&& echo "CipherString = DEFAULT@SECLEVEL=1" >> /etc/ssl/openssl.cnf 
+    && mkdir /home/clessn/logs \
+    && chmod 777 /home/clessn/logs
 
 WORKDIR /home/clessn/dev
-
-COPY automation/docker/packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/packages.R
-
-COPY automation/docker/more_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/more_packages.R
-
-COPY automation/docker/qc125_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/qc125_packages.R
-
-COPY automation/docker/clessnverse_packages.R /home/clessn/dev
-RUN Rscript /home/clessn/dev/clessnverse_packages.R
 
 ADD pipelines/   /home/clessn/dev/clessn/clessn-blend/pipelines
 ADD scrapers/    /home/clessn/dev/clessn/clessn-blend/scrapers
 ADD automation/  /home/clessn/dev/clessn/clessn-blend/automation
 
-COPY automation/docker/.rtweet_token.rds /home/clessn/.rtweet_token.rds
-
 RUN chown -R clessn:staff /home/clessn \
     && chown -R clessn:staff /usr/local/lib/R/site-library
 
-RUN chmod 750 -R /home/clessn/
+COPY automation/docker/.rtweet_token.rds /home/clessn/.rtweet_token.rds
+
+RUN chmod 755 -R /home/clessn/
 
 USER clessn
 

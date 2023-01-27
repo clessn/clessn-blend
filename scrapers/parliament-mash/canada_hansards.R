@@ -15,62 +15,6 @@
 ###############################################################################
 
 
-###############################################################################
-# Function : installPackages
-# This function installs all packages requires in this script and all the
-# scripts called by this one
-#
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr",
-                         "tidyr",
-                         "optparse",
-                         "RCurl",
-                         "httr",
-                         "jsonlite",
-                         "dplyr",
-                         "XML",
-                         "tm",
-                         "tidytext",
-                         "tibble",
-                         "devtools",
-                         "countrycode",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r",
-                         "ropensci/gender",
-                         "lmullen/genderdata")
-
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
-      } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }
-  }
-
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
-      }
-    }
-  }
-} # </function installPackages>
 
 
 safe_GET <- purrr::safely(httr::GET)
@@ -83,12 +27,16 @@ safe_GET <- purrr::safely(httr::GET)
 #
 #installPackages()
 library(dplyr)
+status <- 0
+debate_count <- 0
+intervention_count <- 0
+final_message <- ""
 
 if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
+#opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -169,20 +117,25 @@ if (scraping_method == "Latest") {
   content_url <- "/PublicationSearch/fr/?PubType=37&xml=1"
 
   source_page <- NULL
-
   i_get_attempt <- 1
   
   while (is.null(source_page)  && i_get_attempt <= 20) {
     tryCatch(
       {
-        source_page <- httr::GET(paste(base_url,content_url,sep=''))
+        clessnverse::logit(scriptname, paste("HTTP GET", paste(base_url,content_url,sep='')), logger)
+        source_page <- httr::GET(paste(base_url,content_url,sep='') )
       },
       error = function(e) {
-        print(paste("error getting hansard page ", base_url, content_url, sep=''))
-        print(e)
-        #quit(status=1)
+        clessnverse::logit(scriptname, paste("cannot get", paste(base_url,content_url,sep=""), "index web page"), logger)
+        status <<- 1
+        if (final_message == "") {
+          final_message <- paste("cannot get", paste(base_url,content_url,sep=""), "index web page")
+        } else {
+          final_message <- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
+        }
       }, 
       finally = {
+        i_get_attempt <- i_get_attempt + 1
       }
     )
   }
@@ -278,7 +231,26 @@ for (i_url in 1:length(urls_list_fr)) {
 
   i_get_attempt <- 1
   
-  while(is.null(r_fr) && i_get_attempt <= 20) { r_fr <- safe_GET(current_url_fr) }
+  while(is.null(r_fr) && i_get_attempt <= 20) { 
+    tryCatch(
+      {
+        clessnverse::logit(scriptname, paste("HTTP GET", current_url_fr), logger)
+        r <- httr::GET(current_url_fr)
+      },
+      error = function(e) {
+        clessnverse::logit(scriptname,paste("cannot get", current_url_fr, "event web page"), logger)
+        status <<- 1
+        if (final_message == "") {
+          final_message <- paste("cannot get", current_url_fr, "event web page")
+        } else {
+          final_message <- paste(final_message, "\n", paste("cannot get", current_url_fr, "event web page"))
+        }
+      },
+      finally = {
+        i_get_attempt <- i_get_attempt + 1
+      }
+    )
+  }
 
   if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
@@ -288,14 +260,21 @@ for (i_url in 1:length(urls_list_fr)) {
     while(is.null(r_en) && i_get_attempt <= 20) { 
       tryCatch(
         {
-          r_en <- safe_GET(current_url_en)
+          clessnverse::logit(scriptname, paste("HTTP GET", current_url_en), logger)
+          r_en <- httr::GET(current_url_en)
         },
         error = function(e) {
-          print(paste("error getting hansard page ", base_url, content_url, sep=''))
-          print(e)
-          #quit(status=1)
+          clessnverse::logit(scriptname,paste("cannot get", current_url_en, "event web page"), logger)
+          status <<- 1
+          if (final_message == "") {
+            final_message <- paste("cannot get", current_url_en, "event web page")
+          } else {
+            final_message <- paste(final_message, "\n", paste("cannot get", current_url_en, "event web page"))
+          }
         }, 
-        finally = {}
+        finally = {
+          i_get_attempt <- i_get_attempt + 1
+        }
       ) 
     }
 
@@ -309,8 +288,10 @@ for (i_url in 1:length(urls_list_fr)) {
     } else {
       if (!is.null(r_en$result)) {
         clessnverse::logit(scriptname, paste("Could not GET", current_url_en, "error code", r_en$result$status_code, sep = " "), logger)
+        status <<- 1
       } else {
         clessnverse::logit(scriptname, paste("Could not GET", current_url_en, sep = " "), logger)
+        status <<- 1
       }
       next  
     }
@@ -324,8 +305,10 @@ for (i_url in 1:length(urls_list_fr)) {
   } else {
     if (!is.null(r_fr$result)) {
       clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, "error code", r_fr$result$status_code, sep = " "), logger)
+      status <<- 1
     } else {
       clessnverse::logit(scriptname, paste("Could not GET", current_url_fr, sep = " "), logger)
+      status <<- 1
     }
     next
   }
@@ -946,5 +929,8 @@ for (i_url in 1:length(urls_list_fr)) {
 } #for (i_url in 1:length(urls_list))
 
 
+clessnverse::logit(scriptname, final_message, logger)
+clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
+quit(save="no", status = status)

@@ -157,12 +157,12 @@ if (scraping_method == "Latest") {
 
 if (scraping_method == "SessionRange") {
   content_url <- "Content/House"
-  start_parliam <- 40
+  start_parliam <- 44
   nb_parliam <- 1
   start_session <- 1
-  nb_session <- 3
+  nb_session <- 1
   start_seance <- 1
-  nb_seance <- 175
+  nb_seance <- 148
 
   urls_list_fr <- c()
   urls_list_en <- c()
@@ -537,7 +537,7 @@ for (i_url in 1:length(urls_list_fr)) {
             # Identify the speaker and speaker type
             speaker_node <- intervention_node[["PersonSpeaking"]]
 
-            if (nchar(XML::xmlValue(speaker_node)) > 0) {
+            if (!is.null(speaker_node) && nchar(XML::xmlValue(speaker_node)) > 0) {
               speaker_type  <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "Type")
               speaker_id <- XML::xmlGetAttr(speaker_node[["Affiliation"]], "DbId")
               speaker_value <- XML::xmlValue(speaker_node[["Affiliation"]])
@@ -752,11 +752,16 @@ for (i_url in 1:length(urls_list_fr)) {
             if (nchar(XML::xmlValue(intervention_content_node)) > 0) {
               for (i_intervention_subnode in 1:length(names(intervention_content_node))) {
 
-                if (i_intervention_subnode == 1 &&
+                if (i_intervention_subnode == 1 && length(names(intervention_content_node)) > 1 &&
                     XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText" &&
                     XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode+1]]) == "ParaText") {
 
                   sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
+                } else {
+                  if (i_intervention_subnode == 1 && length(names(intervention_content_node)) == 1 &&
+                      XML::xmlName(intervention_node[["Content"]][[i_intervention_subnode]]) == "ProceduralText") {
+                    sob_procedural_text <- XML::xmlValue(intervention_node[["Content"]][[i_intervention_subnode]])
+                  }
                 }
 
                 if (i_intervention_subnode > 1 && 

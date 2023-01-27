@@ -22,6 +22,8 @@ table.csv
 *.code-workspace
 ##Excel
 *.xlsx
+## RTF
+*.rtf
 ###########################################
 ##### LaTeX auxiliary files to ignore #####
 ###########################################

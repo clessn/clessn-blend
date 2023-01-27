@@ -2,7 +2,7 @@ version: "3"
 services:
   clessn-blend:
     build:
-      context: ../../
+      context: ~/dev/clessn/clessn-blend
       dockerfile: automation/docker/Dockerfile
     image: clessnblend
     container_name: clessnblend

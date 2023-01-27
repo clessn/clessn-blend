@@ -270,7 +270,7 @@ dfCountryLanguageCodes <- clessnverse::loadCountryLanguageCodes(token  = Sys.get
 scraping_method <- "DateRange"
 #scraping_method <- "FrontPage"
 
-start_date <- "2016-12-01"
+start_date <- "2014-09-18"
 #start_date <- "2014-01-01"
 #num_days <- as.integer(as.Date(Sys.time()) - as.Date(start_date))
 num_days <- 1
@@ -481,8 +481,8 @@ for (i in 1:length(urls_list)) {
   speaker_gender <- NA
   speaker_is_minister <- NA
   speaker_type <- NA
-  speaker_party <- NA
   speaker_polgroup <- NA
+  speaker_party <- NA
   speaker_district <- NA
   speaker_country <- NA
   speaker_media <- NA
@@ -562,12 +562,13 @@ for (i in 1:length(urls_list)) {
               speaker_first_name <- NA
               speaker_last_name <- NA
               speaker_full_name <- NA
+              speaker_full_name_native <- NA
               speaker_gender <- NA
               speaker_is_minister <- NA
               speaker_type <- NA
               speaker_mepid <- NA
-              speaker_party <- NA
               speaker_polgroup <- NA
+              speaker_party <- NA
               speaker_district <- NA
               speaker_country <- NA
               speaker_media <- NA
@@ -611,6 +612,7 @@ for (i in 1:length(urls_list)) {
               if (opt$hub_mode != "refresh") {
                 tryCatch(
                   {
+                    clessnverse::logit(scriptname, paste("checking if ",event_id, "-", intervention_seqnum, "beta"," already exists", sep-""), logger)
                     item_check <<- clessnhub::get_item(
                       'agoraplus_interventions', 
                       paste(event_id, "-", intervention_seqnum, "beta", sep="")
@@ -735,7 +737,7 @@ for (i in 1:length(urls_list)) {
               }
               
               if ( stringr::str_detect(speaker_full_name, "\\((.*)\\)") ) {
-                  speaker_party <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
+                  speaker_polgroup <- stringr::str_match(speaker_full_name, "\\((.*)\\)")[2]
                   speaker_full_name <- stringr::str_replace(speaker_full_name, "\\((.*)\\)", "")
                   speaker_full_name <- stringr::str_replace(gsub("\\s+", " ", stringr::str_trim(speaker_full_name)), "B", "b")
               }
@@ -776,8 +778,8 @@ for (i in 1:length(urls_list)) {
                   speaker_first_name <- trimws(stringr::str_to_title(stringr::str_split(speaker_full_name, "\\s")[[1]][[1]]))
                   speaker_last_name <- trimws(stringr::str_to_title(stringr::str_match(speaker_full_name, paste("^",speaker_first_name,"(.*)$",sep=''))[2]))
                   speaker_mepid <- dfSpeaker$mepid
-                  speaker_party <- dfSpeaker$party
                   speaker_polgroup <- dfSpeaker$polgroup
+                  speaker_party <- dfSpeaker$party
                   speaker_country <- dfSpeaker$country
                   skip_person_hub_write <- FALSE
                 } else {
@@ -834,10 +836,10 @@ for (i in 1:length(urls_list)) {
                                           "twitterID"=NA_character_,
                                           "isMinister"="0",
                                           "twitterName"=NA_character_,
-                                          "currentParty"=speaker_party,
+                                          "currentParty"=speaker_polgroup,
                                           "twitterHandle"=NA_character_,
                                           "currentMinister"=NA_character_,
-                                          "currentPolGroup"=speaker_polgroup,
+                                          "currentPolGroup"=speaker_party,
                                           "twitterLocation"=NA_character_,
                                           "twitterPostsCount"=NA_character_,
                                           "twitterProfileURL"=NA_character_,
@@ -862,10 +864,10 @@ for (i in 1:length(urls_list)) {
                   
                   tryCatch(
                     {
-                      #clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
+                      clessnhub::create_item("persons", paste("EU-",speaker_mepid,sep=''), "mp", "v3", person_metadata_row, person_data_row)
                     },
                     error= function(e) {
-                      #clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
+                      clessnhub::create_item("persons", digest::digest(speaker_full_name), "mp", "v3", person_metadata_row, person_data_row)
                     },
                     finally={}
                   )
@@ -891,8 +893,8 @@ for (i in 1:length(urls_list)) {
                 speaker_full_name <- dfSpeaker$data.fullName
                 speaker_first_name <- dfSpeaker$data.firstName
                 speaker_last_name <- dfSpeaker$data.lastName
-                speaker_party <- dfSpeaker$data.currentParty
-                speaker_polgroup <- dfSpeaker$data.currentPolGroup
+                speaker_polgroup <- dfSpeaker$data.currentParty
+                speaker_party <- dfSpeaker$data.currentPolGroup
                 speaker_country <- dfSpeaker$metadata.country
                 speaker_gender <- if (dfSpeaker$data.isFemale == 1) "female" else "male"
                 speaker_is_minister <- NA
@@ -917,7 +919,35 @@ for (i in 1:length(urls_list)) {
               intervention_text <- ""
               
               #cat("first parag:",stringi::stri_remove_empty(trimws(stringr::str_match(XML::xmlValue(content_node[[l]]),"^(.*)\\.(\\s*)–(\\s*)(.*)$")))[3],"\n")
-            } # if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type ) {
+            } else {
+              if (opt$hub_mode != "refresh") {
+                tryCatch(
+                  {
+                    clessnverse::logit(scriptname, paste("checking if ",event_id, "-", intervention_seqnum, "beta"," already exists", sep-""), logger)
+                    item_check <<- clessnhub::get_item(
+                      'agoraplus_interventions', 
+                      paste(event_id, "-", intervention_seqnum, "beta", sep="")
+                    )
+
+                    if (!is.null(item_check)) {
+                      clessnverse::logit(
+                        scriptname, 
+                        paste(
+                          "item ", 
+                          event_id, "-", intervention_seqnum, "beta",
+                          " already exists, skipping...", 
+                          sep=""),
+                        logger)
+
+                      intervention_seqnum <- intervention_seqnum + 1
+                      next
+                    }
+                  },
+                  error=function(e) {},
+                  finally={}
+                )
+              }
+            }# if ( !is.null(content_type) && "/doceo/data/img/arrow_summary.gif" %in% content_type )
             
             # Here we have an intervention - it is either  a new intervention (if first_parag is not null) or the continuation of the same intervention
             if ( is.null(content_type) || !is.null(first_parag) ) {
@@ -1040,8 +1070,8 @@ for (i in 1:length(urls_list)) {
                                             speakerType = speaker_type,
                                             speakerCountry = speaker_country,
                                             speakerIsMinister = speaker_is_minister,
-                                            speakerParty = speaker_party,
                                             speakerPolGroup = speaker_polgroup,
+                                            speakerParty = speaker_party,
                                             speakerDistrict = speaker_district,
                                             speakerMedia = speaker_media,
                                             interventionID = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
