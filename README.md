@@ -2,17 +2,17 @@
 
 **WARNING: As of June 2022, only create/change code in the [Pipelines folder](https://github.com/clessn/clessn-blend/tree/main/Pipelines) of this repo.**
 
-This repo contains code used to construct the data ETL pipelines between the various data sources required for the CLESSN and the datamarts providing datasets needed for research or visualization.
+This repo contains code used to construct the data pipelines between the various data sources required by the CLESSN and the datamarts providing datasets needed for research or visualization.
 
 The data platform of the CLESSN is composed of scripts that move the data across the internet, file storage space, and databases, to make it ready for analytics.
 
-The scripts are the active components of the pipelines, and the storage and databases are passives components.
+The scripts are the active components of the pipelines (compute), and the storage and databases are passives components (storage).
 
 ## Extractors, loaders and refiners : the active components of ETL pipelines
 
 The current methodology consists in data pipelines made out of **data extractors**, **data loaders** and **data refiners**. Each component moves data in turn 
 * from its original source to the **data lake** or **files blob storage**
-* from the data lake or file  to the **data warehouse**
+* from the data lake or files blob storage to the **data warehouse**
 * from the data warehouse to **datamarts**
 
 Side Note: There are exceptions by which an extractor might not be needed in a pipeline. For instance, a researcher could very well obtain raw data in the form of a csv or pdf file, such as a university paper, a political party election program, the answers of survey questions etc. and would store it manually directly in the **data lake** or **files blob storage**. In that case the researcher plays the role of the extractor.
