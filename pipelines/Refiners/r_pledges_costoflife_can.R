@@ -30,49 +30,57 @@ PledgeLabels$legislature[is.na(PledgeLabels$legislature)] <- 44
 PledgeLabels$political_party[is.na(PledgeLabels$political_party)] <- "PLC"
 PledgeLabels$province_or_state[is.na(PledgeLabels$province_or_state)] <- "CAN"
 PledgeLabels$country[is.na(PledgeLabels$country)] <- "CAN"
-PledgeLabels$pledge_id[is.na(PledgeLabels$pledge_id)] <- paste0(
-  PledgeLabels$province_or_state, "-", PledgeLabels$legislature, "_",
-  PledgeLabels$pledge_id)
-PledgeLabels$promise_tolower <-
+PledgeLabels$promise_tolower_fr <-
   PledgeLabels$french_label |>
   tolower() |> # prepare pledge labels for dictionary analysis (lowercase, no punctuation)
   stringr::str_remove_all("\\[|\\]") |>
   stringr::str_replace_all("[[:punct:]]", "  ")
-Dictionaries <- clessnverse::get_dictionary("subcategories", lang = "fr",
-                                            credentials = credentials) # get cost of life dictionary
-Dictionaries$cost_life <- Dictionaries$cost_life |>
+PledgeLabels$promise_tolower_en <-
+  PledgeLabels$english_label |>
+  tolower() |> # prepare pledge labels for dictionary analysis (lowercase, no punctuation)
+  stringr::str_remove_all("\\[|\\]") |>
+  stringr::str_replace_all("[[:punct:]]", "  ")
+DictionariesFR <- clessnverse::get_dictionary( # get cost of life dictionary
+  "subcategories", lang = "fr", credentials = credentials)
+DictionariesEN <- clessnverse::get_dictionary( # get cost of life dictionary
+  "subcategories", lang = "en", credentials = credentials)
+DictionariesFR$cost_life <- DictionariesFR$cost_life |>
   stringr::str_replace_all("'", "*") # adapt dictionary for mistakes
-PledgeLabelsDictionaries <- clessnverse::run_dictionary(
-  PledgeLabels, promise_tolower, Dictionaries) # calculate number of cost of life pledges
-PledgeLabels$cost_life <- PledgeLabelsDictionaries$cost_life
+PledgeLabelsDictionariesFR <- clessnverse::run_dictionary(
+  PledgeLabels, promise_tolower_fr, DictionariesFR) # calculate number of cost of life pledges
+PledgeLabelsDictionariesEN <- clessnverse::run_dictionary(
+  PledgeLabels, promise_tolower_en, DictionariesEN) # calculate number of cost of life pledges
+PledgeLabels$cost_life <- PledgeLabelsDictionariesFR$cost_life +
+  PledgeLabelsDictionariesEN$cost_life
+PledgeLabels$cost_life[PledgeLabels$cost_life > 1] <- 1
+PledgeLabelsCostLife <- dplyr::filter(PledgeLabels, cost_life == 1)
+write.csv(PledgeLabelsCostLife,
+          "../article_inflation/Data/19932021PledgesCostOfLiving.csv")
 InflationPledgesByLegislature <- PledgeLabels |>
   dplyr::group_by(legislature) |> # group pledge totals by mandate
   dplyr::summarise(cost_life = sum(cost_life, na.rm = T),
                    number_pledges = dplyr::n())
 InflationPledgesByLegislature$years <- c(
-  paste0("Chrétien\n1993-1997 (n = ", InflationPledgesByLegislature$number_pledges[1], ")"),
-  paste0("Chrétien\n1997-2000 (n = ", InflationPledgesByLegislature$number_pledges[2], ")"),
-  paste0("Chrétien/Martin\n2000-2004 (n = ", InflationPledgesByLegislature$number_pledges[3], ")"), # give labels to each mandate
-  paste0("Martin\n2004-2006 (n = ", InflationPledgesByLegislature$number_pledges[4], ")"),
-  paste0("Harper\n2006-2008 (n = ", InflationPledgesByLegislature$number_pledges[5], ")"),
-  paste0("Harper\n2008-2011 (n = ", InflationPledgesByLegislature$number_pledges[6], ")"),
-  paste0("Harper\n2011-2015 (n = ", InflationPledgesByLegislature$number_pledges[7], ")"),
-  paste0("Trudeau\n2015-2019 (n = ", InflationPledgesByLegislature$number_pledges[8], ")"),
-  paste0("Trudeau\n2019-2021 (n = ", InflationPledgesByLegislature$number_pledges[9], ")"),
-  paste0("Trudeau\n2021-... (n = ", InflationPledgesByLegislature$number_pledges[10], ")"))
+  paste0("Chrétien\n\n1993-1997 (n = ", InflationPledgesByLegislature$number_pledges[1], ")"),
+  paste0("Chrétien\n\n1997-2000 (n = ", InflationPledgesByLegislature$number_pledges[2], ")"),
+  paste0("Chrétien/Martin\n\n2000-2004 (n = ", InflationPledgesByLegislature$number_pledges[3], ")"), # give labels to each mandate
+  paste0("Martin\n\n2004-2006 (n = ", InflationPledgesByLegislature$number_pledges[4], ")"),
+  paste0("Harper\n\n2006-2008 (n = ", InflationPledgesByLegislature$number_pledges[5], ")"),
+  paste0("Harper\n\n2008-2011 (n = ", InflationPledgesByLegislature$number_pledges[6], ")"),
+  paste0("Harper\n\n2011-2015 (n = ", InflationPledgesByLegislature$number_pledges[7], ")"),
+  paste0("Trudeau\n\n2015-2019 (n = ", InflationPledgesByLegislature$number_pledges[8], ")"),
+  paste0("Trudeau\n\n2019-2021 (n = ", InflationPledgesByLegislature$number_pledges[9], ")"),
+  paste0("Trudeau\n\n2021-... (n = ", InflationPledgesByLegislature$number_pledges[10], ")"))
 ggplot2::ggplot(InflationPledgesByLegislature, ggplot2::aes(
   x = legislature, y = cost_life)) +
   ggplot2::geom_line(ggplot2::aes(group = 1)) +
   ggplot2::scale_x_discrete("", labels = InflationPledgesByLegislature$years) +
-  ggplot2::ylab("Nombre de promesses sur le coût de la vie") +
-  clessnverse::theme_clean_dark(base_size = 30) +
-  ggplot2::ggtitle("Un enjeu autrefois absent?",
-                   subtitle = "Le coût de la vie dans les promesses du parti au pouvoir au Québec depuis 1994") +
+  ggplot2::ylab("Number of government pledges on cost of living") +
   ggplot2::theme(axis.text.x = ggplot2::element_text(hjust = 1, angle = 90,
                                                      lineheight = 0.35))
-#ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/", # in this Excel file, count manually number of pledges in each paragraph in a new column
-#                       "presse_canadienne/2022_09_16/CoutdelaviePromesses.png"),
-#                width = 8, height = 5.5)
+ggplot2::ggsave("../article_inflation/Graphs/CostOfLivingPledgesPerYear.png",
+                width = 8, height = 5.5)
+# in this Excel file, count manually number of pledges in each paragraph in a new column
 
 #### Cost of life pledges by 2021 manifesto ####
 PartyPlatforms2021 <- clessnverse::get_warehouse_table(
@@ -80,16 +88,33 @@ PartyPlatforms2021 <- clessnverse::get_warehouse_table(
 PartyPlatforms2021$paragraph_tolower <- PartyPlatforms2021$paragraph |>
   tolower() |> # prepare manifestos for analysis (lowercase, remove punctuation)
   stringr::str_replace_all("[[:punct:]]", "  ")
-PartyPlatforms2021Dictionaries <- clessnverse::run_dictionary(
-  PartyPlatforms2021, paragraph_tolower, Dictionaries) # calculate number of cost of life mentions
-PartyPlatforms2021$cost_life <- PartyPlatforms2021Dictionaries$cost_life
-#openxlsx::write.xlsx(PartyPlatforms2022,
-#                     paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
-#                            "presse_canadienne/2022_09_16/",
-#                            "CoutdelaviePromesses.xlsx"))
-InflationPledgesByParty <- PartyPlatforms2021 |>
+PartyPlatforms2021FR <- dplyr::filter(PartyPlatforms2021, language == "FR")
+PartyPlatforms2021EN <- dplyr::filter(PartyPlatforms2021, language == "EN")
+PartyPlatforms2021DictionariesFR <- clessnverse::run_dictionary(
+  PartyPlatforms2021FR, paragraph_tolower, DictionariesFR) # calculate number of cost of life mentions
+PartyPlatforms2021DictionariesEN <- clessnverse::run_dictionary(
+  PartyPlatforms2021EN, paragraph_tolower, DictionariesEN) # calculate number of cost of life mentions
+PartyPlatforms2021FR$cost_life <- PartyPlatforms2021DictionariesFR$cost_life
+PartyPlatforms2021EN$cost_life <- PartyPlatforms2021DictionariesEN$cost_life
+PartyPlatforms2021Merged <- rbind(PartyPlatforms2021FR, PartyPlatforms2021EN) |>
+  dplyr::filter(cost_life == 1)
+write.csv(PartyPlatforms2021Merged,
+          "../article_inflation/Data/2021ManifestoStatementsCostOfLiving.csv")
+InflationPledgesByParty <- PartyPlatforms2021Merged |>
   dplyr::group_by(political_party) |> # group cost of life mentions by party
   dplyr::summarise(cost_life = sum(cost_life, na.rm = T))
+InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PLC"] <-
+  InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PLC"
+  ] - 4
+InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PCC"] <-
+  InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PCC"
+  ] - 4
+InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "NPD"] <-
+  InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "NPD"
+  ] - 7
+InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PPC"] <-
+  InflationPledgesByParty$cost_life[InflationPledgesByParty$political_party == "PPC"
+  ] - 1
 
 #### Economy pledges by legislature ####
 PolimeterHistorical <- clessnverse::get_warehouse_table(
@@ -126,30 +151,27 @@ EconomicVerdictsDataShort <- EconomicVerdictsData |>
   dplyr::group_by(legislature) |> # group number of economic pledges by mandate
   dplyr::summarise(number_pledges = sum(number_pledges, na.rm = T))
 EconomicVerdictsDataYears <- c(
-  paste0("Chrétien\n1993-1997 (n = ",
+  paste0("Chrétien\n\n1993-1997 (n = ",
          EconomicVerdictsDataShort$number_pledges[1], ")"),
-  paste0("Chrétien\n1997-2000 (n = ",
+  paste0("Chrétien\n\n1997-2000 (n = ",
          EconomicVerdictsDataShort$number_pledges[2], ")"),
-  paste0("Chrétien/Martin\n2000-2004 (n = ",
+  paste0("Chrétien/Martin\n\n2000-2004 (n = ",
          EconomicVerdictsDataShort$number_pledges[3], ")"),
-  paste0("Martin\n2004-2006 (n = ",
+  paste0("Martin\n\n2004-2006 (n = ",
          EconomicVerdictsDataShort$number_pledges[4], ")"),
-  paste0("Harper\n2006-2008 (n = ",
+  paste0("Harper\n\n2006-2008 (n = ",
          EconomicVerdictsDataShort$number_pledges[5], ")"),
-  paste0("Harper\n2008-2011 (n = ",
+  paste0("Harper\n\n2008-2011 (n = ",
          EconomicVerdictsDataShort$number_pledges[6], ")"),
-  paste0("Harper\n2011-2015 (n = ",
+  paste0("Harper\n\n2011-2015 (n = ",
          EconomicVerdictsDataShort$number_pledges[7], ")"),
-  paste0("Trudeau\n2015-2019 (n = ",
+  paste0("Trudeau\n\n2015-2019 (n = ",
          EconomicVerdictsDataShort$number_pledges[8], ")"),
-  paste0("Trudeau\n2019-2021 (n = ",
-         EconomicVerdictsDataShort$number_pledges[9], ")"),
-  paste0("Trudeau\n2021-... (n = ",
-         EconomicVerdictsDataShort$number_pledges[10], ")"))
+  paste0("Trudeau\n\n2019-2021 (n = ",
+         EconomicVerdictsDataShort$number_pledges[9], ")"))
 ggplot2::ggplot(EconomicVerdictsData, ggplot2::aes(
   x = legislature, y = number_pledges, group = verdict,
   fill = as.factor(verdict))) +
-  clessnverse::theme_clean_dark(base_size = 30) +
   ggplot2::geom_col(position = "fill") +
   ggplot2::scale_x_discrete("", labels = EconomicVerdictsDataYears) +
   ggplot2::scale_y_continuous(
@@ -158,14 +180,14 @@ ggplot2::ggplot(EconomicVerdictsData, ggplot2::aes(
     labels = c(0, 20, 40, 60, 80, 100)) +
   ggplot2::scale_fill_manual("Verdict",
                              values = c("#228B22", "#F3C349", "#AE0101"),
-                             labels = c("Réalisée", "Partiellement réalisée", "Rompue")) +
+                             labels = c("Réalisée", "Partiellement réalisée",
+                                        "Rompue")) +
   ggplot2::theme(plot.title = ggplot2::element_text(lineheight = 0.35),
                  axis.text.x = ggplot2::element_text(
                    hjust = 0.5, vjust = 0.5, angle = 90, lineheight = 0.35)) +
-  ggplot2::ggtitle(paste("Les gouvernements canadiens respectent-ils\nleurs",
+  ggplot2::ggtitle(paste("Les gouvernements canadiens respectent-ils\n\nleurs",
                          "promesses sur l'économie?"),
                    subtitle = paste("État de réalisation des promesses en",
                                     "économie et employabilité depuis 1994"))
-#ggplot2::ggsave(paste0("../elxn-qc2022/_SharedFolder_elxn-qc2022/",
-#                       "presse_canadienne/2022_09_16/CoutdelaviePromesses2",
-#                       ".png"), width = 8, height = 5.5)
+ggplot2::ggsave("../article_inflation/Graphs/CoutdelaviePromesses2.png",
+                width = 8, height = 5.5)
