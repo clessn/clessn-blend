@@ -1,7 +1,30 @@
-35 20   * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh e_qc125.sh >> /home/patrick/logs/e_qc125.log 2>&1
-05 */12 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh e_pressreleases_qc.sh >> /home/patrick/logs/e_pressreleases_qc.consolelog 2>&1
-20 */12 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh l_pressreleases_qc.sh >> /home/patrick/logs/l_pressreleases_qc.consolelog 2>&1
-20 */24 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "candidate" "candidate_elxn_qc2022" 'list(metadata.country="CA",metadata.province_or_state="QC")' >> /home/patrick/logs/twitter_blender_candidate.consolelog 2>&1
+# Edit this file to introduce tasks to be run by cron.
+# 
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+# 
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').
+# 
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+# 
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+# 
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+# 
+# For more information see the manual pages of crontab(5) and cron(8)
+# 
+# m h  dom mon dow   command
+#35 20   * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh e_qc125.sh >> /home/patrick/logs/e_qc125.consolelog 2>&1
+05 */36 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh e_pressreleases_qc.sh >> /home/patrick/logs/e_pressreleases_qc.consolelog 2>&1
+20 */36 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh l_pressreleases_qc.sh >> /home/patrick/logs/l_pressreleases_qc.consolelog 2>&1
+20 3    * * 4 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "candidate" "candidate_elxn_qc2022" 'list(metadata.country="CA",metadata.province_or_state="QC")' >> /home/patrick/logs/twitter_blender_candidate.consolelog 2>&1
 30 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "political_party" "all" "all" >> /home/patrick/logs/twitter_blender_political_party.consolelog 2>&1
 40 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "media" "all" "all" >> /home/patrick/logs/twitter_blender_media.consolelog 2>&1
 50 */72 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "journalist" "journalist_v3" "all" >> /home/patrick/logs/twitter_blender_journalist.consolelog 2>&1
@@ -9,8 +32,8 @@
 05 0    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="National\%20Assembly\%20of\%20Quebec")' >> /home/patrick/logs/twitter_blender_mp.consolelog 2>&1
 10 0    * * 2 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="House\%20of\%20Commons\%20of\%20Canada")' >> /home/patrick/logs/twitter_blender_mp.consolelog 2>&1
 15 0    * * 3 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="European\%20Parliament")' >> /home/patrick/logs/twitter_blender_mp.consolelog 2>&1
-20 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "canada" "console" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_canada.consolelog 2>&1
-40 */72 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "quebec" "console" "update" "update" FALSE FALSE >> /home/patrick/logs/parliament_mash_quebec.consolelog 2>&1
-40 2    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "europe" "console" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_europe.consolelog 2>&1
-40 4    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressconference_crush.sh "quebecnationalassembly" "console" "update" "update" FALSE FALSE >> /home/patrick/logs/pressconference_crush_quebecnationalassembly.consolelog 2>&1
-40 */12 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressreleases_plow.sh "canadafederalparties" "console" "update" "update" TRUE FALSE >> /home/patrick/logs/pressreleases_plow_canadafederalparties.consolelog 2>&1
+20 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "canada" "file" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_canada.consolelog 2>&1
+40 */72 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "quebec" "file" "update" "update" FALSE FALSE >> /home/patrick/logs/parliament_mash_quebec.consolelog 2>&1
+40 2    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "europe" "file" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_europe.consolelog 2>&1
+40 4    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressconference_crush.sh "quebecnationalassembly" "file" "update" "update" FALSE FALSE >> /home/patrick/logs/pressconference_crush_quebecnationalassembly.consolelog 2>&1
+40 */36 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressreleases_plow.sh "canadafederalparties" "file" "update" "update" TRUE FALSE >> /home/patrick/logs/pressreleases_plow_canadafederalparties.consolelog 2>&1

@@ -40,7 +40,13 @@ for (i in 1:nrow(df_persons)) {
         tryCatch(
             { new_tweets <- clessnhub::get_items('tweets', filter, download_data = T) },
             error = function(e) {
-                cat ("Error accessing hub - trying again...\n")
+                cat(paste("Error accessing hub - trying again...\n", e, "\n"))
+                if (grepl("Connectez-vous de nouveau", e)) {
+                    clessnhub::login(
+                        Sys.getenv("HUB_USERNAME"),
+                        Sys.getenv("HUB_PASSWORD"),
+                        Sys.getenv("HUB_URL"))
+                }
             },
             finally = { if (!is.null(df_tweets)) success <- 1 }
         )
@@ -48,6 +54,22 @@ for (i in 1:nrow(df_persons)) {
 
 
     if (!is.null(new_tweets) && nrow(new_tweets) > 0 ) {
+        cat(
+            paste(
+                "retrieved", 
+                nrow(df_tweets), 
+                "tweets for user #", i, 
+                "with twitterHandle", df_persons$data.twitterHandle[i]
+                )
+        )
         df_tweets <- df_tweets %>% rbind(new_tweets)
+    } else {
+        if (!is.null(new_tweets) && nrow(new_tweets) == 0) {
+            cat(paste("no tweets matching filter for", df_persons$data.twitterHandle[i], "\n"))
+        }
+
+        if (is.null(new_tweets)) {
+            cat("df_tweets is null")
+        }
     }
 }
