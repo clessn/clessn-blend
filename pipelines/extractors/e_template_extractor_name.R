@@ -62,7 +62,7 @@ my_function <- function(parm1 = "default_value", parm2 = "defaul_value", parm3..
 ########################               Main              ######################
 ###############################################################################
 
-main <- function(scriptname, logger, credentials) {
+main <- function() {
     
   clessnverse::logit(scriptname, "starting main function", logger)
   
@@ -163,7 +163,7 @@ tryCatch(
 
 		clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
 		clessnverse::log_close(logger)
-		if exists(logger) rm(logger)
+		if (exists("logger")) rm(logger)
 		print(paste("exiting with status", status))
 		quit(status = status)
 	}
