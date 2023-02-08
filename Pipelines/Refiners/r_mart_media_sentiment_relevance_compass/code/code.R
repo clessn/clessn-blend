@@ -302,7 +302,8 @@ library(lubridate)
     # geom_vline(xintercept = as.Date("2022-08-27"),
     #            linetype="dashed", color = "grey") +
     clessnverse::theme_clean_dark(base_size = 25) +
-    theme(text = element_text(family = "roboto")) +
+    theme(text = element_text(family = "roboto"),
+          plot.caption = element_text(lineheight = 0.35, size = 20)) +
     # Ajouter les points sur lignes
     scale_color_manual(values = issue_color2) +
     scale_fill_manual(values = issue_color2) +
@@ -316,7 +317,9 @@ library(lubridate)
     ylab("Nombre d'articles par jour à la Une") +
     labs(title = "La polarisation à la Une",
          subtitle = "En comparaison à trois autres enjeux de la campagne électorale 2022\n",
-         caption = "Données: 453 Unes publiées sur les sites Web des grands médias québécois")
+         caption = "Source: Unes publiées sur les sites Web de La Presse, du Journal de Montréal, de Radio-Canada et du Devoir (n = 453).
+Note: Ensemble des Unes publiées du 23 août au 6 septembre.
+Pour plus d'informations: info@clessn.com")
 
   ggsave("plotRadar.png", width = 6.7, height = 4.5)
 
@@ -344,9 +347,9 @@ load_radarplus_data <- function(){
 
   #Créer la date de début
   # Depuis 2 semaine
-  day <- as.numeric(format(lubridate::today() - days(14), "%d"))
-  month <- as.numeric(format(lubridate::today() - days(14), "%m"))
-  year <- as.numeric(format(lubridate::today() - days(14), "%Y"))
+  day <- as.numeric(format(lubridate::today() - days(17), "%d"))
+  month <- as.numeric(format(lubridate::today() - days(17), "%m"))
+  year <- as.numeric(format(lubridate::today() - days(17), "%Y"))
 
   # on crée une requête avec les paramètres des articles qu'on veut
   # Date de début des données désirées
@@ -358,7 +361,7 @@ load_radarplus_data <- function(){
   year2 <- as.numeric(format(Sys.time(), "%Y"))
 
   # Date de fin des données désirées
-  end_date <- quorum::createDate(day2, month2, year2, 00, 00, 00)
+  end_date <- quorum::createDate(06, 09, 2022, 00, 00, 00)
 
   # Obtenir les données en français
   queryFR <- quorum::createRadarplusQuery(begin_date=begin_date,                # les articles dont la fin de la une est après cette date
@@ -406,23 +409,52 @@ load_radarplus_data <- function(){
   return(DataRadar)
 }
 
-# get_journalists_tweets <- function(){
-#   myfilter <- clessnhub::create_filter(
-#     metadata = list(personType__regex="journalist|media"),
-#     data = list(creationDate__gte="2022-07-20",
-#                 creationDate__lte=as.character(as.Date(Sys.time()))))
-#   Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
-#     mutate(data.likeCount = as.numeric(data.likeCount),
-#            data.retweetCount = as.numeric(data.retweetCount))
-#   return(Tweets)
-# }
-#
-# get_journalists_hub2 <- function(){
-#   filter <- clessnhub::create_filter(type = "journalist")
-#   Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE) %>%
-#     select(handle = data.twitterHandle, fullName = data.fullName, female = data.isFemale, media = data.currentMedia)
-#   return(Persons)
-# }
+get_journalists_tweets <- function(){
+  myfilter <- clessnhub::create_filter(
+    metadata = list(personType__regex="journalist|media"),
+    data = list(creationDate__gte="2022-07-20",
+                creationDate__lte=as.character(as.Date(Sys.time()))))
+  Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
+    mutate(data.likeCount = as.numeric(data.likeCount),
+           data.retweetCount = as.numeric(data.retweetCount))
+  return(Tweets)
+}
+
+get_candidate_tweets <- function(){
+  myfilter <- clessnhub::create_filter(
+    metadata = list(personType__regex="candidate"),
+    data = list(creationDate__gte="2021-04-17",
+                creationDate__lte=as.character(as.Date(Sys.time()))))
+  Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
+    mutate(data.likeCount = as.numeric(data.likeCount),
+           data.retweetCount = as.numeric(data.retweetCount))
+  return(Tweets)
+}
+
+get_party_tweets <- function(){
+  myfilter <- clessnhub::create_filter(
+    metadata = list(personType__regex="party"),
+    data = list(creationDate__gte="2021-04-17",
+                creationDate__lte=as.character(as.Date(Sys.time()))))
+  Tweets <- clessnhub::get_items('tweets', myfilter, download_data = T) %>%
+    mutate(data.likeCount = as.numeric(data.likeCount),
+           data.retweetCount = as.numeric(data.retweetCount))
+  return(Tweets)
+}
+
+get_journalists_hub2 <- function(){
+  filter <- clessnhub::create_filter(type = "journalist")
+  Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE) %>%
+    select(handle = data.twitterHandle, fullName = data.fullName, female = data.isFemale, media = data.currentMedia)
+  return(Persons)
+}
+
+get_candidate_hub2 <- function(){
+  filter <- clessnhub::create_filter(type = "candidate")
+  Persons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
+  return(Persons)
+}
+
 
 ###############################################################################
 ######################            Functions to          ######################
@@ -440,21 +472,26 @@ main <- function() {
   issue <-  clessnverse::get_dictionary("subcategories", lang = 'fr', credentials)
   sentiment <- clessnverse::get_dictionary("sentiments", lang = "fr", credentials)
   radarplus_data <- load_radarplus_data()
-#  journalists_tweets <- get_journalists_tweets()
- # journalists <- get_journalists_hub2()
-
-  # journalists_tweets2 <- journalists_tweets %>%
-  #   select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle)
-
-# tweets <- left_join(journalists_tweets2, journalists, by = "handle") %>%
-#   mutate(source = "twitter") %>%
-#   select(date, text, id = handle, media, source) %>%
-#   filter(media %in% c("TVA Nouvelles", "Radio-Canada", "Radio Canada", "La Presse", "Le Devoir")) %>%
-#   mutate(media = ifelse(media == "La Presse", "la-presse", media),
-#          media = ifelse(media == "Radio-Canada", "radio-canada", media),
-#          media = ifelse(media == "Radio Canada", "radio-canada", media),
-#          media = ifelse(media == "TVA Nouvelles", "tva-nouvelles", media),
-#          media = ifelse(media == "Le Devoir", "le-devoir", media))
+#   candidate_tweets <- get_candidate_tweets()
+#   candidates <- get_candidate_hub2()
+#   party_tweets <- get_party_tweets()
+#
+# candidate_tweets2 <- candidate_tweets %>%
+#     select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle, likes = data.likeCount,
+#            mentions = data.mentions, type)
+#
+# candidates2 <- candidates %>%
+#     select(currentDisctrict = data.currentDistrict, party = data.currentParty, name = data.fullName,
+#            female = data.isFemale, handle = data.twitterHandle)
+#
+# party_tweets2 <- party_tweets %>%
+#   select(date = data.creationDate, text = data.text, handle = metadata.twitterHandle, likes = data.likeCount,
+#          mentions = data.mentions, type) %>%
+#   filter(handle ==  "@PconservateurQc")
+#
+# tweets <- left_join(candidate_tweets2, candidates2, by = "handle") %>%
+#   filter(name == "Duhaime, Éric") %>%
+#   bind_rows(party_tweets2)
 
 radarplus_data2 <- radarplus_data %>%
   mutate(id = source, media = source, source = "headlines") %>%
