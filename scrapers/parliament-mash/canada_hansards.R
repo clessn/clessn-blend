@@ -36,7 +36,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
 clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 
-#opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
+opt <- list(dataframe_mode = "rebuild", log_output = "console", hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
@@ -928,7 +928,7 @@ for (i_url in 1:length(urls_list_fr)) {
   Sys.sleep(60)
 } #for (i_url in 1:length(urls_list))
 
-
+print(status)
 clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)

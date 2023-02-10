@@ -9,7 +9,7 @@ clessnhub::login(
 # Below are a lot of examples on how to filter populations
 
 # Example 1 : all the candidates of the qc election 2022
-filter <- clessnhub::create_filter(type="candidate", schema="candidate_elxn_qc2022", metadata=NULL, data=NULL)
+filter <- clessnhub::create_filter(type="media", metadata=NULL, data=NULL)
 
 # Example 2 : all the mp of the european parliament
 #filter <- clessnhub::create_filter(type="mp", schema="", metadata=list(institution="European Parliament"), data=NULL)
@@ -31,7 +31,13 @@ df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_
 df_tweets <- data.frame()
 
 for (i in 1:nrow(df_persons)) {
-    filter <- clessnhub::create_filter(data=list(personKey = df_persons$key[i]))
+    filter <- clessnhub::create_filter(
+        data=list(
+            personKey = df_persons$key[i],
+            creationDate__gte="2022-09-15",
+            creationDate__lte="2022-10-15"
+        )
+    )
 
     success <- 0
     while(success == 0) {
