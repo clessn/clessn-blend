@@ -931,7 +931,6 @@ for (i_url in 1:length(urls_list_fr)) {
   Sys.sleep(60)
 } #for (i_url in 1:length(urls_list))
 
-print(status)
 clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
