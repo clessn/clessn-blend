@@ -27,10 +27,10 @@ safe_GET <- purrr::safely(httr::GET)
 #
 #installPackages()
 library(dplyr)
-status <- 0
-debate_count <- 0
-intervention_count <- 0
-final_message <- ""
+status <<- 0
+debate_count <<- 0
+intervention_count <<- 0
+final_message <<- ""
 
 if (!exists("scriptname")) scriptname <- "parliament_mash_canada"
 
@@ -129,9 +129,9 @@ if (scraping_method == "Latest") {
         clessnverse::logit(scriptname, paste("cannot get", paste(base_url,content_url,sep=""), "index web page"), logger)
         status <<- 1
         if (final_message == "") {
-          final_message <- paste("cannot get", paste(base_url,content_url,sep=""), "index web page")
+          final_message <<- paste("cannot get", paste(base_url,content_url,sep=""), "index web page")
         } else {
-          final_message <- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
+          final_message <<- paste(final_message, "\n", paste("cannot get", paste(base_url,content_url,sep=""), "index web page"))
         }
       }, 
       finally = {
@@ -235,15 +235,15 @@ for (i_url in 1:length(urls_list_fr)) {
     tryCatch(
       {
         clessnverse::logit(scriptname, paste("HTTP GET", current_url_fr), logger)
-        r <- httr::GET(current_url_fr)
+        r_fr <- httr::GET(current_url_fr)
       },
       error = function(e) {
         clessnverse::logit(scriptname,paste("cannot get", current_url_fr, "event web page"), logger)
         status <<- 1
         if (final_message == "") {
-          final_message <- paste("cannot get", current_url_fr, "event web page")
+          final_message <<- paste("cannot get", current_url_fr, "event web page")
         } else {
-          final_message <- paste(final_message, "\n", paste("cannot get", current_url_fr, "event web page"))
+          final_message <<- paste(final_message, "\n", paste("cannot get", current_url_fr, "event web page"))
         }
       },
       finally = {
@@ -252,7 +252,7 @@ for (i_url in 1:length(urls_list_fr)) {
     )
   }
 
-  if (!is.null(r_fr$result) && r_fr$result$status_code == 200) {
+  if (!is.null(r_fr$status_code) && r_fr$status_code == 200) {
     current_url_en <- urls_list_en[[i_url]]
 
     i_get_attempt <- 1
@@ -267,9 +267,9 @@ for (i_url in 1:length(urls_list_fr)) {
           clessnverse::logit(scriptname,paste("cannot get", current_url_en, "event web page"), logger)
           status <<- 1
           if (final_message == "") {
-            final_message <- paste("cannot get", current_url_en, "event web page")
+            final_message <<- paste("cannot get", current_url_en, "event web page")
           } else {
-            final_message <- paste(final_message, "\n", paste("cannot get", current_url_en, "event web page"))
+            final_message <<- paste(final_message, "\n", paste("cannot get", current_url_en, "event web page"))
           }
         }, 
         finally = {
@@ -278,8 +278,8 @@ for (i_url in 1:length(urls_list_fr)) {
       ) 
     }
 
-    if (r_en$result$status_code == 200) {
-      doc_html_en <- httr::content(r_en$result, encoding = "UTF-8")
+    if (r_en$status_code == 200) {
+      doc_html_en <- httr::content(r_en, encoding = "UTF-8")
       doc_xml_en <- XML::xmlParse(doc_html_en, useInternalNodes = TRUE)
       top_xml_en <- XML::xmlRoot(doc_xml_en)
       title_xml_en <- top_xml_en[["DocumentTitle"]]
@@ -295,7 +295,7 @@ for (i_url in 1:length(urls_list_fr)) {
       }
       next  
     }
-    doc_html_fr <- httr::content(r_fr$result, encoding = "UTF-8")
+    doc_html_fr <- httr::content(r_fr, encoding = "UTF-8")
     doc_xml_fr <- XML::xmlParse(doc_html_fr, useInternalNodes = TRUE)
     top_xml_fr <- XML::xmlRoot(doc_xml_fr)
     title_xml_fr <- top_xml_fr[["DocumentTitle"]]
@@ -907,7 +907,7 @@ for (i_url in 1:length(urls_list_fr)) {
                                                                         metadata = v2_metadata_to_commit,
                                                                         data = v2_row_to_commit,
                                                                         opt$dataframe_mode, opt$hub_mode)
-
+            intervention_count <- intervention_count + 1
             current_speaker_full_name <- speaker_full_name
 
             intervention_id <- NA
@@ -925,6 +925,9 @@ for (i_url in 1:length(urls_list_fr)) {
   clessnverse::logit(scriptname, 
                      paste("Commited", intervention_seqnum, "interventions to the hub for debate", event_id, "at URL", current_url_fr, sep = " "), 
                      logger)
+
+  debate_count <- debate_count + 1
+
   Sys.sleep(60)
 } #for (i_url in 1:length(urls_list))
 
@@ -933,4 +936,4 @@ clessnverse::logit(scriptname, final_message, logger)
 clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
-quit(save="no", status = status)
+#quit(save="no", status = status)
