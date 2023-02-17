@@ -63,10 +63,23 @@ harvest_headline <- function(r, m) {
   }
 
   if (m$short_name == "CBC") {
-    test <- r %>%
-      rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
+    test <<- r %>%
+      #rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
+      rvest::html_nodes(xpath = '//div[@class="card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
+      rvest::html_node("a") %>%
       rvest::html_attr("href")
-    url <- paste(m$base, test[[1]], sep="")
+
+    if (length(test) == 0) {
+      test <<- r %>%
+        rvest::html_nodes(xpath = '//a[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
+        rvest::html_attr("href")
+    }
+
+    if (grepl("^http.*", test[[1]])) {
+      url <- test[[1]]
+    } else {
+      url <- paste(m$base, test[[1]], sep="")
+    } 
     found_supported_media <- TRUE
   }
 
@@ -160,7 +173,8 @@ main <- function() {
       country = m$country
     )
 
-    r <- rvest::session(url)
+    r <<- rvest::session(url)
+    m <<- m
 
     if (r$response$status_code == 200) {
       if (grepl("text/html", r$response$headers$`content-type`)) {

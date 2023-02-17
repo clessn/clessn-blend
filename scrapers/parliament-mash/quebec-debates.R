@@ -16,62 +16,6 @@
 
 
 ###############################################################################
-# Function : installPackages
-# This function installs all packages requires in this script and all the
-# scripts called by this one
-#
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr", 
-                         "tidyr",
-                         "optparse",
-                         "RCurl", 
-                         "httr",
-                         "jsonlite",
-                         "dplyr", 
-                         "XML", 
-                         "tm",
-                         "tidytext", 
-                         "tibble",
-                         "devtools",
-                         "textcat",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r")
-  
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
-      } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }  
-  }
-  
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
-      }
-    }
-  }
-} # </function installPackages>
-
-
-###############################################################################
 #   Globals
 #
 #   scriptname
@@ -79,6 +23,11 @@ installPackages <- function() {
 #
 #installPackages()
 library(dplyr)
+status <<- 0
+debate_count <<- 0
+intervention_count <<- 0
+final_message <<- ""
+
 
 if (!exists("scriptname")) scriptname <- "parliament_mash_quebec"
 
@@ -88,13 +37,13 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_quebec"
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-#opt <- list(dataframe_mode = "skip", hub_mode = "skip", log_output = "console", download_data = FALSE)
+opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "console", download_data = FALSE, translate = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
 }
 
-if (!exists("logger") || is.null(logger) || logger == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+if (!exists("logger") || is.null(logger) || length(logger) == 0) logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 # Download HUB v2 data
 if (opt$dataframe_mode %in% c("update","refresh")) {
@@ -103,7 +52,7 @@ if (opt$dataframe_mode %in% c("update","refresh")) {
                                                                location = "CA-QC", format = "html",
                                                                download_data = opt$download_data,
                                                                token = Sys.getenv('HUB_TOKEN'))
-  
+
   if (is.null(dfInterventions)) dfInterventions <- clessnverse::createAgoraplusInterventionsDf(type = "parliament_debate", schema = "v2")
   
   if (opt$download_data) { 
@@ -233,7 +182,19 @@ for (i in 1:length(list_urls)) {
     ###
     if ( !(event_id %in% dfCache2$key) ) {
       # Read and parse HTML from the URL directly
-      doc_html <- RCurl::getURL(event_url)
+      tryCatch(
+        {doc_html <- RCurl::getURL(event_url)},
+        error = function(e) {
+          clessnverse::logit(scriptname,paste("cannot get", event_url, "event web page"), logger)
+          status <<- 1
+          if (final_message == "") {
+            final_message <<- paste("cannot get", event_url, "event web page")
+          } else {
+            final_message <<- paste(final_message, "\n", paste("cannot get", event_url, "event web page"))
+          }
+        },
+        finally = {}
+      )
       doc_html.original <- doc_html
       doc_html <- stringr::str_replace_all(doc_html, "<a name=\"_Toc([:digit:]{8})\">([:alpha:])",
                                   "<a name=\"_Toc\\1\">Titre: \\2")
@@ -440,8 +401,9 @@ for (i in 1:length(list_urls)) {
       speech_paragraph_count <- 0
       
       for (j in 1:length(doc_text)) {
-        cat(j, "\r")
-        
+        #cat(j, intervention_count, "\r")
+        cat(intervention_count, "\r")
+
         # Is this a new speaker taking the stand?  If so there is typically a : at the begining of the sentence
         # And the Sentence starts with the Title (M. Mme etc) and the last name of the speaker
         
@@ -505,6 +467,7 @@ for (i in 1:length(list_urls)) {
             intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
             intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             matching_row <- NULL
+            intervention_count <<- intervention_count - 1
             next
           }
           
@@ -789,7 +752,7 @@ for (i in 1:length(list_urls)) {
               stringr::str_detect(next_paragraph_start, "^(.*):") &&
               !is.na(doc_text[j]) || 
               (j == length(doc_text) && is.na(doc_text[j+1])) ) {  
-          
+
           # Update Deep
           row_to_commit <- data.frame(uuid = "",
                                       created = "",
@@ -867,21 +830,35 @@ for (i in 1:length(list_urls)) {
           v2_metadata_to_commit <- list("url"=event_url, "format"="html", "location"="CA-QC",
                                      "parliament_number"=parliament_number, "parliament_session"=parliament_session)
 
-          dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
-                                                                       type = "parliament_debate", schema = "v2",
-                                                                       metadata = v2_metadata_to_commit,
-                                                                       data = v2_row_to_commit,
-                                                                       opt$dataframe_mode, opt$hub_mode)
-          
-          intervention_seqnum <- intervention_seqnum + 1
-          matching_row <- NULL
-          
-          sob_procedural_text <- NA
-          intervention_text <- NA
-          speech_paragraph_count <- 0
-          speech_sentence_count <- 0
-          speech_word_count <- 0
-          
+          tryCatch(
+            { 
+              dfInterventions <- clessnverse::commitAgoraplusInterventions(dfDestination = dfInterventions, 
+                                                                        type = "parliament_debate", schema = "v2",
+                                                                        metadata = v2_metadata_to_commit,
+                                                                        data = v2_row_to_commit,
+                                                                        opt$dataframe_mode, opt$hub_mode)
+              intervention_count <<- intervention_count + 1
+              intervention_seqnum <<- intervention_seqnum + 1
+              matching_row <- NULL
+              
+              sob_procedural_text <- NA
+              intervention_text <- NA
+              speech_paragraph_count <- 0
+              speech_sentence_count <- 0
+              speech_word_count <- 0
+            },
+            error = function(e) {
+              clessnverse::logit(scriptname,paste("cannot write", event_id, intervention_seqnum, "intervention"), logger)
+              status <<- 1
+              if (final_message == "") {
+                final_message <<- paste("cannot write", event_id, intervention_seqnum, "intervention")
+              } else {
+                final_message <<- paste(final_message, "\n", paste("cannot write", event_id, intervention_seqnum, "intervention"))
+              }
+            },
+            finally = {
+            }
+          )
         } #If the next speaker is different or if it's the last record
       } # for (j in 1:length(doc_text)) : loop back to the next intervention
       
@@ -908,8 +885,15 @@ for (i in 1:length(list_urls)) {
     } # version finale
     
   } #if (grepl("actualites-salle-presse", event_url))
-  
+
+  if (intervention_count > 1) debate_count <- debate_count + 1
+
 } #for (i in 1:nrow(result))
 
+if (intervention_count < 0) intervention_count <- 0
+
+clessnverse::logit(scriptname, final_message, logger)
+clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
+#quit(save="no", status = status)

@@ -49,59 +49,6 @@ safe_httr_GET <- purrr::safely(httr::GET)
 
 
 
-###############################################################################
-# installPackages
-###############################################################################
-installPackages <- function() {
-  # Define the required packages if they are not installed
-  required_packages <- c("stringr", 
-                         "tidyr",
-                         "optparse",
-                         "RCurl", 
-                         "httr",
-                         "jsonlite",
-                         "dplyr", 
-                         "XML", 
-                         "tm",
-                         "textcat",
-                         "tidytext", 
-                         "tibble",
-                         "devtools",
-                         "purrr",
-                         "clessn/clessnverse",
-                         "clessn/clessn-hub-r")
-  
-  # Install missing packages
-  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-  
-  for (p in 1:length(new_packages)) {
-    if ( grepl("\\/", new_packages[p]) ) {
-      if (grepl("clessnverse", new_packages[p])) {
-        devtools::install_github(new_packages[p], ref = "v1", upgrade = "never", quiet = FALSE, build = FALSE)
-      } else {
-        devtools::install_github(new_packages[p], upgrade = "never", quiet = FALSE, build = FALSE)
-      }
-    } else {
-      install.packages(new_packages[p])
-    }  
-  }
-  
-  # load the packages
-  # We will not invoque the CLESSN packages with 'library'. The functions 
-  # in the package will have to be called explicitely with the package name
-  # in the prefix : example clessnverse::evaluateRelevanceIndex
-  for (p in 1:length(required_packages)) {
-    if ( !grepl("\\/", required_packages[p]) ) {
-      library(required_packages[p], character.only = TRUE)
-    } else {
-      if (grepl("clessn-hub-r", required_packages[p])) {
-        packagename <- "clessnhub"
-      } else {
-        packagename <- stringr::str_split(required_packages[p], "\\/")[[1]][2]
-      }
-    }
-  }
-} # </function installPackages>
 
 
 ###############################################################################
@@ -353,14 +300,20 @@ extractBQUrlsList <- function(xml_root, scriptname, logger) {
 extractBQInfo <- function(comm_root, scriptname, logger) {
   # Récupère le titre
   title <- XML::getNodeSet(comm_root, ".//header/h1")
-  title <- XML::xmlValue(title[[1]])
   
   # Récupère le contenu
   text_node <- XML::getNodeSet(comm_root, ".//div[@class='content']")
-  
+
+  if (length(title) == 0 && length(text_node) == 0) {
+    warning("bad article found for BQ")
+    return(NULL)
+  }
+
+  title <- XML::xmlValue(title[[1]])
+
   # Récupère la date
   date <- XML::xmlValue(text_node[[1]])
-  date <- substr(date, 1, stringr::str_locate(date, "–")[1,1][[1]]-1)
+  date <- substr(date, 1, stringr::str_locate(date, "—")[1,1][[1]]-1)
   date <- trimws(date, which = "both")
   date <- gsub("lundi |mardi |mercredi |jeudi |vendredi |samedi |dimanche", "", date)
   
@@ -470,6 +423,7 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
   if (r$result$status_code == 200) {
     # On extrait les section <a> qui contiennent les liens vers chaque communiqué
     #clessnverse::logit(scriptname, paste("successful GET of", party, "main press release page", party_url), logger)
+    nb_parties <<- nb_parties + 1
     
     index_html <- httr::content(r$result, as="text")
     
@@ -478,7 +432,7 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
     
     #clessnverse::logit(scriptname, paste("Trying to extract", party,"press releases URLs from main press release page"), logger)
     
-    if (party == "LPC") urls_list <- extractLPCUrlsList(xml_root, scriptname, logger)
+    if (party == "LPC") urls_list <- extractLPCUrlsList(xml_root = xml_root, scriptname = scriptname, logger = logger)
     
     if (party == "CPC") {
       date_list_node <- XML::getNodeSet(xml_root, ".//p[@class = 'post-date']")
@@ -504,11 +458,13 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
     if (length(urls_list) > 0) {
       for (i in 1:length(urls_list)) {
         clessnverse::logit(scriptname, paste("scraping", party, "press release page", urls_list[[i]]), logger)
-        
+                
         r <- safe_httr_GET(urls_list[[i]])
         
         if (r$result$status_code == 200) {
           #clessnverse::logit(scriptname, paste ("successful GET on", party, "press release at URL", urls_list[[i]]), logger)
+          nb_urls <<- nb_urls + 1
+
           comm_html <- httr::content(r$result, as="text")
           
           comm_xml <- XML::htmlTreeParse(comm_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
@@ -529,7 +485,6 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
           if (party == "PPC") hub_object <- extractPPCInfo(comm_root, scriptname, logger)
           
           if (!is.null(hub_object)) {
-  
             # Construit le data pour le hub
             key <- digest::digest(urls_list[[i]])
             type <- party
@@ -551,6 +506,9 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
               #clessnverse::logit(scriptname, paste("updating existing item", key, "in table agoraplus_press_releases"), logger)
               clessnhub::edit_item('agoraplus_press_releases', key = key, type = type, schema = schema,metadata = hub_object$metadata, data = hub_object$data)
             }
+
+            nb_releases <<- nb_releases + 1
+
           } else {
             clessnverse::logit(scriptname, paste("no press release from", party, "at", urls_list[[i]]), logger)
           } #if (!is.null(hub_object)) 
@@ -589,7 +547,7 @@ main <- function(scriptname, logger) {
   
   for (i in 1:length(urls_list)) {
     #cat(urls_list[[i]][1], urls_list[[i]][2], "\n")
-    scrapePartyPressRelease(urls_list[[i]][1], urls_list[[i]][2], scriptname, logger)
+    scrapePartyPressRelease(party = urls_list[[i]][1], party_url = urls_list[[i]][2], scriptname = scriptname, logger = logger)
   }
   
 }
@@ -597,42 +555,53 @@ main <- function(scriptname, logger) {
 
 
 tryCatch( 
+  withCallingHandlers(
   {
-    #installPackages()
-    library(dplyr)
+      library(dplyr)
 
-    if (!exists("scriptname")) scriptname <<- "pressreleases_plow_canadafederalparties"
+      nb_parties <<- 0
+      nb_urls <<- 0
+      nb_releases <<- 0
 
-    # Script command line options:
-    # Possible values : update, refresh, rebuild or skip
-    # - update : updates the dataframe by adding only new observations to it
-    # - refresh : refreshes existing observations and adds new observations to the dataframe
-    # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
-    # - skip : does not make any change to the dataframe
-    #opt <- list(dataframe_mode = "refresh", hub_mode = "refresh", log_output = "file,console,hub", download_data = TRUE)
+      if (!exists("scriptname")) scriptname <<- "pressreleases_plow_canadafederalparties"
 
-    if (!exists("opt")) {
-      opt <- clessnverse::processCommandLineOptions()
-    }
-    
-    if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
-    
-    # login to the hub
-    clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
-    clessnverse::logit(scriptname, "connecting to hub", logger)
-    
-    
-    clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
-    
-    main(scriptname, logger)
-  },
+      # Script command line options:
+      # Possible values : update, refresh, rebuild or skip
+      # - update : updates the dataframe by adding only new observations to it
+      # - refresh : refreshes existing observations and adds new observations to the dataframe
+      # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
+      # - skip : does not make any change to the dataframe
+      #opt <- list(dataframe_mode = "refresh", hub_mode = "refresh", log_output = "file,console,hub", download_data = TRUE)
+
+      if (!exists("opt")) {
+        opt <- clessnverse::processCommandLineOptions()
+      }
+      
+      if (!exists("logger") || is.null(logger) || logger == 0) logger <<- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+      
+      # login to the hub
+      clessnhub::connect_with_token(Sys.getenv("HUB_TOKEN"))
+      clessnverse::logit(scriptname, "connecting to hub", logger)
+      
+      
+      clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
+      
+      main(scriptname, logger)
+    },
+    warning = function(w) {
+    clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+    print(w)
+    #final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
+    status <<- 2
+  }),
   
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
-    print(e)
+    stop(e)
   },
   
   finally={
+    clessnverse::logit(scriptname, paste(nb_parties, "parties looped with", nb_urls, "URLs read and", nb_releases, "extracted from the web"), logger)
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::logclose(logger)
     rm(logger)
