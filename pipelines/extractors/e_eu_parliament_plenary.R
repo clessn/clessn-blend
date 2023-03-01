@@ -21,12 +21,18 @@ extract_debates <- function(url_list) {
   for (url in url_list) {
     event_id <- stringr::str_match(url, "\\CRE-(.*)\\.")[2]
     event_id <- stringr::str_replace_all(event_id, "[[:punct:]]", "")
+    parliament_number <- stringr::str_match(url, "\\CRE-(.*)\\-")[2]
+    parliament_number <- stringr::str_match(parliament_number, "^[^-]*")[1]
+    event_date <- stringr::str_match(url, "\\CRE-(.*)\\_")[2]
+    event_date <- stringr::str_match(event_date, "-(.*)$")[2]
 
     metadata <- list(
       format = "",
       tags = "parliament,europe,agora+,european_parliament",
       pillar = "agora+",
       source = url,
+      parliament_number = parliament_number,
+      event_date = event_date,
       description = "european parliament plenary session debate transcription",
       object_type = "raw_data",
       source_type = "website",
@@ -57,11 +63,11 @@ extract_debates <- function(url_list) {
       r <- clessnverse::commit_lake_item(
         data = list(
           key = event_id,
-          path = "agoraplus-europe",
+          path = "agoraplus/european_parliament",
           item = doc
         ),
         metadata = metadata,
-        mode = "newonly",
+        mode = if (opt$refresh_data) "refresh" else "newonly",
         credentials
       )
 
@@ -149,7 +155,7 @@ main <- function() {
         }
       }
     } else {
-      clessnverse::logit(scriptname, paste("invalid scraping_option", scraping_method), logger)
+      clessnverse::logit(scriptname, paste("invalid scraping_method", scraping_method), logger)
     }
   }
   
@@ -178,19 +184,18 @@ tryCatch(
 
     # valid options for this script are
     #    log_output = c("file","console","hub")
-    #    scrapind_method = c("range", "start_date", num_days, start_parliament, num_parliament) | "frontpage" (default)
-    #    hub_mode = "refresh" | "skip" | "update"
+    #    scraping_method = c("range", "start_date", num_days, start_parliament, num_parliament) | "frontpage" (default)
     #    translate = "TRUE" | "FALSE"
     #    refresh_data = "TRUE" | "FALSE"
     #    
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    #opt <<- list(
-    #    log_output = c("console"),
-    #    scraping_method = c("date_range", "2014-09-18", 1, 8, 1),
-    #    hub_mode = "refresh"
-    #)
+    opt <<- list(
+       log_output = c("console"),
+       scraping_option = c("range", "2014-01-01", 365, 7, 2),
+       refresh_data = TRUE
+    )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -255,6 +260,6 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    quit(status = status)
+    #quit(status = status)
   }
 )

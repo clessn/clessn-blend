@@ -16,7 +16,7 @@ table.csv
 # Autre
 .DS_Store
 .Rhistory
-.RData
+.RData*
 .Renviron
 .vscode
 *.code-workspace

@@ -12,7 +12,7 @@ clessnhub::login(
 
 my_filter <- clessnhub::create_filter(
   type="parliament_debate", 
-  schema="v3beta", 
+  schema="v2", 
   metadata=list(
     location="EU", 
     format="html"),
@@ -27,8 +27,15 @@ df <- clessnhub::get_items(
   max_pages = -1
 )
 
+
+# pol_groups <- as.data.frame(table(df$data.speakerPolGroup))
+# names(pol_groups) <- c("pol_group", "Freq")
+# pol_groups$Freq <- NULL
+# write.csv(pol_groups, "pol_groups.csv", row.names=F)
+#clessnverse::dbxUploadFile("df_people_eu_mps.csv", "/clessn-blend/_SharedFolder_clessn-blend/data/agoraplus-europe/", Sys.getenv("DROPBOX_TOKEN"), overwrite = T)
+
 #df1$data.interventionSeqNum <- as.numeric(df1$data.interventionSeqNum)
-df <- df %>% arrange(data.interventionSeqNum)
+# df <- df %>% arrange(data.interventionSeqNum)
 
 # for (i in 1:nrow(df1)) {
 #   clessnhub::delete_item('agoraplus_interventions', df1$key[i])
