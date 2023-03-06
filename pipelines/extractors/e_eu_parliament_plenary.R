@@ -193,8 +193,8 @@ tryCatch(
 
     opt <<- list(
        log_output = c("console"),
-       scraping_option = c("range", "2014-01-01", 365, 7, 2),
-       refresh_data = TRUE
+       scraping_option = c("range", "2018-05-28", 4, 8, 1),
+       refresh_data = FALSE
     )
 
     if (!exists("opt")) {
