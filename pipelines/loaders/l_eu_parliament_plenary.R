@@ -18,11 +18,10 @@
 `%vc%` <- clessnverse::`%vcontains%`
 
 clntxt <- function(x) {
-  x <- gsub("\\n", " ", x)
   x <- gsub("\\\"", "", x)
-   return(x)
+  return(x)
 }
-encodeString()
+
 "%contains%" <- function(vec_y, x) {
    #checks that all the words in x are in a string in the vector of strings vec_y
    for (y in vec_y) {
@@ -692,7 +691,7 @@ process_debate_html <- function(lake_item, xml_core) {
                 speaker_last_name = speaker_last_name, speaker_full_name = speaker_full_name,
                 speaker_full_name_native = speaker_full_name_native, speaker_gender = speaker_gender,
                 speaker_type = speaker_type, speaker_country = speaker_country,
-                speaker_party = speaker_party,
+                speaker_party = speaker_party, speaker_pol_group = speaker_polgroup,
                 intervention_id = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
                 intervention_type = intervention_type, intervention_lang = intervention_lang,
                 intervention_word_count = intervention_word_count, intervention_sentence_count = intervention_sentence_count,
@@ -913,7 +912,7 @@ tryCatch(
     opt <<- list(
       backend = "hub",
       log_output = c("console"),
-      method = c("date_range", "2016-11-30", "2016-11-30"),
+      method = c("date_range", "2016-12-01", "2016-12-01"),
       refresh_data = TRUE,
       translate = TRUE
     )

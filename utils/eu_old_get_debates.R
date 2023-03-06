@@ -2,7 +2,7 @@ library(dplyr)
 
 scriptname <- "get_europe_interventions"
 opt <- list(dataframe_mode = "update", log_output = c("console"), hub_mode = "skip", download_data = TRUE, translate=TRUE)
-logger <- clessnverse::loginit(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+logger <- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
 
 clessnhub::login(
    Sys.getenv("HUB_USERNAME"),
