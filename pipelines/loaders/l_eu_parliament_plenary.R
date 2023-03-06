@@ -912,7 +912,7 @@ tryCatch(
     opt <<- list(
       backend = "hub",
       log_output = c("console"),
-      method = c("date_range", "2016-12-01", "2016-12-01"),
+      method = c("date_range", "2014-09-18", "22014-09-18"),
       refresh_data = TRUE,
       translate = TRUE
     )
