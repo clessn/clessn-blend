@@ -1,7 +1,7 @@
 library(dplyr)
 
 scriptname <- "get_europe_lake_items"
-logger <- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
+logger <- clessnverse::log_init(scriptname, "console", Sys.getenv("LOG_PATH"))
 
 credentials <<- hublot::get_credentials(
   Sys.getenv("HUB3_URL"), 
@@ -13,10 +13,7 @@ datalake_path <<- "agoraplus/european_parliament"
 
 r <- hublot::filter_lake_items(
   credentials, 
-  c( 
-    list(path=datalake_path),
-    list()
-  )
+  list(path=datalake_path, metadata__format="xml")
 )
 
-df <- as.data.frame(unlist(r$results))
+r$results

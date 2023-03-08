@@ -14,15 +14,8 @@ scriptname <- "eu_get_new_debates"
 logger <- clessnverse::log_init(scriptname, "console", "./logs")
 
 df <- clessnverse::get_warehouse_table(
-  table_name = 'agoraplus_european_parliament',
-  data_filter = list(), #list(key__contains = "820161201EN"),
+  table_name = 'countries',
+  data_filter = list(), 
   credentials = credentials,
   nbrows = 0
 )
-
-
-# Uncomment below to purge the hub from the collected records
-# for (i in df$hub.id) {
-#   print(i)
-#   hublot::remove_table_item('clhub_tables_warehouse_agoraplus_european_parliament', i, credentials)
-# }

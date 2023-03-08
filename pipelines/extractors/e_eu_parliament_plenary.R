@@ -48,14 +48,24 @@ extract_debates <- function(url_list) {
     if (r$response$status_code == 200) {
       clessnverse::logit(scriptname, "successful get", logger)
 
+      supported_format <- FALSE
+
       if (grepl("text/html", r$response$headers$`content-type`)) {
         metadata$format <- "html"
         doc <- httr::content(r$response, as = 'text')
+        supported_format <- TRUE
       }
 
-      if (grepl("text/xml", r$response$headers$`content-type`)) {
+      if (grepl("application/xml", r$response$headers$`content-type`)) {
         metadata$format <- "xml"
         doc <- httr::content(r$response, as = 'text')
+        supported_format <- TRUE
+      }
+
+      if (!supported_format) {
+        clessnverse::logit(scriptname, paste("unsupported format", r$response$headers$`content-type`), logger)
+        status <<- 2
+        next
       }
 
       clessnverse::logit(scriptname, paste("pushing", event_id), logger)
@@ -100,16 +110,17 @@ main <- function() {
   clessnverse::logit(scriptname, "starting main function", logger)
   clessnverse::logit(scriptname, "parsing options", logger)
 
-  if(length(opt$scraping_option) == 1 && grepl(",", opt$scraping_option)) {
+  if(length(opt$method) == 1 && grepl(",", opt$method)) {
     # The option parameter given to the script is multivalued - parse
-    opt$scraping_option <- trimws(strsplit(opt$scraping_option, ",")[[1]])
+    opt$method <- trimws(strsplit(opt$method, ",")[[1]])
   }
 
-  scraping_method<- opt$scraping_option[1]
-  start_date <- opt$scraping_option[2]
-  num_days <- as.integer(opt$scraping_option[3])
-  start_parliament <- as.integer(opt$scraping_option[4])
-  num_parliaments <- as.integer(opt$scraping_option[5])
+  scraping_method<- opt$method[1]
+  start_date <- opt$method[2]
+  num_days <- as.integer(opt$method[3])
+  start_parliament <- as.integer(opt$method[4])
+  num_parliaments <- as.integer(opt$method[5])
+  format <- opt$method[6]
 
   clessnverse::logit(
     scriptname, 
@@ -145,7 +156,7 @@ main <- function() {
       
       for (d in date_vect) {
         for (p in c(start_parliament:(start_parliament+num_parliaments-1))) {
-          url <- paste(base_url, "/doceo/document/CRE-", p, "-", as.character(as.Date(d, "1970-01-01")), "_EN.html",sep= '')
+          url <- paste(base_url, "/doceo/document/CRE-", p, "-", as.character(as.Date(d, "1970-01-01")), "_EN.", format,sep= '')
           clessnverse::logit(scriptname, paste("trying", url), logger)
           r <- httr::GET(url)
           if (r$status_code == 200) {
@@ -184,7 +195,7 @@ tryCatch(
 
     # valid options for this script are
     #    log_output = c("file","console","hub")
-    #    scraping_method = c("range", "start_date", num_days, start_parliament, num_parliament) | "frontpage" (default)
+    #    scraping_option = c("range", "start_date", num_days, start_parliament, num_parliament, "html" | "xml") | "frontpage" (default)
     #    translate = "TRUE" | "FALSE"
     #    refresh_data = "TRUE" | "FALSE"
     #    
@@ -192,9 +203,10 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     opt <<- list(
+       backend = "hub",
        log_output = c("console"),
-       scraping_option = c("range", "2018-05-28", 4, 8, 1),
-       refresh_data = FALSE
+       method = c("range", "2019-07-01", 184, 9, 1, "xml"),
+       refresh_data = TRUE
     )
 
     if (!exists("opt")) {

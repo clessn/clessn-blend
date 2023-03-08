@@ -15,7 +15,7 @@ df_countries <- clessnverse::get_warehouse_table(
 )
 
 
-word <- "presidency"
+word <- "président"
 translated <- c()
 
 for (i in df_countries$two_letter_locales) {
@@ -25,7 +25,7 @@ for (i in df_countries$two_letter_locales) {
         translation <- clessnverse::translate_text(
           text = word,
           engine = "deeptranslate",
-          source_lang = "en", 
+          source_lang = "fr", 
           target_lang = substr(j,1,2),
           translate = TRUE
         )

@@ -6,18 +6,21 @@ clntxt <- function(x) {
 
 
 
-text <- readRDS("intervention_text.rds")
+text <- df$intervention_text[20]
 engine = "deeptranslate"
-source_lang = "el"
+source_lang = df$intervention_lang[20]
 target_lang = "en"
 translate = TRUE
-text <- stringr::str_flatten(text)
+
+text <- gsub("\u00a0", " ", text)
 
 r <- clessnverse::translate_text(text, engine, source_lang, target_lang, translate)
 
 
 
     key <- Sys.getenv("DEEP_TRANSLATE_KEY")
+
+    text <- gsub("\\n", "\\[\\*\\*\\*\\]", text)
 
     # if source_lang = NA let's detect the language first
     if (is.na(source_lang)) source_lang <- clessnverse::detect_language(engine = "deeptranslate", text)
@@ -98,5 +101,13 @@ r <- clessnverse::translate_text(text, engine, source_lang, target_lang, transla
       result <- trimws(r$data$translations$translatedText)
     } #if (nchar(text) > 5000)
 
-    print(trimws(result))
+
+    result <- gsub("\\[\\*\\*\\*\\]", "\\\n", result)
+    result <- gsub("\\[\\s\\*\\*\\*\\]", "\\\n", result)
+    result <- gsub("\\[\\*\\s\\*\\*\\]", "\\\n", result)
+    result <- gsub("\\[\\*\\*\\s\\*\\]", "\\\n", result)
+    result <- gsub("\\[\\*\\*\\*\\s\\]", "\\\n", result)
+
+    print(result)
+
     

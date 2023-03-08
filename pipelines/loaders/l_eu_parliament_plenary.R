@@ -13,7 +13,7 @@
 
 
 ###############################################################################
-########################      Functions and Globals      ######################
+########################       Auxiliary functions       ######################
 ###############################################################################
 `%vc%` <- clessnverse::`%vcontains%`
 
@@ -47,11 +47,22 @@ clntxt <- function(x) {
 }
 
 which_contains_one_of2 <- function(vec_y, x) {
-   #checks that at least one the words in x is in a string within the vector of strings vec_y
-   for (y in vec_y) {
-      if (all(strsplit(y, " ")[[1]] %in% strsplit(x, " ")[[1]])) return(y)
-   }
-   return("")
+  #checks that at least one the words in x is in a string within the vector of strings vec_y
+  found <- FALSE
+  best <- ""
+
+  for (y in vec_y) {
+    if (all(strsplit(y, " ")[[1]] %in% strsplit(x, " ")[[1]])) {
+      found <- TRUE
+      if (nchar(y) > nchar(best)) best <- y
+    }
+  }
+
+  if (found) {
+    return(best)
+  } else {
+    return("")
+  }
 }
 
 compute_speaker_key <- function(text) {
@@ -90,10 +101,10 @@ extract_president_name <- function(x) {
   pattern <- which_contains_one_of2(tolower(presidency_of_the_hon), x)
   president_name <- gsub(tolower(pattern), "", x)
 
-  pattern <- which_contains_one_of2(tolower(president), tolower(president_name))
+  pattern <- which_contains_one_of2(tolower(presidency), tolower(president_name))
   president_name <- gsub(tolower(pattern), "", president_name)
 
-  pattern <- which_contains_one_of2(tolower(presidency), tolower(president_name))
+  pattern <- which_contains_one_of2(tolower(president), tolower(president_name))
   president_name <- gsub(tolower(pattern), "", president_name)
 
   pattern <- which_contains_one_of2(tolower(vicepresident), tolower(president_name))
@@ -107,7 +118,20 @@ extract_president_name <- function(x) {
 
 
 
+
+
+
 ###############################################################################
+###############################################################################
+#####################           core functions          #######################
+###############################################################################
+###############################################################################
+
+process_debate_xml <- function(lake_item, xml_core) {
+}
+
+
+
 
 process_debate_html <- function(lake_item, xml_core) {
   event_url <- lake_item$metadata$source
@@ -174,6 +198,11 @@ process_debate_html <- function(lake_item, xml_core) {
       event_end_time <- paste(event_end_time, ":00", sep='')
     }
   }
+
+  event_title <- XML::getNodeSet(xml_core, ".//td[@class='doc_title']")
+  event_title <- if (!is.null(event_title) && length(event_title) > 0) event_title[[1]] else NULL
+  event_title <- if (!is.null(event_title)) XML::xmlValue(event_title) else NA
+
   
   president_name  <- XML::xmlValue(XML::getNodeSet(core_xml_chapters[[2]][["tr"]][["td"]], ".//span")[[1]])
   president_title <- tail(strsplit(XML::xmlValue(XML::getNodeSet(core_xml_chapters[[2]][["tr"]][["td"]], ".//span")[[2]]), split = " ")[[1]], 1)
@@ -182,7 +211,6 @@ process_debate_html <- function(lake_item, xml_core) {
   president_name <- trimws(president_name)
   
   
-  event_title <- NA
   event_word_count <- NA
   event_sentence_count <- NA
   event_paragraph_count <- NA
@@ -679,13 +707,13 @@ process_debate_html <- function(lake_item, xml_core) {
               if (is.null(intervention_translated_text)) intervention_translated_text <- NA
               
               row_to_commit <- list(
-                event_id = event_id, event_format = "html", 
-                lake_item_path = lake_item$path, lake_item_key = lake_item$key,
-                url = lake_item$metadata$source,
+                metadata_schema = "pipeline1_2023_03", metadata_event_format = "html",
+                metadata_lake_item_path = lake_item$path, metadata_lake_item_key = lake_item$key,
+                metadata_url = lake_item$metadata$source,
+                event_id = event_id,  
                 event_date = event_date, 
                 event_start_time = event_start_time, event_end_time = event_end_time, 
                 event_title = event_title, 
-                interventionSeqNum = paste(intervention_seqnum, "beta", sep=""),
                 subject_of_business_id = chapter_number, subject_of_business_title = chapter_title, 
                 speaker_id = speaker_id, speaker_first_name = speaker_first_name,
                 speaker_last_name = speaker_last_name, speaker_full_name = speaker_full_name,
@@ -693,6 +721,7 @@ process_debate_html <- function(lake_item, xml_core) {
                 speaker_type = speaker_type, speaker_country = speaker_country,
                 speaker_party = speaker_party, speaker_pol_group = speaker_polgroup,
                 intervention_id = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
+                intervention_seq_num = paste(intervention_seqnum, "beta", sep=""),
                 intervention_type = intervention_type, intervention_lang = intervention_lang,
                 intervention_word_count = intervention_word_count, intervention_sentence_count = intervention_sentence_count,
                 intervention_paragraph_count = intervention_paragraph_count, intervention_text = intervention_text,
@@ -702,13 +731,32 @@ process_debate_html <- function(lake_item, xml_core) {
               clessnverse::logit(scriptname, "committing row", logger)
 
               if (opt$backend == "hub") {
-                clessnverse::commit_warehouse_row(
-                  table=wh_table,
-                  key=paste(event_id,"-", intervention_seqnum, "beta", sep=""),
-                  row=row_to_commit,
-                  refresh_data=opt$refresh_data,
-                  credentials=credentials 
-                )
+                nb_attempts <- 0
+                write_success <- FALSE
+                while (!write_success && nb_attempts < 20) {
+                  tryCatch(
+                    {
+                      r <- clessnverse::commit_warehouse_row(
+                        table=wh_table,
+                        key=paste(event_id,"-", intervention_seqnum, "beta", sep=""),
+                        row=row_to_commit,
+                        refresh_data=opt$refresh_data,
+                        credentials=credentials 
+                      )
+
+                      if (!is.null(r) && !is.na(r) && r) write_success <- TRUE 
+                    },
+
+                    error=function(e) {
+                      clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
+                      sleep(30)
+                    },
+
+                    finally= {
+                      nb_attempts <- nb_attempts + 1
+                    }
+                  )
+                }
               } else {
                 my_df <<- my_df %>% rbind(as.data.frame(row_to_commit))
               }
@@ -790,6 +838,16 @@ strip_and_load_debate <- function(lake_item) {
     clessnverse::logit(scriptname, paste("properly extracted nodes from lake item", lake_item$key), logger)
     process_debate_html(lake_item, xml_core)
   } else {
+      if (r$header$`Content-Type` == "application/xml") {
+      clessnverse::logit(scriptname, paste("extracting nodes from lake item xml file", lake_item$key), logger)
+      doc_content <- httr::content(r, encoding = "UTF-8")
+      parsed_xml <- XML::htmlParse(doc_content)
+      xml_root <- XML::xmlRoot(parsed_xml)
+      xml_head <- xml_root[[1]]
+      xml_core <- xml_root[[2]]
+      clessnverse::logit(scriptname, paste("properly extracted nodes from lake item", lake_item$key), logger)
+      process_debate_xml(lake_item, xml_core)
+    }
     stop(paste("content-type", r$header$`Content-Type`, "not supported for lake item", lake_item$key, "in file", lake_item$file))
   }
 
@@ -847,54 +905,102 @@ tryCatch(
     nb_debates <<- 0
     nb_lake_items <<- 0
 
-    president <<- c(
-      "president", "president", "президент", "predsjednik", "başkan", "prezident", "formand", 
-      "president", "presidentti", "président", "präsident", "Πρόεδρος", "elnök", "preside", 
-      "uachtarán", "Presidente", "prezidents", "prezidentas", "president", "president", "president",
-      "presidint", "prezydent", "Presidente", "presedinte", "prezident", "predsednik", "presidentea",
-      "president", "presidente", "presidente", "president", "chairman", "chair"
-      )
+    president <<- tolower(unique(c(
+      "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
+      "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
+      "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
+      "présidente","Präsident","President", "Preşedinte"
+      )))
 
-    vicepresident <<- c(
-      "vice-président","вицепрезидент","dopredsjednik","Başkan Vekili","víceprezident","vicepræsident","asepresident","varapresidentti",
-      "vice-président","Vizepräsident","αντιπρόεδρος","alelnök","Leasuachtarán","vicepresidente","viceprezidents","viceprezidentas",
-      "Vizepresident","Viċi President","onderdirecteur","fise-presidint","wiceprezydent","vice-presidente","vice-preşedinte","podpredsedníčka",
-      "podpredsednik","lehendakariordea","vicepresident","vicepresidente","vicepresidente","vice President"  
-    )
+    vicepresident <<- tolower(unique(c(
+      "vice-président","вицепрезидент","dopredsjednik","Başkan Vekili","víceprezident","vicepræsident",
+      "asepresident","varapresidentti","Vizepräsident","αντιπρόεδρος","alelnök","Leasuachtarán",
+      "vicepresidente","viceprezidents","viceprezidentas","Vizepresident","Viċi President","onderdirecteur",
+      "fise-presidint","wiceprezydent","vice-presidente","vice-preşedinte","podpredsedníčka","podpredsednik",
+      "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente" 
+    )))
 
-    president_of_the_commission <<- c(
-      "president de la commission","президент на комисията","predsjednik komisije","komisyon başkanı","prezident de la Commission",
-      "formand for kommissionen","komisjoni president","komission puheenjohtaja","président de la commission","Präsident der Kommission",
-      "πρόεδρος της επιτροπής","bizottság elnöke","Uachtarán an choimisiúin","presidente della commissione","komisijas prezidents",
-      "komisijos pirmininkas","President vun der Kommissioun","president de la commission","voorzitter van de commissie","foarsitter fan de kommisje",
-      "przewodniczący komisji","presidente da comissão","preşedinte de la commission","prezident komisie","predsednik komisije",
-      "batzordeko presidentea","president de la comissió","presidente da comisión","presidente de la comisión","ordförande för kommissionen"
-    )
 
-    president_of_the_committee <<- c(
-      "Chair of the Committee","Председател на комисията","Predsjednik Povjerenstva","Komite Başkanı","Předseda výboru",
-      "Formand for udvalget","komisjoni esimees","komitean puheenjohtaja","Président du Comité","Vorsitzender des Ausschusses",
-      "Πρόεδρος της Επιτροπής","a bizottság elnöke","Cathaoirleach an Choiste","Presidente del Comitato","Komitejas priekšsēdētājs",
-      "Komiteto pirmininkas","President vum Comité","President tal-Kumitat","Voorzitter van de commissie","Foarsitter fan de kommisje",
-      "Przewodniczący Komitetu","Presidente do Comitê","Președinte al Comitetului","predseda výboru","Predsednik odbora",
-      "Batzordeburua","President del Comitè","Presidente do Comité","Presidente del Comité","Utskottets ordförande"
-    )
+    president_of_the_commission <<- tolower(unique(c(
+      "president de la commission","президент на комисията","predsjednik komisije",
+      "komisyon başkanı","prezident de la Commission","formand for kommissionen",
+      "komisjoni president","komission puheenjohtaja","président de la commission",
+      "Präsident der Kommission","πρόεδρος της επιτροπής","bizottság elnöke",
+      "Uachtarán an choimisiúin","presidente della commissione","komisijas prezidents",
+      "komisijos pirmininkas","President vun der Kommissioun","voorzitter van de commissie",
+      "foarsitter fan de kommisje","przewodniczący komisji","presidente da comissão",
+      "preşedinte de la commission","prezident komisie","predsednik komisije",
+      "batzordeko presidentea","president de la comissió","presidente da comisión",
+      "presidente de la comisión","ordförande för kommissionen","chairman of the commission",
+      "president of the commission",
+      "председател на комисията","predsjednik odbora","komite başkanı",
+      "předseda výboru","formand for udvalget","komisjoni esimees",
+      "komitean puheenjohtaja","présidente de la commission","Vorsitzender des Ausschusses",
+      "cathaoirleach an choiste","presidente del comitato","komitejas priekšsēdētājs",
+      "komiteto pirmininkas","President vum Comité","president tal-kumitat",
+      "preşedintele comitetului","predseda výboru","predsednik odbora",
+      "batzordeko lehendakaria","president del comitè","presidente do comité",
+      "presidente del comité","nämndens ordförande"    
+    )))
 
-    presidency_of_the_hon <<- c(
+    president_of_the_committee <<- tolower(unique(c(
+      "komite başkanı","předseda výboru","formand for udvalget",
+      "komisjoni esimees","komitean puheenjohtaja","président du comité",
+      "vorsitzender des ausschusses","πρόεδρος της επιτροπής","a bizottság elnöke",
+      "cathaoirleach an choiste","presidente del comitato","komitejas priekšsēdētājs",
+      "komiteto pirmininkas","president vum comité","president tal-kumitat",
+      "voorzitter van de commissie","foarsitter fan de kommisje","przewodniczący komitetu",
+      "presidente do comitê","președinte al comitetului","predseda výboru",
+      "predsednik odbora","batzordeburua","president del comitè",
+      "presidente do comité","presidente del comité","utskottets ordförande",
+      "chair of the committee","president of the committee", "председател на комисията","predsjednik odbora",
+      "komite başkanı","předseda výboru","formand for udvalget",
+      "présidente du comité","πρόεδρος της επιτροπής","bizottság elnöke",
+      "cathaoirleach an choiste","presidente del comitato","komitejas priekšsēdētājs",
+      "komiteto pirmininkas","president tal-kumitat","voorzitter van de commissie",
+      "foarsitter fan de kommisje","przewodniczący komisji","presidente da comissão",
+      "preşedintele comitetului","predsednik odbora","batzordeko burua",
+      "president de la comissió","presidente do comité","presidente del comité",
+      "ordförande i kommittén"
+    )))
+
+    presidency_of_the_hon <<- tolower(unique(c(
       "presidency of the Hon","председателството на Hon","predsjedništvo č","Cumhurbaşkanlığı","předsednictví Hon",
       "præsidentskab for Hon","presidentuuri au","kunniapuheenjohtaja","présidence de l'honorable","Präsidentschaft des Hon",
       "προεδρία του Ον","elnöksége a Hon","uachtaránacht an Oinigh","presidenza dell'On","prezidentūra god",
       "prezidentu gerb","Présidence vum Hon","presidenza tal-Onor","voorzitterschap van de Hon","presidintskip fan de Hon",
-      "prezydentura Hon","presidência do Exmo.","președinția Onorului","predsedníctvo Hon","predsedstvo Hon",
-      "presidentetza Hon","presidència de l'Excm","presidencia do Excmo","presidencia del Excmo.","ordförandeskapet för Hon"
-    )
+      "prezydentura Hon","presidência do Exmo","președinția Onorului","predsedníctvo Hon","predsedstvo Hon",
+      "presidentetza Hon","presidència de l'Excm","presidencia do Excmo","presidencia del Excmo","ordförandeskapet för Hon"
+    )))
 
-    presidency <<- c(
+    presidency <<- tolower(unique(c(
       "presidency","президентство","predsjedništvo","başkanlık","předsednictví","formandskab","eesistumine","puheenjohtajuus","présidence",
       "Präsidentschaft","προεδρία","elnökség","uachtaránacht","presidenza","prezidentūra","prezidentūra","Présidence","presidenza", "vorsitz",
       "voorzitterschap","presidintskip","przewodnictwo","presidência","preşedinţie","predsedníctvo","predsedstvo","lehendakaritza","presidència",
-      "presidencia","presidencia","ordförandeskap" 
-    )
+      "presidencia","presidencia","ordförandeskap",
+      "presidency of","председателство на","predsjedništvo od","başkanlığı","předsednictví",
+      "formandskab for","aasta presidentuur","puheenjohtajakausi","présidence de","Präsidentschaft von",
+      "προεδρία του","elnöksége","uachtaránacht na","presidenza di","gada prezidentūra",
+      "pirmininkavimas","Présidence vun","presidenza ta","voorzitterschap van","presidintskip fan",
+      "prezydencja","presidência de","preşedinţia lui","predsedníctvo","predsedovanje",
+      "ren presidentetza","presidència de","presidencia de","presidencia de","ordförandeskapet för",
+      "presidency of mrs","председателство на г-жа","predsjedništvo gđe","başkanlığı hanım",
+      "předsednictví mrs","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
+      "présidence de mme","präsidentschaft von mrs","προεδρία της κας","elnöksége mrs",
+      "uachtaránacht mrs","presidenza della sig","kundzes prezidentūra","prezidentūra p",
+      "présidence vun mme","presidenza tas-sinjura","voorzitterschap van mevr","presidintskip fan mrs",
+      "prezydentura p","presidência da sra","președinția doamnei","predsedníctvo p",
+      "predsedovanje ge","andrearen presidentetza","presidència de la sra","presidencia da sra",
+      "presidencia de la sra","presidentskapet för mrs",
+      "chair of mr","presidency of mr","председател на mr","stolica gosp","başkanı sn",
+      "křeslo mr","formand for mr","juhataja hr","puheenjohtaja mr",
+      "présidence de monsieur","vorsitzende von hr","πρόεδρος του κ","elnök úr",
+      "cathaoirleach mr","presidente del sig","priekšsēdētājs mr","pirmininkas p",
+      "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
+      "krzesło p","cadeira do sr","scaunul dlui","predseda p",
+      "predsednik g","jaunaren burua","president del sr","presidente do sr",
+      "silla del sr","ordförande för mr"   
+    )))
 
     datalake_path <<- "agoraplus/european_parliament"
     
@@ -912,7 +1018,7 @@ tryCatch(
     opt <<- list(
       backend = "hub",
       log_output = c("console"),
-      method = c("date_range", "2014-09-18", "22014-09-18"),
+      method = c("date_range", "2014-09-18", "2014-09-18"),
       refresh_data = TRUE,
       translate = TRUE
     )
