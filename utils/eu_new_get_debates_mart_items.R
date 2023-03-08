@@ -10,7 +10,7 @@ logger <- clessnverse::log_init(scriptname, "console", "./logs")
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    data__event_date = "2014-09-18"
+    #data__event_date = "2018-02-28"
   ), 
   credentials = credentials,
   nbrows = 0

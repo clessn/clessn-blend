@@ -356,24 +356,81 @@ process_debate_html <- function(lake_item, xml_core) {
               intervention_lang <- clessnverse::detect_language("fastText", intervention_text)
               
               if (!is.na(intervention_lang)) {
-                intervention_text_en <- clessnverse::translate_text(
-                  text = clntxt(intervention_text), 
-                  engine = "deeptranslate",
-                  source_lang = intervention_lang, 
-                  target_lang = "en", 
-                  translate = TRUE
+                tryCatch(
+                  {
+                    intervention_text_en <- clessnverse::translate_text(
+                      text = clntxt(intervention_text), 
+                      engine = "deeptranslate",
+                      source_lang = intervention_lang, 
+                      target_lang = "en", 
+                      translate = TRUE
+                    )
+                  },
+                  error = function(e) {
+                    clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
+                    status <<- 2
+                    warning("there was an error with the deeptranslate_api : see logs")
+                    clessnverse::logit(scriptname, clntxt(intervention_text), logger)
+                    clessnverse::logit(scriptname, e$message, logger)
+                    intervention_text_en <- clessnverse::translate_text(
+                      text = clntxt(intervention_text), 
+                      engine = "azure",
+                      source_lang = intervention_lang, 
+                      target_lang = "en", 
+                      translate = TRUE
+                    )
+
+                    if(!is.null(intervention_text_en) && !is.na(intervention_text_en) && nchar(intervention_text_en)) {
+                      clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                      clessnverse::logit(scriptname, intervention_text_en, logger)
+                    } else {
+                      clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+                      status <<- 1
+                      stop("unable to recover translation error.  must stop...")
+                    }
+                  },
+                  finally={}
                 )
               }
 
               header_text_lang <- clessnverse::detect_language("fastText", header_text)
 
               if (!is.na(header_text_lang)) {
-                header_text_en <- clessnverse::translate_text(
-                  text = clntxt(header_text), 
-                  engine = "deeptranslate",
-                  source_lang = header_text_lang, 
-                  target_lang = "en", 
-                  translate = TRUE
+                tryCatch(
+                  {
+                    header_text_en <- clessnverse::translate_text(
+                      text = clntxt(header_text), 
+                      engine = "deeptranslate",
+                      source_lang = header_text_lang, 
+                      target_lang = "en", 
+                      translate = TRUE
+                    )
+                  },
+                  error = function(e) {
+                    clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
+                    status <<- 2
+                    warning("there was an error with the deeptranslate_api : see logs")
+                    clessnverse::logit(scriptname, clntxt(intervention_text), logger)
+                    clessnverse::logit(scriptname, e$message, logger)
+                    intervention_text_en <- clessnverse::translate_text(
+                      text = clntxt(intervention_text), 
+                      engine = "azure",
+                      source_lang = intervention_lang, 
+                      target_lang = "en", 
+                      translate = TRUE
+                    )
+
+                    if(!is.null(intervention_text_en) && !is.na(intervention_text_en) && nchar(intervention_text_en)) {
+                      clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                      clessnverse::logit(scriptname, intervention_text_en, logger)
+                    } else {
+                      clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+                      status <<- 1
+                      stop("unable to recover translation error.  must stop...")
+                    }
+
+                  },
+                  finally={}
                 )
               }
             } else {
@@ -420,7 +477,7 @@ process_debate_html <- function(lake_item, xml_core) {
 
                   error=function(e) {
                     clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
-                    sleep(30)
+                    Sys.sleep(30)
                   },
 
                   finally= {
@@ -510,6 +567,7 @@ strip_and_load_debate <- function(lake_item) {
     xml_core <- xml_root[[2]]
     clessnverse::logit(scriptname, paste("properly extracted nodes from lake item", lake_item$key), logger)
     process_debate_html(lake_item, xml_core)
+    nb_debates <<- nb_debates + 1
   } else {
       if (r$header$`Content-Type` == "application/xml") {
       clessnverse::logit(scriptname, paste("extracting nodes from lake item xml file", lake_item$key), logger)
@@ -579,7 +637,7 @@ tryCatch(
       "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
-      "présidente","Präsident","President", "Preşedinte"
+      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -762,7 +820,8 @@ tryCatch(
           "lake items were found",
           nb_debates,
           "debates were loaded in the data warehouse, totalling",
-          nb_interventions
+          nb_interventions,
+          "interventions"
       ),
       logger
     )

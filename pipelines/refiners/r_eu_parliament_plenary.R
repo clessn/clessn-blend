@@ -55,6 +55,10 @@ detect_president <- function(x) {
 get_speaker <- function(full_name, full_name_native) {
   # Get the speaker data from hub 2.0.  If absent try to get it from the parliament.
   # If parliament successful and not in hub, then write in hub for next time
+
+
+  if(is.na(full_name) && is.na(full_name_native)) return(data.frame())
+
   df <- data.frame()
 
   full_name_trimed <- gsub("\\s+", " ", full_name)
@@ -132,6 +136,7 @@ strip_and_push_intervention <- function(intervention) {
   if (is.na(header)) {
     clessnverse::logit(scriptname, paste("intervention header of ", intervention$key, "is missing"), logger)
     warning(paste("intervention header of ", intervention$key, "is missing"))
+    final_message <<- paste(final_message, paste("intervention header of ", intervention$key, "is missing"))
     status <<- 2
 
     return()
@@ -213,12 +218,16 @@ strip_and_push_intervention <- function(intervention) {
             tolower(header)
           )
           if (speaker_type == "") speaker_type <- "mp"
+        } else {
+          speaker_type <- header
+          clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
+          warning(paste("unknown header parsing pattern:", header))
         }
       }
 
     } else {
       clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
-      stop(paste("unknown header parsing pattern:", header))
+      warning(paste("unknown header parsing pattern:", header))
     }
   }
 
@@ -244,6 +253,7 @@ strip_and_push_intervention <- function(intervention) {
   } else {
     clessnverse::logit(scriptname, paste("could not find", speaker_full_name, "in the people table in the hub"), logger)
     warning(paste("could not find", speaker_full_name, "in the people table in the hub"))
+    final_message <<- paste(final_message, paste("could not find", speaker_full_name, "in the people table in the hub"))
     status <<- 2
     # we dont want to lose information in out datamart so we'll bring the full intervention header as full_name
     speaker_full_name <- header
@@ -252,8 +262,8 @@ strip_and_push_intervention <- function(intervention) {
   clessnverse::logit(
     scriptname,
     paste(
-      "\nheader is ", header, 
-      "processing intervention from ", speaker_full_name,
+      "header is ", header, 
+      " processing intervention from ", speaker_full_name,
       " (", speaker_full_name_native, "), gender=", speaker_gender,
       ", from country ", speaker_country, ", belonging to party ", speaker_party,
       ", and political group ", speaker_polgroup, 
@@ -294,8 +304,8 @@ strip_and_push_intervention <- function(intervention) {
           write_success <- TRUE
         },
         error = function(e) {
-          clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
-          sleep(30)
+          clessnverse::logit(scriptname, paste("error witing to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
+          Sys.sleep(30)
         },
         finally={
           nb_attempts <- nb_attempts + 1
@@ -342,7 +352,7 @@ main <- function() {
 
     nb_warehouse_items <<- nrow(df_interventions)
 
-    nb_debates <- 0
+    nb_debates <<- 0
     previous_event_id <- ""
 
     for (i in 1:nrow(df_interventions)) {
@@ -350,7 +360,7 @@ main <- function() {
       intervention <- df_interventions[i,]
 
       current_event_id <- intervention$event_id
-      if (previous_event_id != current_event_id) nb_debates <- nb_debates + 1
+      if (previous_event_id != current_event_id) nb_debates <<- nb_debates + 1
 
       key <- paste(
         intervention$event_id,"-", 
@@ -416,7 +426,7 @@ tryCatch(
       "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
-      "présidente","Präsident","President", "Preşedinte"
+      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -531,7 +541,7 @@ tryCatch(
       backend = "hub",
       schema = "beta_pipelinev1_202303",
       log_output = c("console"),
-      method = c("date_range", "2018-02-28", "2018-02-28"),
+      method = c("date_range", "2014-09-18", "2018-02-28"),
       refresh_data = TRUE,
       translate = TRUE
     )
@@ -612,7 +622,8 @@ tryCatch(
           "warehouse items were found",
           nb_debates,
           "debates were loaded in the datamart, totalling",
-          nb_interventions
+          nb_interventions,
+          "interventions"
       ),
       logger
     )
