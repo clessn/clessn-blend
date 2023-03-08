@@ -22,7 +22,7 @@ df_countries <- clessnverse::get_warehouse_table(
 )
 
 
-for (i in 1:nrow(df)) {
+for (i in 781:nrow(df)) {
   print (i)
   item <- df[i,]
 

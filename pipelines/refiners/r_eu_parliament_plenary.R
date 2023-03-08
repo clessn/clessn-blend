@@ -55,51 +55,51 @@ detect_president <- function(x) {
 get_speaker <- function(full_name, full_name_native) {
   # Get the speaker data from hub 2.0.  If absent try to get it from the parliament.
   # If parliament successful and not in hub, then write in hub for next time
-  if ( !is.null(df_people) ) {
-    df <- df_people[which(tolower(df_people$full_name) == tolower(full_name)),]
-    if (nrow(df) == 0) {
-      df <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
-      if (nrow(df) == 0) {
-        df <- df_people[which(grepl(tolower(full_name_native), tolower(df_people$other_names))),]
-        if (nrow(df) == 0) {
-          df <- df_people[which(tolower(clessnverse::rm_accents(df_people$full_name)) == tolower(clessnverse::rm_accents(full_name))),]
-          if (nrow(df) == 0) {
-            df <- df_people[which(grepl(tolower(clessnverse::rm_accents(full_name)), tolower(clessnverse::rm_accents(df_people$other_names)))),]
-            if (nrow(df) == 0) {
-              df <- df_people[which(grepl(tolower(clessnverse::rm_accents(full_name_native)), tolower(clessnverse::rm_accents(df_people$other_names)))),]
-            }
-          }
-        }
-      }
+  df <- data.frame()
+
+  full_name_trimed <- gsub("\\s+", " ", full_name)
+  full_name_native_trimed <- gsub("\\s+", " ", full_name_native)
+  full_name_nostopword <- tm::removeWords(tolower(full_name), stopwords::stopwords())
+  full_name_native_nostopword <- tm::removeWords(tolower(full_name_native), stopwords::stopwords())
+  full_name_noaccent <- clessnverse::rm_accents(full_name)
+  full_name_native_noaccent <- clessnverse::rm_accents(full_name_native)
+
+  names <- c(
+    full_name, full_name_native, 
+    full_name_trimed, full_name_native_trimed,
+    full_name_nostopword, full_name_native_nostopword,
+    full_name_noaccent, full_name_native_noaccent
+  )
+
+  for (i in names) {
+    df <- df_people[which(tolower(df_people$full_name) == tolower(i)),]
+    if (nrow(df) != 0) break
+
+    df <- df_people[which(grepl(tolower(i), tolower(df_people$other_names))),]
+    if (nrow(df) != 0) break
+  }
+
+
+  if (nrow(df) == 0) {
+    #did not find it in the hub - check the parliament db
+    for (i in names) {
+      df_parliament <- clessnverse::get_europe_mep_data(i)
+      if (!is.na(df_parliament$mepid)) break
     }
 
-    if (nrow(df) == 0) {
-      #did not find it in the hub - check the parliament db
-      df_parliament <- clessnverse::get_europe_mep_data(full_name)
+    if (!is.na(df_parliament$mepid)) {
+      #found it
+      fullname <- df_parliament$fullname
+      first_name <- trimws(stringr::str_to_title(stringr::str_split(full_name, "\\s")[[1]][[1]]))
+      last_name  <- trimws(stringr::str_to_title(stringr::str_match(full_name, paste("^",first_name,"(.*)$",sep=''))[2]))
 
-      if (is.na(df_parliament$mepid)) {
-        #try the full name
-        df_parliament <- clessnverse::get_europe_mep_data(full_name_native)
-      }
-
-      if (!is.na(df_parliament$mepid)) {
-        #found it
-        fullname <- df_parliament$fullname
-        first_name <- trimws(stringr::str_to_title(stringr::str_split(full_name, "\\s")[[1]][[1]]))
-        last_name  <- trimws(stringr::str_to_title(stringr::str_match(full_name, paste("^",first_name,"(.*)$",sep=''))[2]))
-
-        df <- data.frame(
-          full_name = paste(last_name, first_name, sep=", "),
-          pol_group = df_parliament$polgroup,
-          party = df_parliament$party,
-          country = unique(df_country$short_name_3[df_country$name == df_parliament$country])
-        )
-      } else {
-        df <- data.frame()
-      }
+      df <- data.frame(
+        full_name = paste(last_name, first_name, sep=", "),
+        pol_group = df_parliament$polgroup,
+        party = df_parliament$party,
+        country = unique(df_country$short_name_3[df_country$name == df_parliament$country])
+      )
     }
-  } else {
-    df <- data.frame()
   }
 
   return(df)
@@ -116,6 +116,7 @@ get_speaker <- function(full_name, full_name_native) {
 
 strip_and_push_intervention <- function(intervention) {
   speaker_full_name <- NA
+  speaker_full_name_native <- NA
   speaker_gender <- NA
   speaker_polgroup <- NA
   speaker_party <- NA
@@ -221,8 +222,6 @@ strip_and_push_intervention <- function(intervention) {
     }
   }
 
-  speaker_full_name <- tm::removeWords(tolower(speaker_full_name), stopwords::stopwords())
-  speaker_full_name_native <- tm::removeWords(tolower(speaker_full_name_native), stopwords::stopwords())
   speaker_full_name <- stringr::str_to_title(trimws(speaker_full_name))
   speaker_full_name_native <- stringr::str_to_title(trimws(speaker_full_name_native))
 
@@ -280,13 +279,30 @@ strip_and_push_intervention <- function(intervention) {
     )
 
   if (opt$backend == "hub") {
-    clessnverse::commit_mart_row(
-      table = mart_table,
-      key = item$hub.key, 
-      row = as.list(intervention[1,c(which(!grepl("hub.",names(item))))]),
-      refresh_data = T,
-      credentials = credentials
-    )
+    nb_attempts <- 0
+    write_success <- FALSE
+    while (!write_success && nb_attempts < 20) {
+      tryCatch(
+        {
+          r <- clessnverse::commit_mart_row(
+            table = mart_table,
+            key = intervention$hub.key, 
+            row = as.list(intervention[1,c(which(!grepl("hub.",names(intervention))))]),
+            refresh_data = T,
+            credentials = credentials
+          )
+          write_success <- TRUE
+        },
+        error = function(e) {
+          clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
+          sleep(30)
+        },
+        finally={
+          nb_attempts <- nb_attempts + 1
+        }
+
+      )
+    }
   } else {
     my_df <- my_df %>%
       rbind(intervention)
@@ -326,8 +342,16 @@ main <- function() {
 
     nb_warehouse_items <<- nrow(df_interventions)
 
+    nb_debates <- 0
+    previous_event_id <- ""
+
     for (i in 1:nrow(df_interventions)) {
+
       intervention <- df_interventions[i,]
+
+      current_event_id <- intervention$event_id
+      if (previous_event_id != current_event_id) nb_debates <- nb_debates + 1
+
       key <- paste(
         intervention$event_id,"-", 
         intervention$intervention_seq_num, "-", 
@@ -359,6 +383,8 @@ main <- function() {
       }
 
       strip_and_push_intervention(intervention)
+      nb_interventions <<- nb_interventions + 1
+      previous_event_id <- current_event_id
     } #for (i in 1:nrow(df_interventions))
 
   } else {
@@ -502,10 +528,10 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     opt <<- list(
-      backend = "dataframe",
+      backend = "hub",
       schema = "beta_pipelinev1_202303",
       log_output = c("console"),
-      method = c("date_range", "2016-11-30", "2016-12-01"),
+      method = c("date_range", "2018-02-28", "2018-02-28"),
       refresh_data = TRUE,
       translate = TRUE
     )
