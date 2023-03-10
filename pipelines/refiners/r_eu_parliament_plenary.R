@@ -15,6 +15,11 @@
 ########################       Auxiliary functions       ######################
 ###############################################################################
 
+clntxt <- function(x) {
+  x <- gsub("\\\"", "", x)
+  return(x)
+}
+
 "%contains_one_of%" <- function(vec_y, x) {
    #checks that at least one the words in x is in a string within the vector of strings vec_y
    for (y in vec_y) {
@@ -134,16 +139,17 @@ strip_and_push_intervention <- function(intervention) {
   header2 <- NA
 
   if (is.na(header)) {
-    clessnverse::logit(scriptname, paste("intervention header of ", intervention$key, "is missing"), logger)
-    warning(paste("intervention header of ", intervention$key, "is missing"))
-    final_message <<- paste(final_message, paste("intervention header of ", intervention$key, "is missing"))
+    msg <- paste("intervention header of ", intervention$hub.key, "is missing")
+    clessnverse::logit(scriptname, msg, logger)
+    warning(msg)
+    final_message <<- if (nchar(final_message) == 0) msg else paste(final_message, "\n", msg)
     status <<- 2
 
     return()
   }
 
 
-  clessnverse::logit(scriptname, paste("\n\n\nstarting header:", header), logger)
+  clessnverse::logit(scriptname, paste("\n\n\n", header), logger)
 
   if (length(stringr::str_split(header,",")[[1]]) >= 2) {
     # format of type "full name (POLG), blah blah blah"
@@ -176,13 +182,13 @@ strip_and_push_intervention <- function(intervention) {
       speaker_type <- "dignitary or guest speaker"
     } else {
       if ( type_of_speakers %contains_one_of% header2 ) {
-        speaker_type <- header2
+        speaker_type <- stringr::str_to_title(header2)
       } else {
         if (grepl("behalf", tolower(header2))) {
-          speaker_type <- paste("mp", header2)
+          speaker_type <- paste("MEP", stringr::str_to_title(header2))
         } else {
           speaker_type <- which_contains_one_of(
-            c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident), 
+            c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident), 
             tolower(header)
           )
           
@@ -200,16 +206,58 @@ strip_and_push_intervention <- function(intervention) {
         speaker_full_name <- intervention$president_name
         speaker_full_name_native <- intervention$president_name
         
-        if (c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president) %contains_one_of% tolower(header)) {
+        if (c(president_of_the_commission, president_of_the_committee, member_of_the_commission, vicepresident, vicepresident, president) %contains_one_of% tolower(header)) {
           speaker_type <- trimws(gsub(speaker_full_name, "", header))
+          initial_speaker_type <- speaker_type
+
+          detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
+
+          if (detected_speaker_type_lang != "en") {
+            tryCatch(
+              {
+                speaker_type <- clessnverse::translate_text(
+                  clntxt(speaker_type), 
+                  "deeptranslate", 
+                  detected_speaker_type_lang, 
+                  "en", 
+                  opt$translate)
+              },
+              error=function(e) {
+                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
+                status <<- 2
+                warning("there was an error with the deeptranslate_api : see logs")
+                clessnverse::logit(scriptname, clntxt(speaker_type), logger)
+                clessnverse::logit(scriptname, e$message, logger)
+                speaker_type <- clessnverse::translate_text(
+                  text = clntxt(speaker_type), 
+                  engine = "azure",
+                  source_lang = detected_speaker_type_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+
+                if(!is.null(speaker_type) && !is.na(speaker_type) && nchar(speaker_type)) {
+                  clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                  clessnverse::logit(scriptname, speaker_type, logger)
+                } else {
+                  clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+                  status <<- 1
+                  stop("unable to recover translation error.  must stop...")
+                }
+              },
+              finalle={}
+            )
+          }
         }
-        
 
         speaker_type <- trimws(gsub(speaker_full_name, "", header))
+        speaker_type <- stringr::str_to_title(speaker_type)
 
       } else {
         if ( stringr::str_detect(header, "\\((.*)\\)") ) {
-          speaker_full_name <- stringr::str_replace(header, "\\((.*)\\)", "")
+          header1 <- trimws(stringr::str_split(header, "\\((.*)\\)")[[1]][1])
+          header2 <- trimws(stringr::str_split(header, "\\((.*)\\)")[[1]][2])
+          speaker_full_name <- header1
           speaker_full_name <- gsub("\\s+", " ", stringr::str_trim(speaker_full_name))
           speaker_full_name_native <- stringr::str_replace(header_native, "\\((.*)\\)", "")
           speaker_full_name_native <- gsub("\\s+", " ", stringr::str_trim(speaker_full_name_native))
@@ -217,7 +265,7 @@ strip_and_push_intervention <- function(intervention) {
             c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president), 
             tolower(header)
           )
-          if (speaker_type == "") speaker_type <- "mp"
+          if (speaker_type == "") speaker_type <- "MEP"
         } else {
           speaker_type <- header
           clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
@@ -251,18 +299,33 @@ strip_and_push_intervention <- function(intervention) {
     speaker_country <- unique(df_country$name[df_country$short_name_3 == df_speaker$country])
     if (length(speaker_country) == 0) speaker_country <- NA
   } else {
-    clessnverse::logit(scriptname, paste("could not find", speaker_full_name, "in the people table in the hub"), logger)
-    warning(paste("could not find", speaker_full_name, "in the people table in the hub"))
-    final_message <<- paste(final_message, paste("could not find", speaker_full_name, "in the people table in the hub"))
+    msg <- paste("could not find", speaker_full_name, "in the people table in the hub while processing", intervention$hub.key)
+    clessnverse::logit(scriptname, msg, logger)
+    #stop(msg)
+    warning(msg)
+    final_message <<- if (nchar(final_message) == 0) msg else paste(final_message, "\n", msg)
     status <<- 2
     # we dont want to lose information in out datamart so we'll bring the full intervention header as full_name
     speaker_full_name <- header
   }
 
+  if (!is.na(speaker_type)) {
+    speaker_type <- stringr::str_to_title(speaker_type)
+    speaker_type <- gsub("^Mep", "MEP", speaker_type)
+  } 
+
+  if (is.na(speaker_type) && !is.na(df_speaker$pol_group))  {
+    speaker_type <- "MEP"
+  }
+
+  pattern_to_remove <- "^(The|Ms\\.)\\sPresident"
+  if (grepl(pattern_to_remove, speaker_type)){
+    speaker_type <- gsub("^(The|Ms\\.)\\s", "", speaker_type)
+  }
+
   clessnverse::logit(
     scriptname,
     paste(
-      "header is ", header, 
       " processing intervention from ", speaker_full_name,
       " (", speaker_full_name_native, "), gender=", speaker_gender,
       ", from country ", speaker_country, ", belonging to party ", speaker_party,
@@ -426,7 +489,7 @@ tryCatch(
       "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
-      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele"
+      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -434,7 +497,7 @@ tryCatch(
       "asepresident","varapresidentti","Vizepräsident","αντιπρόεδρος","alelnök","Leasuachtarán",
       "vicepresidente","viceprezidents","viceprezidentas","Vizepresident","Viċi President","onderdirecteur",
       "fise-presidint","wiceprezydent","vice-presidente","vice-preşedinte","podpredsedníčka","podpredsednik",
-      "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente" 
+      "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente", "Vicepreşedinte"
     )))
 
 
@@ -459,6 +522,19 @@ tryCatch(
       "batzordeko lehendakaria","president del comitè","presidente do comité",
       "presidente del comité","nämndens ordförande"    
     )))
+
+
+    member_of_the_commission <- tolower(unique(c(
+      "committee member","член на Комисията","član Odbora","Komite Üyesi",    
+      "člen komise","udvalgsmedlem","komisjoni liige","komitean jäsen",
+      "membre de la commission","Ausschussmitglied","μέλος επιτροπής","bizottsági tag",
+      "ball coiste","membro del Comitato","komitejas loceklis","komiteto narys",
+      "Comitésmember","membru tal-kumitat","Commissie lid","kommisjelid",
+      "członek Komisji","membro do Comitê","membru al Comitetului","člen výboru",
+      "član komisije","batzordekidea","membre del comitè","membro do comité",
+      "miembro del Comité","kommittéledamot","committee member","member of the commission"
+    )))
+
 
     president_of_the_committee <<- tolower(unique(c(
       "komite başkanı","předseda výboru","formand for udvalget",
@@ -541,7 +617,7 @@ tryCatch(
       backend = "hub",
       schema = "beta_pipelinev1_202303",
       log_output = c("console"),
-      method = c("date_range", "2014-09-18", "2018-02-28"),
+      method = c("date_range", "2016-12-01", "2016-12-01"),
       refresh_data = TRUE,
       translate = TRUE
     )

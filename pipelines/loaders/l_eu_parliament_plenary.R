@@ -234,10 +234,10 @@ process_debate_html <- function(lake_item, xml_core) {
             
             header_text <- NA
             
-            hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), " – | − | - | — | - | - | – | ‒ ")[1]            
-            
+            hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,200), " – | − | - | — | - | - | – | ‒ | – | – ")[1]
+
             if (is.na(hyphen_pos)) {
-              hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,75), "\\)\\. ")[1] + 1
+              hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,200), "\\)\\. ")[1] + 1
               header_text <- previous_header_text
             } else {
               header_text <- stringi::stri_remove_empty(trimws(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,hyphen_pos)))
@@ -412,10 +412,10 @@ process_debate_html <- function(lake_item, xml_core) {
                     warning("there was an error with the deeptranslate_api : see logs")
                     clessnverse::logit(scriptname, clntxt(intervention_text), logger)
                     clessnverse::logit(scriptname, e$message, logger)
-                    intervention_text_en <- clessnverse::translate_text(
-                      text = clntxt(intervention_text), 
+                    header_text_en <- clessnverse::translate_text(
+                      text = clntxt(header_text), 
                       engine = "azure",
-                      source_lang = intervention_lang, 
+                      source_lang = header_text_lang, 
                       target_lang = "en", 
                       translate = TRUE
                     )
@@ -637,7 +637,7 @@ tryCatch(
       "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
-      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele"
+      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -670,6 +670,19 @@ tryCatch(
       "batzordeko lehendakaria","president del comitè","presidente do comité",
       "presidente del comité","nämndens ordförande"    
     )))
+
+
+    member_of_the_commission <- tolower(unique(c(
+      "committee member","член на Комисията","član Odbora","Komite Üyesi",    
+      "člen komise","udvalgsmedlem","komisjoni liige","komitean jäsen",
+      "membre de la commission","Ausschussmitglied","μέλος επιτροπής","bizottsági tag",
+      "ball coiste","membro del Comitato","komitejas loceklis","komiteto narys",
+      "Comitésmember","membru tal-kumitat","Commissie lid","kommisjelid",
+      "członek Komisji","membro do Comitê","membru al Comitetului","člen výboru",
+      "član komisije","batzordekidea","membre del comitè","membro do comité",
+      "miembro del Comité","kommittéledamot","committee member","member of the commission"
+    )))
+
 
     president_of_the_committee <<- tolower(unique(c(
       "komite başkanı","předseda výboru","formand for udvalget",
@@ -755,7 +768,7 @@ tryCatch(
     opt <<- list(
       backend = "hub",
       log_output = c("console"),
-      method = c("date_range", "2016-11-30", "2016-11-30"),
+      method = c("date_range", "2016-12-01", "2016-12-01"),
       schema = "beta_pipelinev1_202303",
       refresh_data = TRUE,
       translate = TRUE

@@ -15,7 +15,7 @@ logger <- clessnverse::log_init(scriptname, "console", "./logs")
 
 df <- clessnverse::get_warehouse_table(
   table_name = 'agoraplus_european_parliament',
-  data_filter = list(), #list(key__contains = "820161201EN"),
+  data_filter = list(key__contains = "820161130EN"),
   credentials = credentials,
   nbrows = 0
 )

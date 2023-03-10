@@ -7,10 +7,20 @@ Sys.getenv("HUB3_PASSWORD"))
 scriptname <- "eu_get_new_debates"
 logger <- clessnverse::log_init(scriptname, "console", "./logs")
 
+df_people <- clessnverse::get_warehouse_table(
+  table_name = 'people', 
+  data_filter=list(
+    data__union = "EU",
+    data__institution = "European Parliament"
+  ),
+  credentials = credentials,
+  nbrows = 0
+)
+
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    #data__event_date = "2018-02-28"
+    #data__event_date__lte = "2016-12-01"
   ), 
   credentials = credentials,
   nbrows = 0

@@ -15,10 +15,10 @@ df_countries <- clessnverse::get_warehouse_table(
 )
 
 
-word <- "président"
+word <- "membre de la commission"
 translated <- c()
 
-for (i in df_countries$two_letter_locales) {
+for (i in df_countries$locales_2) {
   for (j in strsplit(i,",")[[1]]) {
     tryCatch(
       {
