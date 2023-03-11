@@ -37,7 +37,7 @@ if (!exists("scriptname")) scriptname <- "parliament_mash_quebec"
 # - refresh : refreshes existing observations and adds new observations to the dataframe
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
-opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "console", download_data = FALSE, translate = FALSE)
+#opt <- list(dataframe_mode = "update", hub_mode = "update", log_output = "console", download_data = FALSE, translate = FALSE)
 
 if (!exists("opt")) {
   opt <- clessnverse::processCommandLineOptions()
