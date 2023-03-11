@@ -8,15 +8,17 @@ credentials <<- hublot::get_credentials(
 
 df <- clessnverse::get_warehouse_table(
   table_name = "people",
-  data_filter = list(),
+  data_filter = list(
+    data__pol_group = "Progressive Alliance of Socialists And Democrats (S&D)"
+  ),
   credentials = credentials,
   nbrows = 0
 )
 
-
 df_countries <- clessnverse::get_warehouse_table(
   table_name = 'countries',
-  data_filter = list(), 
+  data_filter = list(
+  ), 
   credentials = credentials,
   nbrows = 0
 )
@@ -26,6 +28,7 @@ for (i in 1:nrow(df)) {
   print (i)
   item <- df[i,]
 
+  item$pol_group <- "Progressive Alliance Of Socialists And Democrats (S&D)"
   # item$pol_group <- trimws(stringr::str_to_title(item$pol_group))
   # item$party <- trimws(stringr::str_to_title(item$party))
 
