@@ -149,8 +149,6 @@ strip_and_push_intervention <- function(intervention) {
   }
 
 
-  clessnverse::logit(scriptname, paste("\n\n\n", header), logger)
-
   if (length(stringr::str_split(header,",")[[1]]) >= 2) {
     # format of type "full name (POLG), blah blah blah"
     header1 <- stringr::str_split(header,",")[[1]][1]
@@ -228,7 +226,7 @@ strip_and_push_intervention <- function(intervention) {
                 warning("there was an error with the deeptranslate_api : see logs")
                 clessnverse::logit(scriptname, clntxt(speaker_type), logger)
                 clessnverse::logit(scriptname, e$message, logger)
-                speaker_type <- clessnverse::translate_text(
+                speaker_type <<- clessnverse::translate_text(
                   text = clntxt(speaker_type), 
                   engine = "azure",
                   source_lang = detected_speaker_type_lang, 
@@ -326,18 +324,24 @@ strip_and_push_intervention <- function(intervention) {
   clessnverse::logit(
     scriptname,
     paste(
-      " processing intervention from ", speaker_full_name,
-      " (", speaker_full_name_native, "), gender=", speaker_gender,
-      ", from country ", speaker_country, ", belonging to party ", speaker_party,
-      ", and political group ", speaker_polgroup, 
-      ", as speaker type ", speaker_type,
-      sep=""
-    ),
+      "processing intervention", intervention$hub.key, 
+      "schema", intervention$.schema, 
+      "from data warehouse to", intervention$hub.key, 
+      "schema", opt$schema),
+    #paste(
+    #  " processing intervention from ", speaker_full_name,
+    #  " (", speaker_full_name_native, "), gender=", speaker_gender,
+    #  ", from country ", speaker_country, ", belonging to party ", speaker_party,
+    #  ", and political group ", speaker_polgroup, 
+    #  ", as speaker type ", speaker_type,
+    #  sep=""
+    #),
     logger
   )
 
   # commit
 
+  intervention$.schema <- opt$schema
 
   intervention <- intervention %>% 
     cbind(data.frame(
@@ -359,7 +363,7 @@ strip_and_push_intervention <- function(intervention) {
         {
           r <- clessnverse::commit_mart_row(
             table = mart_table,
-            key = intervention$hub.key, 
+            key = paste(gsub(intervention$.schema, "", intervention$hub.key), opt$schema, sep=""), 
             row = as.list(intervention[1,c(which(!grepl("hub.",names(intervention))))]),
             refresh_data = T,
             credentials = credentials
@@ -393,6 +397,12 @@ main <- function() {
     
   clessnverse::logit(scriptname, "starting main function", logger)
   clessnverse::logit(scriptname, paste("retrieving debates interventions from data warhouse ", wh_table, sep=''), logger)
+  
+  clessnverse::logit(scriptname, "parsing options", logger)
+  if(length(opt$method) == 1 && grepl(",", opt$method)) {
+    # The option parameter given to the script is multivalued - parse
+    opt$method <- trimws(strsplit(opt$method, ",")[[1]])
+  }
 
   if (opt$method[[1]] == "date_range") {
     my_filter <- list(
@@ -602,7 +612,7 @@ tryCatch(
     type_of_speakers <<- c("rapporteur", "reporter", "auteur", "author", "member of")
 
     
-    if (!exists("scriptname")) scriptname <<- "l_eu_parliament_plenary"
+    if (!exists("scriptname")) scriptname <<- "r_eu_parliament_plenary"
 
     # valid options for this script are
     #    log_output = c("file","console","hub")
@@ -613,14 +623,14 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-      backend = "hub",
-      schema = "beta_pipelinev1_202303",
-      log_output = c("console"),
-      method = c("date_range", "2016-12-01", "2016-12-01"),
-      refresh_data = TRUE,
-      translate = TRUE
-    )
+    #opt <<- list(
+    #  backend = "hub",
+    #  schema = "beta_pipelinev1_202303",
+    #  log_output = c("console"),
+    #  method = c("date_range", "2016-12-01", "2016-12-01"),
+    #  refresh_data = TRUE,
+    #  translate = TRUE
+    #)
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -629,6 +639,12 @@ tryCatch(
     if (!exists("logger") || is.null(logger)) {
       logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     }
+
+    clessnverse::logit(
+      scriptname, 
+      paste("options are", paste(names(opt), opt, collapse=" ", sep="=")),
+      logger
+    )
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
@@ -672,7 +688,7 @@ tryCatch(
     if (final_message == "") {
       final_message <<- w$message
      } else {
-      paste(final_message, "\n", w$message, sep="")
+      final_message <<- paste(final_message, "\n", w$message, sep="")
      }
      
     status <<- 2
@@ -683,7 +699,7 @@ tryCatch(
     if (final_message == "") {
       final_message <<- e$message
      } else {
-      paste(final_message, "\n", e$message, sep="")
+      final_message <<- paste(final_message, "\n", e$message, sep="")
      }
 
     status <<- 1
@@ -708,6 +724,6 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    #quit(status = status)
+    if (opt$prod) quit(status = status)
   }
 )

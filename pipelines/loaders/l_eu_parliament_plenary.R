@@ -234,7 +234,7 @@ process_debate_html <- function(lake_item, xml_core) {
             
             header_text <- NA
             
-            hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,200), " – | − | - | — | - | - | – | ‒ | – | – ")[1]
+            hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,200), " – | − | - | — | - | - | – | ‒ | – | – | – ")[1]
 
             if (is.na(hyphen_pos)) {
               hyphen_pos <- stringr::str_locate(stringr::str_sub(XML::xmlValue(content_node[[l]]),1,200), "\\)\\. ")[1] + 1
@@ -245,6 +245,8 @@ process_debate_html <- function(lake_item, xml_core) {
               header_text <- gsub('^(\u00a0*)','', header_text)
               header_text <- gsub("\\s+", " ", stringr::str_trim(header_text))
             }
+
+            #if (grepl(tolower("Helga Stevens"), tolower(header_text))) stop()
             
             if ( !is.na(header_text) && nchar(header_text) == 0 ) next
 
@@ -355,7 +357,7 @@ process_debate_html <- function(lake_item, xml_core) {
             if (opt$translate) {
               intervention_lang <- clessnverse::detect_language("fastText", intervention_text)
               
-              if (!is.na(intervention_lang)) {
+              if (!is.na(intervention_lang) && intervention_lang != "en") {
                 tryCatch(
                   {
                     intervention_text_en <- clessnverse::translate_text(
@@ -372,7 +374,7 @@ process_debate_html <- function(lake_item, xml_core) {
                     warning("there was an error with the deeptranslate_api : see logs")
                     clessnverse::logit(scriptname, clntxt(intervention_text), logger)
                     clessnverse::logit(scriptname, e$message, logger)
-                    intervention_text_en <- clessnverse::translate_text(
+                    intervention_text_en <<- clessnverse::translate_text(
                       text = clntxt(intervention_text), 
                       engine = "azure",
                       source_lang = intervention_lang, 
@@ -395,7 +397,7 @@ process_debate_html <- function(lake_item, xml_core) {
 
               header_text_lang <- clessnverse::detect_language("fastText", header_text)
 
-              if (!is.na(header_text_lang)) {
+              if (!is.na(header_text_lang) && header_text_lang != "en") {
                 tryCatch(
                   {
                     header_text_en <- clessnverse::translate_text(
@@ -410,9 +412,9 @@ process_debate_html <- function(lake_item, xml_core) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
                     status <<- 2
                     warning("there was an error with the deeptranslate_api : see logs")
-                    clessnverse::logit(scriptname, clntxt(intervention_text), logger)
+                    clessnverse::logit(scriptname, clntxt(header_text), logger)
                     clessnverse::logit(scriptname, e$message, logger)
-                    header_text_en <- clessnverse::translate_text(
+                    header_text_en <<- clessnverse::translate_text(
                       text = clntxt(header_text), 
                       engine = "azure",
                       source_lang = header_text_lang, 
@@ -420,9 +422,9 @@ process_debate_html <- function(lake_item, xml_core) {
                       translate = TRUE
                     )
 
-                    if(!is.null(intervention_text_en) && !is.na(intervention_text_en) && nchar(intervention_text_en)) {
+                    if(!is.null(header_text_en) && !is.na(header_text_en) && nchar(header_text_en)) {
                       clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
-                      clessnverse::logit(scriptname, intervention_text_en, logger)
+                      clessnverse::logit(scriptname, header_text_en, logger)
                     } else {
                       clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
                       status <<- 1
@@ -596,6 +598,12 @@ main <- function() {
   clessnverse::logit(scriptname, "starting main function", logger)
   clessnverse::logit(scriptname, paste("retrieving debates trasnscriptions from datelake with path = ", datalake_path, sep=''), logger)
 
+  clessnverse::logit(scriptname, "parsing options", logger)
+  if(length(opt$method) == 1 && grepl(",", opt$method)) {
+    # The option parameter given to the script is multivalued - parse
+    opt$method <- trimws(strsplit(opt$method, ",")[[1]])
+  }
+
   if (opt$method[[1]] == "date_range") {
     my_filter <- list(
       metadata__event_date__gte = opt$method[[2]],
@@ -765,14 +773,14 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-      backend = "hub",
-      log_output = c("console"),
-      method = c("date_range", "2016-12-01", "2016-12-01"),
-      schema = "beta_pipelinev1_202303",
-      refresh_data = TRUE,
-      translate = TRUE
-    )
+    #opt <<- list(
+    #  backend = "hub",
+    #  log_output = c("console"),
+    #  method = c("date_range", "2016-12-01", "2016-12-01"),
+    #  schema = "beta_pipelinev1_202303",
+    #  refresh_data = TRUE,
+    #  translate = TRUE
+    #)
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -807,7 +815,7 @@ tryCatch(
     if (final_message == "") {
       final_message <<- w$message
      } else {
-      paste(final_message, "\n", w$message, sep="")
+      final_message <<- paste(final_message, "\n", w$message, sep="")
      }
      
     status <<- 2
@@ -818,7 +826,7 @@ tryCatch(
     if (final_message == "") {
       final_message <<- e$message
      } else {
-      paste(final_message, "\n", e$message, sep="")
+      final_message <<- paste(final_message, "\n", e$message, sep="")
      }
 
     status <<- 1
@@ -843,6 +851,6 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    #quit(status = status)
+    if (opt$prod) quit(status = status)
   }
 )

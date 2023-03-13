@@ -20,7 +20,7 @@ df_people <- clessnverse::get_warehouse_table(
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    #data__event_date__lte = "2016-12-01"
+    data__event_date = "2014-09-18"
   ), 
   credentials = credentials,
   nbrows = 0

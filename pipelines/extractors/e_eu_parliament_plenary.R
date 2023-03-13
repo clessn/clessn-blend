@@ -139,7 +139,7 @@ main <- function() {
     content_url <- "/plenary/en/debates-video.html#sidesForm"
     
     source_page <- xml2::read_html(paste(base_url,content_url,sep=""))
-    source_page_html <- htmlParse(source_page, useInternalNodes = TRUE)
+    source_page_html <- XML::htmlParse(source_page, useInternalNodes = TRUE)
     
     urls <- rvest::html_nodes(source_page, 'a')
     urls <- urls[grep("\\.xml", urls)]
@@ -202,12 +202,12 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-       backend = "hub",
-       log_output = c("console"),
-       method = c("range", "2019-07-01", 184, 9, 1, "xml"),
-       refresh_data = TRUE
-    )
+    #opt <<- list(
+    #   backend = "hub",
+    #   log_output = c("console"),
+    #   method = c("range", "2019-07-01", 1, 9, 1, "xml"),
+    #   refresh_data = TRUE
+    #)
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -272,6 +272,6 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    #quit(status = status)
+    if (opt$prod) quit(status = status)
   }
 )

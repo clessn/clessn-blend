@@ -13,7 +13,6 @@ EOF
 
 scriptname="twitter_blender"
 
-R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org", upgrade="never")'
 R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", ref="v1", force=T, upgrade="never")'
 
 R --no-save --no-restore -e 'remotes::install_url("https://cran.r-project.org/src/contrib/Archive/rtweet/rtweet_0.7.0.tar.gz", force=T, upgrade="never")'
