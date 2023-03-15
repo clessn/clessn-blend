@@ -102,7 +102,7 @@ clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
 # - rebuild : wipes out completely the dataframe and rebuilds it from scratch
 # - skip : does not make any change to the dataframe
 #opt <- list(dataframe_mode = "rebuild", hub_mode = "update", download_data = FALSE, translate=TRUE)
-opt <- list(dataframe_mode = "rebuild", log_output = c("console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
+#opt <- list(dataframe_mode = "rebuild", log_output = c("console"), hub_mode = "update", download_data = FALSE, translate=TRUE)
 
 
 if (!exists("opt")) {
