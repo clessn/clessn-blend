@@ -9,14 +9,21 @@ logger <- clessnverse::log_init(scriptname, "console", "./logs")
 
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
-  data_filter = list(data__event_date="2016-12-01"), 
+  data_filter = list(
+    data__event_date__gte="2014-01-01", 
+    data__event_date__lte="2014-12-31"), 
   credentials = credentials,
   nbrows = 0
 )
 
 table(df$event_date)
 
-count <- 1
+  credentials = credentials,
+  nbrows = 0
+)
+
+table(df$event_date)
+
 
 # Uncomment below to purge the hub from the collected records
 #for (i in df$hub.id) {
