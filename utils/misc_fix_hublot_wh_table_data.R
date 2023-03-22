@@ -6,7 +6,7 @@ credentials <<- hublot::get_credentials(
 
 
 
-df <- clessnverse::get_warehouse_table(
+df_people <- clessnverse::get_warehouse_table(
   table_name = "people",
   data_filter = list(
     data__pol_group = "Progressive Alliance of Socialists And Democrats (S&D)"
@@ -24,11 +24,18 @@ df_countries <- clessnverse::get_warehouse_table(
 )
 
 
-for (i in 1:nrow(df)) {
+df <- clessnverse::get_warehouse_table(
+  table_name = 'agoraplus_european_parliament',
+  data_filter = list(), 
+  credentials = credentials,
+  nbrows = 0
+)
+
+for (i in 29938:nrow(df)) {
   print (i)
   item <- df[i,]
 
-  item$pol_group <- "Progressive Alliance Of Socialists And Democrats (S&D)"
+  item$.schema <- "202303"
   # item$pol_group <- trimws(stringr::str_to_title(item$pol_group))
   # item$party <- trimws(stringr::str_to_title(item$party))
 
@@ -41,14 +48,31 @@ for (i in 1:nrow(df)) {
   #     item$country <- unique(df_countries$short_name_3[tolower(df_countries$name) == tolower(item$country)])
   # }
     
-  clessnverse::commit_warehouse_row(
-    table = "people",
-    key = item$hub.key, 
-    row = as.list(item[1,c(which(!grepl("hub.",names(item))))]),
-    refresh_data = T,
+  # clessnverse::commit_warehouse_row(
+  #   table = "agoraplus_european_parliament",
+  #   key = gsub("test", "202303", item$hub.key), 
+  #   row = as.list(item[1,c(which(!grepl("hub.",names(item))))]),
+  #   refresh_data = T,
+  #   credentials = credentials
+  # )
+
+  item$intervention_seq_num <- as.numeric(item$intervention_seq_num)
+
+  hublot::update_table_item(
+    table_name = "clhub_tables_warehouse_agoraplus_european_parliament",
+    id = item$hub.id,
+    body = list(
+      key = gsub("test", "202303", item$hub.key), 
+      timestamp = as.character(Sys.time()), 
+      data = jsonlite::toJSON(
+        as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+        auto_unbox = T
+      )
+    ),
     credentials = credentials
   )
 }
+
 
 
 ###############################################################################

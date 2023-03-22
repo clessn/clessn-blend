@@ -50,10 +50,15 @@ which_contains_one_of <- function(vec_y, x) {
 
 
 detect_president <- function(x) {
-  return (  tolower(president) %contains_one_of% tolower(x) ||
-            tolower(vicepresident) %contains_one_of% tolower(x) ||
-            tolower(presidency) %contains_one_of% tolower(x) ||
-            tolower(presidency_of_the_hon) %contains_one_of% tolower(x) )
+  # return (  clessnverse::rm_accents(tolower(president)) %contains_one_of% clessnverse::rm_accents(gsub("\\.|\\:", "", tolower(x))) ||
+  #           clessnverse::rm_accents(tolower(vicepresident)) %contains_one_of% clessnverse::rm_accents(tolower(x)) ||
+  #           clessnverse::rm_accents(tolower(presidency)) %contains_one_of% clessnverse::rm_accents(tolower(x)) ||
+  #           clessnverse::rm_accents(tolower(presidency_of_the_hon)) %contains_one_of% clessnverse::rm_accents(tolower(x)) )
+  return (grepl(paste(clessnverse::rm_accents(tolower(president)), collapse="|"), clessnverse::rm_accents(gsub("\\.|\\:", "", tolower(x)))) ||
+          grepl(paste(clessnverse::rm_accents(tolower(vicepresident)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
+          grepl(paste(clessnverse::rm_accents(tolower(presidency)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
+          grepl(paste(clessnverse::rm_accents(tolower(presidency_of_the_hon)), collapse="|"), clessnverse::rm_accents(tolower(x))) )
+
 }
 
 
@@ -148,6 +153,7 @@ strip_and_push_intervention <- function(intervention) {
     return()
   }
 
+  header <- gsub("\\,\\)", "\\)", header)
 
   if (length(stringr::str_split(header,",")[[1]]) >= 2) {
     # format of type "full name (POLG), blah blah blah"
@@ -186,8 +192,8 @@ strip_and_push_intervention <- function(intervention) {
           speaker_type <- paste("MEP", stringr::str_to_title(header2))
         } else {
           speaker_type <- which_contains_one_of(
-            c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident), 
-            tolower(header)
+            clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident)), 
+            clessnverse::rm_accents(tolower(header))
           )
           
           if (nchar(speaker_type) == 0)  speaker_type <- NA
@@ -260,8 +266,8 @@ strip_and_push_intervention <- function(intervention) {
           speaker_full_name_native <- stringr::str_replace(header_native, "\\((.*)\\)", "")
           speaker_full_name_native <- gsub("\\s+", " ", stringr::str_trim(speaker_full_name_native))
           speaker_type <- which_contains_one_of(
-            c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president), 
-            tolower(header)
+            clessnverse::rm_accents(c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)),
+            clessnverse::rm_accents(tolower(header))
           )
           if (speaker_type == "") speaker_type <- "MEP"
         } else {
@@ -296,6 +302,17 @@ strip_and_push_intervention <- function(intervention) {
     speaker_party <- df_speaker$party
     speaker_country <- unique(df_country$name[df_country$short_name_3 == df_speaker$country])
     if (length(speaker_country) == 0) speaker_country <- NA
+
+
+    if (!is.na(speaker_type)) {
+      speaker_type <- stringr::str_to_title(speaker_type)
+      speaker_type <- gsub("^Mep", "MEP", speaker_type)
+    } 
+
+    if (is.na(speaker_type) && !is.na(df_speaker$pol_group))  {
+      speaker_type <- "MEP"
+    }
+
   } else {
     msg <- paste("could not find", speaker_full_name, "in the people table in the hub while processing", intervention$hub.key)
     clessnverse::logit(scriptname, msg, logger)
@@ -307,14 +324,7 @@ strip_and_push_intervention <- function(intervention) {
     speaker_full_name <- header
   }
 
-  if (!is.na(speaker_type)) {
-    speaker_type <- stringr::str_to_title(speaker_type)
-    speaker_type <- gsub("^Mep", "MEP", speaker_type)
-  } 
 
-  if (is.na(speaker_type) && !is.na(df_speaker$pol_group))  {
-    speaker_type <- "MEP"
-  }
 
   pattern_to_remove <- "^(The|Ms\\.)\\sPresident"
   if (grepl(pattern_to_remove, speaker_type)){
@@ -324,10 +334,10 @@ strip_and_push_intervention <- function(intervention) {
   clessnverse::logit(
     scriptname,
     paste(
-      "processing intervention", intervention$hub.key, 
+      "processing intervention", gsub(paste("-", intervention$.schema, sep=""), "", intervention$hub.key), 
       "schema", intervention$.schema, 
-      "from data warehouse to", intervention$hub.key, 
-      "schema", opt$schema),
+      "from data warehouse to", gsub(paste("-", intervention$.schema, sep=""), "", intervention$hub.key), 
+      "schema", opt$target_schema),
     #paste(
     #  " processing intervention from ", speaker_full_name,
     #  " (", speaker_full_name_native, "), gender=", speaker_gender,
@@ -341,7 +351,12 @@ strip_and_push_intervention <- function(intervention) {
 
   # commit
 
-  intervention$.schema <- opt$schema
+  if (is.null(speaker_gender)) {
+    speaker_gender_df <- gender::gender(trimws(strsplit(speaker_full_name, ",")[[1]][2]))
+    speaker_gender <- speaker_gender_df$gender
+  }
+
+  intervention$.schema <- opt$target_schema
 
   intervention <- intervention %>% 
     cbind(data.frame(
@@ -363,7 +378,7 @@ strip_and_push_intervention <- function(intervention) {
         {
           r <- clessnverse::commit_mart_row(
             table = mart_table,
-            key = paste(gsub(intervention$.schema, "", intervention$hub.key), opt$schema, sep=""), 
+            key = paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep=""), 
             row = as.list(intervention[1,c(which(!grepl("hub.",names(intervention))))]),
             refresh_data = T,
             credentials = credentials
@@ -407,7 +422,8 @@ main <- function() {
   if (opt$method[[1]] == "date_range") {
     my_filter <- list(
       data__event_date__gte = opt$method[[2]],
-      data__event_date__lte = opt$method[[3]]
+      data__event_date__lte = opt$method[[3]],
+      data__.schema = opt$schema
     )
   }
 
@@ -438,7 +454,7 @@ main <- function() {
       key <- paste(
         intervention$event_id,"-", 
         intervention$intervention_seq_num, "-", 
-        opt$schema, 
+        opt$target_schema, 
         sep=""
       )
 
@@ -499,7 +515,8 @@ tryCatch(
       "president","президент","predsjednik","başkan","prezident","formand","presidentti","président",
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
-      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair"
+      "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
+      "Mistopredseda", "Przewodniczy", "Προεδρια", "Talmannen", "Speaker"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -507,7 +524,8 @@ tryCatch(
       "asepresident","varapresidentti","Vizepräsident","αντιπρόεδρος","alelnök","Leasuachtarán",
       "vicepresidente","viceprezidents","viceprezidentas","Vizepresident","Viċi President","onderdirecteur",
       "fise-presidint","wiceprezydent","vice-presidente","vice-preşedinte","podpredsedníčka","podpredsednik",
-      "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente", "Vicepreşedinte"
+      "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente", "Vicepreşedinte",
+      "Wiceprzewodniczacy", "Vicepresedinta"
     )))
 
 
@@ -570,7 +588,7 @@ tryCatch(
     presidency_of_the_hon <<- tolower(unique(c(
       "presidency of the Hon","председателството на Hon","predsjedništvo č","Cumhurbaşkanlığı","předsednictví Hon",
       "præsidentskab for Hon","presidentuuri au","kunniapuheenjohtaja","présidence de l'honorable","Präsidentschaft des Hon",
-      "προεδρία του Ον","elnöksége a Hon","uachtaránacht an Oinigh","presidenza dell'On","prezidentūra god",
+      "προεδρία του Ον","elnöksége a Hon","uachtaránacht an Oinigh","presidenza dell'On","presidenza dell’On","prezidentūra god",
       "prezidentu gerb","Présidence vum Hon","presidenza tal-Onor","voorzitterschap van de Hon","presidintskip fan de Hon",
       "prezydentura Hon","presidência do Exmo","președinția Onorului","predsedníctvo Hon","predsedstvo Hon",
       "presidentetza Hon","presidència de l'Excm","presidencia do Excmo","presidencia del Excmo","ordförandeskapet för Hon"
@@ -602,7 +620,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"   
+      "silla del sr","ordförande för mr", "Przewodniczy"
     )))
 
     dignitary <- c(
@@ -623,18 +641,21 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    #opt <<- list(
+    # opt <<- list(
     #  backend = "hub",
-    #  schema = "beta_pipelinev1_202303",
+    #  schema = "202303",
+    #  target_schema = "202303",
     #  log_output = c("console"),
-    #  method = c("date_range", "2016-12-01", "2016-12-01"),
+    #  method = c("date_range", "2014-01-01", "2014-12-31"),
     #  refresh_data = TRUE,
     #  translate = TRUE
-    #)
+    # )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
     }
+
+    if (nchar(opt$target_schema) == 0) opt$target_schema <- opt$schema
 
     if (!exists("logger") || is.null(logger)) {
       logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))

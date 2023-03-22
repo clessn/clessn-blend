@@ -38,7 +38,7 @@ R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force
 cd ~
 
 if [ $scriptname != "badbadbad" ]; then
-  shift 2
+  shift 3
   Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$basefolder/$foldername/$prefix$scriptname.R $@ 2>&1
   ret=$?
   sed 's/\"/\\"/g' -i ~/logs/$prefix$scriptname.log
