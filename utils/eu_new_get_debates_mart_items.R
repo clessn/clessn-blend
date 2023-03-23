@@ -10,6 +10,7 @@ logger <- clessnverse::log_init(scriptname, "console", "./logs")
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
+    data__.schema="202303",
     data__event_date__gte="2014-01-01", 
     data__event_date__lte="2014-12-31"
   ),
@@ -17,13 +18,13 @@ df <- clessnverse::get_mart_table(
   nbrows = 0
 )
 
-table(df$event_date)
+table(df$speaker_full_name)
+table(df$speaker_polgroup)
+which(grepl("Modifier", df$speaker_full_name))
+df$hub.key[which(grepl("Modifier", df$speaker_full_name))]
 
-
-table(df$event_date)
-
-
-# Uncomment below to purge the hub from the collected records
+# Uncomment below to PURGE the hub from the collected records
+# This will actually PERMANENTLY DELETE the collected records
 #for (i in df$hub.id) {
 #   cat("processing #", count, "key", i)
 #   hublot::remove_table_item('clhub_tables_warehouse_agoraplus_european_parliament', i, credentials)
