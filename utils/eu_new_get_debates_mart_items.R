@@ -11,16 +11,14 @@ df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__event_date__gte="2014-01-01", 
-    data__event_date__lte="2014-12-31"), 
+    data__event_date__lte="2014-12-31"
+  ),
   credentials = credentials,
   nbrows = 0
 )
 
 table(df$event_date)
 
-  credentials = credentials,
-  nbrows = 0
-)
 
 table(df$event_date)
 

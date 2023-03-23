@@ -429,6 +429,17 @@ main <- function() {
 
   if (opt$backend != "hub") my_df <<- data.frame()
 
+  clessnverse::logit(
+    scriptname, 
+    paste(
+      "retreieving data from mart table", 
+      wh_table, 
+      "with filter = ", 
+      paste(my_filter, collapse = " ")
+    ),
+    logger
+  )
+
   df_interventions <- clessnverse::get_warehouse_table(
     table_name = wh_table,
     data_filter = my_filter,
