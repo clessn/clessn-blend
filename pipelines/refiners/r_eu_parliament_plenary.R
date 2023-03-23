@@ -516,7 +516,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda", "Przewodniczy", "Προεδρια", "Talmannen", "Speaker"
+      "Mistopredseda", "Talmannen", "Speaker"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -620,7 +620,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr", "Przewodniczy"
+      "silla del sr","ordförande för mr", "Przewodniczy", "Προεδρια" 
     )))
 
     dignitary <- c(
@@ -646,7 +646,7 @@ tryCatch(
     #  schema = "202303",
     #  target_schema = "202303",
     #  log_output = c("console"),
-    #  method = c("date_range", "2014-01-01", "2014-12-31"),
+    #  method = c("date_range", "2014-12-17", "2014-12-17"),
     #  refresh_data = TRUE,
     #  translate = TRUE
     # )
