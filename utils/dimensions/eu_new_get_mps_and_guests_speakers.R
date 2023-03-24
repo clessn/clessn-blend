@@ -15,7 +15,7 @@ df <- clessnverse::get_warehouse_table(
 )
 
 table(df$pol_group)
-
+  
 
 # Uncomment below to purge the hub from the collected records
 # for (i in df$hub.id) {
