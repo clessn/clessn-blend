@@ -48,23 +48,37 @@ for (i in 1:nrow(df)) {
 
 ###############################################################################
 # fix speaker_fullname == L’étoile, Modifier
-df <- clessnverse::get_mart_table(
-  table_name = 'agoraplus_european_parliament',
-  data_filter = list(
-    data__.schema="202303",
-    data__speaker_full_name="L’étoile, Modifier"
-  ),
-  credentials = credentials,
-  nbrows = 0
-)
+# df <- clessnverse::get_mart_table(
+#   table_name = 'agoraplus_european_parliament',
+#   data_filter = list(
+#     data__.schema="202303",
+#     data__speaker_full_name="L’étoile, Modifier"
+#   ),
+#   credentials = credentials,
+#   nbrows = 0
+# )
 
-count <- 1
-for (i in df$hub.id) {
-  cat("processing #", count, "key", i)
-  count <- count + 1
+# for (i in 1:nrow(df)) {
+#   item <- df[i,]
 
+#   cat("processing #", i, "key", item$hub.key, "\n")
 
-}
+#   item$speaker_full_name<- "Estrela, Edite"
+
+#   hublot::update_table_item(
+#     table_name = "clhub_tables_mart_agoraplus_european_parliament",
+#     id = item$hub.id,
+#     body = list(
+#       key = item$hub.key, 
+#       timestamp = as.character(Sys.time()), 
+#       data = jsonlite::toJSON(
+#         as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+#         auto_unbox = T
+#       )
+#     ),
+#     credentials = credentials
+#   )
+# }
 
 
 ###############################################################################
@@ -74,26 +88,6 @@ df <- clessnverse::get_mart_table(
   data_filter = list(
     data__.schema="202303",
     data__speaker_full_name="Herczog, Modifier"
-  ),
-  credentials = credentials,
-  nbrows = 0
-)
-
-count <- 1
-for (i in df$hub.id) {
-  cat("processing #", count, "key", i)
-  count <- count + 1
-}
-
-
-
-###############################################################################
-# fix President | Chairman in speaker_full_name
-df <- clessnverse::get_mart_table(
-  table_name = 'agoraplus_european_parliament',
-  data_filter = list(
-    data__.schema="202303",
-    data__speaker_full_name__in=c("President","Chairman","The President, Ms. President")
   ),
   credentials = credentials,
   nbrows = 0
@@ -122,6 +116,42 @@ for (i in 1:nrow(df)) {
 }
 
 
+
+###############################################################################
+# fix President | Chairman in speaker_full_name
+# df <- clessnverse::get_mart_table(
+#   table_name = 'agoraplus_european_parliament',
+#   data_filter = list(
+#     data__.schema="202303",
+#     data__speaker_full_name__in=c("President","Chairman","The President, Ms. President")
+#   ),
+#   credentials = credentials,
+#   nbrows = 0
+# )
+
+# for (i in 1:nrow(df)) {
+#   item <- df[i,]
+
+#   cat("processing #", i, "key", item$hub.key, "\n")
+
+#   item$speaker_full_name<- item$president_name
+
+#   hublot::update_table_item(
+#     table_name = "clhub_tables_mart_agoraplus_european_parliament",
+#     id = item$hub.id,
+#     body = list(
+#       key = item$hub.key, 
+#       timestamp = as.character(Sys.time()), 
+#       data = jsonlite::toJSON(
+#         as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+#         auto_unbox = T
+#       )
+#     ),
+#     credentials = credentials
+#   )
+# }
+
+
 ###############################################################################
 # fix polgroup
 # df <- clessnverse::get_mart_table(
@@ -139,7 +169,42 @@ for (i in 1:nrow(df)) {
 
 #   cat("processing #", i, "key", item$hub.key, "\n")
 
-#   item$speaker_polgroup <- ""
+#   item$speaker_polgroup <- "Renew Europe Group"
+
+#   hublot::update_table_item(
+#     table_name = "clhub_tables_mart_agoraplus_european_parliament",
+#     id = item$hub.id,
+#     body = list(
+#       key = item$hub.key, 
+#       timestamp = as.character(Sys.time()), 
+#       data = jsonlite::toJSON(
+#         as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+#         auto_unbox = T
+#       )
+#     ),
+#     credentials = credentials
+#   )
+# }
+
+
+###############################################################################
+# fix polgroup
+# df <- clessnverse::get_mart_table(
+#   table_name = 'agoraplus_european_parliament',
+#   data_filter = list(
+#     data__.schema="202303",
+#     data__speaker_polgroup="Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"
+#   ),
+#   credentials = credentials,
+#   nbrows = 0
+# )
+
+# for (i in 1:nrow(df)) {
+#   item <- df[i,]
+
+#   cat("processing #", i, "key", item$hub.key, "\n")
+
+#   item$speaker_polgroup <-  "Progressive Alliance Of Socialists And Democrats (S&D)"
 
 #   hublot::update_table_item(
 #     table_name = "clhub_tables_mart_agoraplus_european_parliament",
@@ -163,7 +228,7 @@ df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__.schema="202303",
-    data__speaker_polgroup="Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"
+    data__speaker_polgroup="Confederal Group Of The European United Left - Nordic Green Left"
   ),
   credentials = credentials,
   nbrows = 0
@@ -174,7 +239,7 @@ for (i in 1:nrow(df)) {
 
   cat("processing #", i, "key", item$hub.key, "\n")
 
-  item$speaker_polgroup <-  "Progressive Alliance Of Socialists And Democrats (S&D)"
+  item$speaker_polgroup <-  "The Left Group In The European Parliament - GUE/NGL"
 
   hublot::update_table_item(
     table_name = "clhub_tables_mart_agoraplus_european_parliament",
@@ -190,4 +255,39 @@ for (i in 1:nrow(df)) {
     credentials = credentials
   )
 }
+
+
+###############################################################################
+# fix polgroup
+# df <- clessnverse::get_mart_table(
+#   table_name = 'agoraplus_european_parliament',
+#   data_filter = list(
+#     data__.schema="202303",
+#     data__speaker_polgroup="Europe Of Nations And Freedom Group"
+#   ),
+#   credentials = credentials,
+#   nbrows = 0
+# )
+
+# for (i in 1:nrow(df)) {
+#   item <- df[i,]
+
+#   cat("processing #", i, "key", item$hub.key, "\n")
+
+#   item$speaker_polgroup <-  "Europe Of Freedom And Direct Democracy Group"
+
+#   hublot::update_table_item(
+#     table_name = "clhub_tables_mart_agoraplus_european_parliament",
+#     id = item$hub.id,
+#     body = list(
+#       key = item$hub.key, 
+#       timestamp = as.character(Sys.time()), 
+#       data = jsonlite::toJSON(
+#         as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+#         auto_unbox = T
+#       )
+#     ),
+#     credentials = credentials
+#   )
+# }
 
