@@ -25,28 +25,28 @@ medias_urls <- list(
     country    = "CAN",
     base       = "https://www.cbc.ca",
     front      = "/news"
-  ),
-  jdm = list(
-    long_name  = "Le Journal de Montréal",
-    short_name = "JDM",
-    country    = "CAN",
-    base  = "https://www.journaldemontreal.com",
-    front = "/"
-  ),
-  radiocan = list(
-    long_name  = "Radio-Canada Info",
-    short_name = "RCI",
-    country    = "CAN",
-    base  = "https://ici.radio-canada.ca",
-    front = "/info"
-  ),
-  tvaNouvelles = list(
-    long_name  = "TVA Nouvelles",
-    short_name = "TVA",
-    country    = "CAN",
-    base  = "https://www.tvanouvelles.ca/",
-    front = "/"
   )
+  # jdm = list(
+  #   long_name  = "Le Journal de Montréal",
+  #   short_name = "JDM",
+  #   country    = "CAN",
+  #   base  = "https://www.journaldemontreal.com",
+  #   front = "/"
+  # ),
+  # radiocan = list(
+  #   long_name  = "Radio-Canada Info",
+  #   short_name = "RCI",
+  #   country    = "CAN",
+  #   base  = "https://ici.radio-canada.ca",
+  #   front = "/info"
+  # ),
+  # tvaNouvelles = list(
+  #   long_name  = "TVA Nouvelles",
+  #   short_name = "TVA",
+  #   country    = "CAN",
+  #   base  = "https://www.tvanouvelles.ca/",
+  #   front = "/"
+  # )
 )
 
 
@@ -72,10 +72,8 @@ harvest_headline <- function(r, m) {
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
       # rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]')
-      rvest::html_nodes(xpath = '//div[@class="card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0"]') 
-      %>%
-      rvest::html_node("a") 
-      %>%
+      rvest::html_nodes(xpath = '//div[@class="card cardFeatured cardFeaturedReversed flag-breaking hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
+      rvest::html_node("a") %>%
       rvest::html_attr("href")
 
     clessnverse::logit(scriptname, CBC_extracted_headline, logger)
