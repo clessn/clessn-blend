@@ -25,28 +25,28 @@ medias_urls <- list(
     country    = "CAN",
     base       = "https://www.cbc.ca",
     front      = "/news"
+  ),
+  jdm = list(
+    long_name  = "Le Journal de Montréal",
+    short_name = "JDM",
+    country    = "CAN",
+    base  = "https://www.journaldemontreal.com",
+    front = "/"
+  ),
+  radiocan = list(
+    long_name  = "Radio-Canada Info",
+    short_name = "RCI",
+    country    = "CAN",
+    base  = "https://ici.radio-canada.ca",
+    front = "/info"
+  ),
+  tvaNouvelles = list(
+    long_name  = "TVA Nouvelles",
+    short_name = "TVA",
+    country    = "CAN",
+    base  = "https://www.tvanouvelles.ca/",
+    front = "/"
   )
-  # jdm = list(
-  #   long_name  = "Le Journal de Montréal",
-  #   short_name = "JDM",
-  #   country    = "CAN",
-  #   base  = "https://www.journaldemontreal.com",
-  #   front = "/"
-  # ),
-  # radiocan = list(
-  #   long_name  = "Radio-Canada Info",
-  #   short_name = "RCI",
-  #   country    = "CAN",
-  #   base  = "https://ici.radio-canada.ca",
-  #   front = "/info"
-  # ),
-  # tvaNouvelles = list(
-  #   long_name  = "TVA Nouvelles",
-  #   short_name = "TVA",
-  #   country    = "CAN",
-  #   base  = "https://www.tvanouvelles.ca/",
-  #   front = "/"
-  # )
 )
 
 
@@ -65,6 +65,7 @@ harvest_headline <- function(r, m) {
       rvest::html_element("span") %>% 
       rvest::html_attr("data-story-url") %>%
       na.omit()
+
     url <- JDM_extracted_headline[[1]]
     found_supported_media <- TRUE
   }
@@ -72,11 +73,10 @@ harvest_headline <- function(r, m) {
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
       # rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]')
-      rvest::html_nodes(xpath = '//div[@class="card cardFeatured cardFeaturedReversed flag-breaking hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
+      rvest::html_nodes(xpath = '//*[@id="card-1.6792292"]') %>%
       rvest::html_node("a") %>%
       rvest::html_attr("href")
 
-    clessnverse::logit(scriptname, CBC_extracted_headline, logger)
     if (length(CBC_extracted_headline) == 0) {
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//a[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
