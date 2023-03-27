@@ -74,7 +74,7 @@ harvest_headline <- function(r, m) {
     CBC_extracted_headline <<- r %>%
       # rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]')
       rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-updated hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
-      rvest::html_nodes(xpath = '//*[@class="content-wrapper"]') %>%
+      rvest::html_nodes('a') %>%
       rvest::html_attr("href")
     if (length(CBC_extracted_headline) == 0) {
       clessnverse::logit(scriptname, "Initial scraping found nothing", logger)
