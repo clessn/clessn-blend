@@ -77,10 +77,12 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes('a') %>%
       rvest::html_attr("href")
     if (length(CBC_extracted_headline) == 0) {
-      clessnverse::logit(scriptname, "Initial scraping found nothing", logger)
+      clessnverse::logit(scriptname, "CBC: scraping method 1 found nothing", logger)
       CBC_extracted_headline <<- r %>%
-        rvest::html_nodes(xpath = '//a[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
+        rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-analysis sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>% 
+        rvest::html_nodes('a') %>%
         rvest::html_attr("href")
+    
     }
 
     clessnverse::logit(scriptname, CBC_extracted_headline, logger)
