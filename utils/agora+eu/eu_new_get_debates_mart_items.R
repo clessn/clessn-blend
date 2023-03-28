@@ -1,3 +1,5 @@
+library(tidyverse)
+
 # connect to hublot
 credentials <<- hublot::get_credentials(
 Sys.getenv("HUB3_URL"), 
@@ -19,6 +21,11 @@ table(df$speaker_full_name)
 table(df$speaker_polgroup, useNA = 'ifany')
 which(grepl("Modifier", df$speaker_full_name))
 df$hub.key[which(grepl("Modifier", df$speaker_full_name))]
+
+Clean <- df %>%
+  select(speaker_full_name, speaker_type) %>%
+  filter(is.na(speaker_type)) %>%
+  distinct(speaker_full_name)
 
 # Uncomment below to PURGE the hub from the collected records
 # This will actually PERMANENTLY DELETE the collected records
