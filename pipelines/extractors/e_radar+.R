@@ -73,13 +73,32 @@ harvest_headline <- function(r, m) {
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
       # rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]')
+      rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-updated sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
+      rvest::html_nodes('a') %>%
+      rvest::html_attr("href")
+
+    if(length(CBC_extracted_headline) == 0){
+      
+      clessnverse::logit(scriptname, "CBC: scraping method 1 found nothing, trying with hasVideo", logger)
+
       rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-updated hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
       rvest::html_nodes('a') %>%
       rvest::html_attr("href")
+    }
     if (length(CBC_extracted_headline) == 0) {
-      clessnverse::logit(scriptname, "CBC: scraping method 1 found nothing", logger)
+      clessnverse::logit(scriptname, "CBC: scraping method 1 found nothing with video, trying method 2", logger)
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-analysis sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>% 
+        rvest::html_nodes('a') %>%
+        rvest::html_attr("href")
+    
+    }
+
+    
+    if (length(CBC_extracted_headline) == 0) {
+      clessnverse::logit(scriptname, "CBC: scraping method 2 found nothing, trying with video", logger)
+      CBC_extracted_headline <<- r %>%
+        rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-analysis hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>% 
         rvest::html_nodes('a') %>%
         rvest::html_attr("href")
     
