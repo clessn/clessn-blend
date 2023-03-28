@@ -39,6 +39,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://ici.radio-canada.ca",
     front = "/info"
+  ),
+  nationalPost = list(
+    long_name  = "National Post",
+    short_name = "NP",
+    country    = "CAN",
+    base  = "https://nationalpost.com",
+    front = "/"
   )
 )
 
@@ -82,6 +89,10 @@ harvest_headline <- function(r, m) {
     } 
     found_supported_media <- TRUE
   }
+
+  # if(m$short_name == "NP"){
+  #   NP_extracted_headline <- 
+  # }
 
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
