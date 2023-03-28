@@ -112,6 +112,27 @@ harvest_headline <- function(r, m) {
     
     }
 
+    
+
+    if (length(CBC_extracted_headline) == 0) {
+      clessnverse::logit(scriptname, "CBC: scraping method 2 found nothing with video, trying method 3", logger)
+      CBC_extracted_headline <<- r %>%
+        rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-breaking sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>% 
+        rvest::html_nodes('a') %>%
+        rvest::html_attr("href")
+    
+    }
+
+    
+    if (length(CBC_extracted_headline) == 0) {
+      clessnverse::logit(scriptname, "CBC: scraping method 3 found nothing, trying with video", logger)
+      CBC_extracted_headline <<- r %>%
+        rvest::html_nodes(xpath = '//*[@class="card cardFeatured cardFeaturedReversed flag-breaking hasVideo sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>% 
+        rvest::html_nodes('a') %>%
+        rvest::html_attr("href")
+    
+    }
+
     if (grepl("^http.*", CBC_extracted_headline[[1]])) {
       url <- CBC_extracted_headline[[1]]
     } else {
