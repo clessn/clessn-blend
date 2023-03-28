@@ -19,27 +19,27 @@
 ########################      Functions and Globals      ######################
 ###############################################################################
 medias_urls <- list(
-  cbcnews = list(
-    long_name  = "CBC News",
-    short_name = "CBC",
-    country    = "CAN",
-    base       = "https://www.cbc.ca",
-    front      = "/news"
-  ),
-  jdm = list(
-    long_name  = "Le Journal de Montréal",
-    short_name = "JDM",
-    country    = "CAN",
-    base  = "https://www.journaldemontreal.com",
-    front = "/"
-  ),
-  radiocan = list(
-    long_name  = "Radio-Canada Info",
-    short_name = "RCI",
-    country    = "CAN",
-    base  = "https://ici.radio-canada.ca",
-    front = "/info"
-  ),
+  # cbcnews = list(
+  #   long_name  = "CBC News",
+  #   short_name = "CBC",
+  #   country    = "CAN",
+  #   base       = "https://www.cbc.ca",
+  #   front      = "/news"
+  # ),
+  # jdm = list(
+  #   long_name  = "Le Journal de Montréal",
+  #   short_name = "JDM",
+  #   country    = "CAN",
+  #   base  = "https://www.journaldemontreal.com",
+  #   front = "/"
+  # ),
+  # radiocan = list(
+  #   long_name  = "Radio-Canada Info",
+  #   short_name = "RCI",
+  #   country    = "CAN",
+  #   base  = "https://ici.radio-canada.ca",
+  #   front = "/info"
+  # ),
   nationalPost = list(
     long_name  = "National Post",
     short_name = "NP",
@@ -92,7 +92,7 @@ harvest_headline <- function(r, m) {
 
   if(m$short_name == "NP"){
     NP_extracted_headline <<- r %>%
-      rvest::html_nodes(xpath = '//div[contains(concat(" ", "@class", "="), "hero-feed__hero-col")]') %>%
+      rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "hero-feed__hero-col")]') %>%
       rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
       rvest::html_attr("href")
 
