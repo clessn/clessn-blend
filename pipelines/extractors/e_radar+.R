@@ -46,6 +46,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.tvanouvelles.ca/",
     front = "/"
+  ),
+  globeAndMail = list(
+    long_name  = "The Globe and Mail",
+    short_name = "GAM",
+    country    = "CAN",
+    base  = "https://www.theglobeandmail.com/",
+    front = "/"
   )
 )
 
@@ -105,8 +112,6 @@ harvest_headline <- function(r, m) {
     
     }
 
-    clessnverse::logit(scriptname, CBC_extracted_headline, logger)
-
     if (grepl("^http.*", CBC_extracted_headline[[1]])) {
       url <- CBC_extracted_headline[[1]]
     } else {
@@ -125,6 +130,51 @@ harvest_headline <- function(r, m) {
     }
     found_supported_media <- TRUE
   }
+
+  if(m$short_name == "GAM"){
+    GAM_extracted_headline <- r %>% 
+      rvest::html_nodes(xpath = '//div[@class="c-card--topstory-no-img"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if(length(GAM_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "GAM: scraping method 1 found nothing, trying method 2", logger)
+        
+      GAM_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="c-card--hero-story"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if(length(GAM_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "GAM: scraping method 2 found nothing, trying method 3", logger)
+        
+      GAM_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="c-card--3package-imgleft-story"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if(length(GAM_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "GAM: Old XPATH found nothing, trying new XPATH", logger)
+        
+      GAM_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="default__StyledLayoutContainer-qi2b9a-0 jQBUdK top-package-chain top-package-2col"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
+        rvest::html_attr("href")
+    }
+
+    
+
+    if (grepl("^http.*", GAM_extracted_headline[[1]])) {
+      url <- GAM_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+
 
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
