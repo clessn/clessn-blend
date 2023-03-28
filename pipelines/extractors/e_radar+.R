@@ -90,6 +90,13 @@ harvest_headline <- function(r, m) {
         rvest::html_nodes('a') %>%
         rvest::html_attr("href")
 
+    if(length(CBC_extracted_headline) == 0){
+      CBC_extracted_headline <<- r %>%
+        rvest::html_nodes(xpath = '//*[@class="primaryHeadline desktopHeadline"]') %>%
+        rvest::html_nodes('a') %>%
+        rvest::html_attr("href")
+    }
+
     if (grepl("^http.*", CBC_extracted_headline[[1]])) {
       url <- CBC_extracted_headline[[1]]
     } else {
