@@ -4,22 +4,19 @@ Sys.getenv("HUB3_URL"),
 Sys.getenv("HUB3_USERNAME"), 
 Sys.getenv("HUB3_PASSWORD"))
 
-scriptname <- "eu_get_new_debates"
-logger <- clessnverse::log_init(scriptname, "console", "./logs")
-
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__.schema="202303",
     data__event_date__gte="2014-01-01", 
-    data__event_date__lte="2014-12-31"
+    data__event_date__lte="2019-06-30"
   ),
   credentials = credentials,
   nbrows = 0
 )
 
 table(df$speaker_full_name)
-table(df$speaker_polgroup)
+table(df$speaker_polgroup, useNA = 'ifany')
 which(grepl("Modifier", df$speaker_full_name))
 df$hub.key[which(grepl("Modifier", df$speaker_full_name))]
 

@@ -229,6 +229,13 @@ strip_and_push_intervention <- function(intervention) {
               error=function(e) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
                 status <<- 2
+                
+                if (final_message == "") {
+                  final_message <<- e$message
+                } else {
+                  final_message <<- paste(final_message, "\n", e$message, sep="")
+                }
+
                 warning("there was an error with the deeptranslate_api : see logs")
                 clessnverse::logit(scriptname, clntxt(speaker_type), logger)
                 clessnverse::logit(scriptname, e$message, logger)
@@ -245,11 +252,18 @@ strip_and_push_intervention <- function(intervention) {
                   clessnverse::logit(scriptname, speaker_type, logger)
                 } else {
                   clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+
+                  if (final_message == "") {
+                    final_message <<- paste("unable to recover translation error.  must stop...", e$message)
+                  } else {
+                    final_message <<- paste(paste("unable to recover translation error.  must stop...", final_message), "\n", e$message, sep="")
+                  }
+
                   status <<- 1
                   stop("unable to recover translation error.  must stop...")
                 }
               },
-              finalle={}
+              finally = {}
             )
           }
         }
@@ -376,6 +390,7 @@ strip_and_push_intervention <- function(intervention) {
     while (!write_success && nb_attempts < 20) {
       tryCatch(
         {
+          clessnverse::logit(scriptname, paste("about to commit", paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep="")), logger)
           r <- clessnverse::commit_mart_row(
             table = mart_table,
             key = paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep=""), 
@@ -383,6 +398,7 @@ strip_and_push_intervention <- function(intervention) {
             refresh_data = T,
             credentials = credentials
           )
+          clessnverse::logit(scriptname, paste("committed", paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep="")), logger)
           write_success <- TRUE
         },
         error = function(e) {
@@ -527,7 +543,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda", "Talmannen", "Speaker"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -536,7 +552,7 @@ tryCatch(
       "vicepresidente","viceprezidents","viceprezidentas","Vizepresident","Viċi President","onderdirecteur",
       "fise-presidint","wiceprezydent","vice-presidente","vice-preşedinte","podpredsedníčka","podpredsednik",
       "lehendakariordea","vicepresident","vice President","vice-president","vice-présidente", "Vicepreşedinte",
-      "Wiceprzewodniczacy", "Vicepresedinta"
+      "Wiceprzewodniczacy"
     )))
 
 
@@ -631,7 +647,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr", "Przewodniczy", "Προεδρια" 
+      "silla del sr","ordförande för mr"   
     )))
 
     dignitary <- c(
@@ -653,12 +669,12 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     # opt <<- list(
-    #  backend = "hub",
+    #  backend = "dataframe",
     #  schema = "202303",
     #  target_schema = "202303",
     #  log_output = c("console"),
-    #  method = c("date_range", "2014-12-17", "2014-12-17"),
-    #  refresh_data = TRUE,
+    #  method = c("date_range", "2018-02-28", "2018-02-28"),
+    #  refresh_data = FALSE,
     #  translate = TRUE
     # )
 

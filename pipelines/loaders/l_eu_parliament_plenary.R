@@ -1277,6 +1277,8 @@ main <- function() {
     )
   )
 
+  clessnverse::logit(scriptname, paste("found", length(r$results), "lake items"), logger)
+
   for (lake_item in r$results) {
  
     current_lake_item <- hublot::retrieve_lake_item(lake_item$id, credentials)
@@ -1302,7 +1304,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -1434,7 +1436,7 @@ tryCatch(
     # opt <<- list(
     #  backend = "hub",
     #  log_output = c("console"),
-    #  method = c("date_range", "2017-03-14", "2017-04-14"),
+    #  method = c("date_range", "2016-01-01", "2016-12-31"),
     #  schema = "test",
     #  refresh_data = TRUE,
     #  translate = TRUE
