@@ -39,6 +39,20 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://ici.radio-canada.ca",
     front = "/info"
+  ),
+  tvaNouvelles = list(
+    long_name  = "TVA Nouvelles",
+    short_name = "TVA",
+    country    = "CAN",
+    base  = "https://www.tvanouvelles.ca/",
+    front = "/"
+  ),
+  globeAndMail = list(
+    long_name  = "The Globe and Mail",
+    short_name = "GAM",
+    country    = "CAN",
+    base  = "https://www.theglobeandmail.com/",
+    front = "/"
   )
 )
 
@@ -47,41 +61,62 @@ harvest_headline <- function(r, m) {
   found_supported_media <- FALSE
 
   if (m$short_name == "RCI") {
-    test <- r %>% rvest::html_nodes(xpath = '//*[@class="item--1"]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
-    url <- paste(m$base, test[[1]], sep="")
+    RCI_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="item--1"]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
+    url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
     found_supported_media <- TRUE
   }
 
   if (m$short_name == "JDM") {
-    test <- r %>%
+    JDM_extracted_headline <- r %>%
       rvest::html_elements(xpath = "//a") %>% 
       rvest::html_element("span") %>% 
       rvest::html_attr("data-story-url") %>%
       na.omit()
-    url <- test[[1]]
+
+    url <- JDM_extracted_headline[[1]]
     found_supported_media <- TRUE
   }
 
   if (m$short_name == "CBC") {
-    test <<- r %>%
-      #rvest::html_nodes(xpath = '//*[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
-      rvest::html_nodes(xpath = '//div[@class="card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0"]') %>%
-      rvest::html_node("a") %>%
-      rvest::html_attr("href")
-
-    if (length(test) == 0) {
-      test <<- r %>%
-        rvest::html_nodes(xpath = '//a[@class="primaryHeadlineLink sclt-contentpackageheadline"]') %>% 
+    CBC_extracted_headline <<- r %>%
+        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0")]') %>%
+        rvest::html_nodes('a') %>%
         rvest::html_attr("href")
-    }
 
-    if (grepl("^http.*", test[[1]])) {
-      url <- test[[1]]
+    if (grepl("^http.*", CBC_extracted_headline[[1]])) {
+      url <- CBC_extracted_headline[[1]]
     } else {
-      url <- paste(m$base, test[[1]], sep="")
+      url <- paste(m$base, CBC_extracted_headline[[1]], sep="")
     } 
     found_supported_media <- TRUE
   }
+
+  if(m$short_name == "TVA"){
+    TVA_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="home-top-story"]') %>% rvest::html_nodes(xpath = '//*[@class="news_unit-link"]') %>% rvest::html_attr("href")
+    
+    if (grepl("^http.*", TVA_extracted_headline[[1]])) {
+      url <- TVA_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, TVA_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "GAM"){
+    GAM_extracted_headline <- r %>% 
+      rvest::html_nodes(xpath = '//div[@class="default__StyledLayoutContainer-qi2b9a-0 jQBUdK top-package-chain top-package-2col"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", GAM_extracted_headline[[1]])) {
+      url <- GAM_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+
 
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
