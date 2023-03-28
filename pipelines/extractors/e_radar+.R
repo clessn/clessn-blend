@@ -104,38 +104,9 @@ harvest_headline <- function(r, m) {
 
   if(m$short_name == "GAM"){
     GAM_extracted_headline <- r %>% 
-      rvest::html_nodes(xpath = '//div[@class="c-card--topstory-no-img"]') %>%
-      rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
+      rvest::html_nodes(xpath = '//div[@class="default__StyledLayoutContainer-qi2b9a-0 jQBUdK top-package-chain top-package-2col"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
-
-    if(length(GAM_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "GAM: scraping method 1 found nothing, trying method 2", logger)
-        
-      GAM_extracted_headline <- r %>% 
-        rvest::html_nodes(xpath = '//div[@class="c-card--hero-story"]') %>%
-        rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
-        rvest::html_attr("href")
-    }
-
-    if(length(GAM_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "GAM: scraping method 2 found nothing, trying method 3", logger)
-        
-      GAM_extracted_headline <- r %>% 
-        rvest::html_nodes(xpath = '//div[@class="c-card--3package-imgleft-story"]') %>%
-        rvest::html_nodes(xpath = '//a[@class="c-card__link"]') %>%
-        rvest::html_attr("href")
-    }
-
-    if(length(GAM_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "GAM: Old XPATH found nothing, trying new XPATH", logger)
-        
-      GAM_extracted_headline <- r %>% 
-        rvest::html_nodes(xpath = '//div[@class="default__StyledLayoutContainer-qi2b9a-0 jQBUdK top-package-chain top-package-2col"]') %>%
-        rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
-        rvest::html_attr("href")
-    }
-
-    
 
     if (grepl("^http.*", GAM_extracted_headline[[1]])) {
       url <- GAM_extracted_headline[[1]]
