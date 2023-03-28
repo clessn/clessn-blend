@@ -90,9 +90,19 @@ harvest_headline <- function(r, m) {
     found_supported_media <- TRUE
   }
 
-  # if(m$short_name == "NP"){
-  #   NP_extracted_headline <- 
-  # }
+  if(m$short_name == "NP"){
+    NP_extracted_headline <<- r %>%
+      rvest::html_nodes(xpath = '//div[contains(concat(" ", "@class", "="), "hero-feed__hero-col")]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", NP_extracted_headline[[1]])) {
+      url <- NP_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, NP_extracted_headline[[1]], sep="")
+    } 
+    found_supported_media <- TRUE
+  }
 
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
