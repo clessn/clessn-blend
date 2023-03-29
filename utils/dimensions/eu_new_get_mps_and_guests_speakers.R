@@ -4,12 +4,9 @@ Sys.getenv("HUB3_URL"),
 Sys.getenv("HUB3_USERNAME"), 
 Sys.getenv("HUB3_PASSWORD"))
 
-scriptname <- "eu_get_new_mps_and_guest_speakers"
-logger <- clessnverse::log_init(scriptname, "console", "./logs")
-
 df <- clessnverse::get_warehouse_table(
   table_name = 'people',
-  data_filter = list(), #list(key__contains = "820161201EN"),
+  data_filter = list(data__institution = "European Parliament"), #list(key__contains = "820161201EN"),
   credentials = credentials,
   nbrows = 0
 )
