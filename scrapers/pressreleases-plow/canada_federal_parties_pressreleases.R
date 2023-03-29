@@ -517,8 +517,14 @@ scrapePartyPressRelease <- function(party, party_url, scriptname, logger) {
           clessnverse::logit(scriptname, paste("error accessing", party, "press release page", urls_list[[i]]), logger)
       } #for (i in 1:length(urls_list))
         }
-      clessnverse::logit(scriptname, paste(i, "press releases were scraped from the", party, "web site"), logger)
-      cat(i, "press releases were scraped from the", party, "web site", "\n")
+      breakdown <- paste(length(urls_list), "press releases were scraped from the", party, "web site")
+      if(final_message == ""){
+        final_message <<- breakdown
+      } else {
+        final_message <<- paste(final_message, breakdown, sep = "\n")
+      }
+      clessnverse::logit(scriptname, breakdown, logger)
+      cat(breakdown, "\n")
     }#if (length(urls_list) > 0)
   } else {
     clessnverse::logit(scriptname, "Error getting", party, "main press release page", logger)
@@ -552,7 +558,7 @@ main <- function(scriptname, logger) {
   
 }
 
-
+final_message <<- ""
 
 tryCatch( 
   withCallingHandlers(
@@ -602,6 +608,7 @@ tryCatch(
   
   finally={
     clessnverse::logit(scriptname, paste(nb_parties, "parties looped with", nb_urls, "URLs read and", nb_releases, "extracted from the web"), logger)
+    cat("final_message: ", final_message, "\n")
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::logclose(logger)
     rm(logger)
