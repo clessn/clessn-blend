@@ -608,7 +608,7 @@ tryCatch(
   
   finally={
     clessnverse::logit(scriptname, paste(nb_parties, "parties looped with", nb_urls, "URLs read and", nb_releases, "extracted from the web"), logger)
-    cat("final_message: ", final_message, "\n")
+    cat(final_message, "\n")
     clessnverse::logit(scriptname, paste("Execution of",  scriptname,"program terminated"), logger)
     clessnverse::logclose(logger)
     rm(logger)
