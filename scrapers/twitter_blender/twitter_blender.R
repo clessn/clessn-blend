@@ -429,6 +429,8 @@ main <- function(opt, scriptname, logger) {
 
   filter <- clessnhub::create_filter(type=opt$type, schema=opt$schema, metadata=metadata_filter, data=data_filter)
 
+  clessnverse::logit(scriptname, filter, logger)
+
   dfPersons <- clessnhub::get_items(table = 'persons', filter = filter, download_data = TRUE)
 
   if (!is.null(dfPersons) && nrow(dfPersons) > 0) {
