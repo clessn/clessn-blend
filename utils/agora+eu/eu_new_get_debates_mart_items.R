@@ -1,5 +1,3 @@
-library(tidyverse)
-
 # connect to hublot
 credentials <<- hublot::get_credentials(
 Sys.getenv("HUB3_URL"), 
