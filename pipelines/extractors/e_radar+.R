@@ -186,6 +186,21 @@ harvest_headline <- function(r, m) {
     }
     found_supported_media <- TRUE
   }
+
+  if(m$short_name == "LAP"){
+    LAP_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//div[@class="homeHeadlinesRow__main"]') %>%
+      rvest::html_nodes(xpath = '//article[@data-position="1"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="storyCard__cover homeHeadlinesCard__cover"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", LAP_extracted_headline[[1]])) {
+      url <- LAP_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
   
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
