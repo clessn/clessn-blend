@@ -91,6 +91,7 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
 
     if(length(CBC_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "CBC: Scraping with card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0 failed, trying with primaryHeadline desktopHeadline", logger)
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//*[@class="primaryHeadline desktopHeadline"]') %>%
         rvest::html_nodes('a') %>%
