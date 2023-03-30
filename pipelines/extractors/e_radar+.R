@@ -236,8 +236,12 @@ harvest_headline <- function(r, m) {
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
+    keyUrl <- url
+    if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
+      keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
+    }
     #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(url, "[^/]+$"), Sys.time(), sep="_"))
+    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
 
     hub_response <- clessnverse::commit_lake_item(
       data = list(
@@ -304,7 +308,12 @@ main <- function() {
       clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
 
       #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-      key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(url, "[^/]+$"), Sys.time(), sep="_"))
+      keyUrl <- url
+      if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
+        keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
+      }
+
+      key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
       hub_response <- clessnverse::commit_lake_item(
