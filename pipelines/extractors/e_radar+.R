@@ -51,29 +51,29 @@ medias_urls <- list(
     long_name  = "TVA Nouvelles",
     short_name = "TVA",
     country    = "CAN",
-    base  = "https://www.tvanouvelles.ca/",
+    base  = "https://www.tvanouvelles.ca",
     front = "/"
   ),
   globeAndMail = list(
     long_name  = "The Globe and Mail",
     short_name = "GAM",
     country    = "CAN",
-    base  = "https://www.theglobeandmail.com/",
+    base  = "https://www.theglobeandmail.com",
     front = "/"
   ),
   vancouverSun = list(
     long_name  = "Vancouver Sun",
     short_name = "VS",
     country    = "CAN",
-    base  = "https://vancouversun.com/",
-    front = ""
+    base  = "https://vancouversun.com",
+    front = "/"
   ),
   laPresse = list(
     long_name  = "La Presse",
     short_name = "LAP",
     country    = "CAN",
-    base  = "https://www.lapresse.ca/",
-    front = ""
+    base  = "https://www.lapresse.ca",
+    front = "/"
   )
 )
 
