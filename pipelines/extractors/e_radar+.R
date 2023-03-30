@@ -60,6 +60,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.theglobeandmail.com/",
     front = "/"
+  ),
+  vancouverSun = list(
+    long_name  = "Vancouver Sun",
+    short_name = "VS",
+    country    = "CAN",
+    base  = "https://vancouversun.com/",
+    front = ""
   )
 )
 
@@ -141,6 +148,28 @@ harvest_headline <- function(r, m) {
       url <- GAM_extracted_headline[[1]]
     } else {
       url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "VS"){
+    VS_extracted_headline <- r %>% 
+      rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if(length(VS_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link")
+      VS_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="article-card__image-link"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if (grepl("^http.*", VS_extracted_headline[[1]])) {
+      url <- VS_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, VS_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
