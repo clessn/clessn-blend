@@ -60,6 +60,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.theglobeandmail.com/",
     front = "/"
+  ),
+  vancouverSun = list(
+    long_name  = "Vancouver Sun",
+    short_name = "VS",
+    country    = "CAN",
+    base  = "https://vancouversun.com/",
+    front = ""
   )
 )
 
@@ -91,6 +98,7 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
 
     if(length(CBC_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "CBC: Scraping with card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0 failed, trying with primaryHeadline desktopHeadline", logger)
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//*[@class="primaryHeadline desktopHeadline"]') %>%
         rvest::html_nodes('a') %>%
@@ -136,10 +144,38 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", GAM_extracted_headline[[1]])) {
-      url <- GAM_extracted_headline[[1]]
+    headlineIndex <- 1
+
+    if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
+      headlineIndex <- headlineIndex + 1
+    }
+
+    if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
+      url <- GAM_extracted_headline[[headlineIndex]]
     } else {
-      url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+      url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "VS"){
+    VS_extracted_headline <- r %>% 
+      rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if(length(VS_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link", logger)
+      VS_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="article-card__image-link"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if (grepl("^http.*", VS_extracted_headline[[1]])) {
+      url <- VS_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, VS_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
