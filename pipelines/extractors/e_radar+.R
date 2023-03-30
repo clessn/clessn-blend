@@ -144,10 +144,16 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", GAM_extracted_headline[[1]])) {
-      url <- GAM_extracted_headline[[1]]
+    headlineIndex <- 1
+
+    if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
+      headlineIndex <- headlineIndex + 1
+    }
+
+    if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
+      url <- GAM_extracted_headline[[headlineIndex]]
     } else {
-      url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+      url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
     }
     found_supported_media <- TRUE
   }
@@ -159,7 +165,7 @@ harvest_headline <- function(r, m) {
       rvest::html_attr("href")
 
     if(length(VS_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link")
+      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link", logger)
       VS_extracted_headline <- r %>% 
         rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
         rvest::html_nodes(xpath = '//a[@class="article-card__image-link"]') %>%
