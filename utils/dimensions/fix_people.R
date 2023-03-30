@@ -11,7 +11,7 @@ clessnhub::login(
    Sys.getenv("HUB_URL"))
 
 
-df <- clessnverse::get_warehouse_table(
+df_people <- clessnverse::get_warehouse_table(
   table_name = 'people',
   data_filter = list(
     data__institution="European Parliament"
@@ -20,7 +20,7 @@ df <- clessnverse::get_warehouse_table(
   nbrows = 0
 )
 
-table(df$pol_group)
+table(df_people$pol_group)
 
 # df$pol_group[which(df$pol_group == "Renew Europe Group")] <- "Group Renew Europe"
 
@@ -28,18 +28,18 @@ table(df$pol_group)
 
 # df$pol_group[which(df$pol_group == "Europe Of Nations And Freedom Group")] <- "Europe Of Freedom And Direct Democracy"
 
-# df$pol_group[which(df$pol_group == "Europe Of Freedom And Direct Democracy Group")] <- "Europe Of Freedom And Direct Democracy"
+df_people$pol_group[which(df_people$pol_group == "Europe Of Freedom And Direct Democracy")] <- "Europe Of Freedom And Direct Democracy Group"
 
 # df$pol_group[which(df$pol_group == "Progressive Alliance Of Socialists And Democrats (S&D)")] <- "Group of the Progressive Alliance of Socialists and Democrats in the European Parliament"
 # df$pol_group[which(df$pol_group == " Progressive Alliance Of Socialists And Democrats (S&D)")] <- "Group of the Progressive Alliance of Socialists and Democrats in the European Parliament"
-df$pol_group[which(df$pol_group == "Group of the Progressive Alliance of Socialists and Democrats in the European Parliament")] <- "Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"
+#df$pol_group[which(df$pol_group == "Group of the Progressive Alliance of Socialists and Democrats in the European Parliament")] <- "Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"
 
 # df$pol_group[which(df$pol_group == "Group of the European People's Party (Christian Democrats)")] <- "Group Of The European People's Party (Christian Democrats)"
 
 # df$pol_group[which(df$pol_group == "Europe Of Freedom And Democracy Group")] <- "Europe Of Freedom And Direct Democracy"
 # df$pol_group[which(df$pol_group == "Europe Of Freedom And Direct Democracy Group ")] <- "Europe Of Freedom And Direct Democracy"
 
-df_to_process <- df[which(df$pol_group == "Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"),]
+df_to_process <- df_people[which(df_people$pol_group == "Europe Of Freedom And Direct Democracy Group"),]
 
 
 for (i in 1:nrow(df_to_process)) {
