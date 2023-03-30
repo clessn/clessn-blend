@@ -67,6 +67,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://vancouversun.com/",
     front = ""
+  ),
+  laPresse = list(
+    long_name  = "La Presse",
+    short_name = "LAP",
+    country    = "CAN",
+    base  = "https://www.lapresse.ca/",
+    front = ""
   )
 )
 
