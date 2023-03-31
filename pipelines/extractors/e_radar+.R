@@ -74,6 +74,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.lapresse.ca",
     front = "/"
+  ),
+  leDevoir = list(
+    long_name  = "Le Devoir",
+    short_name = "LED",
+    country    = "CAN",
+    base  = "https://www.ledevoir.com",
+    front = "/"
   )
 )
 
@@ -198,6 +205,19 @@ harvest_headline <- function(r, m) {
       url <- LAP_extracted_headline[[1]]
     } else {
       url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "LED"){
+    LED_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//a[@class="card-click"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", LED_extracted_headline[[1]])) {
+      url <- LED_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, LED_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
