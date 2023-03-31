@@ -114,7 +114,7 @@ harvest_headline <- function(r, m) {
 
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
-        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0")]') %>%
+        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed")]') %>%
         rvest::html_nodes('a') %>%
         rvest::html_attr("href")
 
