@@ -81,6 +81,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.ledevoir.com",
     front = "/"
+  ),
+  montrealGazette = list(
+    long_name  = "Montreal Gazette",
+    short_name = "MG",
+    country    = "CAN",
+    base  = "https://montrealgazette.com",
+    front = "/"
   )
 )
 
@@ -107,7 +114,7 @@ harvest_headline <- function(r, m) {
 
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
-        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0")]') %>%
+        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed")]') %>%
         rvest::html_nodes('a') %>%
         rvest::html_attr("href")
 
@@ -218,6 +225,20 @@ harvest_headline <- function(r, m) {
       url <- LED_extracted_headline[[1]]
     } else {
       url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "MG"){
+    MG_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//div[contains(concat(" ", @class, "="), "hero-feed__hero-col")]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", MG_extracted_headline[[1]])) {
+      url <- LED_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, MG_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
