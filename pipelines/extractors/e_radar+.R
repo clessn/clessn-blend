@@ -81,6 +81,13 @@ medias_urls <- list(
     country    = "CAN",
     base  = "https://www.ledevoir.com",
     front = "/"
+  ),
+  montrealGazette = list(
+    long_name  = "Montreal Gazette",
+    short_name = "MG",
+    country    = "CAN",
+    base  = "https://montrealgazette.com",
+    front = "/"
   )
 )
 
