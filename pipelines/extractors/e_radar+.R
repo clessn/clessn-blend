@@ -51,14 +51,42 @@ medias_urls <- list(
     long_name  = "TVA Nouvelles",
     short_name = "TVA",
     country    = "CAN",
-    base  = "https://www.tvanouvelles.ca/",
+    base  = "https://www.tvanouvelles.ca",
     front = "/"
   ),
   globeAndMail = list(
     long_name  = "The Globe and Mail",
     short_name = "GAM",
     country    = "CAN",
-    base  = "https://www.theglobeandmail.com/",
+    base  = "https://www.theglobeandmail.com",
+    front = "/"
+  ),
+  vancouverSun = list(
+    long_name  = "Vancouver Sun",
+    short_name = "VS",
+    country    = "CAN",
+    base  = "https://vancouversun.com",
+    front = "/"
+  ),
+  laPresse = list(
+    long_name  = "La Presse",
+    short_name = "LAP",
+    country    = "CAN",
+    base  = "https://www.lapresse.ca",
+    front = "/"
+  ),
+  leDevoir = list(
+    long_name  = "Le Devoir",
+    short_name = "LED",
+    country    = "CAN",
+    base  = "https://www.ledevoir.com",
+    front = "/"
+  ),
+  montrealGazette = list(
+    long_name  = "Montreal Gazette",
+    short_name = "MG",
+    country    = "CAN",
+    base  = "https://montrealgazette.com",
     front = "/"
   )
 )
@@ -86,11 +114,12 @@ harvest_headline <- function(r, m) {
 
   if (m$short_name == "CBC") {
     CBC_extracted_headline <<- r %>%
-        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0")]') %>%
+        rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "card cardFeatured cardFeaturedReversed")]') %>%
         rvest::html_nodes('a') %>%
         rvest::html_attr("href")
 
     if(length(CBC_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "CBC: Scraping with card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0 failed, trying with primaryHeadline desktopHeadline", logger)
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//*[@class="primaryHeadline desktopHeadline"]') %>%
         rvest::html_nodes('a') %>%
@@ -136,10 +165,80 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", GAM_extracted_headline[[1]])) {
-      url <- GAM_extracted_headline[[1]]
+    headlineIndex <- 1
+
+    if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
+      headlineIndex <- headlineIndex + 1
+    }
+
+    if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
+      url <- GAM_extracted_headline[[headlineIndex]]
     } else {
-      url <- paste(m$base, GAM_extracted_headline[[1]], sep="")
+      url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "VS"){
+    VS_extracted_headline <- r %>% 
+      rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if(length(VS_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link", logger)
+      VS_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="article-card__image-link"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if (grepl("^http.*", VS_extracted_headline[[1]])) {
+      url <- VS_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, VS_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "LAP"){
+    LAP_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//div[@class="homeHeadlinesRow__main"]') %>%
+      rvest::html_nodes(xpath = '//article[@data-position="1"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="storyCard__cover homeHeadlinesCard__cover"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", LAP_extracted_headline[[1]])) {
+      url <- LAP_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "LED"){
+    LED_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//a[@class="card-click"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", LED_extracted_headline[[1]])) {
+      url <- LED_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "MG"){
+    MG_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//div[contains(concat(" ", @class, "="), "hero-feed__hero-col")]') %>%
+      rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", MG_extracted_headline[[1]])) {
+      url <- LED_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, MG_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
@@ -178,8 +277,12 @@ harvest_headline <- function(r, m) {
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
+    keyUrl <- url
+    if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
+      keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
+    }
     #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(url, "[^/]+$"), Sys.time(), sep="_"))
+    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
 
     hub_response <- clessnverse::commit_lake_item(
       data = list(
@@ -246,7 +349,12 @@ main <- function() {
       clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
 
       #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-      key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(url, "[^/]+$"), Sys.time(), sep="_"))
+      keyUrl <- url
+      if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
+        keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
+      }
+
+      key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
       hub_response <- clessnverse::commit_lake_item(
