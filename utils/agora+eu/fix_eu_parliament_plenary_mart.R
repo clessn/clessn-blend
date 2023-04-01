@@ -8,6 +8,31 @@ Sys.getenv("HUB3_PASSWORD"))
 table_name <- "clhub_tables_mart_agoraplus_european_parliament"
 
 
+df_people <- clessnverse::get_warehouse_table(
+  table_name = 'people',
+  data_filter = list(data__institution = "European Parliament"),
+  credentials = credentials,
+  nbrows = 0
+)
+
+df_countries <- clessnverse::get_warehouse_table(
+  table_name = 'countries',
+  data_filter = list(),
+  credentials = credentials,
+  nbrows = 0
+)
+
+df <- clessnverse::get_mart_table(
+  table_name = 'agoraplus_european_parliament',
+  data_filter = list(
+    data__.schema="202303",
+    data__event_date__gte="2014-01-01", 
+    data__event_date__lte="2019-06-30"
+  ),
+  credentials = credentials,
+  nbrows = 0
+)
+
 
 #####
 # Fix polgroups
@@ -74,7 +99,7 @@ fix_list <- list(
     )
   ),
 
-   list(
+  list(
     filter = list(
       data__.schema="202303",
       data__speaker_polgroup="Group of the Progressive Alliance of Socialists and Democrats in the European Parliament"
@@ -82,7 +107,7 @@ fix_list <- list(
     fix = list(
       fix = 'item$speaker_polgroup <- "Group Of The Progressive Alliance Of Socialists And Democrats In The European Parliament"'
     )
-  )
+  ),
 
   
 )
@@ -159,31 +184,8 @@ for (i in 1:length(fix_list)) {
 #####
 # Fix speaker_full_name
 
-df_people <- clessnverse::get_warehouse_table(
-  table_name = 'people',
-  data_filter = list(data__institution = "European Parliament"),
-  credentials = credentials,
-  nbrows = 0
-)
 
-df_countries <- clessnverse::get_warehouse_table(
-  table_name = 'countries',
-  data_filter = list(),
-  credentials = credentials,
-  nbrows = 0
-)
-
-df <- clessnverse::get_mart_table(
-  table_name = 'agoraplus_european_parliament',
-  data_filter = list(
-    data__.schema="202303",
-    data__event_date__gte="2014-01-01", 
-    data__event_date__lte="2014-12-30"
-  ),
-  credentials = credentials,
-  nbrows = 0
-)
-
+#######
 # Fix1
 #df_to_fix <- df[which(nchar(df$speaker_full_name) > 30),]
 
@@ -191,11 +193,15 @@ df <- clessnverse::get_mart_table(
 #df_to_fix <- df[which(grepl("in writing", df$speaker_full_name)),]
 
 # Fix3
+df_to_fix <- df[which(grepl("chairman", df$speaker_full_name)),]
 #df_to_fix <- df[which(grepl("The president", df$speaker_full_name)),]
 #df_to_fix$president_name[df_to_fix$president_name == "Rainer Wieland Catch-The-Eye-Verfahren"] <- "Rainer Wieland"
 #df_to_fix$president_name <- trimws(df_to_fix$president_name)
 #df_to_fix$president_name[grepl("Als Nachster Punkt Folgt Die Abstimmungsstunde", df_to_fix$president_name)] <- "Martin Schulz"
 #df_to_fix$president_name[df_to_fix$president_name == "Προεδρια Αννυ Ποδηματα"] <- "Anni Podimata"
+#df_to_fix$president_name[df_to_fix$president_name == "Προεδρια Αννυ Ποδηματα"] <- "Anni Podimata"
+#df_to_fix <- df[df$speaker_full_name == "Προεδρια Αννυ Ποδηματα",] 
+
 
 # Fix4
 #df_to_fix <- df[which(grepl("Προεδρια Δημητριοσ Παπαδημουλη", df$speaker_full_name)),]
@@ -214,12 +220,16 @@ df <- clessnverse::get_mart_table(
 #df_to_fix <- df[which(grepl("Tibor Navracsics, Member of the Commission", df$speaker_full_name)),]
 
 # Fix8
-df_to_fix <- df[which(grepl("^.*(\\(.*\\))$", df$speaker_full_name)),]
+#df_to_fix <- df[which(grepl("^.*(\\(.*\\))$", df$speaker_full_name)),]
 
 for (i in 1:nrow(df_to_fix)) {
   df_speaker <- data.frame()
   
   item <- df_to_fix[i,]
+
+  if (is.na(item$speaker_full_name)) next
+
+
   full_name <- NA
   speaker_type <- NA
 
@@ -326,8 +336,14 @@ for (i in 1:nrow(df_to_fix)) {
                         full_name <- trimws(gsub(pattern, "", item$speaker_full_name))
                         df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))) ,]
                         change <- TRUE
-                      }
-                    } 
+                      } 
+                    } else {
+                      if (item$speaker_full_name == "Προεδρια Αννυ Ποδηματα") {
+                          full_name <- "Anni Podimata" 
+                          df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))) ,]
+                          change <- TRUE
+                        }
+                      } 
                   }
                 } 
               } 
@@ -392,7 +408,7 @@ for (i in 1:nrow(df_to_fix)) {
 
   item <- df_to_fix[i,]
 
-  item$country <- df_countries$name[df_countries$short_name_3 == item$speaker_country]
+  item$speaker_country <- df_countries$name[df_countries$short_name_3 == item$speaker_country]
 
   success <- FALSE
   attempt <- 1
@@ -429,22 +445,23 @@ for (i in 1:nrow(df_to_fix)) {
 
 
 #####
-# Fix speaker_country
+# Fix speaker_gender
 df_to_fix <- df[which(is.na(df$speaker_gender)),]
 
 for (i in 1:nrow(df_to_fix)) {
 
   item <- df_to_fix[i,]
 
-  df_gender <- gender::gender(item$speaker_full_name)
-  if (nrow(df_gender) > 0 ) item$speaker_gender <- df_gender$gender
-
-  item$country <- df_countries$name[df_countries$short_name_3 == item$speaker_country]
+  df_gender <- gender::gender(strsplit(item$speaker_full_name, " ")[[1]][1])
+  if (nrow(df_gender) > 0 ) {
+    item$speaker_gender <- df_gender$gender
+    change <- TRUE
+  }
 
   success <- FALSE
   attempt <- 1
 
-  while (!success && attempt < 20) {
+  while (change && !success && attempt < 20) {
     cat("writing ", item$hub.key, "\n")
     tryCatch(
       {
@@ -472,4 +489,327 @@ for (i in 1:nrow(df_to_fix)) {
       }
     )
   }
+}
+
+
+#####
+# Fix president_name 
+
+#1
+#president_patterns <- " Vicepresedinta|vicepresedinta|Catch-The-Eye Procedure|Ol |Pan |Presedintia |Przewodniczy |Przewodniczy |Catch-The-Eye-Verfahren| Wiceprzewodniczacy|Προεδρια "
+#df_to_fix <- df[which(grepl(president_patterns, df$president_name)),]
+
+#2
+#df_to_fix <- df[which(grepl("Dezbaterea A Fost Inchisavotul Va Avea Loc Joi, 18 Mai", df$president_name)),]
+
+#3
+#df_to_fix <- df[which(grepl("Siamo Chiamati Ad Esprimerci Anche Sull’accordo", df$president_name)),]
+
+#4
+df_to_fix <- df[which(grepl("Als Nachster Punkt Folgt Die Abstimmungsstunde", df$president_name)),]
+
+
+for (i in 1:nrow(df_to_fix)) {
+
+  item <- df_to_fix[i,]
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  #1
+  #full_name <- item$president_name
+  #2 
+  #full_name <- "IOAN MIRCEA PAŞCU"
+  #3
+  #fill_name <- "ANTONIO TAJANI"
+  #4
+  fill_name <- "MARTIN SCHULZ"
+
+  full_name <- gsub(president_patterns, "", full_name)
+
+  df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  if (nrow(df_speaker) > 0) {
+    item$president_name <- paste(strsplit(df_speaker$full_name[1], ", ")[[1]][2], strsplit(df_speaker$full_name[1], ", ")[[1]][1])
+    change <- TRUE
+  } 
+
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+}
+
+
+#####
+# Fix speaker_full_name and speaker_full_name_native when spraker is president
+
+#1
+# connect to hublot
+speaker_type_patterns <- "^Chairman$|^Chairman \\:$|^Chairman\\:$|^President$|^vice-president$|^Speaker$|^Vice-Presiden$"
+df_to_fix <- df[which(stringr::str_detect(df$speaker_full_name, speaker_type_patterns) & is.na(df$speaker_polgroup)),]
+nrow(df_to_fix)
+table(df_to_fix$speaker_type)
+table(df_to_fix$speaker_full_name)
+
+for (i in 1:nrow(df_to_fix)) {
+
+  item <- df_to_fix[i,]
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  
+  full_name <- item$president_name
+  full_name <- gsub(president_patterns, "", full_name)
+
+  df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  if (nrow(df_speaker) > 0) {
+    item$president_name <- paste(strsplit(df_speaker$full_name[1], ", ")[[1]][2], strsplit(df_speaker$full_name[1], ", ")[[1]][1])
+    change <- TRUE
+  } 
+
+  if (nrow(df_speaker) == 0) warning(paste("could not find", full_name))
+
+
+  if (nrow(df_speaker) > 0) {
+    item$speaker_full_name <- df_speaker$full_name[1]
+    if (is.na(item$speaker_polgroup)) item$speaker_polgroup <- df_speaker$pol_group[1]
+    item$speaker_party <- df_speaker$party[1]
+    item$speaker_gender <- df_speaker$gender[1]
+    item$speaker_country <- df_countries$name[df_countries$short_name_3 == df_speaker$country[1]]
+  } else {
+    if (!is.na(full_name)) item$speaker_full_name <- full_name
+  }
+
+
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+}
+
+
+#######
+# Fix speaker_full_name
+#1
+#patterns <- ", on behalf of|, rapporteur for|, representative of|, answer to|, Vice-President of|, former President|, Wife of|, President of|, Author of|, Winner of |, president of|, Prime Minister of"
+#df_to_fix <- df[which(grepl(patterns, df$speaker_full_name) & is.na(df$speaker_polgroup)),]
+#2
+patterns <- "president|президент|predsjednik|başkan|prezident|formand|presidentti|président|präsident|Πρόεδρος|elnök|preside|uachtarán|Presidente|prezidents|prezidentas|presidint|prezydent|presedinte|predsednik|presidentea|presidente|chairman|chair|présidente|Präsident|President|Preşedinte|Preşedintele|Presedintele|in the chair|Mistopredseda|Präsidentin|Presedintia|Speaker"
+df_to_fix <- df[which(grepl(tolower(patterns), tolower(df$speaker_full_name))),]
+
+
+nrow(df_to_fix)
+table(df_to_fix$speaker_type)
+table(df_to_fix$speaker_full_name)
+
+for (i in 1:nrow(df_to_fix)) {
+
+  item <- df_to_fix[i,]
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  #1
+  # full_name <- trimws(strsplit(item$speaker_full_name, ",")[[1]][1])
+  # full_name <- gsub(president_patterns, "", full_name)
+  # speaker_type <- trimws(strsplit(item$speaker_full_name, ",")[[1]][2])
+
+  # df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  # if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  # if (nrow(df_speaker) > 0) {
+  #   item$speaker_full_name <- df_speaker$full_name[1]
+  #   if (is.na(item$speaker_polgroup)) item$speaker_polgroup <- df_speaker$pol_group[1]
+  #   item$speaker_party <- df_speaker$party[1]
+  #   item$speaker_gender <- df_speaker$gender[1]
+  #   item$speaker_country <- if (!is.na(item$speaker_country)) df_countries$name[df_countries$short_name_3 == df_speaker$country[1]] else NA
+  # } else {
+  #   if (!is.na(full_name)) item$speaker_full_name <- full_name
+  # }
+
+  # item$speaker_type <- speaker_type
+
+  #2
+  full_name <- item$president_name
+  df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  if (nrow(df_speaker) > 0) {
+    item$speaker_full_name <- df_speaker$full_name[1]
+    if (is.na(item$speaker_polgroup)) item$speaker_polgroup <- df_speaker$pol_group[1]
+    item$speaker_party <- df_speaker$party[1]
+    item$speaker_gender <- df_speaker$gender[1]
+    item$speaker_country <- if (!is.na(df_speaker$country[1])) df_countries$name[df_countries$short_name_3 == df_speaker$country[1]] else NA
+  } else {
+    if (!is.na(full_name)) item$speaker_full_name <- full_name
+  }
+
+
+  change <- TRUE
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+}
+
+########
+#fix polgroup
+
+df_to_fix <- df[is.na(df$speaker_polgroup),]
+nrow(df_to_fix)
+
+for (i in 5083:nrow(df_to_fix)) {
+  change <- FALSE
+
+  item <- df_to_fix[i,]
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  full_name <- item$speaker_full_name
+  full_name <- gsub("\\(","\\\\(",full_name)
+  full_name <- gsub("\\)","\\\\)",full_name)
+  
+  df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  if (nrow(df_speaker) > 0) {
+    df_speaker <- df_speaker[which.max(rowSums(!is.na(df_speaker))),]
+
+    item$speaker_full_name <- df_speaker$full_name
+    if (is.na(item$speaker_polgroup)) item$speaker_polgroup <- df_speaker$pol_group
+    item$speaker_party <- df_speaker$party
+    item$speaker_gender <- df_speaker$gender
+    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) == 3) df_countries$name[df_countries$short_name_3 == df_speaker$country] else NA
+    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) > 3)  df_speaker$country else NA
+    
+    change <- TRUE
+  } 
+
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+
 }
