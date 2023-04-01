@@ -33,6 +33,17 @@ df <- clessnverse::get_mart_table(
   nbrows = 0
 )
 
+# df <- clessnverse::get_mart_table(
+#   table_name = 'agoraplus_european_parliament',
+#   data_filter = list(
+#     data__.schema="202303",
+#     data__event_date__gte="2014-01-01", 
+#     data__event_date__lte="2019-06-30",
+#     data__speaker_full_name = "Mélenchon, Jean-Luc"
+#   ),
+#   credentials = credentials,
+#   nbrows = 0
+# )
 
 #####
 # Fix polgroups
@@ -746,14 +757,45 @@ for (i in 1:nrow(df_to_fix)) {
 
 ########
 #fix polgroup
+#1
+#df_to_fix <- df[is.na(df$speaker_polgroup),]
+#2
+#df_to_fix <- df[df$speaker_full_name == "Mélenchon, Jean-Luc",]
+#3
+#df_to_fix <- df[df$speaker_full_name == "Laid, Diogo",]
+#4
+#df_to_fix <- df[df$speaker_full_name == "Epitideos, George",]
+#df_to_fix <- df[df$speaker_full_name == "Epitideos, Georgios",]
+#5
+#df_to_fix <- df[df$speaker_full_name == "Mogherini, Federica",]
+#6
+#df_to_fix <- df[df$speaker_full_name == "Jourová, Vĕra",]
+#7
+#df_to_fix <- df[df$speaker_full_name == "Hahn, Johannes",]
+#8
+#df_to_fix <- df[df$speaker_full_name == "Assise, François",]
+#9
+#df_to_fix <- df[df$speaker_full_name == "Zdzislaw Krasnodebski",]
+#10
+#df_to_fix <- df[df$speaker_full_name == "Timmermans, Frans",]
+#11
+#df_to_fix <- df[df$speaker_full_name == "Assis, Francisco",]
+#12
+#df_to_fix <- df[df$speaker_full_name == "Mauridis, Kostas",]
+#13
+df_to_fix <- df[df$speaker_full_name == "Avramopoulos, Dimitris",]
 
-df_to_fix <- df[is.na(df$speaker_polgroup),]
+
+
 nrow(df_to_fix)
 
-for (i in 5083:nrow(df_to_fix)) {
+
+for (i in 1:nrow(df_to_fix)) {
   change <- FALSE
 
   item <- df_to_fix[i,]
+
+  if (is.na(unique(as.list(item))[[1]])) next
 
   cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
 
@@ -772,8 +814,90 @@ for (i in 5083:nrow(df_to_fix)) {
     item$speaker_party <- df_speaker$party
     item$speaker_gender <- df_speaker$gender
     item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) == 3) df_countries$name[df_countries$short_name_3 == df_speaker$country] else NA
-    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) > 3)  df_speaker$country else NA
-    
+    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) > 3)  df_speaker$country else item$speaker_country
+    change <- TRUE
+  } 
+
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+
+}
+
+
+########
+#fix speaker_type
+#1
+#df_to_fix <- df[df$speaker_full_name == "Vella, Karmenu",]
+#2
+#df_to_fix <- df[df$speaker_full_name == "Bulc, Violeta",]
+#3
+#df_to_fix <- df[df$speaker_full_name == "Povilas Andriukaitis, Vytenis",]
+#4
+#df_to_fix <- df[df$speaker_full_name == "Mimica, Neven",]
+#5
+df_to_fix <- df[df$speaker_full_name == "Bieńkowska, Elżbieta",]
+
+nrow(df_to_fix)
+
+
+for (i in 1:nrow(df_to_fix)) {
+  change <- FALSE
+
+  item <- df_to_fix[i,]
+
+  if (is.na(unique(as.list(item))[[1]])) next
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  full_name <- item$speaker_full_name
+  full_name <- gsub("\\(","\\\\(",full_name)
+  full_name <- gsub("\\)","\\\\)",full_name)
+  
+  df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$other_names))),]
+  if (nrow(df_speaker) == 0) df_speaker <- df_people[which(grepl(tolower(full_name), tolower(df_people$full_name))),]
+ 
+  if (nrow(df_speaker) > 0) {
+    df_speaker <- df_speaker[which.max(rowSums(!is.na(df_speaker))),]
+
+    item$speaker_full_name <- df_speaker$full_name
+    if (is.na(item$speaker_polgroup)) item$speaker_polgroup <- df_speaker$pol_group
+    item$speaker_party <- df_speaker$party
+    item$speaker_gender <- df_speaker$gender
+    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) == 3) df_countries$name[df_countries$short_name_3 == df_speaker$country] else NA
+    item$speaker_country <- if (!is.na(df_speaker$country) && nchar(df_speaker$country) > 3)  df_speaker$country else item$speaker_country
+    if (item$speaker_type == "Member Of The Commission") item$speaker_type <- df_speaker$type
     change <- TRUE
   } 
 
