@@ -96,11 +96,18 @@ medias_urls <- list(
     base  = "https://www.ctvnews.ca",
     front = "/"
   ),
-  GlobalNews = list(
+  globalNews = list(
     long_name  = "Global News",
     short_name = "GN",
     country    = "CAN",
     base  = "https://globalnews.ca",
+    front = "/"
+  ),
+  theStar = list(
+    long_name  = "The Toronto Star",
+    short_name = "TTS",
+    country    = "CAN",
+    base  = "https://www.thestar.com",
     front = "/"
   )
 )
@@ -295,6 +302,19 @@ harvest_headline <- function(r, m) {
       url <- GN_extracted_headline[[1]]
     } else {
       url <- paste(m$base, GN_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
+
+  if(m$short_name == "TTS"){
+    TTS_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "c-feature-mediacard")]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", TTS_extracted_headline[[1]])) {
+      url <- TTS_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, TTS_extracted_headline[[1]], sep="")
     }
     found_supported_media <- TRUE
   }
