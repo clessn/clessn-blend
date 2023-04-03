@@ -270,6 +270,34 @@ harvest_headline <- function(r, m) {
     }
     found_supported_media <- TRUE
   }
+
+  if(m$short_name == "GN"){
+    GN_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//a[@class="c-posts_headlineLink"]') %>%
+      rvest::html_attr("href")
+
+    if(length(GN_extracted_headline) == 0){  
+      clessnverse::logit(scriptname, "a.c-posts__headlineLink failed, trying a.l-highImpact__headlineLink", logger)
+      GN_extracted_headline <- r %>%
+        rvest::html_nodes(xpath = '//a[@class="l-highImpact__headlineLink"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if(length(GN_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "a.l-highImpact__headlineLink failed, trying div.l-section__main a.c-posts__inner", logger)
+      GN_extracted_headline <- r %>%
+        rvest::html_nodes(xpath = '//div[@class="l-section__main"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="c-posts__inner"]') %>%
+        rvest::html_attr("href")
+    }
+
+    if (grepl("^http.*", GN_extracted_headline[[1]])) {
+      url <- GN_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, GN_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
   
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
