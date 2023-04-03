@@ -543,7 +543,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -670,10 +670,10 @@ tryCatch(
 
     # opt <<- list(
     #  backend = "dataframe",
-    #  schema = "202303",
-    #  target_schema = "202303",
+    #  schema = "test",
+    #  target_schema = "test",
     #  log_output = c("console"),
-    #  method = c("date_range", "2018-02-28", "2018-02-28"),
+    #  method = c("date_range", "2019-07-01", "2019-07-31"),
     #  refresh_data = FALSE,
     #  translate = TRUE
     # )

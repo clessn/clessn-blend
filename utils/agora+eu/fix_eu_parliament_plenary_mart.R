@@ -10,7 +10,10 @@ table_name <- "clhub_tables_mart_agoraplus_european_parliament"
 
 df_people <- clessnverse::get_warehouse_table(
   table_name = 'people',
-  data_filter = list(data__institution = "European Parliament"),
+  data_filter = list(
+    data__institution = "European Parliament"#,
+    #data__pol_group = "Renew Europe Group"
+  ),
   credentials = credentials,
   nbrows = 0
 )
@@ -22,12 +25,13 @@ df_countries <- clessnverse::get_warehouse_table(
   nbrows = 0
 )
 
-df <- clessnverse::get_mart_table(
+df <- clessnverse::get_warehouse_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    data__.schema="202303",
-    data__event_date__gte="2014-01-01", 
-    data__event_date__lte="2019-06-30"
+    data__.schema="test",
+    #data__event_date__gte="2019-07-01", 
+    #data__event_date__lte="2019-07-31",
+    data__.lake_item_format="xml"
   ),
   credentials = credentials,
   nbrows = 0
@@ -901,6 +905,115 @@ for (i in 1:nrow(df_to_fix)) {
     change <- TRUE
   } 
 
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df[df$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_mart_agoraplus_european_parliament",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+
+}
+
+
+
+#####
+# fix polgroup Renew Europe
+
+df_to_fix <- df_people[which(df_people$pol_group == "Renew Europe Group"),]
+nrow(df_to_fix)
+
+for (i in 1:nrow(df_to_fix)) {
+
+  item <- df_to_fix[i,]
+
+  if (is.na(unique(as.list(item))[[1]])) next
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  item$pol_group <- "Renew Europe Group"
+
+  change <- TRUE
+  success <- FALSE
+  attempt <- 1
+
+  while (change && !success && attempt < 20) {
+    cat("writing ", item$hub.key, "\n")
+    tryCatch(
+      {
+
+        df_people[df_people$hub.key == item$hub.key,] <- item   
+
+        hublot::update_table_item(
+          table_name = "clhub_tables_warehouse_people",
+          id = item$hub.id,
+          body = list(
+            key = item$hub.key, 
+            timestamp = as.character(Sys.time()), 
+            data = jsonlite::toJSON(
+              as.list(item[1,c(which(!grepl("hub.",names(item))))]), 
+              auto_unbox = T
+            )
+          ),
+          credentials = credentials
+        )
+        success <- TRUE
+      },
+      error = function(e) {
+        print(e)
+        Sys.sleep(30)
+      },
+      finally={
+        attempt <- attempt + 1
+      }
+    )
+  }
+
+}
+
+
+
+df_to_fix <- df[which(df$speaker_polgroup == "Group Renew Europe"),]
+nrow(df_to_fix)
+
+for (i in 1:nrow(df_to_fix)) {
+
+  item <- df_to_fix[i,]
+
+  if (is.na(unique(as.list(item))[[1]])) next
+
+  cat("processing #", i, "/", nrow(df_to_fix), "key", item$hub.key, "\n")
+
+  item$speaker_polgroup <- "Renew Europe Group"
+
+  change <- TRUE
   success <- FALSE
   attempt <- 1
 
