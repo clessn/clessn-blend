@@ -273,7 +273,7 @@ harvest_headline <- function(r, m) {
 
   if(m$short_name == "GN"){
     GN_extracted_headline <- r %>%
-      rvest::html_nodes(xpath = '//a[@class="c-posts_headlineLink"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="c-posts__headlineLink"]') %>%
       rvest::html_attr("href")
 
     if(length(GN_extracted_headline) == 0){  
