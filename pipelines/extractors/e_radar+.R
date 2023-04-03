@@ -305,6 +305,19 @@ harvest_headline <- function(r, m) {
     }
     found_supported_media <- TRUE
   }
+
+  if(m$short_name == "TTS"){
+    TTS_extracted_headline <- r %>%
+      rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "c-feature-mediacard")]') %>%
+      rvest::html_attr("href")
+
+    if (grepl("^http.*", TTS_extracted_headline[[1]])) {
+      url <- TTS_extracted_headline[[1]]
+    } else {
+      url <- paste(m$base, TTS_extracted_headline[[1]], sep="")
+    }
+    found_supported_media <- TRUE
+  }
   
   if (!found_supported_media) {
     clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
