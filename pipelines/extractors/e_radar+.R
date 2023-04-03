@@ -96,11 +96,18 @@ medias_urls <- list(
     base  = "https://www.ctvnews.ca",
     front = "/"
   ),
-  GlobalNews = list(
+  globalNews = list(
     long_name  = "Global News",
     short_name = "GN",
     country    = "CAN",
     base  = "https://globalnews.ca",
+    front = "/"
+  ),
+  theStar = list(
+    long_name  = "The Toronto Star",
+    short_name = "TTS",
+    country    = "CAN",
+    base  = "https://www.thestar.com",
     front = "/"
   )
 )
