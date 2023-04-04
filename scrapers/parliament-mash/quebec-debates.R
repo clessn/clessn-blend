@@ -25,7 +25,7 @@
 library(dplyr)
 status <<- 0
 debate_count <<- 0
-intervention_count <<- 0
+total_intervention_count <<- 0
 final_message <<- ""
 
 
@@ -158,6 +158,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/4\\d-\\d/journal-debats", doc_ur
 #
 for (i in 1:length(list_urls)) {
   
+  intervention_count <<- 0
   #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
@@ -886,14 +887,17 @@ for (i in 1:length(list_urls)) {
     
   } #if (grepl("actualites-salle-presse", event_url))
 
-  if (intervention_count > 1) debate_count <- debate_count + 1
+  if (intervention_count > 1) {
+    debate_count <- debate_count + 1
+    total_intervention_count <<- total_intervention_count + intervention_count  
+  }
 
 } #for (i in 1:nrow(result))
 
-if (intervention_count < 0) intervention_count <- 0
+if (total_intervention_count < 0) total_intervention_count <- 0
 
 clessnverse::logit(scriptname, final_message, logger)
-clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", intervention_count, "interventions"), logger)
+clessnverse::logit(scriptname, paste(debate_count, "debates were added to the hub totalling", total_intervention_count, "interventions"), logger)
 clessnverse::logit(scriptname, paste("reaching end of", scriptname, "script"), logger = logger)
 logger <- clessnverse::logclose(logger)
 quit(save="no", status = status)
