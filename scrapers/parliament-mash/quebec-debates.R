@@ -467,7 +467,7 @@ for (i in 1:length(list_urls)) {
             intervention_text <- substr(doc_text[j], unlist(gregexpr(":", paragraph_start))+1, nchar(doc_text[j]))
             intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             matching_row <- NULL
-            intervention_count <<- intervention_count + 1
+            intervention_count <<- intervention_count - 1
             next
           }
           
