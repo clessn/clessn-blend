@@ -104,12 +104,15 @@ get_speaker <- function(full_name, full_name_native) {
     if (!is.na(df_parliament$mepid)) {
       #found it
       fullname <- df_parliament$fullname
-      first_name <- trimws(stringr::str_to_title(stringr::str_split(full_name, "\\s")[[1]][[1]]))
-      last_name  <- trimws(stringr::str_to_title(stringr::str_match(full_name, paste("^",first_name,"(.*)$",sep=''))[2]))
+      #first_name <- trimws(stringr::str_to_title(stringr::str_split(full_name, "\\s")[[1]][[1]]))
+      #last_name  <- trimws(stringr::str_to_title(stringr::str_match(full_name, paste("^",first_name,"(.*)$",sep=''))[2]))
+      last_name <- trimws(stringr::str_extract(fullname, "([:upper:]|[:space:]){2,}"))
+      first_name <- trimws(gsub(last_name, "", fullname))
+      last_name <- stringr::str_to_title(last_name)
 
       df <- data.frame(
         full_name = paste(last_name, first_name, sep=", "),
-        pol_group = df_parliament$polgroup,
+        pol_group = stringr::str_to_title(df_parliament$polgroup),
         party = df_parliament$party,
         country = unique(df_country$short_name_3[df_country$name == df_parliament$country])
       )
@@ -205,14 +208,20 @@ strip_and_push_intervention <- function(intervention) {
   } else {
 
     if (length(stringr::str_split(header,",")[[1]]) == 1) {
-
+      # format of type "full name (POLG)"
       if (detect_president(header)) {
         speaker_full_name <- intervention$president_name
         speaker_full_name_native <- intervention$president_name
+
+        pattern_prez <- c(president_of_the_commission, president_of_the_committee, member_of_the_commission, presidency_of_the_hon, presidency, vicepresident, president)
         
-        if (c(president_of_the_commission, president_of_the_committee, member_of_the_commission, vicepresident, vicepresident, president) %contains_one_of% tolower(header)) {
+        if (pattern_prez %contains_one_of% tolower(header)) {
           speaker_type <- trimws(gsub(speaker_full_name, "", header))
-          initial_speaker_type <- speaker_type
+
+          speaker_full_name <- gsub(tolower(paste(pattern_prez, collapse="|")), "", tolower(speaker_full_name))
+          speaker_full_name <- trimws(speaker_full_name)
+          speaker_full_name <- stringr::str_to_title(speaker_full_name)
+
 
           detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
 
@@ -285,7 +294,8 @@ strip_and_push_intervention <- function(intervention) {
           )
           if (speaker_type == "") speaker_type <- "MEP"
         } else {
-          speaker_type <- header
+          speaker_type <- NA
+          speaker_full_name <- header
           clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
           warning(paste("unknown header parsing pattern:", header))
         }
@@ -368,6 +378,7 @@ strip_and_push_intervention <- function(intervention) {
   if (is.null(speaker_gender)) {
     speaker_gender_df <- gender::gender(trimws(strsplit(speaker_full_name, ",")[[1]][2]))
     speaker_gender <- speaker_gender_df$gender
+    if (length(speaker_gender) == 0) speaker_gender <- NA
   }
 
   intervention$.schema <- opt$target_schema
@@ -543,7 +554,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -633,7 +644,7 @@ tryCatch(
       "prezydencja","presidência de","preşedinţia lui","predsedníctvo","predsedovanje",
       "ren presidentetza","presidència de","presidencia de","presidencia de","ordförandeskapet för",
       "presidency of mrs","председателство на г-жа","predsjedništvo gđe","başkanlığı hanım",
-      "předsednictví mrs","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
+      "předsednictví mrs","předsednictví: pani", "formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
       "présidence de mme","präsidentschaft von mrs","προεδρία της κας","elnöksége mrs",
       "uachtaránacht mrs","presidenza della sig","kundzes prezidentūra","prezidentūra p",
       "présidence vun mme","presidenza tas-sinjura","voorzitterschap van mevr","presidintskip fan mrs",
@@ -647,7 +658,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"   
+      "silla del sr","ordförande för mr"
     )))
 
     dignitary <- c(
@@ -673,7 +684,7 @@ tryCatch(
     #  schema = "test",
     #  target_schema = "test",
     #  log_output = c("console"),
-    #  method = c("date_range", "2019-07-01", "2019-07-31"),
+    #  method = c("date_range", "2019-09-17", "2019-09-17"),
     #  refresh_data = FALSE,
     #  translate = TRUE
     # )

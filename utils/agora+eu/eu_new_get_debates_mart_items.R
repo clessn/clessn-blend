@@ -10,16 +10,20 @@ df <- clessnverse::get_mart_table(
     data__.schema="test",
     data__.lake_item_format="xml",
     data__event_date__gte="2019-07-01", 
-    data__event_date__lte="2019-07-31"
+    data__event_date__lte="2019-12-31"
   ),
   credentials = credentials,
   nbrows = 0
 )
 
-table(df$speaker_full_name)
+table(df$speaker_full_name, useNA = 'ifany')
 table(df$speaker_polgroup, useNA = 'ifany')
-which(grepl("Modifier", df$speaker_full_name))
-df$hub.key[which(grepl("Modifier", df$speaker_full_name))]
+table(df$speaker_party, useNA = 'ifany')
+table(df$president_name, useNA = 'ifany')
+df$speaker_type[is.na(df$speaker_polgroup)]
+df$speaker_full_name[is.na(df$speaker_polgroup)]
+df$intervention_header[is.na(df$speaker_polgroup)]
+
 
 Clean <- df %>%
   select(speaker_full_name, speaker_type) %>%

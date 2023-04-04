@@ -159,6 +159,12 @@ process_debate_xml <- function(lake_item, xml_core) {
     chapter_title <- XML::xmlValue(XML::xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='EN']"))
           
     chapter_nodes_list <- names(chapter_node)
+
+    node <- NA
+    node_name <- NA
+    previous_header_value1 <- NA
+    previous_header_value2 <- NA
+
     
     # We have to loop through every NODE
     for (k in 1:length(chapter_node)) {
@@ -169,20 +175,20 @@ process_debate_xml <- function(lake_item, xml_core) {
       if (!node_name %in% c("INTERVENTION", "PRES")) next
 
       if ( node_name == "PRES" ) {
-        president_name <- XML::xmlValue(XML::xpathApply(xml_core[[j]], "//PRES/EMPHAS[@NAME='B']"))
-        president_name <- president_name[[1]]
+        president_name <- XML::xmlValue(XML::xpathApply(node, "//PRES/EMPHAS[@NAME='B']"))
         president_name <- gsub(paste(c(presidency_of_the_hon, president_of_the_commission, president_of_the_committee, presidency, president), collapse= "|"), "", tolower(president_name))
         president_name <- gsub("\\.", "", president_name)
         president_name <- gsub("\\:", "", president_name)
         president_name <- trimws(president_name)
         president_name <- stringr::str_to_title(president_name)
-
         if (length(president_name) > 1) stop()
 
         next
       }
 
+
       if ( node_name == "INTERVENTION" ) {
+
         intervention_seqnum <- intervention_seqnum + 1
         
         intervention_lang <- NA
@@ -194,20 +200,46 @@ process_debate_xml <- function(lake_item, xml_core) {
         # Strip out the speaker info
         intervention_node <- xml_core[[j]][[k]]
         speaker_node <- intervention_node[["ORATEUR"]]
+
+        header_node1 <- speaker_node[["EMPHAS"]]
+        if (!is.null(header_node1)) {
+          header_value1 <- XML::xmlValue(XML::xpathApply(header_node1, "//EMPHAS[@NAME='B']"))
+          header_value1 <- trimws(gsub("\\.|\\,|\\s\\–", "", header_value1))
+        } else {
+          header_value1 <- previous_header_value1
+        }
+
+        header_node2 <- intervention_node[["PARA"]][[1]]
+        tryCatch(
+          {
+            sink("NUL")
+            header_value2 <- XML::xmlValue(XML::xpathApply(header_node2, "//EMPHAS[@NAME='I']"))
+          },
+          error = function(e) {
+            header_value2 <<- NA
+          },
+          finally={
+            sink()
+          }
+        )
+
+        if (is.na(header_value2) || length(header_value2) == 0) {
+          header_value2 <- previous_header_value2
+        }
         
-        header_text <- trimws(gsub("\\.|\\,|\\s\\–", "", XML::xmlValue(speaker_node[["EMPHAS"]])))
+        header_text <- if (!is.na(header_value2)) paste(header_value1, header_value2, sep = ", ") else header_value1
                     
-        if (opt$translate) {
+        if (opt$translate && !is.na(header_value2) > 0) {
           #translate header_text
-          header_text_lang <- clessnverse::detect_language("fastText", header_text)
+          header_value2_lang <- clessnverse::detect_language("fastText", header_value2)
           
-          if (!is.na(header_text_lang) && header_text_lang != "en") {
+          if (!is.na(header_value2_lang) && header_value2_lang != "en") {
             tryCatch(
               {
-                header_text_en <- clessnverse::translate_text(
-                  text = clntxt(header_text), 
+                header_value2_en <- clessnverse::translate_text(
+                  text = clntxt(header_value2), 
                   engine = "deeptranslate",
-                  source_lang = header_text_lang, 
+                  source_lang = header_value2_lang, 
                   target_lang = "en", 
                   translate = TRUE
                 )
@@ -216,19 +248,19 @@ process_debate_xml <- function(lake_item, xml_core) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
                 status <<- 2
                 warning("there was an error with the deeptranslate_api : see logs")
-                clessnverse::logit(scriptname, clntxt(header_text), logger)
+                clessnverse::logit(scriptname, clntxt(header_value2), logger)
                 clessnverse::logit(scriptname, e$message, logger)
-                header_text_en <<- clessnverse::translate_text(
-                  text = clntxt(header_text), 
+                header_value2_en <<- clessnverse::translate_text(
+                  text = clntxt(header_value2), 
                   engine = "azure",
-                  source_lang = header_text_lang, 
+                  source_lang = header_value2_lang, 
                   target_lang = "en", 
                   translate = TRUE
                 )
 
-                if(!is.null(header_text_en) && !is.na(header_text_en) && nchar(header_text_en)) {
+                if(!is.null(header_value2_en) && !is.na(header_value2_en) && nchar(header_value2_en)) {
                   clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
-                  clessnverse::logit(scriptname, header_text_en, logger)
+                  clessnverse::logit(scriptname, header_value2_en, logger)
                 } else {
                   clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
                   status <<- 1
@@ -238,13 +270,16 @@ process_debate_xml <- function(lake_item, xml_core) {
               finally={}
             )
           } else {
-            if (!is.na(header_text) && header_text_lang == "en") header_text_en <- header_text
+            if (!is.na(header_value2) && header_value2_lang == "en") header_value2_en <- header_value2
           }
         } else {
-          header_text_lang = "xx"
-          header_text_en = "not translated because opt$translate = FALSE"
+          if (!opt$translate) {
+            header_value2_lang = "xx"
+            header_value2_en = "not translated because opt$translate = FALSE"
+          }
         } #if (opt$translate)
-                  
+
+        header_text_en <- if (!is.na(header_value2) > 0) paste(header_value1, header_value2_en, sep = ", ") else header_value1
 
         intervention_lang <- tolower(XML::xmlValue(speaker_node[["LG"]]))
         intervention_text <- ""
@@ -254,10 +289,17 @@ process_debate_xml <- function(lake_item, xml_core) {
         for (l in which(names(intervention_node) == "PARA")) {            
           intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
         } #for (l in which(names(intervention_node) == "PARA"))
+
+        if (!is.na(header_value2)) intervention_text <- gsub(header_value2, "", intervention_text)
         
         if (stringr::str_detect(intervention_text, "\\. – ")) {
           #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
           intervention_text <- gsub("\\. – ", "", intervention_text)
+        }
+
+        if (stringr::str_detect(intervention_text, "\\.– ")) {
+          #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+          intervention_text <- gsub("\\.– ", "", intervention_text)
         }
         
         if (stringr::str_detect(intervention_text, "^– ")) {
@@ -269,13 +311,13 @@ process_debate_xml <- function(lake_item, xml_core) {
         intervention_text <- gsub("^– ", "", intervention_text)           
         #intervention_text <- gsub("\\\\", " ", intervention_text)
         intervention_text <- gsub("^NA\n\n", "", intervention_text)
-        intervention_text <- gsub("^\n\n", "", intervention_text)          
-        
+        intervention_text <- gsub("^\n\n", "", intervention_text)        
+
         
         if (opt$translate) {
 
           #translate intervention_text
-          intervention_text_lang <- clessnverse::detect_language("fastText", intervention_text)
+          intervention_text_lang <- clessnverse::detect_language("fastText", substr(intervention_text, 1, 300))
           
           if (!is.na(intervention_text_lang) && intervention_text_lang != "en") {
             tryCatch(
@@ -376,6 +418,10 @@ process_debate_xml <- function(lake_item, xml_core) {
         nb_interventions <<- nb_interventions + 1
         clessnverse::logit(scriptname, "committing row done", logger)
       } # if ( node_name == "INTERVENTION" )
+
+      previous_header_value1 <- header_value1
+      previoud_header_value2 <- header_value2
+
     } #for (k in 1:length(chapter_node)) 
   } #for (j in 1:core_xml_nbchapters)
 } #</function process_debate_xml>
@@ -975,7 +1021,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -1065,7 +1111,7 @@ tryCatch(
       "prezydencja","presidência de","preşedinţia lui","predsedníctvo","predsedovanje",
       "ren presidentetza","presidència de","presidencia de","presidencia de","ordförandeskapet för",
       "presidency of mrs","председателство на г-жа","predsjedništvo gđe","başkanlığı hanım",
-      "předsednictví mrs","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
+      "předsednictví mrs","předsednictví: pani","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
       "présidence de mme","präsidentschaft von mrs","προεδρία της κας","elnöksége mrs",
       "uachtaránacht mrs","presidenza della sig","kundzes prezidentūra","prezidentūra p",
       "présidence vun mme","presidenza tas-sinjura","voorzitterschap van mevr","presidintskip fan mrs",
@@ -1079,7 +1125,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"   
+      "silla del sr","ordförande för mr"
     )))
 
 
