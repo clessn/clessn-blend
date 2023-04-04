@@ -183,9 +183,12 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                 warning(paste(r$error, paste("error accessing", party_acronym, "press release page", urls_list[[i]]), sep="\n"))
             }
         } #for (url in press_releases_urls_list)
+        
+        partyUpdateMessage = paste(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site")
 
-        clessnverse::logit(scriptname, paste(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site"), logger)
-        cat(length(press_releases_urls_list), "press releases were scraped from the", party_acronym, "web site", "\n")
+        clessnverse::logit(scriptname, partyUpdateMessage, logger)
+        cat(partyUpdateMessage)
+        final_message <<- if(final_message == "") partyUpdateMessage else paste(final_message, "\n", partyUpdateMessage)
         total_press_releases_scraped <<- total_press_releases_scraped + length(press_releases_urls_list)
     } else {
         clessnverse::logit(scriptname, paste("Error getting", party_acronym, "main press release page"), logger)
@@ -241,6 +244,7 @@ main <- function(scriptname, logger, credentials) {
 
 
 
+final_message <<- ""
 
 
 tryCatch( 
@@ -270,7 +274,6 @@ tryCatch(
         clessnverse::logit(scriptname, paste("Execution of",  scriptname,"starting"), logger)
 
         status <<- 0
-        final_message <<- ""
         total_press_releases_scraped <<- 0
         
         main(scriptname, logger, credentials)
