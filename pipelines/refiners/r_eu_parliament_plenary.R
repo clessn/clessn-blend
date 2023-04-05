@@ -213,9 +213,11 @@ strip_and_push_intervention <- function(intervention) {
             ) 
           }
 
+          if (nchar(speaker_type) == 0) speaker_type <- NA
+
           detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
 
-          if (detected_speaker_type_lang != "en") {
+          if (!is.na(speaker_type) && detected_speaker_type_lang != "en") {
             tryCatch(
               {
                 speaker_type <- clessnverse::translate_text(
@@ -266,9 +268,9 @@ strip_and_push_intervention <- function(intervention) {
             )
           }
           
-          if (nchar(speaker_type) == 0)  speaker_type <- NA else speaker_type <- stringr::str_to_title(speaker_type)
+          if (!is.na(speaker_type) && nchar(speaker_type) == 0)  speaker_type <- NA else speaker_type <- stringr::str_to_title(speaker_type)
 
-          if (speaker_type == "President") speaker_full_name <- intervention$president_name
+          if (!is.na(speaker_type) && speaker_type == "President") speaker_full_name <- intervention$president_name
         }
       }
     }
@@ -420,7 +422,7 @@ strip_and_push_intervention <- function(intervention) {
 
   pattern_to_remove <- "^(The|Ms\\.)\\sPresident"
   if (grepl(pattern_to_remove, speaker_type)){
-    speaker_type <- gsub("^(The|Ms\\.)\\s", "", speaker_type)
+    speaker_type <- gsub("^(The|Ms\\.|Mr\\.)\\s", "", speaker_type)
   }
 
   clessnverse::logit(
@@ -622,7 +624,8 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -654,7 +657,7 @@ tryCatch(
       "komiteto pirmininkas","President vum Comité","president tal-kumitat",
       "preşedintele comitetului","predseda výboru","predsednik odbora",
       "batzordeko lehendakaria","president del comitè","presidente do comité",
-      "presidente del comité","nämndens ordförande"    
+      "presidente del comité","nämndens ordförande",  "President-in-Office of the Council"
     )))
 
 
@@ -752,8 +755,8 @@ tryCatch(
     #  schema = "test",
     #  target_schema = "test",
     #  log_output = c("console"),
-    #  method = c("date_range", "2019-09-17", "2019-09-17"),
-    #  refresh_data = FALSE,
+    #  method = c("date_range", "2019-11-25", "2019-11-25"),
+    #  refresh_data = TRUE,
     #  translate = TRUE
     # )
 
