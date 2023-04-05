@@ -91,80 +91,7 @@ extract_president_name <- function(x) {
   return(r)
 }
 
-add_speaker_to_the_hub <- function(df_speaker) {
-  person_metadata_row <- list(
-    "source"="https://www.europarl.europa.eu/meps/fr/download/advanced/xml?name=",
-    "country"=df_speaker$country,
-    "institution"="European Parliament",
-    "province_or_state"=df_speaker$country,
-    "twitterAccountHasBeenScraped"="0")
 
-  row <- list(
-    ".id" = gsub(" ", "_", tolower(df_speaker$fullname)),
-    "full_name"=df_speaker$fullname,
-    "gender"= if (!is.na(speaker_gender) && !is.null(speaker_gender) && speaker_gender=="female") as.character(1) else as.character(0),
-    "lastName"=speaker_last_name,
-    "firstName"=speaker_first_name,
-    "twitterID"=NA_character_,
-    "isMinister"="0",
-    "twitterName"=NA_character_,
-    "currentParty"=df_speaker$party,
-    "twitterHandle"=NA_character_,
-    "currentMinister"=NA_character_,
-    "currentPolGroup"=df_speaker$polgroup,
-    "twitterLocation"=NA_character_,
-    "twitterPostsCount"=NA_character_,
-    "twitterProfileURL"=NA_character_,
-    "twitterListedCount"=NA_character_,
-    "twitterFriendsCount"=NA_character_,
-    "currentFunctionsList"=NA_character_,
-    "twitterFollowersCount"=NA_character_,
-    "currentProvinceOrState"=df_speaker$country,
-    "twitterAccountVerified"=NA_character_,
-    "twitterProfileImageURL"=NA_character_,
-    "twitterAccountCreatedAt"=NA_character_,
-    "twitterAccountCreatedOn"=NA_character_,
-    "twitterAccountProtected"=NA_character_,
-    "twitterProfileBannerURL"=NA_character_,
-    "twitterUpdateDateStamps"=NA_character_,
-    "twitterUpdateTimeStamps"=NA_character_)
-  
-  
-  if (add_speaker_to_the_hub) {
-    speaker_key <- if (!is.na(df_speaker$mepid)) paste("EU-",df_speaker$mepid,sep='') else paste("EU-",digest::digest(speaker_full_name),sep='')
-    clessnverse::logit(scriptname=scriptname, message=paste("adding", speaker_full_name,  "/",full_name_native, "-", speaker_key, "to the hub"), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="speaker metadata:", logger = logger)
-    clessnverse::logit(scriptname=scriptname, message=paste(person_metadata_row, collapse = " * "), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="speaker data:", logger = logger)
-    clessnverse::logit(scriptname=scriptname, message=paste(person_data_row, collapse = " * "), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="\n", logger = logger)
-    if (opt$hub_mode != "skip") clessnhub::create_item("persons", speaker_key, "mp", "v3", person_metadata_row, person_data_row)
-    names(person_metadata_row) <- paste("metadata.", names(person_metadata_row),sep='')
-    names(person_data_row) <- paste("data.", names(person_data_row),sep='')
-    dfPersons <- dfPersons %>% rbind(cbind(data.frame(key=speaker_key, type="mp", schema="v3", uuid=""), as.data.frame(person_metadata_row), as.data.frame(person_data_row)))
-  }
-  
-  if (update_speaker_in_the_hub) {
-    speaker_key <- df_speaker$mepid
-
-    clessnverse::logit(scriptname=scriptname, message=paste("updating", speaker_full_name, "/",full_name_native, "-", speaker_key, "in the hub"), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="speaker metadata:", logger = logger)
-    clessnverse::logit(scriptname=scriptname, message=paste(person_metadata_row, collapse = " * "), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="speaker data:", logger = logger)
-    clessnverse::logit(scriptname=scriptname, message=paste(person_data_row, collapse = " * "), logger = logger)
-    clessnverse::logit(scriptname=scriptname, message="\n", logger = logger)
-    if (opt$hub_mode != "skip") clessnhub::edit_item("persons", speaker_key, "mp", "v3", person_metadata_row, person_data_row)
-    names(person_metadata_row) <- paste("metadata.", names(person_metadata_row),sep='')
-    names(person_data_row) <- paste("data.", names(person_data_row),sep='')
-    #dfPersons[df_persons_row,] <- cbind(data.frame(key=dfPersons$key[df_persons_row], type=dfPersons$type[df_persons_row], schema=dfPersons$schema[df_persons_row], dfPersons$uuid[df_persons_row]), as.data.frame(person_metadata_row), as.data.frame(person_data_row))
-    dfPersons <- dfPersons %>% rows_update(cbind(data.frame(key=dfPersons$key[df_persons_row], 
-                                                            type=dfPersons$type[df_persons_row], 
-                                                            schema=dfPersons$schema[df_persons_row],
-                                                            uuid=dfPersons$uuid[df_persons_row]), 
-                                                            as.data.frame(person_metadata_row),
-                                                            as.data.frame(person_data_row)), by = "key")
-  }
-}
 
 ###############################################################################
 ###############################################################################
@@ -173,6 +100,13 @@ add_speaker_to_the_hub <- function(df_speaker) {
 ###############################################################################
 
 process_debate_xml <- function(lake_item, xml_core) {
+
+  event_id <- NA
+  event_url <- NA
+  event_date <- NA
+  event_title <- NA
+  event_start_time <- NA
+  event_end_time <- NA
 
   event_url <- lake_item$metadata$source
   event_id <- lake_item$key
@@ -195,521 +129,304 @@ process_debate_xml <- function(lake_item, xml_core) {
   event_end_time <- substr(XML::xmlGetAttr(xml_core[[core_xml_nbchapters]][["TL-CHAP"]], "VOD-END"),12,19)
   if (length(event_end_time) == 0) event_end_time <- substr(XML::xmlGetAttr(xml_core[[core_xml_nbchapters]][["NUMERO"]], "VOD-END"),12,19)
   
-  event_title <- NA  
+  event_title <- stringr::str_to_title(XML::xmlValue(XML::xpathApply(xml_core[[1]], "//CHAPTER/TL-CHAP[@VL='EN']")))
   
   ####################################
   # The colums of the detailed dataset
-  intervention_seqnum <- NA
-  speaker_first_name <- NA
-  speaker_last_name <- NA
-  speaker_full_name <- NA
-  full_name_native <- NA
-  speaker_gender <- NA
-  speaker_is_minister <- NA
-  speaker_type <- NA
-  speaker_party <- NA
-  speaker_polgroup <- NA
-  speaker_country <- NA
-  intervention_type <- NA
+  president_name <- NA
+
+  subject_of_business_id <- NA
+  subject_of_business_title <- NA
+
+  intervention_seqnum <- 0
+
   intervention_lang <- NA
-  intervention_word_count <- NA
-  intervention_sentence_count <- NA
-  intervention_paragraph_count <- NA
-  header_text <- NA
-  header_text_en <- NA
+  intervention_header <- NA
+  intervention_header_en <- NA
   intervention_text <- NA
   intervention_text_en <- NA
-  
-  df_speaker <- data.frame()
 
   ########################################################
   # Go through the xml document chapter by chapter
   # and strip out any relevant info
   intervention_seqnum <- 0
-    
-  current_speaker_full_name <- ""
   
   for (j in 1:core_xml_nbchapters) {
     
     # New chapter
     chapter_node <- xml_core[[j]]
     chapter_number <- XML::xmlGetAttr(chapter_node, "NUMBER")
-    chapter_title <- XML::xmlValue(XML::xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='EN']")[j])
-    
-    if (length(chapter_node[["TL-CHAP"]]) == 2) {
-      # Here there is a URL within the title of the chapter => most likely a linked document 
-      chapter_tabled_docid <- stringr::str_split(XML::xmlGetAttr(chapter_node[["TL-CHAP"]][[2]], "redmap-uri"), "/")[[1]][3]
-      
-      tabled_document_url <- paste("https://www.europarl.europa.eu/doceo/document/", chapter_tabled_docid, "_EN.html", sep = "")
-      tabled_document_html <- RCurl::getURL(tabled_document_url)
-      tabled_document_html_table <- XML::readHTMLTable(tabled_document_html)
-      
-      list1_id <- grep("Texts adopted", tabled_document_html_table)[1]
-      list2_id <- grep("Texts adopted", tabled_document_html_table[[list1_id]])[2]
-      chapter_adopted_docid <- tabled_document_html_table[[list1_id]][[list2_id]][which(grepl("Texts adopted",tabled_document_html_table[[list1_id]][[list2_id]]))]
-      if (!is.null(chapter_adopted_docid)) {
-        chapter_adopted_docid <- stringr::str_split(chapter_adopted_docid, " ")[[1]][length(stringr::str_split(chapter_adopted_docid, " ")[[1]])]
-      } else {
-        chapter_adopted_docid <- NA
-      }
-      
-    } else {
-      chapter_tabled_docid <- NA
-      chapter_adopted_docid <- NA
-    }
-      
+    chapter_title <- XML::xmlValue(XML::xpathApply(chapter_node, "//CHAPTER/TL-CHAP[@VL='EN']"))
+          
     chapter_nodes_list <- names(chapter_node)
 
-    if ( "PRES" %in% chapter_nodes_list ) {
-      president_node <- xml_core[[j]][[length(xml_core[[j]])]]
-      president_name <- XML::xmlValue(president_node)
-      # CONTINUE #########president_name <- 
-    }
+    node <- NA
+    node_name <- NA
+    previous_header_value1 <- NA
+    previous_header_value2 <- NA
+
     
-    if ( "INTERVENTION" %in% chapter_nodes_list ) {
-      # There is one or more interventions in this section.
-      # From potentially multiple speakers
-      
-      # We have to loop through every intervention
-      for (k in which(chapter_nodes_list == "INTERVENTION")) {
-          intervention_seqnum <- intervention_seqnum + 1
-          
-          speaker_first_name <- NA
-          speaker_last_name <- NA
-          speaker_full_name <- NA
-          full_name_native <- NA
-          speaker_gender <- NA
-          speaker_type <- NA
-          speaker_party <- NA
-          speaker_polgroup <- NA
-          speaker_country <- NA
-          chapter_tabled_docid <- NA
-          chapter_adopted_docid <- NA
-          intervention_type <- NA
-          intervention_lang <- NA
-          intervention_word_count <- NA
-          intervention_sentence_count <- NA
-          intervention_paragraph_count <- NA
-          intervention_header <- NA
-          intervention_header_en <- NA
-          intervention_text <- NA
-          intervention_translated_text <- NA      
-          
-          df_speaker <- data.frame()
-          df_persons_row <- 0
-          add_speaker_to_the_hub <- FALSE
-          update_speaker_in_the_hub <- FALSE
-          
-          # Strip out the speaker info
-          intervention_node <- xml_core[[j]][[k]]
-          speaker_node <- intervention_node[["ORATEUR"]]
-          
-          speaker_full_name <- XML::xmlGetAttr(speaker_node, "LIB")
-          speaker_full_name <- gsub("\u00a0", "", speaker_full_name)
-          speaker_full_name <- stringr::str_to_title(speaker_full_name)
-          speaker_last_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[2]], "both")
-          speaker_first_name <- trimws(stringr::str_split(speaker_full_name, "\\|")[[1]][[1]], "both")
-          speaker_full_name <- trimws(stringr::str_remove(speaker_full_name, "\\|\\s"))
-          speaker_full_name <- stringr::str_squish(speaker_full_name)
-  
-          speaker_gender <- paste("", gender::gender(clessnverse::splitWords(speaker_first_name)[1])$gender, sep = "")
-          if ( speaker_gender == "" ) speaker_gender <- NA
-          
-          #Get the speaker from the hub
-          #If not, get it from the parliament search 
-          #If not use the data in the xml structure without properties such as political party etc
-          
-          df_speaker <- dfPersons[which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name)),]
-          df_persons_row <- which(tolower(dfPersons$data.fullName) == tolower(speaker_full_name))
-          
-          # If we did not find the speaker fullname in the hub, we can try looking for the native spelling of his name also
-          if ( nrow(df_speaker) == 0 ) {
-            df_speaker <- dfPersons[which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name)),]
-            df_persons_row <- which(tolower(dfPersons$data.fullNameNative) == tolower(speaker_full_name))
-            keep_full_name_native <- FALSE
-          } else {
-            keep_full_name_native <- TRUE
-          }
+    # We have to loop through every NODE
+    for (k in 1:length(chapter_node)) {
+
+      node <- chapter_node[[k]]
+      node_name <- XML::xmlName(node)
+
+      if (!node_name %in% c("INTERVENTION", "PRES")) next
+
+      if ( node_name == "PRES" ) {
+        president_name <- XML::xmlValue(XML::xpathApply(node, "//PRES/EMPHAS[@NAME='B']"))
+        president_name <- gsub(paste(c(presidency_of_the_hon, president_of_the_commission, president_of_the_committee, presidency, president), collapse= "|"), "", tolower(president_name))
+        president_name <- gsub("\\.", "", president_name)
+        president_name <- gsub("\\:", "", president_name)
+        president_name <- trimws(president_name)
+        president_name <- stringr::str_to_title(president_name)
+        if (length(president_name) > 1) stop()
+
+        next
+      }
+
+
+      if ( node_name == "INTERVENTION" ) {
+
+        intervention_seqnum <- intervention_seqnum + 1
         
-          if (nrow(df_speaker) == 0) {
-            # Not found in hub
-            clessnverse::logit(scriptname = scriptname, message = paste("searching for", speaker_full_name, "in the parliament database"), logger = logger)
+        intervention_lang <- NA
+        intervention_header <- NA
+        intervention_header_en <- NA
+        intervention_text <- NA
+        intervention_text_en <- NA    
+        
+        # Strip out the speaker info
+        intervention_node <- xml_core[[j]][[k]]
+        speaker_node <- intervention_node[["ORATEUR"]]
 
-            df_speaker <- clessnverse::getEuropeMepData(speaker_full_name)
-            
-            add_speaker_to_the_hub <- FALSE
-            update_speaker_in_the_hub <- FALSE
-            
-            if (is.na(df_speaker$mepid)) {
-              # Not found in the parliament database
-              # Not much to do...
-              clessnverse::logit(scriptname = scriptname, message = paste("could not find", speaker_full_name, "in the parliament database"), logger = logger)
+        header_node1 <- speaker_node[["EMPHAS"]]
+        if (!is.null(header_node1)) {
+          header_value1 <- XML::xmlValue(XML::xpathApply(header_node1, "//EMPHAS[@NAME='B']"))
+          header_value1 <- trimws(gsub("\\.|\\,|\\s\\–", "", header_value1))
+        } else {
+          header_value1 <- previous_header_value1
+        }
 
-              speaker_country <- countrycode::codelist$country.name.en[which(countrycode::codelist$iso2c == XML::xmlGetAttr(speaker_node, "LG"))]
-              if (length(speaker_country) == 0) speaker_country <- NA
-              
-              speaker_party <- case_when(XML::xmlGetAttr(speaker_node, "PP") != "NULL" ~  XML::xmlGetAttr(speaker_node, "PP"), TRUE ~ NA_character_)
-              speaker_mepid <- case_when(XML::xmlGetAttr(speaker_node, "MEPID") != "0" ~  XML::xmlGetAttr(speaker_node, "MEPID"), TRUE ~ NA_character_)
-              
-              speaker_polgroup <- NA
-              
-              if (!is.null(XML::xmlGetAttr(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]], "NAME")) && 
-                  XML::xmlGetAttr(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]], "NAME")=="I") {
-                if ( grepl("winner|presidente?|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe", clessnverse::rm_accent(tolower(XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]])))) ) {
-                  speaker_type <- XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]])
-                } else {
-                  speaker_polgroup <- XML::xmlValue(intervention_node[[which(names(intervention_node) == "PARA")[1]]][[1]])
-                }
-              }
-              
-              full_name_native <- NA
-              df_speaker <- data.frame(mepid=speaker_mepid, fullname=speaker_full_name, country=speaker_country, polgroup=speaker_polgroup, party=speaker_party)
+        header_node2 <- intervention_node[["PARA"]][[1]]
+        tryCatch(
+          {
+            sink("NUL")
+            header_value2 <- XML::xmlValue(XML::xpathApply(header_node2, "//EMPHAS[@NAME='I']"))
+          },
+          error = function(e) {
+            header_value2 <<- NA
+          },
+          finally={
+            sink()
+          }
+        )
 
-              add_speaker_to_the_hub <- TRUE
-              
-            } else {
-              #### found in the parliament database ####
-              #### Add it to the hub!
-              add_speaker_to_the_hub <- TRUE
-              clessnverse::logit(scriptname = scriptname, message = paste("found", speaker_full_name, "in the parliament database"), logger = logger)
-              full_name_native <- stringr::str_to_title(df_speaker$fullname)
-            } #is.na(df_speaker$mepid)
-            
-          } else {
-            # Found in hub => convert data structure to match as if we went to find it from parliament web site
-            # There might be more that one row in the result because of the html scraper
-            # We'll take the one the most complete
-            fullest_row <- min(rowSums(is.na(df_speaker)))
-            fullest_row <- which(rowSums( is.na(df_speaker)) == fullest_row)
-            if (length(fullest_row) > 1) fullest_row <- fullest_row[1]
-            df_speaker <- df_speaker[fullest_row,]
-            
-            if (keep_full_name_native) full_name_native <- df_speaker$data.fullNameNative else full_name_native <- df_speaker$data.fullName
-            
-            names(df_speaker)[names(df_speaker)=="key"] <- "mepid"
-            names(df_speaker)[names(df_speaker)=="data.currentParty"] <- "party"
-            names(df_speaker)[names(df_speaker)=="data.fullName"] <- "fullname"
-            names(df_speaker)[names(df_speaker)=="data.currentPolGroup"] <- "polgroup"
-            names(df_speaker)[names(df_speaker)=="metadata.country"] <- "country"
-            
-            add_speaker_to_the_hub <- FALSE
-            update_speaker_in_the_hub <- FALSE
-            
-            # Check if the data is complete - update the hub from the parliament database if not
-            if ( is.na(df_speaker$party) || is.na(df_speaker$polgroup) || is.na(df_speaker$country) || df_speaker$fullname != df_speaker$data.fullNameNative ) {
-              # We have an incomplete MP record - try and complete it from the parliament DB
-              df_speakerCheck <- clessnverse::getEuropeMepData(speaker_full_name)
-
-              if (!is.na(df_speakerCheck$polgroup) && df_speakerCheck$polgroup == "Renew Europe Group") df_speakerCheck$polgroup <- "Group Renew Europe"
-              
-              if ( sum(colSums(is.na(df_speakerCheck))) == ncol(df_speakerCheck) ) {
-                # could not find anything better on the parliament web site
-              } else {
-                if ( df_speakerCheck$country != df_speaker$country || df_speakerCheck$polgroup != df_speaker$polgroup || df_speakerCheck$party != df_speaker$party ) {
-                  update_speaker_in_the_hub <- TRUE
-                  speaker_key <- df_speaker$mepid
-                  df_speaker <- df_speakerCheck
-                  df_speaker$mepid <- speaker_key
-                } else {
-                  update_speaker_in_the_hub <- FALSE
-                }
-              }
-            }
-          } #if (nrow(df_speaker) == 0) {
-          
-          #df_speaker$fullname <- stringr::str_to_title(df_speaker$fullname)
-          
-          if (update_speaker_in_the_hub || add_speaker_to_the_hub) {
-            add_speaker_to_the_hub(df_speaker)
-          } #if (update_speaker_in_the_hub || add_speaker_to_the_hub)
-          
-          if (!is.na(df_speaker$mepid)) {
-            speaker_mepid <- df_speaker$mepid
-            speaker_party <- df_speaker$party
-            speaker_polgroup <- df_speaker$polgroup
-            speaker_country <- df_speaker$country
-          } else {
-            speaker_mepid <- NA
-            speaker_party <- case_when(XML::xmlGetAttr(speaker_node, "PP") != "NULL" ~  XML::xmlGetAttr(speaker_node, "PP"),
-                                      TRUE ~ NA_character_)
-            speaker_polgroup <- NA
-            speaker_country <- countrycode::codelist$country.name.en[which(countrycode::codelist$iso2c == XML::xmlGetAttr(speaker_node, "LG"))]
-            if (length(speaker_country) == 0) speaker_country <- NA
-          }
-          
-          if (!is.na(speaker_polgroup) && stringr::str_detect(speaker_polgroup, ":")) speaker_polgroup <- trimws(stringr::str_split(speaker_polgroup, ":")[[1]][2])
-          
-          intervention_type <- trimws(gsub("\\.|\\,|\\s\\–", "", XML::xmlValue(speaker_node[["EMPHAS"]])))
-          
-          if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), tolower(speaker_full_name)) ) intervention_type <- NA
-          if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "\\((.*)\\)$") ) intervention_type <- NA
-          
-          if ( !is.na(intervention_type) && intervention_type != "" && !(TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_no_translate)) &&
-              (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english" || tolower(intervention_type) == "im namen der ppe-fraktion") ) {
-            
-            #if (opt$translate) { 
-                if ( TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) ) {
-                  t_index <- which(stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) == TRUE) 
-                  intervention_type_translated <- intervention_types_manual_translated[[t_index]]
-                  if (intervention_type_translated == "On Behalf Of The") {
-                    group_name <- gsub(intervention_types_manual_translate[[t_index]], "", tolower(intervention_type))
-                    group_name <- trimws(group_name)
-                    group_name <- stringr::str_to_title(group_name)
-                    intervention_type_translated <- paste(intervention_type_translated, group_name, "Group")
-                  }
-                  
-                  #if ((i %% 5)== 0) 
-                  clessnverse::logit(scriptname = scriptname, message = paste("self-translating intervention_type", intervention_type, "to", intervention_type_translated), logger = logger)
-                  
-                  intervention_type <- intervention_type_translated
-                  intervention_type <- gsub("-Gruppen", "", intervention_type)
-                  intervention_type <- gsub("-Fraktion", "", intervention_type)
-                  intervention_type <- gsub("-Fractie", "", intervention_type)
-                } else {
-                  clessnverse::logit(scriptname = scriptname, message = paste("translating intervention_type", intervention_type), logger = logger)
-                  intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
-                  #clessnverse::logit(scriptname = scriptname, message = paste("translated intervention_type", intervention_type), logger = logger)
-                }
-            #}
-            
-          }
-          
-          if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteure|rapporteur|representative")) ) {
-            intervention_type <- NA
-            speaker_type <- "Rapporteur"
-          }
-          
-          if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "member")) ) {
-            speaker_type <- intervention_type
-            intervention_type <- NA
-          }
-          
-          if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "winner|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe") ) {
-            speaker_type <- intervention_type
-            intervention_type <- "Speech"
-          }
-          
-          if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
-            intervention_type <- "Moderation"
-            speaker_type <- "President"
-          } 
-          
-          if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
-          
-          if ( !is.null(intervention_type) && !is.na(intervention_type) ) {
-            intervention_type <- gsub("\\(", "", intervention_type)
-            intervention_type <- gsub("\\)", "", intervention_type)
-            intervention_type <- gsub("\"", "", intervention_type)
-            intervention_type <- gsub("\\\\u2012", "", intervention_type)
-            intervention_type <- gsub("\\\\ U2012", "", intervention_type)
-            intervention_type <- gsub("blue-card", "Blue Card", intervention_type)
-            intervention_type <- gsub("Blue-Card", "Blue Card", intervention_type)
-            intervention_type <- gsub("Blue-card", "Blue Card", intervention_type)
-            intervention_type <- stringr::str_squish(intervention_type)
-            intervention_type <- trimws(intervention_type)
-            intervention_type <- stringr::str_to_title(intervention_type)
-          }
-          
-          if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
-            if (tolower(speaker_type) == "member of the commission") speaker_type <- "Member of the Commission"
-          }
-          
-          speaker_district <- NA
-          speaker_media <- NA    
-          
-          #intervention_type <- NA
-          intervention_lang <- XML::xmlValue(speaker_node[["LG"]])
-          intervention_word_count <- 0
-          intervention_sentence_count <- 0
-          intervention_paragraph_count <- 0
-          intervention_text <- ""
-          intervention_translated_text <- ""
-          
-          # Strip out the intervention by looping through paragraphs
-          for (l in which(names(intervention_node) == "PARA")) {
-
-            if (is.na(intervention_type)) {
-              intervention_type <- trimws(XML::xmlValue(intervention_node[["PARA"]][["EMPHAS"]]))
-              
-              if ( !is.na(intervention_type) && intervention_type != "" && !(TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_no_translate)) &&
-                  (is.na(textcat::textcat(tolower(intervention_type))) || textcat::textcat(tolower(intervention_type)) != "english" || tolower(intervention_type) == "im namen der ppe-fraktion") ) { 
-                
-                #if (opt$translate) { 
-                  if ( TRUE %in% stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) ) {
-                    t_index <- which(stringr::str_detect(tolower(intervention_type), intervention_types_manual_translate) == TRUE) 
-                    intervention_type_translated <- intervention_types_manual_translated[[t_index]]
-                    if (intervention_type_translated == "On Behalf Of The") {
-                      group_name <- gsub(intervention_types_manual_translate[[t_index]], "", tolower(intervention_type))
-                      group_name <- trimws(group_name)
-                      group_name <- stringr::str_to_title(group_name)
-                      intervention_type_translated <- paste(intervention_type_translated, group_name, "Group")
-                    }
+        if (is.na(header_value2) || length(header_value2) == 0) {
+          header_value2 <- previous_header_value2
+        }
+        
+        header_text <- if (!is.na(header_value2)) paste(header_value1, header_value2, sep = ", ") else header_value1
                     
-                    if ((i %% 5)== 0) clessnverse::logit(scriptname = scriptname, message = paste("self-translating", intervention_type, "to", intervention_type_translated), logger = logger)
-                    
-                    intervention_type <- intervention_type_translated
-                    intervention_type <- gsub("-Gruppen", "", intervention_type)
-                    intervention_type <- gsub("-Fraktion", "", intervention_type)
-                    intervention_type <- gsub("-Fractie", "", intervention_type)
-                  } else {
-                    clessnverse::logit(scriptname = scriptname, message = paste("translating intervention_type", intervention_type), logger = logger)
-                    intervention_type <- clessnverse::translateText(intervention_type, engine="azure", target_lang="en",fake=!opt$translate)[2]
-                    #clessnverse::logit(scriptname = scriptname, message = paste("translated", intervention_type), logger = logger)
-                  }
-                #}
-                
-              }
-              
-              if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "rapporteure|rapporteur|representative")) ) {
-                intervention_type <- NA
-                speaker_type <- "Rapporteur"
-              }
-              
-              if ( !is.na(intervention_type) && (stringr::str_detect(tolower(intervention_type), "member")) ) {
-                speaker_type <- intervention_type
-                intervention_type <- NA
-              }
-              
-              if ( !is.na(intervention_type) && stringr::str_detect(tolower(intervention_type), "winner|president,\\s|president-in-office|chancellor|president\\sof|minister|his\\sholiness|secretary|king|ombudsman|chair\\sof\\sthe") ) {
-                speaker_type <- intervention_type
-                intervention_type <- "Speech"
-              }
-              
-              if ( !is.na(intervention_type) && tolower(intervention_type) == "president" ) {
-                intervention_type <- "Moderation"
-                speaker_type <- "President"
-              } 
-              
-              if ( is.na(speaker_type) ) speaker_type <- "Member of the Commission"
-              
-            } #if (is.na(intervention_type)) {
-            
-            if ( !is.null(intervention_type) && !is.na(intervention_type) ) {
-              intervention_type <- gsub("\\(", "", intervention_type)
-              intervention_type <- gsub("\\)", "", intervention_type)
-              intervention_type <- gsub("\"", "", intervention_type)
-              intervention_type <- gsub("\\\\u2012", "", intervention_type)
-              intervention_type <- gsub("\\\\ U2012", "", intervention_type)
-              intervention_type <- gsub("blue-card", "Blue Card", intervention_type)
-              intervention_type <- gsub("Blue-Card", "Blue Card", intervention_type)
-              intervention_type <- gsub("Blue-card", "Blue Card", intervention_type)
-              intervention_type <- stringr::str_squish(intervention_type)
-              intervention_type <- trimws(intervention_type)
-              intervention_type <- stringr::str_to_title(intervention_type)
-            }
-            
-            if ( !is.null(speaker_type) && !is.na(speaker_type) ) {
-              if (tolower(speaker_type) == "member of the commission") speaker_type <- "Member of the Commission"
-            }
-            
-            intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
-          } #for (l in which(names(intervention_node) == "PARA"))
+        if (opt$translate && !is.na(header_value2) > 0) {
+          #translate header_text
+          header_value2_lang <- clessnverse::detect_language("fastText", header_value2)
           
-          if (stringr::str_detect(intervention_text, "\\. – ")) {
-            #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
-            intervention_text <- gsub("\\. – ", "", intervention_text)
-          }
-          
-          if (stringr::str_detect(intervention_text, "^– ")) {
-            #intervention_text <- stringr::str_split(intervention_text, "^– ")[[1]][2]
-            intervention_text <- gsub("^– ", "", intervention_text)
-          }
-          
-          intervention_text <- trimws(intervention_text, "left")
-          intervention_text <- gsub("^– ", "", intervention_text) 
-          intervention_word_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), word, txt, token="words",format="text"))
-          intervention_sentence_count <- nrow(tidytext::unnest_tokens(tibble(txt=intervention_text), sentence, txt, token="sentences",format="text"))
-          intervention_paragraph_count <- length(which(names(intervention_node) == "PARA"))
-          
-          # Translation
-          if (grepl("\\\\", intervention_text)) intervention_text <- gsub("\\\\"," ", intervention_text)
-          intervention_text <- gsub("^NA\n\n", "", intervention_text)
-          intervention_text <- gsub("^\n\n", "", intervention_text)
-          
-          
-          
-          if (opt$translate) {
-            if (textcat::textcat(intervention_text) != "english") {
-              clessnverse::logit(scriptname = scriptname, message = paste("translating intervention_text", substr(intervention_text, 1, 50)), logger = logger)
-              intervention_translation <- clessnverse::translateText(text=intervention_text, engine="azure", target_lang="en", fake=!opt$translate)
-              intervention_translated_text <- intervention_translation[2]
-              clessnverse::logit(scriptname = scriptname, message = paste("translated intervention_text", substr(intervention_translated_text, 1, 50)), logger = logger)
-            } 
-          } else {
-            intervention_translation <- NA
-            intervention_translated_text <- NA
-          }
-          
-          if (!is.na(speaker_type)  && speaker_type == "breaking point") speaker_type <- NA
-          if (!is.na(speaker_party) && stringr::str_detect(clessnverse::rm_accent(tolower(speaker_party)), "independent|independant")) speaker_party <- "Independent"
-          if (is.null(intervention_translated_text)) intervention_translated_text <- NA
-          
-          # commit 
-          row_to_commit <- list(
-              .schema = opt$schema, .lake_item_format = "xml",
-              .lake_item_path = lake_item$path, .lake_item_key = lake_item$key,
-              .url = lake_item$metadata$source,
-              event_id = event_id,  
-              event_date = event_date, 
-              event_start_time = event_start_time, event_end_time = event_end_time, 
-              event_title = event_title, 
-              subject_of_business_id = chapter_number, subject_of_business_title = chapter_title, 
-              president_name = president_name,
-              intervention_id = paste(gsub("dp", "", event_id),intervention_seqnum,sep=''),
-              intervention_seq_num = intervention_seqnum,
-              intervention_header = header_text, intervention_header_en = header_text_en,
-              intervention_lang = intervention_lang,
-              intervention_text = intervention_text, intervention_text_en = intervention_text_en)
-          
-          # commit intervention to the Hub
-          clessnverse::logit(scriptname, paste("committing row", paste(gsub("dp", "", event_id),intervention_seqnum,sep='')), logger)
+          if (!is.na(header_value2_lang) && header_value2_lang != "en") {
+            tryCatch(
+              {
+                header_value2_en <- clessnverse::translate_text(
+                  text = clntxt(header_value2), 
+                  engine = "deeptranslate",
+                  source_lang = header_value2_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+              },
+              error = function(e) {
+                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
+                status <<- 2
+                warning("there was an error with the deeptranslate_api : see logs")
+                clessnverse::logit(scriptname, clntxt(header_value2), logger)
+                clessnverse::logit(scriptname, e$message, logger)
+                header_value2_en <<- clessnverse::translate_text(
+                  text = clntxt(header_value2), 
+                  engine = "azure",
+                  source_lang = header_value2_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
 
-          if (opt$backend == "hub") {
-            nb_attempts <- 0
-            write_success <- FALSE
-            while (!write_success && nb_attempts < 20) {
-              tryCatch(
-                {
-                  r <- clessnverse::commit_warehouse_row(
-                    table=wh_table,
-                    key=paste(event_id,"-", intervention_seqnum, "-", opt$schema, sep=""),
-                    row=row_to_commit,
-                    refresh_data=opt$refresh_data,
-                    credentials=credentials 
-                  )
-
-                  if (!is.null(r) && !is.na(r) && r) write_success <- TRUE 
-                },
-
-                error=function(e) {
-                  clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
-                  Sys.sleep(30)
-                },
-
-                finally= {
-                  nb_attempts <- nb_attempts + 1
+                if(!is.null(header_value2_en) && !is.na(header_value2_en) && nchar(header_value2_en)) {
+                  clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                  clessnverse::logit(scriptname, header_value2_en, logger)
+                } else {
+                  clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+                  status <<- 1
+                  stop("unable to recover translation error.  must stop...")
                 }
-              )
-            }
+              },
+              finally={}
+            )
           } else {
-            my_df <<- my_df %>% rbind(as.data.frame(row_to_commit))
-          }          
+            if (!is.na(header_value2) && header_value2_lang == "en") header_value2_en <- header_value2
+          }
+        } else {
+          if (!opt$translate) {
+            header_value2_lang = "xx"
+            header_value2_en = "not translated because opt$translate = FALSE"
+          }
+        } #if (opt$translate)
+
+        header_text_en <- if (!is.na(header_value2) > 0) paste(header_value1, header_value2_en, sep = ", ") else header_value1
+
+        intervention_lang <- tolower(XML::xmlValue(speaker_node[["LG"]]))
+        intervention_text <- ""
+        intervention_text_en <- ""
+        
+        # Strip out the intervention by looping through paragraphs
+        for (l in which(names(intervention_node) == "PARA")) {            
+          intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
+        } #for (l in which(names(intervention_node) == "PARA"))
+
+        if (!is.na(header_value2)) intervention_text <- gsub(header_value2, "", intervention_text)
+        
+        if (stringr::str_detect(intervention_text, "\\. – ")) {
+          #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+          intervention_text <- gsub("\\. – ", "", intervention_text)
+        }
+
+        if (stringr::str_detect(intervention_text, "\\.– ")) {
+          #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+          intervention_text <- gsub("\\.– ", "", intervention_text)
+        }
+        
+        if (stringr::str_detect(intervention_text, "^– ")) {
+          #intervention_text <- stringr::str_split(intervention_text, "^– ")[[1]][2]
+          intervention_text <- gsub("^– ", "", intervention_text)
+        }
+        
+        intervention_text <- trimws(intervention_text, "left")
+        intervention_text <- gsub("^– ", "", intervention_text)           
+        #intervention_text <- gsub("\\\\", " ", intervention_text)
+        intervention_text <- gsub("^NA\n\n", "", intervention_text)
+        intervention_text <- gsub("^\n\n", "", intervention_text)        
+
+        
+        if (opt$translate) {
+
+          #translate intervention_text
+          intervention_text_lang <- clessnverse::detect_language("fastText", substr(intervention_text, 1, 300))
           
-          intervention_count <- intervention_count + 1
-          
-          current_speaker_full_name <- speaker_full_name
-          
-            # previous_header_text <- header_text
-            # intervention_text <- NA
-            # intervention_text_en <- NA
-            # intervention_lang <- NA
-  
-      } #for (k in which(chapter_nodes_list == "INTERVENTION"))
-      
-    } #if ( "INTERVENTION" %in% chapter_nodes_list )
-  
+          if (!is.na(intervention_text_lang) && intervention_text_lang != "en") {
+            tryCatch(
+              {
+                intervention_text_en <- clessnverse::translate_text(
+                  text = clntxt(intervention_text), 
+                  engine = "deeptranslate",
+                  source_lang = intervention_text_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+              },
+              error = function(e) {
+                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
+                status <<- 2
+                warning("there was an error with the deeptranslate_api : see logs")
+                clessnverse::logit(scriptname, clntxt(intervention_text), logger)
+                clessnverse::logit(scriptname, e$message, logger)
+                intervention_text_en <<- clessnverse::translate_text(
+                  text = clntxt(intervention_text), 
+                  engine = "azure",
+                  source_lang = intervention_text_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+
+                if(!is.null(intervention_text_en) && !is.na(intervention_text_en) && nchar(intervention_text_en)) {
+                  clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                  clessnverse::logit(scriptname, intervention_text_en, logger)
+                } else {
+                  clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+                  status <<- 1
+                  stop("unable to recover translation error.  must stop...")
+                }
+              },
+              finally={}
+            )
+          } else {
+            if (!is.na(intervention_text) && intervention_text_lang == "en") intervention_text_en <- intervention_text
+          }
+        } else {
+          intervention_text_lang = "xx"
+          intervention_text_en = "not translated because opt$translate = FALSE"
+        } #if (opt$translate)
+        
+        
+        # commit 
+        row_to_commit <- list(
+            .schema = opt$schema, .lake_item_format = "xml",
+            .lake_item_path = lake_item$path, .lake_item_key = lake_item$key,
+            .url = lake_item$metadata$source,
+            event_id = event_id,  
+            event_date = event_date,
+            event_start_time = event_start_time, event_end_time = event_end_time, 
+            event_title = event_title, 
+            subject_of_business_id = chapter_number, subject_of_business_title = chapter_title, 
+            president_name = president_name,
+            intervention_id = paste(event_id, "-", intervention_seqnum, "-", opt$schema, sep=''),
+            intervention_seq_num = intervention_seqnum,
+            intervention_header = header_text, intervention_header_en = header_text_en,
+            intervention_lang = intervention_lang,
+            intervention_text = intervention_text, intervention_text_en = intervention_text_en)
+        
+        # commit intervention to the Hub
+        clessnverse::logit(scriptname, paste("committing row", row_to_commit$intervention_id), logger)
+
+        if (opt$backend == "hub") {
+          nb_attempts <- 0
+          write_success <- FALSE
+          while (!write_success && nb_attempts < 20) {
+            tryCatch(
+              {
+                r <- clessnverse::commit_warehouse_row(
+                  table=wh_table,
+                  key=paste(event_id,"-", intervention_seqnum, "-", opt$schema, sep=""),
+                  row=row_to_commit,
+                  refresh_data=opt$refresh_data,
+                  credentials=credentials 
+                )
+
+                if (!is.null(r) && !is.na(r) && r) write_success <- TRUE 
+              },
+
+              error=function(e) {
+                clessnverse::logit(scriptname, paste("error rwiting to hub:", e$message, "on attempt", nb_attempts, ". sleeping 30 seconds"), logger)
+                Sys.sleep(30)
+              },
+
+              finally= {
+                nb_attempts <- nb_attempts + 1
+              }
+            )
+          }
+        } else {
+          my_df <<- my_df %>% rbind(as.data.frame(row_to_commit))
+        }          
+
+        nb_interventions <<- nb_interventions + 1
+        clessnverse::logit(scriptname, "committing row done", logger)
+      } # if ( node_name == "INTERVENTION" )
+
+      previous_header_value1 <- header_value1
+      previoud_header_value2 <- header_value2
+
+    } #for (k in 1:length(chapter_node)) 
   } #for (j in 1:core_xml_nbchapters)
 } #</function process_debate_xml>
+
+
 
 
 
@@ -1158,6 +875,8 @@ process_debate_html <- function(lake_item, xml_core) {
 
 
 
+
+
 strip_and_load_debate <- function(lake_item) {
   clessnverse::logit(
     scriptname, 
@@ -1219,7 +938,7 @@ strip_and_load_debate <- function(lake_item) {
     process_debate_html(lake_item, xml_core)
     nb_debates <<- nb_debates + 1
   } else {
-      if (r$header$`Content-Type` == "application/xml") {
+    if (r$header$`Content-Type` == "application/xml") {
       clessnverse::logit(scriptname, paste("extracting nodes from lake item xml file", lake_item$key), logger)
       doc_content <- httr::content(r, encoding = "UTF-8")
 
@@ -1227,19 +946,17 @@ strip_and_load_debate <- function(lake_item) {
       top_xml <- XML::xmlRoot(doc_xml)
       xml_head <- top_xml[[1]]
       xml_core <- top_xml[[2]]
-
-      # parsed_xml <- XML::htmlParse(doc_content)
-      # xml_root <- XML::xmlRoot(parsed_xml)
-      # xml_head <- xml_root[[1]]
-      # xml_core <- xml_root[[2]]
       clessnverse::logit(scriptname, paste("properly extracted nodes from lake item", lake_item$key), logger)
       process_debate_xml(lake_item, xml_core)
       nb_debates <<- nb_debates + 1
+    } else {
+      stop(paste("content-type", r$header$`Content-Type`, "not supported for lake item", lake_item$key, "in file", lake_item$file))
     }
-    stop(paste("content-type", r$header$`Content-Type`, "not supported for lake item", lake_item$key, "in file", lake_item$file))
   }
 
-} #</my_function>
+} #</strip_and_load_debate>
+
+
 
 
 
@@ -1304,7 +1021,7 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -1394,7 +1111,7 @@ tryCatch(
       "prezydencja","presidência de","preşedinţia lui","predsedníctvo","predsedovanje",
       "ren presidentetza","presidència de","presidencia de","presidencia de","ordförandeskapet för",
       "presidency of mrs","председателство на г-жа","predsjedništvo gđe","başkanlığı hanım",
-      "předsednictví mrs","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
+      "předsednictví mrs","předsednictví: pani","formandskab for mrs","presidendiks pr","rouvan puheenjohtajakausi",
       "présidence de mme","präsidentschaft von mrs","προεδρία της κας","elnöksége mrs",
       "uachtaránacht mrs","presidenza della sig","kundzes prezidentūra","prezidentūra p",
       "présidence vun mme","presidenza tas-sinjura","voorzitterschap van mevr","presidintskip fan mrs",
@@ -1408,7 +1125,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"   
+      "silla del sr","ordförande för mr"
     )))
 
 
@@ -1436,7 +1153,7 @@ tryCatch(
     # opt <<- list(
     #  backend = "hub",
     #  log_output = c("console"),
-    #  method = c("date_range", "2016-01-01", "2016-12-31"),
+    #  method = c("date_range", "2019-07-01", "2019-07-31"),
     #  schema = "test",
     #  refresh_data = TRUE,
     #  translate = TRUE
@@ -1473,6 +1190,14 @@ tryCatch(
       data_filter = list(data__institution = "European Parliament"),
       credentials = credentials
     )
+
+    df_countries <- clessnverse::get_warehouse_table(
+      table_name = 'countries',
+      data_filter = list(),
+      credentials = credentials,
+      nbrows = 0
+    )
+
 
     
     main()
