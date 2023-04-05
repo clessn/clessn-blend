@@ -268,6 +268,7 @@ strip_and_push_intervention <- function(intervention) {
           
           if (nchar(speaker_type) == 0)  speaker_type <- NA else speaker_type <- stringr::str_to_title(speaker_type)
 
+          if (speaker_type == "President") speaker_full_name <- intervention$president_name
         }
       }
     }
