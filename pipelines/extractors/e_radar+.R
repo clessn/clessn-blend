@@ -118,8 +118,11 @@ harvest_headline <- function(r, m) {
 
   if (m$short_name == "RCI") {
     RCI_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="item--1"]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
-    url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
-    found_supported_media <- TRUE
+    
+    if(length(RCI_extracted_headline) > 0){
+      url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
+      found_supported_media <- TRUE
+    }
   }
 
   if (m$short_name == "JDM") {
@@ -129,8 +132,11 @@ harvest_headline <- function(r, m) {
       rvest::html_attr("data-story-url") %>%
       na.omit()
 
-    url <- JDM_extracted_headline[[1]]
-    found_supported_media <- TRUE
+
+    if(length(JDM_extracted_headline) > 0){
+      url <- JDM_extracted_headline[[1]]
+      found_supported_media <- TRUE
+    }
   }
 
   if (m$short_name == "CBC") {
@@ -147,12 +153,15 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
     }
 
-    if (grepl("^http.*", CBC_extracted_headline[[1]])) {
-      url <- CBC_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, CBC_extracted_headline[[1]], sep="")
-    } 
-    found_supported_media <- TRUE
+    if(length(CBC_extracted_headline) > 0){
+      if (grepl("^http.*", CBC_extracted_headline[[1]])) {
+        url <- CBC_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, CBC_extracted_headline[[1]], sep="")
+      } 
+      found_supported_media <- TRUE
+    }
+    
   }
   
   if(m$short_name == "NP"){
