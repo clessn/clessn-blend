@@ -31,6 +31,7 @@ df_persons <- clessnhub::get_items(table = 'persons', filter = filter, download_
 df_tweets <- data.frame()
 
 for (i in 1:nrow(df_persons)) {
+
     filter <- clessnhub::create_filter(
         data=list(
             personKey = df_persons$key[i],
@@ -59,7 +60,7 @@ for (i in 1:nrow(df_persons)) {
     }
 
 
-    if (!is.null(new_tweets) && nrow(new_tweets) > 0 ) {
+    if (!is.null(new_tweets) && nrow(new_tweets) > 0) {
         cat(
             paste(
                 "retrieved", 
@@ -69,7 +70,8 @@ for (i in 1:nrow(df_persons)) {
                 )
         )
         df_tweets <- df_tweets %>% rbind(new_tweets)
-    } else {
+
+    } else {
         if (!is.null(new_tweets) && nrow(new_tweets) == 0) {
             cat(paste("no tweets matching filter for", df_persons$data.twitterHandle[i], "\n"))
         }
@@ -77,5 +79,6 @@ for (i in 1:nrow(df_persons)) {
         if (is.null(new_tweets)) {
             cat("df_tweets is null")
         }
+
     }
 }
