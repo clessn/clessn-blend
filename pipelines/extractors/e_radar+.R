@@ -186,18 +186,21 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
-    headlineIndex <- 1
 
-    if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
-      headlineIndex <- headlineIndex + 1
-    }
+    if(length(GAM_extracted_headline) > 0){
+      headlineIndex <- 1
 
-    if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
-      url <- GAM_extracted_headline[[headlineIndex]]
-    } else {
-      url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+      if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
+        headlineIndex <- headlineIndex + 1
+      }
+
+      if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
+        url <- GAM_extracted_headline[[headlineIndex]]
+      } else {
+        url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "VS"){
@@ -214,12 +217,14 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
     }
 
-    if (grepl("^http.*", VS_extracted_headline[[1]])) {
-      url <- VS_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, VS_extracted_headline[[1]], sep="")
+    if(length(VS_extracted_headline) > 0){
+      if (grepl("^http.*", VS_extracted_headline[[1]])) {
+        url <- VS_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, VS_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "LAP"){
