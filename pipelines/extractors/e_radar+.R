@@ -229,25 +229,29 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="storyCard__cover homeHeadlinesCard__cover"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", LAP_extracted_headline[[1]])) {
-      url <- LAP_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+    if(length(LAP_extracted_headline) > 0){
+      if (grepl("^http.*", LAP_extracted_headline[[1]])) {
+        url <- LAP_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "LED"){
     LED_extracted_headline <- r %>%
       rvest::html_nodes(xpath = '//a[@class="card-click"]') %>%
       rvest::html_attr("href")
-    
-    if (grepl("^http.*", LED_extracted_headline[[1]])) {
-      url <- LED_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+
+    if(length(LED_extracted_headline) > 0){
+      if (grepl("^http.*", LED_extracted_headline[[1]])) {
+        url <- LED_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "MG"){
@@ -271,7 +275,7 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes("h3") %>%
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
-      
+
     if(length(CTV_extracted_headline) > 0){
       if (grepl("^http.*", CTV_extracted_headline[[1]])) {
         url <- CTV_extracted_headline[[1]]
