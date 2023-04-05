@@ -161,23 +161,27 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", NP_extracted_headline[[1]])) {
-      url <- NP_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, NP_extracted_headline[[1]], sep="")
-    } 
-    found_supported_media <- TRUE
+    if(length(NP_extracted_headline) > 0){
+      if (grepl("^http.*", NP_extracted_headline[[1]])) {
+        url <- NP_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, NP_extracted_headline[[1]], sep="")
+      } 
+      found_supported_media <- TRUE
+    }
   }
 
   if(m$short_name == "TVA"){
     TVA_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="home-top-story"]') %>% rvest::html_nodes(xpath = '//*[@class="news_unit-link"]') %>% rvest::html_attr("href")
-    
-    if (grepl("^http.*", TVA_extracted_headline[[1]])) {
-      url <- TVA_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, TVA_extracted_headline[[1]], sep="")
+  
+    if(length(TVA_extracted_headline) > 0){
+      if (grepl("^http.*", TVA_extracted_headline[[1]])) {
+        url <- TVA_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, TVA_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "GAM"){
