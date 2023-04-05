@@ -214,11 +214,78 @@ strip_and_push_intervention <- function(intervention) {
           speaker_type <- paste("MEP", stringr::str_to_title(header2))
         } else {
           speaker_type <- which_contains_one_of(
-            clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident)), 
+            clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
             clessnverse::rm_accents(tolower(header))
           )
+
+          if (nchar(speaker_type) == 0) {
+            speaker_type <- which_contains_one_of(
+              clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
+              clessnverse::rm_accents(tolower(header1))
+            ) 
+          }
+
+          if (nchar(speaker_type) == 0) {
+            speaker_type <- which_contains_one_of(
+              clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
+              clessnverse::rm_accents(tolower(header2))
+            ) 
+          }
+
+          detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
+
+          if (detected_speaker_type_lang != "en") {
+            tryCatch(
+              {
+                speaker_type <- clessnverse::translate_text(
+                  clntxt(speaker_type), 
+                  "deeptranslate", 
+                  detected_speaker_type_lang, 
+                  "en", 
+                  opt$translate)
+              },
+              error=function(e) {
+                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
+                status <<- 2
+                
+                if (final_message == "") {
+                  final_message <<- e$message
+                } else {
+                  final_message <<- paste(final_message, "\n", e$message, sep="")
+                }
+
+                warning("there was an error with the deeptranslate_api : see logs")
+                clessnverse::logit(scriptname, clntxt(speaker_type), logger)
+                clessnverse::logit(scriptname, e$message, logger)
+                speaker_type <<- clessnverse::translate_text(
+                  text = clntxt(speaker_type), 
+                  engine = "azure",
+                  source_lang = detected_speaker_type_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+
+                if(!is.null(speaker_type) && !is.na(speaker_type) && nchar(speaker_type)) {
+                  clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                  clessnverse::logit(scriptname, speaker_type, logger)
+                } else {
+                  clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+
+                  if (final_message == "") {
+                    final_message <<- paste("unable to recover translation error.  must stop...", e$message)
+                  } else {
+                    final_message <<- paste(paste("unable to recover translation error.  must stop...", final_message), "\n", e$message, sep="")
+                  }
+
+                  status <<- 1
+                  stop("unable to recover translation error.  must stop...")
+                }
+              },
+              finally = {}
+            )
+          }
           
-          if (nchar(speaker_type) == 0)  speaker_type <- NA
+          if (nchar(speaker_type) == 0)  speaker_type <- NA else speaker_type <- stringr::str_to_title(speaker_type)
 
         }
       }
