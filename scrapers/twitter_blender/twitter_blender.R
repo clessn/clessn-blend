@@ -406,6 +406,8 @@ main <- function(opt, scriptname, logger) {
   # load twitter token rds file
   if (file.exists(".rtweet_token.rds")) token <- readRDS(".rtweet_token.rds")
   if (file.exists("~/.rtweet_token.rds")) token <- readRDS("~/.rtweet_token.rds")
+  if (file.exists("~/dev/clessn/clessn-blend/automation/docker/.rtweet_token.rds")) token <- readRDS("~/dev/clessn/clessn-blend/automation/docker/.rtweet_token.rds")
+  
   
   # get all persons dataframes
   clessnverse::logit(scriptname, "getting persons", logger)
@@ -505,7 +507,7 @@ tryCatch(
       #opt <- opt <- list(max_timeline = 100, log_output = "console", population = "small_sample")
       #opt <- list(max_timeline = 100, log_output = "file", type = "mp", schema = "all", filter = 'list(metadata.institution="National Assembly of Quebec")')
       #opt <- list(max_timeline = 100, log_output = "file", type = "all", schema = "all", filter = 'all')
-      #opt <- list(max_timeline = 100, log_output = "file", type = "political_party", schema = "all", filter = 'all')
+      # opt <- list(max_timeline = 100, log_output = "console", type = "media", schema = "all", filter = 'all')
 
       if (!exists("opt")) {
         opt <- processCommandLineOptions()

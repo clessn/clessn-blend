@@ -20,10 +20,11 @@ table(df$speaker_full_name, useNA = 'ifany')
 table(df$speaker_polgroup, useNA = 'ifany')
 table(df$speaker_party, useNA = 'ifany')
 table(df$president_name, useNA = 'ifany')
-df$speaker_type[is.na(df$speaker_polgroup)]
-df$speaker_full_name[is.na(df$speaker_polgroup)]
+table(df$speaker_type[is.na(df$speaker_polgroup)], useNA = 'ifany')
+length(df$intervention_id[is.na(df$speaker_polgroup)])
+table(df$speaker_full_name[is.na(df$speaker_polgroup)], useNA = 'ifany')
 df$intervention_header[is.na(df$speaker_polgroup)]
-
+df$intervention_id[is.na(df$speaker_polgroup)]
 
 Clean <- df %>%
   select(speaker_full_name, speaker_type) %>%

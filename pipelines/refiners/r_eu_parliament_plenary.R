@@ -97,7 +97,26 @@ get_speaker <- function(full_name, full_name_native) {
   if (nrow(df) == 0) {
     #did not find it in the hub - check the parliament db
     for (i in names) {
-      df_parliament <- clessnverse::get_europe_mep_data(i)
+      eu_success <- FALSE
+      eu_attempt <- 1
+      while (!eu_success && eu_attempt <= 20) {
+        tryCatch(
+          {
+            df_parliament <- clessnverse::get_europe_mep_data(i)
+            eu_success <- TRUE
+          },
+          error = function(e) {
+            msg <- paste("could not get MEP info for ", i, "from the parliament website... trying again in 60 seconds.  Actual error is:")
+            clessnverse::logit(scriptname, msg, logger)
+            clessnverse::logit(scriptname, e$message, logger)
+            warning(paste(msg, e$message))
+            sleep(60)
+          },
+          finally = {
+            eu_attempt <- eu_attempt + 1
+          }
+        )
+      }
       if (!is.na(df_parliament$mepid)) break
     }
 
