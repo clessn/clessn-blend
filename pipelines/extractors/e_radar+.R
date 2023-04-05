@@ -241,7 +241,7 @@ harvest_headline <- function(r, m) {
     LED_extracted_headline <- r %>%
       rvest::html_nodes(xpath = '//a[@class="card-click"]') %>%
       rvest::html_attr("href")
-
+    
     if (grepl("^http.*", LED_extracted_headline[[1]])) {
       url <- LED_extracted_headline[[1]]
     } else {
@@ -256,12 +256,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", MG_extracted_headline[[1]])) {
-      url <- MG_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, MG_extracted_headline[[1]], sep="")
+    if(length(MG_extracted_headline) > 0){
+      if (grepl("^http.*", MG_extracted_headline[[1]])) {
+        url <- MG_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, MG_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "CTV"){
@@ -269,13 +271,15 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes("h3") %>%
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
-
-    if (grepl("^http.*", CTV_extracted_headline[[1]])) {
-      url <- CTV_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, CTV_extracted_headline[[1]], sep="")
+      
+    if(length(CTV_extracted_headline) > 0){
+      if (grepl("^http.*", CTV_extracted_headline[[1]])) {
+        url <- CTV_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, CTV_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "GN"){
