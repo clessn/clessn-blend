@@ -406,10 +406,12 @@ harvest_headline <- function(r, m) {
       nb_headline <<- nb_headline + 1
     } else {
       clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
+      warning(paste("error while pushing headline", key, "to datalake"))
     }
 
   } else {
       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+      warning(paste("there was an error getting url", url))
   }
 
 } #</my_function>
@@ -480,10 +482,12 @@ main <- function() {
         harvest_headline(r, m)
       } else {
         clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
+        warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
        clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+       warning(paste("there was an error getting url", url))
     }
   }#</for>
   
@@ -551,14 +555,14 @@ tryCatch(
   warning = function(w) {
     clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
     print(w)
-    final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
+    final_message <<- if (final_message == "") paste(w, collapse=' ') else paste(final_message, "\n", paste(w, collapse=' '), sep="")    
     status <<- 2
   }),
     
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
-    final_message <<- if (final_message == "") e else paste(final_message, "\n", e, sep="")    
+    final_message <<- if (final_message == "") paste(e, collapse=' ') else paste(final_message, "\n", paste(e, collapse=' '), sep="")    
     status <<- 1
   },
   
