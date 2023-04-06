@@ -159,6 +159,7 @@ list_urls <- doc_urls[grep("assemblee-nationale/4\\d-\\d/journal-debats", doc_ur
 for (i in 1:length(list_urls)) {
   
   intervention_count <<- 0
+  skipped_intervention <- 0
   #if (opt$hub_mode != "skip") clessnhub::refresh_token(configuration$token, configuration$url)
   if (opt$hub_mode != "skip") clessnhub::connect_with_token(Sys.getenv('HUB_TOKEN'))
   
@@ -401,6 +402,7 @@ for (i in 1:length(list_urls)) {
       event_sentence_count <- clessnverse::countVecSentences(doc_text) - 1
       speech_paragraph_count <- 0
       
+      skipped_intervention <- 0
       for (j in 1:length(doc_text)) {
         #cat(j, intervention_count, "\r")
         cat(intervention_count, "\r")
@@ -469,6 +471,7 @@ for (i in 1:length(list_urls)) {
             intervention_text <- gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", intervention_text, perl=TRUE)
             matching_row <- NULL
             intervention_count <<- intervention_count - 1
+            skipped_intervention <<- skipped_intervention + 1
             next
           }
           
@@ -887,6 +890,8 @@ for (i in 1:length(list_urls)) {
     
   } #if (grepl("actualites-salle-presse", event_url))
   clessnverse::logit(scriptname, paste("intervention_count: ", intervention_count), logger)
+  clessnverse::logit(scriptname, paste("Skipped: ", skipped_intervention), logger)
+  
   if (intervention_count > 1) {
     debate_count <- debate_count + 1
     total_intervention_count <<- total_intervention_count + intervention_count  
