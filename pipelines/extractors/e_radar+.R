@@ -553,16 +553,16 @@ tryCatch(
   },
 
   warning = function(w) {
-    clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+    clessnverse::logit(scriptname, w$message, logger)
     print(w)
-    final_message <<- if (final_message == "") paste(w, collapse=' ') else paste(final_message, "\n", paste(w, collapse=' '), sep="")    
+    final_message <<- if (final_message == "") w$message else paste(final_message, "\n", w$message, sep="")    
     status <<- 2
   }),
     
   error = function(e) {
-    clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
+    clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    final_message <<- if (final_message == "") paste(e, collapse=' ') else paste(final_message, "\n", paste(e, collapse=' '), sep="")    
+    final_message <<- if (final_message == "") e$message else paste(final_message, "\n", e$message, sep="")    
     status <<- 1
   },
   
