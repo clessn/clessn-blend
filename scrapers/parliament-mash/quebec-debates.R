@@ -886,7 +886,7 @@ for (i in 1:length(list_urls)) {
     } # version finale
     
   } #if (grepl("actualites-salle-presse", event_url))
-
+  clessnverse::logit(scriptname, paste("intervention_count: ", intervention_count), logger)
   if (intervention_count > 1) {
     debate_count <- debate_count + 1
     total_intervention_count <<- total_intervention_count + intervention_count  
