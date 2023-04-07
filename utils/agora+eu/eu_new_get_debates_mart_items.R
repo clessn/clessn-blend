@@ -26,8 +26,8 @@ df$intervention_header[is.na(df$speaker_polgroup)]
 
 
 Clean <- df %>%
-  select(speaker_full_name, speaker_type) %>%
-  filter(is.na(speaker_type)) %>%
+  select(speaker_full_name, speaker_party) %>%
+  filter(is.na(speaker_party)) %>%
   distinct(speaker_full_name)
 
 # Uncomment below to PURGE the hub from the collected records
