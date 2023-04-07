@@ -118,8 +118,11 @@ harvest_headline <- function(r, m) {
 
   if (m$short_name == "RCI") {
     RCI_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="item--1"]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
-    url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
-    found_supported_media <- TRUE
+    
+    if(length(RCI_extracted_headline) > 0){
+      url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
+      found_supported_media <- TRUE
+    }
   }
 
   if (m$short_name == "JDM") {
@@ -129,8 +132,11 @@ harvest_headline <- function(r, m) {
       rvest::html_attr("data-story-url") %>%
       na.omit()
 
-    url <- JDM_extracted_headline[[1]]
-    found_supported_media <- TRUE
+
+    if(length(JDM_extracted_headline) > 0){
+      url <- JDM_extracted_headline[[1]]
+      found_supported_media <- TRUE
+    }
   }
 
   if (m$short_name == "CBC") {
@@ -147,12 +153,15 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
     }
 
-    if (grepl("^http.*", CBC_extracted_headline[[1]])) {
-      url <- CBC_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, CBC_extracted_headline[[1]], sep="")
-    } 
-    found_supported_media <- TRUE
+    if(length(CBC_extracted_headline) > 0){
+      if (grepl("^http.*", CBC_extracted_headline[[1]])) {
+        url <- CBC_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, CBC_extracted_headline[[1]], sep="")
+      } 
+      found_supported_media <- TRUE
+    }
+    
   }
   
   if(m$short_name == "NP"){
@@ -161,23 +170,27 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", NP_extracted_headline[[1]])) {
-      url <- NP_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, NP_extracted_headline[[1]], sep="")
-    } 
-    found_supported_media <- TRUE
+    if(length(NP_extracted_headline) > 0){
+      if (grepl("^http.*", NP_extracted_headline[[1]])) {
+        url <- NP_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, NP_extracted_headline[[1]], sep="")
+      } 
+      found_supported_media <- TRUE
+    }
   }
 
   if(m$short_name == "TVA"){
     TVA_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="home-top-story"]') %>% rvest::html_nodes(xpath = '//*[@class="news_unit-link"]') %>% rvest::html_attr("href")
-    
-    if (grepl("^http.*", TVA_extracted_headline[[1]])) {
-      url <- TVA_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, TVA_extracted_headline[[1]], sep="")
+  
+    if(length(TVA_extracted_headline) > 0){
+      if (grepl("^http.*", TVA_extracted_headline[[1]])) {
+        url <- TVA_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, TVA_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "GAM"){
@@ -186,18 +199,21 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
-    headlineIndex <- 1
 
-    if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
-      headlineIndex <- headlineIndex + 1
-    }
+    if(length(GAM_extracted_headline) > 0){
+      headlineIndex <- 1
 
-    if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
-      url <- GAM_extracted_headline[[headlineIndex]]
-    } else {
-      url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+      if(grepl("/podcasts/the-decibel/", GAM_extracted_headline[[headlineIndex]])){
+        headlineIndex <- headlineIndex + 1
+      }
+
+      if (grepl("^http.*", GAM_extracted_headline[[headlineIndex]])) {
+        url <- GAM_extracted_headline[[headlineIndex]]
+      } else {
+        url <- paste(m$base, GAM_extracted_headline[[headlineIndex]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "VS"){
@@ -214,12 +230,14 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
     }
 
-    if (grepl("^http.*", VS_extracted_headline[[1]])) {
-      url <- VS_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, VS_extracted_headline[[1]], sep="")
+    if(length(VS_extracted_headline) > 0){
+      if (grepl("^http.*", VS_extracted_headline[[1]])) {
+        url <- VS_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, VS_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "LAP"){
@@ -229,12 +247,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="storyCard__cover homeHeadlinesCard__cover"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", LAP_extracted_headline[[1]])) {
-      url <- LAP_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+    if(length(LAP_extracted_headline) > 0){
+      if (grepl("^http.*", LAP_extracted_headline[[1]])) {
+        url <- LAP_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, LAP_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "LED"){
@@ -242,12 +262,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="card-click"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", LED_extracted_headline[[1]])) {
-      url <- LED_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+    if(length(LED_extracted_headline) > 0){
+      if (grepl("^http.*", LED_extracted_headline[[1]])) {
+        url <- LED_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, LED_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "MG"){
@@ -256,12 +278,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes(xpath = '//a[@class="article-card__link"]') %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", MG_extracted_headline[[1]])) {
-      url <- MG_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, MG_extracted_headline[[1]], sep="")
+    if(length(MG_extracted_headline) > 0){
+      if (grepl("^http.*", MG_extracted_headline[[1]])) {
+        url <- MG_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, MG_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "CTV"){
@@ -270,12 +294,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
 
-    if (grepl("^http.*", CTV_extracted_headline[[1]])) {
-      url <- CTV_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, CTV_extracted_headline[[1]], sep="")
+    if(length(CTV_extracted_headline) > 0){
+      if (grepl("^http.*", CTV_extracted_headline[[1]])) {
+        url <- CTV_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, CTV_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
 
   if(m$short_name == "GN"){
@@ -298,25 +324,29 @@ harvest_headline <- function(r, m) {
         rvest::html_attr("href")
     }
 
-    if (grepl("^http.*", GN_extracted_headline[[1]])) {
-      url <- GN_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, GN_extracted_headline[[1]], sep="")
+    if(length(GN_extracted_headline) > 0){
+      if (grepl("^http.*", GN_extracted_headline[[1]])) {
+        url <- GN_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, GN_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
+    
   }
 
   if(m$short_name == "TTS"){
     TTS_extracted_headline <- r %>%
       rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "c-feature-mediacard")]') %>%
       rvest::html_attr("href")
-
-    if (grepl("^http.*", TTS_extracted_headline[[1]])) {
-      url <- TTS_extracted_headline[[1]]
-    } else {
-      url <- paste(m$base, TTS_extracted_headline[[1]], sep="")
+    if(length(TTS_extracted_headline) > 0){
+      if (grepl("^http.*", TTS_extracted_headline[[1]])) {
+        url <- TTS_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, TTS_extracted_headline[[1]], sep="")
+      }
+      found_supported_media <- TRUE
     }
-    found_supported_media <- TRUE
   }
   
   if (!found_supported_media) {
@@ -376,10 +406,12 @@ harvest_headline <- function(r, m) {
       nb_headline <<- nb_headline + 1
     } else {
       clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
+      warning(paste("error while pushing headline", key, "to datalake"))
     }
 
   } else {
       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+      warning(paste("there was an error getting url", url))
   }
 
 } #</my_function>
@@ -450,10 +482,12 @@ main <- function() {
         harvest_headline(r, m)
       } else {
         clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
+        warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
        clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+       warning(paste("there was an error getting url", url))
     }
   }#</for>
   
@@ -519,16 +553,16 @@ tryCatch(
   },
 
   warning = function(w) {
-    clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
+    clessnverse::logit(scriptname, w$message, logger)
     print(w)
-    final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
+    final_message <<- if (final_message == "") w$message else paste(final_message, "\n", w$message, sep="")    
     status <<- 2
   }),
     
   error = function(e) {
-    clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
+    clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    final_message <<- if (final_message == "") e else paste(final_message, "\n", e, sep="")    
+    final_message <<- if (final_message == "") e$message else paste(final_message, "\n", e$message, sep="")    
     status <<- 1
   },
   

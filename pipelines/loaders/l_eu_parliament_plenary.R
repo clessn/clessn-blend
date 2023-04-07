@@ -209,7 +209,9 @@ process_debate_xml <- function(lake_item, xml_core) {
           header_value1 <- previous_header_value1
         }
 
-        header_node2 <- intervention_node[["PARA"]][[1]]
+        header_node2 <- intervention_node[["PARA"]]
+        if (length(XML::xmlValue(header_node2)) > 0) header_node2 <- header_node2[[1]] else header_node2 <- NA
+
         tryCatch(
           {
             sink("NUL")
@@ -229,7 +231,7 @@ process_debate_xml <- function(lake_item, xml_core) {
         
         header_text <- if (!is.na(header_value2)) paste(header_value1, header_value2, sep = ", ") else header_value1
                     
-        if (opt$translate && !is.na(header_value2) > 0) {
+        if (opt$translate && !is.na(header_value2)) {
           #translate header_text
           header_value2_lang <- clessnverse::detect_language("fastText", header_value2)
           
@@ -290,16 +292,34 @@ process_debate_xml <- function(lake_item, xml_core) {
           intervention_text <- paste(intervention_text, XML::xmlValue(intervention_node[[l]]), sep = " ")
         } #for (l in which(names(intervention_node) == "PARA"))
 
-        if (!is.na(header_value2)) intervention_text <- gsub(header_value2, "", intervention_text)
-        
+        if (!is.na(header_value2)) {
+
+          header_value2 <- strsplit(substr(intervention_text, 1, 200), "\\. – |\\. –|\\.– |\\.–|^– ")
+          if (length(header_value2[[1]]) > 1) {
+            header_value2 <- header_value2[[1]][1]
+          }
+
+          intervention_text <- gsub(header_value2, "", intervention_text)
+        }
+
         if (stringr::str_detect(intervention_text, "\\. – ")) {
           #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
           intervention_text <- gsub("\\. – ", "", intervention_text)
+        }
+        
+        if (stringr::str_detect(intervention_text, "\\. –")) {
+          #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+          intervention_text <- gsub("\\. –", "", intervention_text)
         }
 
         if (stringr::str_detect(intervention_text, "\\.– ")) {
           #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
           intervention_text <- gsub("\\.– ", "", intervention_text)
+        }
+        
+        if (stringr::str_detect(intervention_text, "\\.–")) {
+          #intervention_text <- stringr::str_split(intervention_text, "\\. – ")[[1]][2]
+          intervention_text <- gsub("\\.–", "", intervention_text)
         }
         
         if (stringr::str_detect(intervention_text, "^– ")) {
@@ -1151,9 +1171,9 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     # opt <<- list(
-    #  backend = "hub",
+    #  backend = "dataframe",
     #  log_output = c("console"),
-    #  method = c("date_range", "2019-07-01", "2019-07-31"),
+    #  method = c("date_range", "2023-03-14", "2023-03-14"),
     #  schema = "test",
     #  refresh_data = TRUE,
     #  translate = TRUE

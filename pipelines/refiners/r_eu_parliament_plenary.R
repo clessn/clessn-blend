@@ -97,7 +97,26 @@ get_speaker <- function(full_name, full_name_native) {
   if (nrow(df) == 0) {
     #did not find it in the hub - check the parliament db
     for (i in names) {
-      df_parliament <- clessnverse::get_europe_mep_data(i)
+      eu_success <- FALSE
+      eu_attempt <- 1
+      while (!eu_success && eu_attempt <= 20) {
+        tryCatch(
+          {
+            df_parliament <- clessnverse::get_europe_mep_data(i)
+            eu_success <- TRUE
+          },
+          error = function(e) {
+            msg <- paste("could not get MEP info for ", i, "from the parliament website... trying again in 60 seconds.  Actual error is:")
+            clessnverse::logit(scriptname, msg, logger)
+            clessnverse::logit(scriptname, e$message, logger)
+            warning(paste(msg, e$message))
+            sleep(60)
+          },
+          finally = {
+            eu_attempt <- eu_attempt + 1
+          }
+        )
+      }
       if (!is.na(df_parliament$mepid)) break
     }
 
@@ -195,12 +214,82 @@ strip_and_push_intervention <- function(intervention) {
           speaker_type <- paste("MEP", stringr::str_to_title(header2))
         } else {
           speaker_type <- which_contains_one_of(
-            clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident)), 
+            clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
             clessnverse::rm_accents(tolower(header))
           )
-          
-          if (nchar(speaker_type) == 0)  speaker_type <- NA
 
+          if (nchar(speaker_type) == 0) {
+            speaker_type <- which_contains_one_of(
+              clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
+              clessnverse::rm_accents(tolower(header1))
+            ) 
+          }
+
+          if (nchar(speaker_type) == 0) {
+            speaker_type <- which_contains_one_of(
+              clessnverse::rm_accents(c(member_of_the_commission, president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)), 
+              clessnverse::rm_accents(tolower(header2))
+            ) 
+          }
+
+          if (nchar(speaker_type) == 0) speaker_type <- NA
+
+          detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
+
+          if (!is.na(speaker_type) && detected_speaker_type_lang != "en") {
+            tryCatch(
+              {
+                speaker_type <- clessnverse::translate_text(
+                  clntxt(speaker_type), 
+                  "deeptranslate", 
+                  detected_speaker_type_lang, 
+                  "en", 
+                  opt$translate)
+              },
+              error=function(e) {
+                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
+                status <<- 2
+                
+                if (final_message == "") {
+                  final_message <<- e$message
+                } else {
+                  final_message <<- paste(final_message, "\n", e$message, sep="")
+                }
+
+                warning("there was an error with the deeptranslate_api : see logs")
+                clessnverse::logit(scriptname, clntxt(speaker_type), logger)
+                clessnverse::logit(scriptname, e$message, logger)
+                speaker_type <<- clessnverse::translate_text(
+                  text = clntxt(speaker_type), 
+                  engine = "azure",
+                  source_lang = detected_speaker_type_lang, 
+                  target_lang = "en", 
+                  translate = TRUE
+                )
+
+                if(!is.null(speaker_type) && !is.na(speaker_type) && nchar(speaker_type)) {
+                  clessnverse::logit(scriptname, "manage to recover the error.  translation below:", logger)
+                  clessnverse::logit(scriptname, speaker_type, logger)
+                } else {
+                  clessnverse::logit(scriptname, "unable to recover translation error.  must stop...", logger)
+
+                  if (final_message == "") {
+                    final_message <<- paste("unable to recover translation error.  must stop...", e$message)
+                  } else {
+                    final_message <<- paste(paste("unable to recover translation error.  must stop...", final_message), "\n", e$message, sep="")
+                  }
+
+                  status <<- 1
+                  stop("unable to recover translation error.  must stop...")
+                }
+              },
+              finally = {}
+            )
+          }
+          
+          if (!is.na(speaker_type) && nchar(speaker_type) == 0)  speaker_type <- NA else speaker_type <- stringr::str_to_title(speaker_type)
+
+          if (!is.na(speaker_type) && speaker_type == "President") speaker_full_name <- intervention$president_name
         }
       }
     }
@@ -352,7 +441,7 @@ strip_and_push_intervention <- function(intervention) {
 
   pattern_to_remove <- "^(The|Ms\\.)\\sPresident"
   if (grepl(pattern_to_remove, speaker_type)){
-    speaker_type <- gsub("^(The|Ms\\.)\\s", "", speaker_type)
+    speaker_type <- gsub("^(The|Ms\\.|Mr\\.)\\s", "", speaker_type)
   }
 
   clessnverse::logit(
@@ -554,7 +643,8 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -586,7 +676,7 @@ tryCatch(
       "komiteto pirmininkas","President vum Comité","president tal-kumitat",
       "preşedintele comitetului","predseda výboru","predsednik odbora",
       "batzordeko lehendakaria","president del comitè","presidente do comité",
-      "presidente del comité","nämndens ordförande"    
+      "presidente del comité","nämndens ordförande",  "President-in-Office of the Council"
     )))
 
 
@@ -684,8 +774,8 @@ tryCatch(
     #  schema = "test",
     #  target_schema = "test",
     #  log_output = c("console"),
-    #  method = c("date_range", "2019-09-17", "2019-09-17"),
-    #  refresh_data = FALSE,
+    #  method = c("date_range", "2019-11-25", "2019-11-25"),
+    #  refresh_data = TRUE,
     #  translate = TRUE
     # )
 

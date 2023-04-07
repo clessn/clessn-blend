@@ -7,10 +7,9 @@ Sys.getenv("HUB3_PASSWORD"))
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    data__.schema="test",
-    data__.lake_item_format="xml",
+    data__.schema="202303",
     data__event_date__gte="2019-07-01", 
-    data__event_date__lte="2019-12-31"
+    data__event_date__lte="2023-03-31"
   ),
   credentials = credentials,
   nbrows = 0
@@ -20,10 +19,11 @@ table(df$speaker_full_name, useNA = 'ifany')
 table(df$speaker_polgroup, useNA = 'ifany')
 table(df$speaker_party, useNA = 'ifany')
 table(df$president_name, useNA = 'ifany')
-df$speaker_type[is.na(df$speaker_polgroup)]
-df$speaker_full_name[is.na(df$speaker_polgroup)]
+table(df$speaker_type[is.na(df$speaker_polgroup)], useNA = 'ifany')
+length(df$intervention_id[is.na(df$speaker_polgroup)])
+table(df$speaker_full_name[is.na(df$speaker_polgroup)], useNA = 'ifany')
 df$intervention_header[is.na(df$speaker_polgroup)]
-
+df$intervention_id[is.na(df$speaker_polgroup)]
 
 Clean <- df %>%
   select(speaker_full_name, speaker_party) %>%
