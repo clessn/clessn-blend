@@ -7,10 +7,9 @@ Sys.getenv("HUB3_PASSWORD"))
 df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
-    data__.schema="test",
-    data__.lake_item_format="xml",
+    data__.schema="202303",
     data__event_date__gte="2019-07-01", 
-    data__event_date__lte="2019-12-31"
+    data__event_date__lte="2023-03-31"
   ),
   credentials = credentials,
   nbrows = 0
