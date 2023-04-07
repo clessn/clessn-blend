@@ -9,7 +9,7 @@ clessnhub::login(
 # Below are a lot of examples on how to filter populations
 
 # Example 1 : all the candidates of the qc election 2022
-filter <- clessnhub::create_filter(type="media", metadata=NULL, data=NULL)
+filter <- clessnhub::create_filter(metadata=NULL, data=NULL)
 
 # Example 2 : all the mp of the european parliament
 #filter <- clessnhub::create_filter(type="mp", schema="", metadata=list(institution="European Parliament"), data=NULL)
@@ -82,3 +82,17 @@ for (i in 1:nrow(df_persons)) {
 
     }
 }
+
+
+
+# We can also get all the tweets for a specific period
+# Exemple
+
+filter <- clessnhub::create_filter(
+       data=list(
+           creationDate__gte="2022-07-01",
+           creationDate__lte="2022-07-31"
+       )
+   )
+
+df_tweets <- clessnhub::get_items('tweets', filter, download_data = T)
