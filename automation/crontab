@@ -26,9 +26,19 @@
 20 */36 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh l_pressreleases_qc.sh >> /home/patrick/logs/l_pressreleases_qc.consolelog 2>&1
 20 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "canada" "file" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_canada.consolelog 2>&1
 40 */72 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "quebec" "file" "update" "update" FALSE FALSE >> /home/patrick/logs/parliament_mash_quebec.consolelog 2>&1
-40 2    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "europe" "file" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_europe.consolelog 2>&1
+#40 2    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh parliament_mash.sh "europe" "file" "rebuild" "update" FALSE TRUE >> /home/patrick/logs/parliament_mash_europe.consolelog 2>&1
 40 4    * * 1 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressconference_crush.sh "quebecnationalassembly" "file" "update" "update" FALSE FALSE >> /home/patrick/logs/pressconference_crush_quebecnationalassembly.consolelog 2>&1
 40 */36 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh pressreleases_plow.sh "canadafederalparties" "file" "update" "update" TRUE FALSE >> /home/patrick/logs/pressreleases_plow_canadafederalparties.consolelog 2>&1
+
+# Europe pipeline
+# Every Saturday at 0:01AM extract
+# Every Saturday at 1:01AM load
+# Every Saturday at 2:01AM refine
+01 00   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "frontpage" --refresh_data FALSE --translate TRUE --prod TRUE
+01 01   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh load detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE
+01 02   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh refine detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE
+
+
 #20 3    * * 4 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "candidate" "candidate_elxn_qc2022" 'list(metadata.country="CA",metadata.province_or_state="QC")' >> /home/patrick/logs/twitter_blender_candidate.consolelog 2>&1
 #30 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "political_party" "all" "all" >> /home/patrick/logs/twitter_blender_political_party_all.consolelog 2>&1
 #40 */48 * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "media" "all" "all" >> /home/patrick/logs/twitter_blender_media_all.consolelog 2>&1
