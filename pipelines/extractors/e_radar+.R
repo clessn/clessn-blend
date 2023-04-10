@@ -517,11 +517,11 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-        log_output = c("file"),
-        scraping_method = "frontpage",
-        refresh_data = TRUE
-    )
+    # opt <<- list(
+    #     log_output = c("file,console"),
+    #     scraping_method = "frontpage",
+    #     refresh_data = TRUE
+    # )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
