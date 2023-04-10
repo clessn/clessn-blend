@@ -1186,6 +1186,12 @@ tryCatch(
     if (!exists("logger") || is.null(logger) || logger == 0) {
       logger <<- clessnverse::log_init(scriptname, opt$log_output, Sys.getenv("LOG_PATH"))
     }
+
+    clessnverse::logit(
+      scriptname, 
+      paste("options are", paste(names(opt), opt, collapse=" ", sep="=")),
+      logger
+    )
     
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)

@@ -167,6 +167,7 @@ main <- function() {
       }
     } else {
       clessnverse::logit(scriptname, paste("invalid scraping_method", scraping_method), logger)
+      stop(paste("invalid scraping_method", scraping_method))
     }
   }
   
@@ -246,14 +247,14 @@ tryCatch(
   warning = function(w) {
     clessnverse::logit(scriptname, paste(w, collapse=' '), logger)
     print(w)
-    final_message <<- if (final_message == "") w else paste(final_message, "\n", w, sep="")    
+    final_message <<- if (final_message == "") w$message else paste(final_message, "\n", w$message, sep="")    
     status <<- 2
   }),
   
   error = function(e) {
     clessnverse::logit(scriptname, paste(e, collapse=' '), logger)
     print(e)
-    final_message <<- if (final_message == "") e else paste(final_message, "\n", e, sep="")    
+    final_message <<- if (final_message == "") e$message else paste(final_message, "\n", e$message, sep="")    
     status <<- 1
   },
 
