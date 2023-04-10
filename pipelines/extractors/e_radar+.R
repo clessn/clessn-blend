@@ -583,7 +583,7 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    #quit(status = status)
+    quit(status = status)
   }
 )
 
