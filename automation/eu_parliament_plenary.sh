@@ -42,7 +42,7 @@ if [ $scriptname != "badbadbad" ]; then
   Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$basefolder/$foldername/$prefix$scriptname.R $@ 2>&1
   ret=$?
   sed 's/\"/\\"/g' -i ~/logs/$prefix$scriptname.log
-  sed 's///g ' -i ~/logs/$prefix$scriptname.log
+  sed 's///g ' -i ~/logs/$prefix$scriptname.log
   sed 's/--:--/     /g ' -i ~/logs/$prefix$scriptname.log
   sed 's/:--/   /g ' -i ~/logs/$prefix$scriptname.log
 fi
