@@ -1,5 +1,29 @@
 #!/bin/sh
 
+basefolder="clessn-blend/pipelines"
+scriptname="radar+"
+
+if [ $1 = "extract" ];then
+  function="Extractor"
+  foldername="extractors"
+  prefix="e_"
+elif [ $1 = "load" ];then
+  function="Loader"
+  foldername="loaders"
+  prefix="l_"
+elif [ $1 = "refine" ];then
+  function="Refiner"
+  foldername="refiners"
+  prefix="r_"
+else
+  function="badbadbad"
+  output="invalid parameter 1 provided to shell script" $1
+  ret=1
+fi
+
+
+echo "$function of $scriptname starting..."
+
 generate_post_data()
 {
   cat <<EOF
@@ -9,18 +33,21 @@ generate_post_data()
 EOF
 }
 
-scriptname="e_radar+"
-
-R --no-save --no-restore -e 'install.packages("remotes", repos = "http://cran.us.r-project.org")'
 R --no-save --no-restore -e 'remotes::install_github("clessn/clessnverse", force=T, upgrade="never")'
 
 cd ~
 
-Rscript --no-save --no-restore $CLESSN_ROOT_DIR/clessn-blend/pipelines/extractors/$scriptname.R 2>&1
-ret=$?
+if [ $scriptname != "badbadbad" ]; then
+  shift 3
+  Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$basefolder/$foldername/$prefix$scriptname.R $@ 2>&1
+  ret=$?
+  sed 's/\"/\\"/g' -i ~/logs/$prefix$scriptname.log
+  sed 's/
+//g ' -i ~/logs/$prefix$scriptname.log
+  sed 's/--:--/     /g ' -i ~/logs/$prefix$scriptname.log
+  sed 's/:--/   /g ' -i ~/logs/$prefix$scriptname.log
+fi
 
-sed 's/\"/\\"/g' -i ~/logs/$scriptname.log
-sed 's/^M//g ' -i ~/logs/$scriptname.log
 
 if [ $ret -eq 0 ]; then
   status="SUCCESS"
@@ -38,9 +65,9 @@ if [ $ret -eq 2 ]; then
 fi
 
 if [ $ret -ne 0 ]; then
-  output=`tail -n 10 ~/logs/$scriptname.log`
+  output=`tail -n 10 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
-  output=`tail -n 3 ~/logs/$scriptname.log`
+  output=`tail -n 2 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi
