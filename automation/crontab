@@ -37,9 +37,9 @@
 # Every Saturday at 0:01AM extract
 # Every Saturday at 1:01AM load
 # Every Saturday at 2:01AM refine
-01 00   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "frontpage" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/e_eu_parliament_plenary.consolelog 2>&1
-01 01   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh load detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/l_eu_parliament_plenary.consolelog 2>&1
-01 02   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh refine detached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/r_eu_parliament_plenary.consolelog 2>&1
+01 00   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract attached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "frontpage" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/e_eu_parliament_plenary.consolelog 2>&1
+01 01   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh load attached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/l_eu_parliament_plenary.consolelog 2>&1
+01 02   * * 6 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh refine attached eu_parliament_plenary --backend "hub" --log_output "file" --schema "202303" --method "date_range,$(date -d "$date -7 days" '+%Y-%m-%d'),$(date '+%Y-%m-%d')" --refresh_data FALSE --translate TRUE --prod TRUE >> /home/patrick/logs/r_eu_parliament_plenary.consolelog 2>&1
 
 
 # Twitter blender
