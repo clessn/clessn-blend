@@ -52,3 +52,6 @@
 #10 0    * * 2 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="House\%20of\%20Commons\%20of\%20Canada")' >> /home/patrick/logs/twitter_blender_mp_ca.consolelog 2>&1
 #15 0    * * 3 $CLESSN_ROOT_DIR/clessn-blend/automation/docker/launchcontainer.sh twitter_blender.sh 3200 "file" "mp" "all" 'list(metadata.institution="European\%20Parliament")' >> /home/patrick/logs/twitter_blender_mp_eu.consolelog 2>&1
 
+# Radar+ pipeline
+# Every 10 minutes extract
+02 */10 * * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract attached radar+ --log_output "file" --method "frontpage" --refresh_data TRUE --translate TRUE --prod TRUE >> /home/patrick/logs/e_radar+.consolelog 2>&1
