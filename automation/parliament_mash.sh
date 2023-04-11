@@ -38,9 +38,9 @@ if [ $scriptname != "badbadbad" ]; then
   Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$foldername/$scriptname.R --log_output $2 --dataframe_mode $3 --hub_mode $4 --download_data $5 --translate $6 2>&1
   ret=$?
   sed 's/\"/\\"/g' -i ~/logs/parliament_mash"_"$1.log
-  sed 's///g ' -i ~/logs/parliament_mash"_"$1.log
-  sed 's/--:--/     /g ' -i ~/logs/parliament_mash"_"$1.log
-  sed 's/:--/   /g ' -i ~/logs/parliament_mash"_"$1.log
+  sed 's///g' -i ~/logs/parliament_mash"_"$1.log
+  sed 's/--:--/     /g' -i ~/logs/parliament_mash"_"$1.log
+  sed 's/:--/   /g' -i ~/logs/parliament_mash"_"$1.log
 fi
 
 
