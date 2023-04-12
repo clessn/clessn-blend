@@ -567,7 +567,7 @@ tryCatch(
   error = function(e) {
     clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    errorOutput <<- paste("WARNING: ", e$message)
+    errorOutput <<- paste("ERROR: ", e$message)
     final_message <<- if (final_message == "") errorOutput else paste(final_message, "\n", errorOutput, sep="")    
     status <<- 1
   },
