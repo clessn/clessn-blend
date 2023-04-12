@@ -390,7 +390,7 @@ harvest_headline <- function(r, m) {
       keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
     }
     #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+    key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
