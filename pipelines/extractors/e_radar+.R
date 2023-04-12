@@ -112,6 +112,8 @@ medias_urls <- list(
   )
 )
 
+pushedHeadlines = list()
+
 
 harvest_headline <- function(r, m) {
   found_supported_media <- FALSE
@@ -403,6 +405,7 @@ harvest_headline <- function(r, m) {
 
     if (hub_response) {
       clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
+      pushedHeadlines[[m$short_name]] = key
       nb_headline <<- nb_headline + 1
     } else {
       clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
@@ -567,6 +570,12 @@ tryCatch(
   },
   
   finally={
+    # if status == 0, no errors happened. Add the breakdown of every media source to final message
+    if(status == 0){
+      for (pushedHeadline in pushedHeadlines) { 
+        final_message <<- if (final_message == "") pushedHeadline else paste(final_message, "\n", pushedHeadline, sep="")  
+      }
+    }
     clessnverse::logit(scriptname, final_message, logger)
 
     clessnverse::logit(scriptname, 
