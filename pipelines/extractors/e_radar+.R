@@ -559,14 +559,16 @@ tryCatch(
   warning = function(w) {
     clessnverse::logit(scriptname, w$message, logger)
     print(w)
-    final_message <<- if (final_message == "") w$message else paste(final_message, "\n", w$message, sep="")    
+    warnOutput <<- paste("WARNING: ", w$message)
+    final_message <<- if (final_message == "") warnOutput else paste(final_message, "\n", warnOutput, sep="")    
     status <<- 2
   }),
     
   error = function(e) {
     clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    final_message <<- if (final_message == "") e$message else paste(final_message, "\n", e$message, sep="")    
+    errorOutput <<- paste("WARNING: ", e$message)
+    final_message <<- if (final_message == "") errorOutput else paste(final_message, "\n", errorOutput, sep="")    
     status <<- 1
   },
   
