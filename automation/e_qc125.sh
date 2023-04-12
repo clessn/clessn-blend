@@ -21,7 +21,7 @@ Rscript --no-save --no-restore $CLESSN_ROOT_DIR/clessn-blend/pipelines/extractor
 ret=$?
 
 sed 's/\"/\\"/g' -i $scriptname.out
-sed 's/^M//g ' -i $scriptname.out
+sed 's/^M//g' -i $scriptname.out
 
 if [ $ret -eq 0 ]; then
   status="SUCCESS"

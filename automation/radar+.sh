@@ -1,7 +1,7 @@
 #!/bin/sh
 
 basefolder="clessn-blend/pipelines"
-scriptname="eu_parliament_plenary"
+scriptname="radar+"
 
 if [ $1 = "extract" ];then
   function="Extractor"
@@ -42,9 +42,9 @@ if [ $scriptname != "badbadbad" ]; then
   Rscript --no-save --no-restore $CLESSN_ROOT_DIR/$basefolder/$foldername/$prefix$scriptname.R $@ 2>&1
   ret=$?
   sed 's/\"/\\"/g' -i ~/logs/$prefix$scriptname.log
-  sed 's/^M//g' -i ~/logs/$prefix$scriptname.log
-  sed 's/--:--/     /g' -i ~/logs/$prefix$scriptname.log
-  sed 's/:--/   /g' -i ~/logs/$prefix$scriptname.log
+  sed 's/^M//g ' -i ~/logs/$prefix$scriptname.log
+  sed 's/--:--/     /g ' -i ~/logs/$prefix$scriptname.log
+  sed 's/:--/   /g ' -i ~/logs/$prefix$scriptname.log
 fi
 
 
@@ -67,6 +67,6 @@ if [ $ret -ne 0 ]; then
   output=`tail -n 10 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
-  output=`tail -n 2 ~/logs/$prefix$scriptname.log`
+  output=`tail -n 4 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi

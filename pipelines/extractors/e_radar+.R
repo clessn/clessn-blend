@@ -517,11 +517,11 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-        log_output = "console",
-        scraping_method = "frontpage",
-        refresh_data = TRUE
-    )
+    # opt <<- list(
+    #     log_output = c("console,file"),
+    #     scraping_method = "frontpage",
+    #     refresh_data = TRUE
+    # )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -583,7 +583,7 @@ tryCatch(
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
     print(paste("exiting with status", status))
-    #quit(status = status)
+    quit(status = status)
   }
 )
 
