@@ -374,7 +374,8 @@ harvest_headline <- function(r, m) {
     source_type = "website",
     content_type = "news_headline",
     storage_class = "lake",
-    country = m$country
+    country = m$country,
+    schema = if(opt$prod) "prod" else "test"
   )
 
   if (r$response$status_code == 200) {
@@ -397,7 +398,7 @@ harvest_headline <- function(r, m) {
     hub_response <- clessnverse::commit_lake_item(
       data = list(
         key = key,
-        path = paste("radarplus/headline/", m$short_name, sep=""),
+        path = "radarplus/headline",
         item = doc
       ),
       metadata = metadata,
@@ -446,7 +447,8 @@ main <- function() {
       source_type = "website",
       content_type = "news_frontpage",
       storage_class = "lake",
-      country = m$country
+      country = m$country,
+      schema = if(opt$prod) "prod" else "test"
     )
 
     r <<- rvest::session(url)
@@ -472,7 +474,7 @@ main <- function() {
       hub_response <- clessnverse::commit_lake_item(
         data = list(
           key = key,
-          path = paste("radarplus/frontpage/", m$short_name, sep=""),
+          path = "radarplus/frontpage",
           item = doc
         ),
         metadata = metadata,
