@@ -112,7 +112,7 @@ medias_urls <- list(
   )
 )
 
-pushedHeadlines = list()
+pushedHeadlines <<- list()
 
 
 harvest_headline <- function(r, m) {
@@ -392,6 +392,8 @@ harvest_headline <- function(r, m) {
     #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
     key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
 
+    pushedHeadlines <<- append(pushedHeadlines, key)
+
     hub_response <- clessnverse::commit_lake_item(
       data = list(
         key = key,
@@ -405,7 +407,6 @@ harvest_headline <- function(r, m) {
 
     if (hub_response) {
       clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
-      pushedHeadlines[[m$short_name]] = key
       nb_headline <<- nb_headline + 1
     } else {
       clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
@@ -576,6 +577,7 @@ tryCatch(
         final_message <<- if (final_message == "") pushedHeadline else paste(final_message, "\n", pushedHeadline, sep="")  
       }
     }
+
     clessnverse::logit(scriptname, final_message, logger)
 
     clessnverse::logit(scriptname, 
