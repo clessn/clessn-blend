@@ -398,7 +398,7 @@ harvest_headline <- function(r, m) {
     hub_response <- clessnverse::commit_lake_item(
       data = list(
         key = key,
-        path = paste("radarplus/headline/", m$short_name, sep=""),
+        path = "radarplus/headline",
         item = doc
       ),
       metadata = metadata,
@@ -474,7 +474,7 @@ main <- function() {
       hub_response <- clessnverse::commit_lake_item(
         data = list(
           key = key,
-          path = paste("radarplus/frontpage/", m$short_name, sep=""),
+          path = "radarplus/frontpage",
           item = doc
         ),
         metadata = metadata,
