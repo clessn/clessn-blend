@@ -374,7 +374,8 @@ harvest_headline <- function(r, m) {
     source_type = "website",
     content_type = "news_headline",
     storage_class = "lake",
-    country = m$country
+    country = m$country,
+    schema = if(opt$prod) "prod" else "test"
   )
 
   if (r$response$status_code == 200) {
@@ -446,7 +447,8 @@ main <- function() {
       source_type = "website",
       content_type = "news_frontpage",
       storage_class = "lake",
-      country = m$country
+      country = m$country,
+      schema = if(opt$prod) "prod" else "test"
     )
 
     r <<- rvest::session(url)
