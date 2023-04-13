@@ -514,13 +514,13 @@ checkDuplicate <- function(path, key, doc, credentials){
     return FALSE
   }
 
-  for(res in r$result){
-    lake_item <- hublot::retrieve_lake_item(
-      id = res$id, 
-      credentials = credentials
-    )
-    valeria_url <- lake_item[[6]]
-  }
+  
+  lake_item <- hublot::retrieve_lake_item(
+    id = r$result[[1]]$id, 
+    credentials = credentials
+  )
+  valeria_url <- lake_item[[6]]
+
 }
 
 tryCatch( 
