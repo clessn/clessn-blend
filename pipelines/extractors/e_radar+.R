@@ -510,7 +510,8 @@ checkDuplicate <- function(path, key, doc, credentials){
   r <- hublot::filter_lake_items(credentials, list(path = path, key=key))
 
   if(length(r$result) == 0){
-    clessnverse::logit(scriptname, "No results found with this metadata", logger)
+    clessnverse::logit(scriptname, "No results found with the same key", logger)
+    return FALSE
   }
 
   for(res in r$result){
