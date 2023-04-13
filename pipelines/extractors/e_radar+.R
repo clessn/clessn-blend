@@ -112,6 +112,8 @@ medias_urls <- list(
   )
 )
 
+pushedHeadlines <<- list()
+
 
 harvest_headline <- function(r, m) {
   found_supported_media <- FALSE
@@ -372,7 +374,8 @@ harvest_headline <- function(r, m) {
     source_type = "website",
     content_type = "news_headline",
     storage_class = "lake",
-    country = m$country
+    country = m$country,
+    schema = if(opt$prod) "prod" else "test"
   )
 
   if (r$response$status_code == 200) {
@@ -388,12 +391,14 @@ harvest_headline <- function(r, m) {
       keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
     }
     #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-    key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+    key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+
+    pushedHeadlines <<- append(pushedHeadlines, key)
 
     hub_response <- clessnverse::commit_lake_item(
       data = list(
         key = key,
-        path = paste("radarplus/headline/", m$short_name, sep=""),
+        path = "radarplus/headline",
         item = doc
       ),
       metadata = metadata,
@@ -442,7 +447,8 @@ main <- function() {
       source_type = "website",
       content_type = "news_frontpage",
       storage_class = "lake",
-      country = m$country
+      country = m$country,
+      schema = if(opt$prod) "prod" else "test"
     )
 
     r <<- rvest::session(url)
@@ -468,7 +474,7 @@ main <- function() {
       hub_response <- clessnverse::commit_lake_item(
         data = list(
           key = key,
-          path = paste("radarplus/frontpage/", m$short_name, sep=""),
+          path = "radarplus/frontpage",
           item = doc
         ),
         metadata = metadata,
@@ -555,18 +561,27 @@ tryCatch(
   warning = function(w) {
     clessnverse::logit(scriptname, w$message, logger)
     print(w)
-    final_message <<- if (final_message == "") w$message else paste(final_message, "\n", w$message, sep="")    
+    warnOutput <<- paste("WARNING: ", w$message)
+    final_message <<- if (final_message == "") warnOutput else paste(final_message, "\n", warnOutput, sep="")    
     status <<- 2
   }),
     
   error = function(e) {
     clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    final_message <<- if (final_message == "") e$message else paste(final_message, "\n", e$message, sep="")    
+    errorOutput <<- paste("ERROR: ", e$message)
+    final_message <<- if (final_message == "") errorOutput else paste(final_message, "\n", errorOutput, sep="")    
     status <<- 1
   },
   
   finally={
+    # if status == 0, no errors happened. Add the breakdown of every media source to final message
+    if(status == 0){
+      for (pushedHeadline in pushedHeadlines) { 
+        final_message <<- if (final_message == "") pushedHeadline else paste(final_message, "\n", pushedHeadline, sep="")  
+      }
+    }
+
     clessnverse::logit(scriptname, final_message, logger)
 
     clessnverse::logit(scriptname, 
