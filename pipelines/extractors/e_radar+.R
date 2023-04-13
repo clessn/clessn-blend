@@ -499,7 +499,9 @@ main <- function() {
   
 }
 
-
+checkDuplicate <- function(key, doc){
+  
+}
 
 tryCatch( 
   withCallingHandlers(
