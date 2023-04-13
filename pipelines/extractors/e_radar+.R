@@ -473,7 +473,11 @@ main <- function() {
       key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      handleDuplicate("radarplus/frontpage", key, doc, credentials)
+      if(handleDuplicate("radarplus/frontpage", key, doc, credentials)){
+        clessnverse::logit(scriptname, "DUPLICATED", logger)
+      } else {
+        clessnverse::logit(scriptname, "NOT DUPLICATED", logger)
+      }
 
       hub_response <- clessnverse::commit_lake_item(
         data = list(
@@ -511,7 +515,7 @@ handleDuplicate <- function(path, key, doc, credentials){
 
   if(length(r$result) == 0){
     clessnverse::logit(scriptname, "No results found with the same key", logger)
-    return FALSE
+    return(FALSE)
   }
 
   
@@ -521,6 +525,20 @@ handleDuplicate <- function(path, key, doc, credentials){
   )
   valeria_url <- lake_item[[6]]
 
+  r <- rvest::session(valeria_url)
+
+  if (r$response$status_code == 200) {
+      if (grepl("text/html", r$response$headers$`content-type`)) {
+        inHub_doc <- httr::content(r$response, as = 'text')
+        
+        if(doc == inHub_doc){
+          # here is where I'd make the thing where I update instead of save
+          return(TRUE)
+        }
+      }
+  }
+
+  return(FALSE)
 }
 
 tryCatch( 
