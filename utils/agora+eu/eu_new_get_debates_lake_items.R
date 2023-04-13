@@ -12,8 +12,16 @@ credentials <<- hublot::get_credentials(
 datalake_path <<- "agoraplus/european_parliament"
 
 r <- hublot::filter_lake_items(
-  credentials, 
-  list(path=datalake_path, metadata__format="xml")
+  filter = list(path=datalake_path, metadata__format="xml"),
+  credentials = credentials
 )
 
-r$results
+
+for (lake_item in r$results) {
+
+  current_lake_item <- hublot::retrieve_lake_item(
+    id = lake_item$id, 
+    credentials = credentials
+  )
+ 
+}
