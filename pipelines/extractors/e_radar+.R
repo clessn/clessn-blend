@@ -395,7 +395,7 @@ harvest_headline <- function(r, m) {
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
-    handleDuplicate("radarplus/headline", key, doc, credentials)
+    # handleDuplicate("radarplus/headline", key, doc, credentials)
 
     hub_response <- clessnverse::commit_lake_item(
       data = list(
