@@ -473,7 +473,7 @@ main <- function() {
       key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      # checkDuplicate("radarplus/frontpage", key, doc, credentials)
+      checkDuplicate("radarplus/frontpage", key, doc, credentials)
 
       hub_response <- clessnverse::commit_lake_item(
         data = list(
@@ -503,15 +503,24 @@ main <- function() {
   
 }
 
-# checkDuplicate <- function(path, key, doc, credentials){
-#   # data <- hublot::filter_lake_items(credentials, filter = filter)
+checkDuplicate <- function(path, key, doc, credentials){
+  # data <- hublot::filter_lake_items(credentials, filter = filter)
 
-#   # retrieve_lake_item 
-#   previous <- hublot::filter_lake_items(credentials, paste(path, key, sep = "/"))
+  # retrieve_lake_item 
+  r <- hublot::filter_lake_items(credentials, list(path = path, key=key))
 
-#   if(previous != NULL) clessnverse::logit(scriptname, paste(key, "has a duplicate in the lake with the same key (I think)"), logger)
-#   else clessnverse::logit(scriptname, "No item with that key", logger)
-# }
+  if(length(r$result) == 0){
+    clessnverse::logit(scriptname, "No results found with this metadata", logger)
+  }
+
+  for(res in r$result){
+    lake_item <- hublot::retrieve_lake_item(
+      id = res$id, 
+      credentials = credentials
+    )
+    valeria_url <- lake_item[[6]]
+  }
+}
 
 tryCatch( 
   withCallingHandlers(
