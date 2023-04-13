@@ -473,6 +473,8 @@ main <- function() {
       key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
+      # checkDuplicate("radarplus/frontpage", key, doc, credentials)
+
       hub_response <- clessnverse::commit_lake_item(
         data = list(
           key = key,
@@ -507,7 +509,7 @@ main <- function() {
 #   # retrieve_lake_item 
 #   previous <- hublot::filter_lake_items(credentials, paste(path, key, sep = "/"))
 
-#   if(previous != NULL) clessnverse::logit(scriptname, previous, logger)
+#   if(previous != NULL) clessnverse::logit(scriptname, paste(key, "has a duplicate in the lake with the same key (I think)"), logger)
 #   else clessnverse::logit(scriptname, "No item with that key", logger)
 # }
 
