@@ -395,7 +395,7 @@ harvest_headline <- function(r, m) {
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
-    # checkDuplicate("radarplus/headline", key, doc, credentials)
+    handleDuplicate("radarplus/headline", key, doc, credentials)
 
     hub_response <- clessnverse::commit_lake_item(
       data = list(
@@ -473,7 +473,7 @@ main <- function() {
       key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      checkDuplicate("radarplus/frontpage", key, doc, credentials)
+      handleDuplicate("radarplus/frontpage", key, doc, credentials)
 
       hub_response <- clessnverse::commit_lake_item(
         data = list(
@@ -503,7 +503,7 @@ main <- function() {
   
 }
 
-checkDuplicate <- function(path, key, doc, credentials){
+handleDuplicate <- function(path, key, doc, credentials){
   # data <- hublot::filter_lake_items(credentials, filter = filter)
 
   # retrieve_lake_item 
