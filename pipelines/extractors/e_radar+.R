@@ -473,7 +473,7 @@ main <- function() {
       key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      if(handleDuplicate("radarplus/frontpage", key, doc, credentials)){
+      if(handleDuplicate("radarplus/frontpage", key, doc, credentials, m$short_name)){
         clessnverse::logit(scriptname, "DUPLICATED", logger)
       } else {
         clessnverse::logit(scriptname, "NOT DUPLICATED", logger)
@@ -507,20 +507,20 @@ main <- function() {
   
 }
 
-handleDuplicate <- function(path, key, doc, credentials){
+handleDuplicate <- function(path, key, doc, credentials, mediaSource){
   # data <- hublot::filter_lake_items(credentials, filter = filter)
 
   # retrieve_lake_item 
-  r <- hublot::filter_lake_items(credentials, list(path = path, key=key))
+  r <- hublot::filter_lake_items(credentials, list(path = path, key__contains = mediaSource))
 
   if(length(r$result) == 0){
     clessnverse::logit(scriptname, "No results found with the same key", logger)
     return(FALSE)
   }
 
-  
   lake_item <- hublot::retrieve_lake_item(
-    id = r$result[[1]]$id, 
+    # Sorted by key alphabetical ascending. Means that the last element is most recent
+    id = r$result[[length(r$result)]]$id, 
     credentials = credentials
   )
   valeria_url <- lake_item[[6]]
