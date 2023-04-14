@@ -175,21 +175,21 @@ process_debate_xml <- function(lake_item, xml_core) {
       if (!node_name %in% c("INTERVENTION", "PRES")) next
 
       if ( node_name == "PRES" ) {
-        president_name <- XML::xmlValue(XML::xpathApply(node, "//PRES/EMPHAS[@NAME='B']"))
-        president_name <- gsub(paste(c(presidency_of_the_hon, president_of_the_commission, president_of_the_committee, presidency, president), collapse= "|"), "", tolower(president_name))
-        president_name <- gsub("\\.", "", president_name)
-        president_name <- gsub("\\:", "", president_name)
-        president_name <- trimws(president_name)
-        president_name <- stringr::str_to_title(president_name)
-        if (length(president_name) > 1) stop()
+        name <- XML::xmlValue(XML::xpathApply(node, "//PRES/EMPHAS[@NAME='B']"))
+        if (length(name) > 0) {
+          president_name <- gsub(paste(c(presidency_of_the_hon, president_of_the_commission, president_of_the_committee, presidency, president), collapse= "|"), "", tolower(name))
+          president_name <- gsub("\\.", "", president_name)
+          president_name <- gsub("\\:", "", president_name)
+          president_name <- trimws(president_name)
+          president_name <- stringr::str_to_title(president_name)
+          if (length(president_name) > 1 || is.na(president_name)) stop()
+        }
 
         next
       }
 
 
       if ( node_name == "INTERVENTION" ) {
-
-        intervention_seqnum <- intervention_seqnum + 1
         
         intervention_lang <- NA
         intervention_header <- NA
@@ -227,6 +227,10 @@ process_debate_xml <- function(lake_item, xml_core) {
 
         if (is.na(header_value2) || length(header_value2) == 0) {
           header_value2 <- previous_header_value2
+        }
+
+        if ( !is.na(header_value2) && nchar(gsub("[[:punct:] ]+", "", header_value2)) == 0 ) {
+          header_value2 <- NA
         }
         
         header_text <- if (!is.na(header_value2)) paste(header_value1, header_value2, sep = ", ") else header_value1
@@ -294,12 +298,19 @@ process_debate_xml <- function(lake_item, xml_core) {
 
         if (!is.na(header_value2)) {
 
-          header_value2 <- strsplit(substr(intervention_text, 1, 200), "\\. – |\\. –|\\.– |\\.–|^– ")
+          if (grepl("\\. – |\\. –|\\.– |\\.–|^– ", substr(intervention_text, 1, 200))) {
+            header_value2 <- strsplit(substr(intervention_text, 1, 200), "\\. – |\\. –|\\.– |\\.–|^– ")
+          }
+
           if (length(header_value2[[1]]) > 1) {
             header_value2 <- header_value2[[1]][1]
           }
 
-          intervention_text <- gsub(header_value2, "", intervention_text)
+          sub_text <- header_value2
+          sub_text <- gsub("\\(", "\\\\(", header_value2)
+          sub_text <- gsub("\\)", "\\\\)", sub_text)
+
+          intervention_text <- gsub(sub_text, "", intervention_text)
         }
 
         if (stringr::str_detect(intervention_text, "\\. – ")) {
@@ -334,7 +345,7 @@ process_debate_xml <- function(lake_item, xml_core) {
         intervention_text <- gsub("^\n\n", "", intervention_text)        
 
         
-        if (opt$translate) {
+        if (opt$translate && nchar(intervention_text) > 0) {
 
           #translate intervention_text
           intervention_text_lang <- clessnverse::detect_language("fastText", substr(intervention_text, 1, 300))
@@ -379,12 +390,24 @@ process_debate_xml <- function(lake_item, xml_core) {
             if (!is.na(intervention_text) && intervention_text_lang == "en") intervention_text_en <- intervention_text
           }
         } else {
-          intervention_text_lang = "xx"
-          intervention_text_en = "not translated because opt$translate = FALSE"
+          if (nchar(intervention_text) > 0) {
+            # on avait du texte dans l'intervention
+            intervention_text_lang = "xx"
+            intervention_text_en = "not translated because opt$translate = FALSE"
+          } else {
+            # l'intervention est vide
+            next
+            # if (!is.null(header_value2) && !is.na(header_value2) && nchar(header_value2) > 0) {
+            #  intervention_text <- header_value2
+            #  intervention_text_en <- header_value2_en
+            # }
+          }
         } #if (opt$translate)
         
         
         # commit 
+        intervention_seqnum <- intervention_seqnum + 1
+
         row_to_commit <- list(
             .schema = opt$schema, .lake_item_format = "xml",
             .lake_item_path = lake_item$path, .lake_item_key = lake_item$key,
@@ -1017,6 +1040,26 @@ main <- function() {
   clessnverse::logit(scriptname, paste("found", length(r$results), "lake items"), logger)
 
   for (lake_item in r$results) {
+
+    if (!opt$refresh_data) {
+      # check of that debate already exists in the data warehouse
+      item_check <- hublot::filter_table_items(
+        table_name = paste("clhub_tables_warehouse_", wh_table, sep=''), 
+        filter = list(
+          key = paste(lake_item$key, "-1-", opt$schema, sep = "")
+        ),
+        credentials = credentials
+      )    
+
+      if (length(item_check$results) > 0) {
+        clessnverse::logit(
+          scriptname, 
+          paste("Intervention", paste(lake_item$key, "-1-", opt$schema, sep = ""), "already exists.  Skipping entire debate because refresh_data option is TRUE"),
+          logger
+        )
+        next
+      }
+    }
  
     current_lake_item <- hublot::retrieve_lake_item(lake_item$id, credentials)
     strip_and_load_debate(current_lake_item)
@@ -1041,7 +1084,8 @@ tryCatch(
       "präsident","Πρόεδρος","elnök","preside","uachtarán","Presidente","prezidents","prezidentas",
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
-      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", "Puhemies", "ELNÖKÖL", "Przewodnicząca"
+      "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -1145,7 +1189,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"
+      "silla del sr","ordförande för mr", "Predsedá"
     )))
 
 
@@ -1171,10 +1215,10 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     # opt <<- list(
-    #  backend = "dataframe",
+    #  backend = "hub",
     #  log_output = c("console"),
-    #  method = c("date_range", "2023-03-14", "2023-03-14"),
-    #  schema = "test",
+    #  method = c("date_range", "2020-07-08", "2020-07-08"),
+    #  schema = "202303",
     #  refresh_data = TRUE,
     #  translate = TRUE
     # )

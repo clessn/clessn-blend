@@ -9,8 +9,9 @@ df <- clessnverse::get_warehouse_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__.schema = "202303",
-    data__event_date__gte="2014-01-01", 
-    data__event_date__lte="2019-06-30"
+    #data__event_date__gte="2014-01-01", 
+    #data__event_date__lte="2019-06-30"
+    data__president_name__isnull=TRUE 
   ),
   credentials = credentials,
   nbrows = 0
