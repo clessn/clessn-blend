@@ -8,13 +8,15 @@ df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__.schema="202303",
-    data__event_date__gte="2019-07-01", 
-    data__event_date__lte="2023-03-31"
+    data__event_date__gte="2020-07-08", 
+    data__event_date__lte="2020-07-08"
   ),
   credentials = credentials,
   nbrows = 0
 )
 
+nrow(df)
+SDFr <- clessnverse::get_dictionary(topic = "sentiments", credentials=credentials)
 table(df$speaker_full_name, useNA = 'ifany')
 table(df$speaker_polgroup, useNA = 'ifany')
 table(df$speaker_party, useNA = 'ifany')

@@ -314,7 +314,7 @@ strip_and_push_intervention <- function(intervention) {
 
           detected_speaker_type_lang <- clessnverse::detect_language("fastText", speaker_type) 
 
-          if (detected_speaker_type_lang != "en") {
+          if (!is.na(detected_speaker_type_lang) && detected_speaker_type_lang != "en") {
             tryCatch(
               {
                 speaker_type <- clessnverse::translate_text(
@@ -644,7 +644,7 @@ tryCatch(
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
       "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
-      "Puhemies", "ELNÖKÖL", "Przewodnicząca"
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -748,7 +748,7 @@ tryCatch(
       "president vum mr","president tas-sur","stoel van dhr","foarsitter fan mr",
       "krzesło p","cadeira do sr","scaunul dlui","predseda p",
       "predsednik g","jaunaren burua","president del sr","presidente do sr",
-      "silla del sr","ordförande för mr"
+      "silla del sr","ordförande för mr", "Predsedá"
     )))
 
     dignitary <- c(
@@ -770,11 +770,11 @@ tryCatch(
     #    but set it to c("file") before putting in automated containerized production
 
     # opt <<- list(
-    #  backend = "dataframe",
-    #  schema = "test",
-    #  target_schema = "test",
+    #  backend = "hub",
+    #  schema = "202303",
+    #  target_schema = "202303",
     #  log_output = c("console"),
-    #  method = c("date_range", "2019-11-25", "2019-11-25"),
+    #  method = c("date_range", "2020-07-08", "2020-07-08"),
     #  refresh_data = TRUE,
     #  translate = TRUE
     # )
