@@ -492,7 +492,7 @@ main <- function() {
         keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
       }
 
-      key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
+      key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
       if(handleDuplicate("radarplus/frontpage", key, doc, credentials, m$short_name)){
