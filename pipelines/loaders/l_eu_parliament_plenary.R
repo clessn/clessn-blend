@@ -285,7 +285,10 @@ process_debate_xml <- function(lake_item, xml_core) {
           }
         } #if (opt$translate)
 
-        header_text_en <- if (!is.na(header_value2) > 0) paste(header_value1, header_value2_en, sep = ", ") else header_value1
+        header_text_en <- if (!is.na(header_value2)) paste(header_value1, header_value2_en, sep = ", ") else header_value1
+
+        if (grepl("\\, character\\(0\\)", header_text)) header_text <- gsub("\\, character\\(0\\)", "", header_text)
+        if (grepl("\\, character\\(0\\)", header_text_en)) header_text_en <- gsub("\\, character\\(0\\)", "", header_text_en)
 
         intervention_lang <- tolower(XML::xmlValue(speaker_node[["LG"]]))
         intervention_text <- ""
@@ -1085,7 +1088,7 @@ tryCatch(
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
       "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
-      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci"
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci", "SĒDI VADA", "Sēdes vadītājs", "Προεδρια"
       )))
 
     vicepresident <<- tolower(unique(c(

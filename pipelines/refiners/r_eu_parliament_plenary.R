@@ -54,10 +54,16 @@ detect_president <- function(x) {
   #           clessnverse::rm_accents(tolower(vicepresident)) %contains_one_of% clessnverse::rm_accents(tolower(x)) ||
   #           clessnverse::rm_accents(tolower(presidency)) %contains_one_of% clessnverse::rm_accents(tolower(x)) ||
   #           clessnverse::rm_accents(tolower(presidency_of_the_hon)) %contains_one_of% clessnverse::rm_accents(tolower(x)) )
-  return (grepl(paste(clessnverse::rm_accents(tolower(president)), collapse="|"), clessnverse::rm_accents(gsub("\\.|\\:", "", tolower(x)))) ||
-          grepl(paste(clessnverse::rm_accents(tolower(vicepresident)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
-          grepl(paste(clessnverse::rm_accents(tolower(presidency)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
-          grepl(paste(clessnverse::rm_accents(tolower(presidency_of_the_hon)), collapse="|"), clessnverse::rm_accents(tolower(x))) )
+  return (
+    grepl(paste(clessnverse::rm_accents(tolower(president)), collapse="|"), clessnverse::rm_accents(gsub("\\.|\\:", "", tolower(x)))) ||
+    grepl(paste(clessnverse::rm_accents(tolower(vicepresident)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
+    grepl(paste(clessnverse::rm_accents(tolower(presidency)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
+    grepl(paste(clessnverse::rm_accents(tolower(presidency_of_the_hon)), collapse="|"), clessnverse::rm_accents(tolower(x))) ||
+    grepl(paste(tolower(president), collapse="|"), gsub("\\.|\\:", "", tolower(x))) ||
+    grepl(paste(tolower(vicepresident), collapse="|"), tolower(x)) ||
+    grepl(paste(tolower(presidency), collapse="|"), tolower(x)) ||
+    grepl(paste(tolower(presidency_of_the_hon), collapse="|"), tolower(x))
+  )
 
 }
 
@@ -383,10 +389,24 @@ strip_and_push_intervention <- function(intervention) {
           )
           if (speaker_type == "") speaker_type <- "MEP"
         } else {
-          speaker_type <- NA
-          speaker_full_name <- header
-          clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
-          warning(paste("unknown header parsing pattern:", header))
+          if ( stringr::str_detect(header, "\\((.*)") ) {
+            header1 <- trimws(stringr::str_split(header, "\\((.*)")[[1]][1])
+            header2 <- trimws(stringr::str_split(header, "\\((.*)")[[1]][2])
+            speaker_full_name <- header1
+            speaker_full_name <- gsub("\\s+", " ", stringr::str_trim(speaker_full_name))
+            speaker_full_name_native <- stringr::str_replace(header_native, "\\((.*)", "")
+            speaker_full_name_native <- gsub("\\s+", " ", stringr::str_trim(speaker_full_name_native))
+            speaker_type <- which_contains_one_of(
+              clessnverse::rm_accents(c(president_of_the_commission, president_of_the_committee, vicepresident, vicepresident, president)),
+              clessnverse::rm_accents(tolower(header))
+            )
+            if (speaker_type == "") speaker_type <- "MEP"
+          } else {
+            speaker_type <- NA
+            speaker_full_name <- header
+            clessnverse::logit(scriptname, paste("unknown header parsing pattern:", header), logger)
+            warning(paste("unknown header parsing pattern:", header))
+          }
         }
       }
 
@@ -644,7 +664,7 @@ tryCatch(
       "presidint","prezydent","presedinte","predsednik","presidentea","presidente","chairman","chair",
       "présidente","Präsident","President", "Preşedinte", "Preşedintele", "Presedintele", "in the chair",
       "Mistopredseda",  "Präsidentin", "Presedintia", "Speaker", "Provisional Chair", "Puhetta Johti", 
-      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci"
+      "Puhemies", "ELNÖKÖL", "Przewodnicząca", "Predsedajúci", "SĒDI VADA", "Sēdes vadītājs", "Προεδρια"
       )))
 
     vicepresident <<- tolower(unique(c(
@@ -774,7 +794,7 @@ tryCatch(
     #  schema = "202303",
     #  target_schema = "202303",
     #  log_output = c("console"),
-    #  method = c("date_range", "2020-07-08", "2020-07-08"),
+    #  method = c("date_range", "2022-12-13", "2022-12-13"),
     #  refresh_data = TRUE,
     #  translate = TRUE
     # )
