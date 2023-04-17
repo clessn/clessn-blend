@@ -377,7 +377,7 @@ harvest_headline <- function(r, m) {
     storage_class = "lake",
     country = m$country,
     schema = if(opt$prod) "prod" else "test",
-    identifiant = NA
+    hashedHTML = NA
   )
 
   if (r$response$status_code == 200) {
