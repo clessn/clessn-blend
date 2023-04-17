@@ -8,8 +8,8 @@ df <- clessnverse::get_mart_table(
   table_name = 'agoraplus_european_parliament',
   data_filter = list(
     data__.schema="202303",
-    data__event_date__gte="2020-07-08", 
-    data__event_date__lte="2020-07-08"
+    data__event_date__gte="2014-01-01", 
+    data__event_date__lte="2023-03-31"
   ),
   credentials = credentials,
   nbrows = 0
