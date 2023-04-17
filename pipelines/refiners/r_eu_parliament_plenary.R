@@ -510,15 +510,15 @@ strip_and_push_intervention <- function(intervention) {
     while (!write_success && nb_attempts < 20) {
       tryCatch(
         {
-          clessnverse::logit(scriptname, paste("about to commit", paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep="")), logger)
+          clessnverse::logit(scriptname, paste("about to commit", paste(gsub(paste("-",intervention$.schema,sep=""), "", intervention$hub.key), "-", opt$target_schema, sep="")), logger)
           r <- clessnverse::commit_mart_row(
             table = mart_table,
-            key = paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep=""), 
+            key = paste(gsub(paste("-",intervention$.schema,sep=""), "", intervention$hub.key), "-", opt$target_schema, sep=""), 
             row = as.list(intervention[1,c(which(!grepl("hub.",names(intervention))))]),
             refresh_data = T,
             credentials = credentials
           )
-          clessnverse::logit(scriptname, paste("committed", paste(gsub(intervention$.schema, "", intervention$hub.key), opt$target_schema, sep="")), logger)
+          clessnverse::logit(scriptname, paste("committed", paste(gsub(paste("-",intervention$.schema,sep=""), "", intervention$hub.key), "-", opt$target_schema, sep="")), logger)
           write_success <- TRUE
         },
         error = function(e) {
@@ -789,15 +789,15 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    # opt <<- list(
-    #  backend = "hub",
-    #  schema = "202303",
-    #  target_schema = "202303",
-    #  log_output = c("console"),
-    #  method = c("date_range", "2022-12-13", "2022-12-13"),
-    #  refresh_data = TRUE,
-    #  translate = TRUE
-    # )
+    opt <<- list(
+     backend = "hub",
+     schema = "202303",
+     target_schema = "202303",
+     log_output = c("console"),
+     method = c("date_range", "2023-01-01", "2023-03-31"),
+     refresh_data = TRUE,
+     translate = TRUE
+    )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
