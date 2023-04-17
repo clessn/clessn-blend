@@ -56,4 +56,4 @@
 
 # Radar+ pipeline
 # Every 10 minutes extract
-*/10 * * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract attached radar+ --log_output "file" --method "frontpage" --refresh_data TRUE --translate TRUE --prod TRUE >> /home/patrick/logs/e_radar+.consolelog 2>&1
+*/10 * * * * $CLESSN_ROOT_DIR/clessn-blend/automation/docker/pipeline.sh extract attached radar+ --log_output "file" --method "frontpage" --refresh_data TRUE --translate TRUE --schema "prod" >> /home/patrick/logs/e_radar+.consolelog 2>&1
