@@ -376,7 +376,7 @@ harvest_headline <- function(r, m) {
     content_type = "news_headline",
     storage_class = "lake",
     country = m$country,
-    schema = if(opt$prod) "prod" else "test",
+    schema = opt$schema,
     hashedHTML = NA
   )
 
@@ -453,7 +453,7 @@ main <- function() {
       content_type = "news_headline",
       storage_class = "lake",
       country = m$country,
-      schema = if(opt$prod) "prod" else "test",
+      schema = opt$schema,
       keysUne = NA
     )
 
