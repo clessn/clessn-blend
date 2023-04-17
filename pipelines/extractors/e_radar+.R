@@ -439,18 +439,20 @@ main <- function() {
 
     metadata <- list(
       format = "",
-      timespamp = Sys.time(),
-      tags = paste("news,frontpage,radar+", m$short_name, m$long_name, sep=","),
+      start_timestamp = Sys.time(),
+      end_timestamp = Sys.time(),
+      tags = paste("news,headline,radar+", m$short_name, m$long_name, sep=","),
       pillar = "radar+",
       source = url,
       media = m$short_name,
-      description = "Frontpage page of the medias where the headline sits",
+      description = "Headline page of the medias",
       object_type = "raw_data",
       source_type = "website",
-      content_type = "news_frontpage",
+      content_type = "news_headline",
       storage_class = "lake",
       country = m$country,
-      schema = if(opt$prod) "prod" else "test"
+      schema = if(opt$prod) "prod" else "test",
+      keysUne = NA
     )
 
     r <<- rvest::session(url)
