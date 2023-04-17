@@ -364,7 +364,8 @@ harvest_headline <- function(r, m) {
 
   metadata <- list(
     format = "",
-    timespamp = Sys.time(),
+    start_timestamp = Sys.time(),
+    end_timestamp = Sys.time(),
     tags = paste("news,headline,radar+", m$short_name, m$long_name, sep=","),
     pillar = "radar+",
     source = url,
