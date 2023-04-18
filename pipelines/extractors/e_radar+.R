@@ -296,6 +296,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
 
+    if(length(CTV_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "CTV: Initial attempt failed, trying thorugh xpaths.", logger)
+      CTV_extracted_headline <- r %>%
+        rvest::html_nodes(xpath = '//div[@class="c-list__item__block"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="c-list__item__image"]') %>%
+        rvest::html_attr("href")
+    }
+
     if(length(CTV_extracted_headline) > 0){
       if (grepl("^http.*", CTV_extracted_headline[[1]])) {
         url <- CTV_extracted_headline[[1]]
