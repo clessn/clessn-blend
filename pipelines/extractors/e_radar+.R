@@ -385,7 +385,8 @@ harvest_headline <- function(r, m) {
     storage_class = "lake",
     country = m$country,
     schema = opt$schema,
-    hashedHTML = NA
+    hashed_html = NA,
+    frontpage_root_key = NA
   )
 
   if (r$response$status_code == 200) {
@@ -468,7 +469,7 @@ main <- function() {
       storage_class = "lake",
       country = m$country,
       schema = opt$schema,
-      keysUne = NA
+      keys_une = NA
     )
 
     r <<- rvest::session(url)
