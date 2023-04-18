@@ -407,24 +407,30 @@ harvest_headline <- function(r, m) {
 
     # handleDuplicate("radarplus/headline", key, doc, credentials)
 
-    hub_response <- clessnverse::commit_lake_item(
-      data = list(
-        key = key,
-        path = "radarplus/headline",
-        item = doc
-      ),
-      metadata = metadata,
-      mode = if (opt$refresh_data) "refresh" else "newonly",
-      credentials
-    )
+    pushed <- FALSE
 
-    if (hub_response) {
-      clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
-      nb_headline <<- nb_headline + 1
-    } else {
-      clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
-      warning(paste("error while pushing headline", key, "to datalake"))
+    while(!pushed){
+      hub_response <- clessnverse::commit_lake_item(
+        data = list(
+          key = key,
+          path = "radarplus/headline",
+          item = doc
+        ),
+        metadata = metadata,
+        mode = if (opt$refresh_data) "refresh" else "newonly",
+        credentials
+      )
+
+      if (hub_response) {
+        clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
+        nb_headline <<- nb_headline + 1
+        pushed <- TRUE
+      } else {
+        clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
+        warning(paste("error while pushing headline", key, "to datalake"))
+      }
     }
+    
 
   } else {
       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
@@ -491,24 +497,29 @@ main <- function() {
         clessnverse::logit(scriptname, "NOT DUPLICATED", logger)
       }
 
-      hub_response <- clessnverse::commit_lake_item(
-        data = list(
-          key = key,
-          path = "radarplus/frontpage",
-          item = doc
-        ),
-        metadata = metadata,
-        mode = mode,
-        credentials = credentials
-      )
+      pushed <- FALSE
 
-      if (hub_response) {
-        clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
-        nb_frontpage <<- nb_frontpage + 1
-        harvest_headline(r, m)
-      } else {
-        clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
-        warning(paste("error while pushing frontpage", key, "to datalake"))
+      while(!pushed){
+        hub_response <- clessnverse::commit_lake_item(
+          data = list(
+            key = key,
+            path = "radarplus/frontpage",
+            item = doc
+          ),
+          metadata = metadata,
+          mode = mode,
+          credentials = credentials
+        )
+
+        if (hub_response) {
+          clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
+          nb_frontpage <<- nb_frontpage + 1
+          pushed <- TRUE
+          harvest_headline(r, m)
+        } else {
+          clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
+          warning(paste("error while pushing frontpage", key, "to datalake"))
+        }
       }
 
     } else {
