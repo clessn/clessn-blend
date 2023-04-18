@@ -472,8 +472,7 @@ main <- function() {
       content_type = "news_headline",
       storage_class = "lake",
       country = m$country,
-      schema = opt$schema,
-      headline_keys = NA
+      schema = opt$schema
     )
 
     r <<- rvest::session(url)
