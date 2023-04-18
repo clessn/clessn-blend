@@ -409,8 +409,12 @@ harvest_headline <- function(r, m) {
     # handleDuplicate("radarplus/headline", key, doc, credentials)
 
     pushed <- FALSE
+    counter <- 0
 
-    while(!pushed){
+    while(!pushed && counter < 20){
+      if(counter > 0){
+        Sys.sleep(20)
+      }
       hub_response <- clessnverse::commit_lake_item(
         data = list(
           key = key,
@@ -428,11 +432,13 @@ harvest_headline <- function(r, m) {
         pushed <- TRUE
       } else {
         clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
-        warning(paste("error while pushing headline", key, "to datalake"))
+        counter <- counter + 1
       }
     }
     
-
+    if(!pushed){
+      warning(paste("error while pushing headline", key, "to datalake"))
+    }
   } else {
       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
       warning(paste("there was an error getting url", url))
@@ -499,8 +505,12 @@ main <- function() {
       }
 
       pushed <- FALSE
+      counter <- 0
 
       while(!pushed){
+        if(counter > 0){
+          Sys.sleep(20)
+        }
         hub_response <- clessnverse::commit_lake_item(
           data = list(
             key = key,
@@ -516,11 +526,16 @@ main <- function() {
           clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
           nb_frontpage <<- nb_frontpage + 1
           pushed <- TRUE
-          harvest_headline(r, m)
         } else {
           clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
-          warning(paste("error while pushing frontpage", key, "to datalake"))
+          counter <- counter + 1
         }
+      }
+
+      if(pushed){
+          harvest_headline(r, m)
+      } else {
+          warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
