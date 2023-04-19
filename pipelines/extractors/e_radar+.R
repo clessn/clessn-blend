@@ -296,6 +296,14 @@ harvest_headline <- function(r, m) {
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
 
+    if(length(CTV_extracted_headline) == 0){
+      clessnverse::logit(scriptname, "CTV: Initial attempt failed, trying thorugh xpaths.", logger)
+      CTV_extracted_headline <- r %>%
+        rvest::html_nodes(xpath = '//div[@class="c-list__item__block"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="c-list__item__image"]') %>%
+        rvest::html_attr("href")
+    }
+
     if(length(CTV_extracted_headline) > 0){
       if (grepl("^http.*", CTV_extracted_headline[[1]])) {
         url <- CTV_extracted_headline[[1]]
@@ -377,7 +385,8 @@ harvest_headline <- function(r, m) {
     storage_class = "lake",
     country = m$country,
     schema = opt$schema,
-    hashedHTML = NA
+    hashed_html = NA,
+    frontpage_root_key = NA
   )
 
   if (r$response$status_code == 200) {
@@ -397,25 +406,37 @@ harvest_headline <- function(r, m) {
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
-    hub_response <- clessnverse::commit_lake_item(
-      data = list(
-        key = key,
-        path = "radarplus/headline",
-        item = doc
-      ),
-      metadata = metadata,
-      mode = if (opt$refresh_data) "refresh" else "newonly",
-      credentials
-    )
+    pushed <- FALSE
+    counter <- 0
 
-    if (hub_response) {
-      clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
-      nb_headline <<- nb_headline + 1
-    } else {
-      clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
+    while(!pushed && counter < 20){
+      if(counter > 0){
+        Sys.sleep(20)
+      }
+      hub_response <- clessnverse::commit_lake_item(
+        data = list(
+          key = key,
+          path = "radarplus/headline",
+          item = doc
+        ),
+        metadata = metadata,
+        mode = if (opt$refresh_data) "refresh" else "newonly",
+        credentials
+      )
+
+      if (hub_response) {
+        clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
+        nb_headline <<- nb_headline + 1
+        pushed <- TRUE
+      } else {
+        clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
+        counter <- counter + 1
+      }
+    }
+    
+    if(!pushed){
       warning(paste("error while pushing headline", key, "to datalake"))
     }
-
   } else {
       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
       warning(paste("there was an error getting url", url))
@@ -452,7 +473,7 @@ main <- function() {
       storage_class = "lake",
       country = m$country,
       schema = opt$schema,
-      keysUne = NA
+      headline_root_key = NA
     )
 
     r <<- rvest::session(url)
@@ -472,27 +493,41 @@ main <- function() {
         keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
       }
 
-      key <- gsub(" |-|:|/|\\.", "_", paste(stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+      key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      hub_response <- clessnverse::commit_lake_item(
-        data = list(
-          key = key,
-          path = "radarplus/frontpage",
-          item = doc
-        ),
-        metadata = metadata,
-        mode = mode,
-        credentials = credentials
-      )
+      pushed <- FALSE
+      counter <- 0
 
-      if (hub_response) {
-        clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
-        nb_frontpage <<- nb_frontpage + 1
-        harvest_headline(r, m)
+      while(!pushed){
+        if(counter > 0){
+          Sys.sleep(20)
+        }
+        hub_response <- clessnverse::commit_lake_item(
+          data = list(
+            key = key,
+            path = "radarplus/frontpage",
+            item = doc
+          ),
+          metadata = metadata,
+          mode = mode,
+          credentials = credentials
+        )
+
+        if (hub_response) {
+          clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
+          nb_frontpage <<- nb_frontpage + 1
+          pushed <- TRUE
+        } else {
+          clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
+          counter <- counter + 1
+        }
+      }
+
+      if(pushed){
+          harvest_headline(r, m)
       } else {
-        clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
-        warning(paste("error while pushing frontpage", key, "to datalake"))
+          warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
