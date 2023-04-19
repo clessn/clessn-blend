@@ -456,7 +456,7 @@ main <- function() {
   
   for (m in medias_urls) {
     url <- paste(m$base, m$front, sep="")
-    clessnverse::logit(scriptname, paste("getting frontpage from", url), logger)
+    clessnverse::logit(scriptname, paste("getting frontpage from", url, "with code", r$response$status_code), logger)
 
     metadata <- list(
       format = "",
@@ -531,7 +531,7 @@ main <- function() {
       }
 
     } else {
-       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+       clessnverse::logit(scriptname, paste("there was an error getting url", url, "with code", r$response$status_code), logger)
        warning(paste("there was an error getting url", url))
     }
   }#</for>
