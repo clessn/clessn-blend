@@ -408,6 +408,9 @@ harvest_headline <- function(r, m) {
 
     # handleDuplicate("radarplus/headline", key, doc, credentials)
 
+    pushed <- FALSE
+    counter <- 0
+
     while(!pushed && counter < 20){
       if(counter > 0){
         Sys.sleep(20)
