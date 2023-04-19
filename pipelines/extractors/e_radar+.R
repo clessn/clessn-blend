@@ -114,8 +114,7 @@ medias_urls <- list(
 
 pushedHeadlines <<- list()
 
-
-harvest_headline <- function(r, m) {
+findHeadline <- function(r, m){
   found_supported_media <- FALSE
 
   if (m$short_name == "RCI") {
@@ -364,6 +363,12 @@ harvest_headline <- function(r, m) {
     warning(paste("no supported media found", m$short_name))
     return()
   }
+
+  return(url)
+}
+
+harvest_headline <- function(r, m) {
+  
 
   clessnverse::logit(scriptname, paste("getting headline from", url), logger)
 
