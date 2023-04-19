@@ -113,8 +113,10 @@ medias_urls <- list(
 )
 
 pushedHeadlines <<- list()
+failedHeadlines <<- list()
 
 find_headline <- function(r, m){
+  clessnverse::logit(scriptname, paste("Finding headline for", m$short_name), logger)
   found_supported_media <- FALSE
 
   if (m$short_name == "RCI") {
@@ -367,13 +369,7 @@ find_headline <- function(r, m){
   return(url)
 }
 
-harvest_headline <- function(r, m) {
-  url <- find_headline(r, m)
-
-  if(url == ""){
-    warning(paste("WARNING: Could now find url from source", m$short_name))
-  }
-
+harvest_headline <- function(r, m, url) {
   clessnverse::logit(scriptname, paste("getting headline from", url), logger)
 
   r <- rvest::session(url)
@@ -496,6 +492,14 @@ main <- function() {
     m <<- m
 
     if (r$response$status_code == 200) {
+      headlineUrl <- find_headline(r, m)
+
+      if(headlineUrl == ""){
+        clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
+        failedHeadlines <<- append(failedHeadlines, m)
+        next
+      }
+
       if (grepl("text/html", r$response$headers$`content-type`)) {
         metadata$format <- "html"
         doc <- httr::content(r$response, as = 'text')
@@ -542,7 +546,7 @@ main <- function() {
       }
 
       if(pushed){
-          harvest_headline(r, m)
+          harvest_headline(r, m, headlineUrl)
       } else {
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
@@ -553,6 +557,8 @@ main <- function() {
     }
   }#</for>
   
+
+
 }
 
 handleDuplicate <- function(path, key, doc, credentials, mediaSource){
