@@ -406,12 +406,8 @@ harvest_headline <- function(r, m) {
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
-    keyUrl <- url
-    if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
-      keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
-    }
-    #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-    key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+    
+    key <- form_key(url)
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
@@ -456,6 +452,15 @@ harvest_headline <- function(r, m) {
 } #</my_function>
 
 
+form_key <- function(url){
+  keyUrl <- url
+  if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
+    keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
+  }
+  key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+  return(key)
+}
+
 
 ###############################################################################
 ########################               Main              ######################
@@ -498,13 +503,8 @@ main <- function() {
 
       clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
 
-      #key = paste(digest::digest(url), gsub(" |-|:", "", Sys.time()), sep="_")
-      keyUrl <- url
-      if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
-        keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
-      }
+      key <- form_key(url)
 
-      key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
       if(handleDuplicate("radarplus/frontpage", key, doc, credentials, m$short_name)){
