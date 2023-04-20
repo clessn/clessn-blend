@@ -512,12 +512,9 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     in_lake_id <- lake_item[[metadata_index]]$headline_root_key
   } else {
     in_lake_id <- lake_item[[metadata_index]]$hashed_html
-  } 
+  }
 
-  clessnverse::logit(scriptname, paste("In lake id:", in_lake_id), logger)
-  # same_id <- identifiant == in_lake_id
-
-  return(FALSE)
+  return(!is.null(in_lake_id) && identifiant == in_lake_id)
 }
 ###############################################################################
 ########################               Main              ######################
