@@ -402,8 +402,11 @@ harvest_headline <- function(r, m, url) {
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
-    
-    key <- form_key(url)
+    key <- form_root_key(url)
+
+    key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
+
+    clessnverse::logit(scriptname, key, logger)
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
@@ -422,12 +425,12 @@ harvest_headline <- function(r, m, url) {
 } #</my_function>
 
 
-form_key <- function(url){
+form_root_key <- function(url){
   keyUrl <- url
   if(substr(keyUrl, nchar(keyUrl) - 1 + 1, nchar(keyUrl)) == '/'){
     keyUrl <- substr(keyUrl, 1, nchar(keyUrl) - 1)
   }
-  key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), Sys.time(), sep="_"))
+  key <- gsub(" |-|:|/|\\.", "_", paste(m$short_name, stringr::str_match(keyUrl, "[^/]+$"), sep="_"))
   return(key)
 }
 
@@ -551,7 +554,11 @@ main <- function() {
 
       clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
 
-      key <- form_key(url)
+      key <- form_root_key(url)
+
+      key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
+
+      clessnverse::logit(scriptname, key, logger)
 
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
