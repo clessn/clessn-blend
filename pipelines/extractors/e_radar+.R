@@ -472,36 +472,50 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
 
 
 
-handleDuplicate <- function(path, key, doc, credentials, mediaSource){
+handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifiant){
   # data <- hublot::filter_lake_items(credentials, filter = filter)
 
   # retrieve_lake_item 
-  r <- hublot::filter_lake_items(credentials, list(path = path, key__contains = mediaSource))
+  r <- hublot::filter_lake_items(credentials, list(path = paste("radarplus", path, sep = "/"), key__contains = key))
 
   if(length(r$result) == 0){
     clessnverse::logit(scriptname, "No results found with the same key", logger)
     return(FALSE)
   }
 
-  lake_item <- hublot::retrieve_lake_item(
-    # Sorted by key alphabetical ascending. Means that the last element is most recent
-    id = r$result[[length(r$result)]]$id, 
-    credentials = credentials
-  )
-  valeria_url <- lake_item[[6]]
+  # Only look for results with same schema
+  start_index <- length(r$result)
+  metadata_index <<- 7
+  
+  repeat{
+    lake_item <- hublot::retrieve_lake_item(
+      # Sorted by key alphabetical ascending. Means that the last element is most recent
+      id = r$result[[start_index]]$id, 
+      credentials = credentials
+    )
 
-  r <- rvest::session(valeria_url)
+    if(lake_item[[metadata_index]]$schema == opt$schema){
+      break
+    }
 
-  if (r$response$status_code == 200) {
-      if (grepl("text/html", r$response$headers$`content-type`)) {
-        inHub_doc <- httr::content(r$response, as = 'text')
-        
-        if(doc == inHub_doc){
-          # here is where I'd make the thing where I update instead of save
-          return(TRUE)
-        }
-      }
+    start_index <- start_index - 1
+
+    if(start_index == 0){
+      clessnverse::logit(scriptname, paste(key, ": no element with same schema found"), logger)
+      return(FALSE)
+    }
   }
+
+  in_lake_id <- "NOTHING"
+
+  if(path == "frontpage") {
+    in_lake_id <- lake_item[[metadata_index]]$headline_root_key
+  } else {
+    in_lake_id <- lake_item[[metadata_index]]$hashed_html
+  } 
+
+  clessnverse::logit(scriptname, paste("In lake id:", in_lake_id), logger)
+  # same_id <- identifiant == in_lake_id
 
   return(FALSE)
 }
@@ -539,9 +553,9 @@ main <- function() {
     m <<- m
 
     if (r$response$status_code == 200) {
-      headlineUrl <- find_headline(r, m)
+      headline_url <- find_headline(r, m)
 
-      if(headlineUrl == ""){
+      if(headline_url == ""){
         clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
         failedHeadlines <<- append(failedHeadlines, m)
         next
@@ -556,22 +570,21 @@ main <- function() {
 
       key <- form_root_key(url)
 
+      headline_key <- form_root_key(headline_url)
+      
+      clessnverse::logit(scriptname, handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key), logger)
+
       key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
+      headline_key <- gsub(" |-|:|/|\\.", "_", paste(headline_key, Sys.time(), sep="_"))
 
       clessnverse::logit(scriptname, key, logger)
 
       if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      if(handleDuplicate("radarplus/frontpage", key, doc, credentials, m$short_name)){
-        clessnverse::logit(scriptname, "DUPLICATED", logger)
-      } else {
-        clessnverse::logit(scriptname, "NOT DUPLICATED", logger)
-      }
-
       pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
 
       if(pushed){
-          harvest_headline(r, m, headlineUrl)
+          harvest_headline(r, m, headline_url)
       } else {
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
