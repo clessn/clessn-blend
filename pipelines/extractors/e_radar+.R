@@ -409,33 +409,7 @@ harvest_headline <- function(r, m, url) {
 
     # handleDuplicate("radarplus/headline", key, doc, credentials)
 
-    pushed <- FALSE
-    counter <- 0
-
-    while(!pushed && counter < 20){
-      if(counter > 0){
-        Sys.sleep(20)
-      }
-      hub_response <- clessnverse::commit_lake_item(
-        data = list(
-          key = key,
-          path = "radarplus/headline",
-          item = doc
-        ),
-        metadata = metadata,
-        mode = if (opt$refresh_data) "refresh" else "newonly",
-        credentials
-      )
-
-      if (hub_response) {
-        clessnverse::logit(scriptname, paste("successfuly pushed headline", key, "to datalake"), logger)
-        nb_headline <<- nb_headline + 1
-        pushed <- TRUE
-      } else {
-        clessnverse::logit(scriptname, paste("error while pushing headline", key, "to datalake"), logger)
-        counter <- counter + 1
-      }
-    }
+    pushed <- push_to_lake("headline", key, metadata, credentials, doc)
     
     if(!pushed){
       warning(paste("error while pushing headline", key, "to datalake"))
@@ -457,7 +431,77 @@ form_key <- function(url){
   return(key)
 }
 
+push_to_lake <- function(type, key, metadata, credentials, doc){
+  pushed <- FALSE
+  counter <- 0
 
+  while(!pushed && counter < 20){
+    if(counter > 0){
+      Sys.sleep(20)
+    }
+    hub_response <- clessnverse::commit_lake_item(
+      data = list(
+        key = key,
+        path = paste("radarplus", type, sep = "/"),
+        item = doc
+      ),
+      metadata = metadata,
+      mode = if (opt$refresh_data) "refresh" else "newonly",
+      credentials
+    )
+
+    if (hub_response) {
+      clessnverse::logit(scriptname, paste("successfuly pushed", type, key, "to datalake"), logger)
+      if(type == "headline"){
+        nb_headline <<- nb_headline + 1
+      } else {
+        nb_frontpage <<- nb_frontpage + 1
+      }
+      return(TRUE)
+    } else {
+      clessnverse::logit(scriptname, paste("error while pushing", type, key, "to datalake"), logger)
+      counter <- counter + 1
+    }
+  }
+
+  return(FALSE)
+}
+
+
+
+handleDuplicate <- function(path, key, doc, credentials, mediaSource){
+  # data <- hublot::filter_lake_items(credentials, filter = filter)
+
+  # retrieve_lake_item 
+  r <- hublot::filter_lake_items(credentials, list(path = path, key__contains = mediaSource))
+
+  if(length(r$result) == 0){
+    clessnverse::logit(scriptname, "No results found with the same key", logger)
+    return(FALSE)
+  }
+
+  lake_item <- hublot::retrieve_lake_item(
+    # Sorted by key alphabetical ascending. Means that the last element is most recent
+    id = r$result[[length(r$result)]]$id, 
+    credentials = credentials
+  )
+  valeria_url <- lake_item[[6]]
+
+  r <- rvest::session(valeria_url)
+
+  if (r$response$status_code == 200) {
+      if (grepl("text/html", r$response$headers$`content-type`)) {
+        inHub_doc <- httr::content(r$response, as = 'text')
+        
+        if(doc == inHub_doc){
+          # here is where I'd make the thing where I update instead of save
+          return(TRUE)
+        }
+      }
+  }
+
+  return(FALSE)
+}
 ###############################################################################
 ########################               Main              ######################
 ###############################################################################
@@ -517,33 +561,7 @@ main <- function() {
         clessnverse::logit(scriptname, "NOT DUPLICATED", logger)
       }
 
-      pushed <- FALSE
-      counter <- 0
-
-      while(!pushed){
-        if(counter > 0){
-          Sys.sleep(20)
-        }
-        hub_response <- clessnverse::commit_lake_item(
-          data = list(
-            key = key,
-            path = "radarplus/frontpage",
-            item = doc
-          ),
-          metadata = metadata,
-          mode = mode,
-          credentials = credentials
-        )
-
-        if (hub_response) {
-          clessnverse::logit(scriptname, paste("successfuly pushed frontpage", key, "to datalake"), logger)
-          nb_frontpage <<- nb_frontpage + 1
-          pushed <- TRUE
-        } else {
-          clessnverse::logit(scriptname, paste("error while pushing frontpage", key, "to datalake"), logger)
-          counter <- counter + 1
-        }
-      }
+      pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
 
       if(pushed){
           harvest_headline(r, m, headlineUrl)
@@ -559,40 +577,6 @@ main <- function() {
   
 
 
-}
-
-handleDuplicate <- function(path, key, doc, credentials, mediaSource){
-  # data <- hublot::filter_lake_items(credentials, filter = filter)
-
-  # retrieve_lake_item 
-  r <- hublot::filter_lake_items(credentials, list(path = path, key__contains = mediaSource))
-
-  if(length(r$result) == 0){
-    clessnverse::logit(scriptname, "No results found with the same key", logger)
-    return(FALSE)
-  }
-
-  lake_item <- hublot::retrieve_lake_item(
-    # Sorted by key alphabetical ascending. Means that the last element is most recent
-    id = r$result[[length(r$result)]]$id, 
-    credentials = credentials
-  )
-  valeria_url <- lake_item[[6]]
-
-  r <- rvest::session(valeria_url)
-
-  if (r$response$status_code == 200) {
-      if (grepl("text/html", r$response$headers$`content-type`)) {
-        inHub_doc <- httr::content(r$response, as = 'text')
-        
-        if(doc == inHub_doc){
-          # here is where I'd make the thing where I update instead of save
-          return(TRUE)
-        }
-      }
-  }
-
-  return(FALSE)
 }
 
 tryCatch( 
