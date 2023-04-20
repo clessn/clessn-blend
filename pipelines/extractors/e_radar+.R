@@ -568,6 +568,8 @@ main <- function() {
       key <- form_root_key(url)
 
       headline_key <- form_root_key(headline_url)
+
+      metadata$headline_root_key <- headline_key
       
       clessnverse::logit(scriptname, handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key), logger)
 
