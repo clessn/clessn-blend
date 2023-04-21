@@ -506,6 +506,8 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     }
   }
 
+  clessnverse::logit(scriptname, lake_item, logger)
+
   in_lake_id <- "NOTHING"
 
   if(path == "frontpage") {
@@ -514,7 +516,19 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     in_lake_id <- lake_item[[metadata_index]]$hashed_html
   }
 
-  return(!is.null(in_lake_id) && identifiant == in_lake_id)
+  same_id <- !is.null(in_lake_id) && identifiant == in_lake_id
+
+  if(same_id){
+    clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
+    lake_item[[metadata_index]]$end_timestamp <- Sys.time()
+
+    # pushed <- push_to_lake(type = path, key, metadata = lake_item[[metadata_index]], credentials, doc)
+
+    return(FALSE)
+  }
+
+  clessnverse::logit(scriptname, "Not duplicated. Upload new one.", logger)
+  return(FALSE)
 }
 ###############################################################################
 ########################               Main              ######################
@@ -571,16 +585,18 @@ main <- function() {
 
       metadata$headline_root_key <- headline_key
       
-      clessnverse::logit(scriptname, handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key), logger)
+      pushed <- handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key)
 
-      key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
-      headline_key <- gsub(" |-|:|/|\\.", "_", paste(headline_key, Sys.time(), sep="_"))
+      if(!pushed){
+        key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
+        headline_key <- gsub(" |-|:|/|\\.", "_", paste(headline_key, Sys.time(), sep="_"))
 
-      clessnverse::logit(scriptname, key, logger)
+        clessnverse::logit(scriptname, key, logger)
 
-      if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
+        if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
-      pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
+        pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
+      }      
 
       if(pushed){
           harvest_headline(r, m, headline_url)
