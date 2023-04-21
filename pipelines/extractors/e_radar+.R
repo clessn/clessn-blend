@@ -369,7 +369,7 @@ find_headline <- function(r, m){
   return(url)
 }
 
-harvest_headline <- function(r, m, url, key) {
+harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
   clessnverse::logit(scriptname, paste("getting headline from", url), logger)
 
   r <- rvest::session(url)
@@ -391,7 +391,7 @@ harvest_headline <- function(r, m, url, key) {
     country = m$country,
     schema = opt$schema,
     hashed_html = NA,
-    frontpage_root_key = NA
+    frontpage_root_key = frontpage_root_key
   )
 
   if (r$response$status_code == 200) {
@@ -402,13 +402,21 @@ harvest_headline <- function(r, m, url, key) {
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
+    key <- gsub(" |-|:|/|\\.", "_", paste(root_key, Sys.time(), sep="_"))
+
     clessnverse::logit(scriptname, key, logger)
 
     pushedHeadlines <<- append(pushedHeadlines, key)
 
-    # handleDuplicate("radarplus/headline", key, doc, credentials)
+    hashed_html <- digest(doc, algo = "md5", serialize = F)
 
-    pushed <- push_to_lake("headline", key, metadata, credentials, doc)
+    metadata$hashed_html <- hashed_html
+
+    pushed <- handleDuplicate("headline", root_key, doc, credentials, m$short_name, hashed_html)
+
+    if(!pushed){
+      pushed <- push_to_lake("headline", key, metadata, credentials, doc)
+    }
     
     if(!pushed){
       warning(paste("error while pushing headline", key, "to datalake"))
@@ -573,27 +581,26 @@ main <- function() {
 
       clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
 
-      key <- form_root_key(url)
+      root_key <- form_root_key(url)
 
       headline_key <- form_root_key(headline_url)
 
       metadata$headline_root_key <- headline_key
       
-      pushed <- handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key)
+      pushed <- handleDuplicate("frontpage", root_key, doc, credentials, m$short_name, headline_key)
 
       if(!pushed){
-        key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
-        headline_key <- gsub(" |-|:|/|\\.", "_", paste(headline_key, Sys.time(), sep="_"))
+        key <- gsub(" |-|:|/|\\.", "_", paste(root_key, Sys.time(), sep="_"))
 
         clessnverse::logit(scriptname, key, logger)
 
         if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
 
         pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
-      }      
+      }
 
       if(pushed){
-          harvest_headline(r, m, headline_url, headline_key)
+          harvest_headline(r, m, headline_url, headline_key, root_key)
       } else {
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
@@ -606,6 +613,9 @@ main <- function() {
 
     
   repeat {
+    if(length(failed_headlines) == 0){
+      break
+    }
     Sys.sleep(30)
 
     minutes <- format(as.POSIXct(Sys.time()), format = "%M")
@@ -698,6 +708,7 @@ tryCatch(
   withCallingHandlers(
   {
     library(dplyr)
+    library(digest)
 
     status <<- 0
     final_message <<- ""
