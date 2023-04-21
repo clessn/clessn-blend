@@ -431,8 +431,6 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     clessnverse::logit(scriptname, key, logger)
 
-    pushed_headlines <<- append(pushed_headlines, key)
-
     hashed_html <- digest(doc, algo = "md5", serialize = F)
 
     content <- get_content(r, m)
@@ -446,7 +444,10 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
     pushed <- handleDuplicate("headline", root_key, doc, credentials, m$short_name, hashed_html)
 
     if(!pushed){
+      pushed_headlines <<- append(pushed_headlines, key)
       pushed <- push_to_lake("headline", key, metadata, credentials, doc)
+    } else {
+      pushed_headlines <<- append(pushed_headlines, paste(key, "DUPLICATED"))
     }
     
     if(!pushed){
