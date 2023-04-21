@@ -112,8 +112,11 @@ medias_urls <- list(
   )
 )
 
-pushedHeadlines <<- list()
+pushed_headlines <<- list()
 failed_headlines <<- list()
+
+duplicate_frontpages <<- 0
+duplicate_headlines <<- 0
 
 find_headline <- function(r, m){
   clessnverse::logit(scriptname, paste("Finding headline for", m$short_name), logger)
@@ -406,7 +409,7 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     clessnverse::logit(scriptname, key, logger)
 
-    pushedHeadlines <<- append(pushedHeadlines, key)
+    pushedHeadlines <<- append(pushed_headlines, key)
 
     hashed_html <- digest(doc, algo = "md5", serialize = F)
 
@@ -525,6 +528,12 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     lake_item[[metadata_index]]$end_timestamp <- Sys.time()
 
     pushed <- push_to_lake(type = path, key = lake_item[[4]], metadata = lake_item[[metadata_index]], credentials, doc = doc)
+
+    if(path == "frontpage"){
+      duplicate_frontpages <- duplicate_frontpages + 1
+    } else {
+      duplicate_headlines <- duplicate_headlines + 1
+    }
 
     return(pushed)
   }
@@ -781,11 +790,13 @@ tryCatch(
   finally={
     # if status == 0, no errors happened. Add the breakdown of every media source to final message
     if(status == 0){
-      for (pushedHeadline in pushedHeadlines) { 
+      for (pushedHeadline in pushed_headlines) { 
         final_message <<- if (final_message == "") pushedHeadline else paste(final_message, "\n", pushedHeadline, sep="")  
       }
     }
 
+    final_message <<- if(final_message == "") paste("Duplicate frontpages:", duplicate_frontpages, "\nDuplicate headlines:", duplicate_headlines) else paste(final_message, "\nDuplicate frontpages:", duplicate_frontpages, "\nDuplicate headlines:", duplicate_headlines) 
+    
     clessnverse::logit(scriptname, final_message, logger)
 
     clessnverse::logit(scriptname, 
