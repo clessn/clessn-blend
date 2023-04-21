@@ -522,9 +522,9 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
     lake_item[[metadata_index]]$end_timestamp <- Sys.time()
 
-    # pushed <- push_to_lake(type = path, key, metadata = lake_item[[metadata_index]], credentials, doc)
+    pushed <- push_to_lake(type = path, key = lake_item[[4]], metadata = lake_item[[metadata_index]], credentials, doc = doc)
 
-    return(FALSE)
+    return(pushed)
   }
 
   clessnverse::logit(scriptname, "Not duplicated. Upload new one.", logger)
