@@ -373,6 +373,16 @@ find_headline <- function(r, m){
 }
 
 get_content <- function(r, m){
+  if(m$short_name == "LAP"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//div[@class="article-body"]') %>%
+      rvest::html_text()
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    }
+  }
+
   if(m$short_name == "CTV"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//div[@class="c-text"]') %>%
