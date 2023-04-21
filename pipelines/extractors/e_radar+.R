@@ -373,6 +373,15 @@ find_headline <- function(r, m){
 }
 
 get_content <- function(r, m){
+  if(m$short_name == "GN"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//article[@class="l-article__text js-story-text"]')
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    }
+  }
+
   if(m$short_name == "TTS"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//div[@class="c-article-body__content"]')
