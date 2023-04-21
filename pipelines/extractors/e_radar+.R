@@ -606,6 +606,7 @@ main <- function() {
 
     
   repeat {
+    Sys.sleep(30)
 
     minutes <- format(as.POSIXct(Sys.time()), format = "%M")
     minutes <- stringr::str_sub(minutes, 2, 2)
