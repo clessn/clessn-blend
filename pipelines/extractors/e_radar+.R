@@ -113,7 +113,7 @@ medias_urls <- list(
 )
 
 pushedHeadlines <<- list()
-failedHeadlines <<- list()
+failed_headlines <<- list()
 
 find_headline <- function(r, m){
   clessnverse::logit(scriptname, paste("Finding headline for", m$short_name), logger)
@@ -562,7 +562,7 @@ main <- function() {
 
       if(headline_url == ""){
         clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
-        failedHeadlines <<- append(failedHeadlines, m)
+        failedHeadlines <<- append(failed_headlines, m)
         next
       }
 
@@ -603,9 +603,94 @@ main <- function() {
        warning(paste("there was an error getting url", url))
     }
   }#</for>
+
+    
+  repeat {
+
+    minutes <- format(as.POSIXct(Sys.time()), format = "%M")
+    minutes <- stringr::str_sub(minutes, 2, 2)
+
+    if(minutes == "8" || minutes == "0" || minutes == "9"){
+      break
+    }
+
+    failed_headlines_copy <- list()
+
+    for(m in failed_headlines){
+      url <- paste(m$base, m$front, sep="")
+      clessnverse::logit(scriptname, paste("getting frontpage from", url), logger)
+
+      metadata <- list(
+        format = "",
+        start_timestamp = Sys.time(),
+        end_timestamp = Sys.time(),
+        tags = paste("news,headline,radar+", m$short_name, m$long_name, sep=","),
+        pillar = "radar+",
+        source = url,
+        media = m$short_name,
+        description = "Headline page of the medias",
+        object_type = "raw_data",
+        source_type = "website",
+        content_type = "news_headline",
+        storage_class = "lake",
+        country = m$country,
+        schema = opt$schema,
+        headline_root_key = NA
+      )
+
+      r <<- rvest::session(url)
+      m <<- m
+
+      if (r$response$status_code == 200) {
+        headline_url <- find_headline(r, m)
+
+        if(headline_url == ""){
+          clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
+          failed_headlines_copy <<- append(failed_headlines_copy, m)
+          next
+        }
+
+        if (grepl("text/html", r$response$headers$`content-type`)) {
+          metadata$format <- "html"
+          doc <- httr::content(r$response, as = 'text')
+        }
+
+        clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
+
+        key <- form_root_key(url)
+
+        headline_key <- form_root_key(headline_url)
+
+        metadata$headline_root_key <- headline_key
+        
+        pushed <- handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key)
+
+        if(!pushed){
+          key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
+          headline_key <- gsub(" |-|:|/|\\.", "_", paste(headline_key, Sys.time(), sep="_"))
+
+          clessnverse::logit(scriptname, key, logger)
+
+          if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
+
+          pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
+        }      
+
+        if(pushed){
+            harvest_headline(r, m, headline_url, headline_key)
+        } else {
+            warning(paste("error while pushing frontpage", key, "to datalake"))
+        }
+
+      } else {
+        clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+        warning(paste("there was an error getting url", url))
+      }
+    }
+
+    failed_headlines <- failed_headlines_copy
+  }
   
-
-
 }
 
 tryCatch( 
