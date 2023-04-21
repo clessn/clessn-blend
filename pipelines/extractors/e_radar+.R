@@ -369,7 +369,7 @@ find_headline <- function(r, m){
   return(url)
 }
 
-harvest_headline <- function(r, m, url) {
+harvest_headline <- function(r, m, url, key) {
   clessnverse::logit(scriptname, paste("getting headline from", url), logger)
 
   r <- rvest::session(url)
@@ -401,10 +401,6 @@ harvest_headline <- function(r, m, url) {
     }
 
     clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
-
-    key <- form_root_key(url)
-
-    key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
 
     clessnverse::logit(scriptname, key, logger)
 
@@ -506,8 +502,6 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
     }
   }
 
-  clessnverse::logit(scriptname, lake_item, logger)
-
   in_lake_id <- "NOTHING"
 
   if(path == "frontpage") {
@@ -599,7 +593,7 @@ main <- function() {
       }      
 
       if(pushed){
-          harvest_headline(r, m, headline_url)
+          harvest_headline(r, m, headline_url, headline_key)
       } else {
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
