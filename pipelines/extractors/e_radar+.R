@@ -372,6 +372,19 @@ find_headline <- function(r, m){
   return(url)
 }
 
+get_content <- function(r, m){
+  if(m$short_name == "TTS"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//div[@class="c-article-body__content"]')
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    }
+  }
+
+  return(list())
+}
+
 harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
   clessnverse::logit(scriptname, paste("getting headline from", url), logger)
 
@@ -412,6 +425,12 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
     pushed_headlines <<- append(pushed_headlines, key)
 
     hashed_html <- digest(doc, algo = "md5", serialize = F)
+
+    content <- get_content(r, m)
+
+    if(length(content) > 0){
+      hashed_html <- digest(content, algo = "md5", serialize = T)
+    }
 
     metadata$hashed_html <- hashed_html
 
@@ -476,7 +495,6 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
 
   return(FALSE)
 }
-
 
 
 handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifiant){
