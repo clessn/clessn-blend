@@ -374,7 +374,6 @@ find_headline <- function(r, m){
 
 get_content <- function(r, m){
   if(m$short_name == "LAP"){
-
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//div[@class="articleBody"]') %>%
       rvest::html_children() %>%
@@ -383,6 +382,20 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
+    }
+  }
+
+  if(m$short_name == "LED"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//div[@class="editor scrolling-tracker"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(":not(.hidden-print):not(.read-also)") %>%
+      rvest::html_text()
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, "LED: Empty content", logger)
     }
   }
 
