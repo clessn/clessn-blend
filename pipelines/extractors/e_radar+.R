@@ -383,7 +383,6 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
-    } else {
     }
   }
 
@@ -574,6 +573,9 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   } else {
     in_lake_id <- lake_item[[metadata_index]]$hashed_html
   }
+
+  clessnverse::logit(scriptname, paste("Scraped id:", identifiant), logger)
+  clessnverse::logit(scriptname, paste("In lake id:", in_lake_id), logger)
 
   same_id <- !is.null(in_lake_id) && identifiant == in_lake_id
 
