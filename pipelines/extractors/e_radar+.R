@@ -373,6 +373,20 @@ find_headline <- function(r, m){
 }
 
 get_content <- function(r, m){
+  if(m$short_name == "TVA"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//div[contains(concat(" ", @class, "="), "story-body")]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(":not(.bigbox-container):not(.article):not(.dfp-container)") %>%
+      rvest::html_text()
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+    }
+  }
+
   if(m$short_name == "GAM"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//article[@class="l-article"]') %>%
