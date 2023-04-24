@@ -373,6 +373,18 @@ find_headline <- function(r, m){
 }
 
 get_content <- function(r, m){
+  if(m$short_name == "GAM"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//article[@class="l-article"]') %>%
+      rvest::html_text()
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+    }
+  }
+
   if(m$short_name == "VS"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//article[@class="article-content-story article-content-story--story"]') %>%
