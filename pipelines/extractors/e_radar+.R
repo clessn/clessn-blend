@@ -375,7 +375,9 @@ find_headline <- function(r, m){
 get_content <- function(r, m){
   if(m$short_name == "CBC"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//div[@class="story"]') %>%
+      rvest::html_nodes(xpath = '//div[@class="detailMainCol sclt-storycontent"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp)") %>%
       rvest::html_text()
 
     if(length(article_content) > 0){
