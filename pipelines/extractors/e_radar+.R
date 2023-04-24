@@ -373,6 +373,20 @@ find_headline <- function(r, m){
 }
 
 get_content <- function(r, m){
+  if(m$short_name == "VS"){
+    article_content <<- r %>%
+      rvest::html_nodes(xpath = '//article[@class="article-content-story article-content-story--story"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(xpath = '//section[@class="article-content__content-group article-content__content-group--story"]') %>%
+      rvest::html_text()
+
+    if(length(article_content) > 0){
+      return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+    }
+  }
+
   if(m$short_name == "LAP"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//div[@class="articleBody"]') %>%
@@ -382,6 +396,8 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
     }
   }
 
@@ -395,7 +411,7 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, "LED: Empty content", logger)
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
     }
   }
 
@@ -406,6 +422,8 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
     }
   }
 
@@ -416,6 +434,8 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
     }
   }
 
@@ -426,6 +446,8 @@ get_content <- function(r, m){
 
     if(length(article_content) > 0){
       return(article_content[[1]])
+    } else {
+      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
     }
   }
 
