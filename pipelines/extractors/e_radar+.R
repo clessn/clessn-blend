@@ -526,6 +526,8 @@ get_content <- function(r, m){
   if(m$short_name == "GN"){
     article_content <<- r %>%
       rvest::html_nodes(xpath = '//article[@class="l-article__text js-story-text"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(':not(.c-ad):not(.c-ad--bigbox):not(.l-article__ad)') %>%
       rvest::html_text()
 
     if(length(article_content) > 0){
