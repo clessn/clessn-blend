@@ -768,7 +768,7 @@ main <- function() {
 
       if(headline_url == ""){
         clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
-        failedHeadlines <<- append(failed_headlines, m)
+        failed_headlines <<- append(failed_headlines, m)
         next
       }
 
