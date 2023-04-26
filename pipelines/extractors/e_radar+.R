@@ -800,11 +800,13 @@ main <- function() {
       if(pushed){
           harvest_headline(r, m, headline_url, headline_key, root_key)
       } else {
+          failed_headlines <<- append(failed_headlines, m)
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
        clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+       failed_headlines <<- append(failed_headlines, m)
        warning(paste("there was an error getting url", url))
     }
   }#</for>
@@ -819,7 +821,9 @@ main <- function() {
     minutes <- format(as.POSIXct(Sys.time()), format = "%M")
     minutes <- stringr::str_sub(minutes, 2, 2)
 
+    #Hard coded, probably a much better way of doing this
     if(minutes == "8" || minutes == "0" || minutes == "9"){
+      warning(paste("There are", length(failed_headlines), " failed headlines"))
       break
     }
 
