@@ -28,7 +28,7 @@ generate_post_data()
 {
   cat <<EOF
   {
-   "text": "\n${status}: ${scriptname} ${output_msg} on $(date)\n${output}\n"
+    "text": "\n*${status}*: ${scriptname} ${output_msg} on $(date)\n${output}\n"
   }
 EOF
 }
