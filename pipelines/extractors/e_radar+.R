@@ -574,7 +574,8 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
     country = m$country,
     schema = opt$schema,
     hashed_html = NA,
-    frontpage_root_key = frontpage_root_key
+    frontpage_root_key = frontpage_root_key,
+    duplicated_count = 1
   )
 
   if (r$response$status_code == 200) {
@@ -715,6 +716,10 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   if(same_id){
     clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
     lake_item[[metadata_index]]$end_timestamp <- Sys.time()
+    if(is.na(lake_item[[metadata_index]]$duplicated_count) || is.null(lake_item[[metadata_index]]$duplicated_count)){
+      lake_item[[metadata_index]]$duplicated_count <- 1
+    }
+    lake_item[[metadata_index]]$duplicated_count <- lake_item[[metadata_index]]$duplicated_count + 1
 
     pushed <- push_to_lake(type = path, key = lake_item[[4]], metadata = lake_item[[metadata_index]], credentials, doc = doc)
 
@@ -757,7 +762,8 @@ main <- function() {
       storage_class = "lake",
       country = m$country,
       schema = opt$schema,
-      headline_root_key = NA
+      headline_root_key = NA,
+      duplicated_count = 1
     )
 
     r <<- rvest::session(url)
