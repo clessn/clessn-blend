@@ -892,11 +892,13 @@ main <- function() {
         if(pushed){
             harvest_headline(r, m, headline_url, headline_key)
         } else {
+            failed_headlines_copy <<- append(failed_headlines_copy, m)
             warning(paste("error while pushing frontpage", key, "to datalake"))
         }
 
       } else {
         clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
+        failed_headlines_copy <<- append(failed_headlines_copy, m)
         warning(paste("there was an error getting url", url))
       }
     }
