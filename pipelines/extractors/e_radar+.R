@@ -678,13 +678,13 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   # Only look for results with same schema
   start_index <- length(r$result)
   metadata_index <<- 7
+
+  r$result[order(sapply(r$result, '[[', 4))]
+
+  # clessnverse::logit(scriptname, r$result[[0]]$key, logger)
   
   repeat{
-    lake_item <- hublot::retrieve_lake_item(
-      # Sorted by key alphabetical ascending. Means that the last element is most recent
-      id = r$result[[start_index]]$id, 
-      credentials = credentials
-    )
+    lake_item <- r$result[[start_index]]
 
     if(lake_item[[metadata_index]]$schema == opt$schema){
       break
