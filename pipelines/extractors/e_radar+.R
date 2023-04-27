@@ -600,7 +600,7 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     metadata$hashed_html <- hashed_html
 
-    pushed <- handleDuplicate("headline", root_key, doc, credentials, m$short_name, hashed_html)
+    pushed <- handleDuplicate("headline", m$short_name, doc, credentials, m$short_name, hashed_html)
 
     if(!pushed){
       pushed_headlines <<- append(pushed_headlines, key)
@@ -679,9 +679,9 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   start_index <- length(r$result)
   metadata_index <<- 7
 
-  r$result[order(sapply(r$result, '[[', 4))]
+  r$result[order(sapply(r$result, '[[', 3))]
 
-  # clessnverse::logit(scriptname, r$result[[0]]$key, logger)
+  clessnverse::logit(scriptname, r$result[[start_index]], logger)
   
   repeat{
     lake_item <- r$result[[start_index]]
