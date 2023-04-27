@@ -713,7 +713,6 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
 
   if(same_id){
     clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
-    pushed_headlines <<- append(pushed_headlines, paste("*", lake_item[[4]], " DUPLICATED", "*", sep=""))
     lake_item[[metadata_index]]$end_timestamp <- Sys.time()
     if(is.na(lake_item[[metadata_index]]$duplicated_count) || is.null(lake_item[[metadata_index]]$duplicated_count)){
       lake_item[[metadata_index]]$duplicated_count <- 1
@@ -726,6 +725,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
       duplicate_frontpages <<- duplicate_frontpages + 1
     } else {
       duplicate_headlines <<- duplicate_headlines + 1
+      pushed_headlines <<- append(pushed_headlines, paste("*", lake_item[[4]], " DUPLICATED", "*", sep=""))
     }
 
     return(pushed)
