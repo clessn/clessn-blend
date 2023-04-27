@@ -605,8 +605,6 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
     if(!pushed){
       pushed_headlines <<- append(pushed_headlines, key)
       pushed <- push_to_lake("headline", key, metadata, credentials, doc)
-    } else {
-      pushed_headlines <<- append(pushed_headlines, paste(key, "DUPLICATED"))
     }
     
     if(!pushed){
@@ -715,6 +713,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
 
   if(same_id){
     clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
+    pushed_headlines <<- append(pushed_headlines, paste("*", lake_item[[4]], " DUPLICATED", "*", sep=""))
     lake_item[[metadata_index]]$end_timestamp <- Sys.time()
     if(is.na(lake_item[[metadata_index]]$duplicated_count) || is.null(lake_item[[metadata_index]]$duplicated_count)){
       lake_item[[metadata_index]]$duplicated_count <- 1

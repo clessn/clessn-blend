@@ -67,6 +67,6 @@ if [ $ret -ne 0 ]; then
   output=`tail -n 10 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 else
-  output=`tail -n 16 ~/logs/$prefix$scriptname.log`
+  output=`tail -n 20 ~/logs/$prefix$scriptname.log`
   curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
 fi
