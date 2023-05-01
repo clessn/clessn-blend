@@ -679,7 +679,11 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   start_index <- length(r$result)
   metadata_index <<- 7
 
-  r$result[order(sapply(r$result, '[[', 3))]
+  if(path == "frontpage"){
+    r$result[order(sapply(r$result, '[[', 4))]
+  } else {
+    r$result[order(sapply(r$result, '[[', 3))]
+  }
 
   clessnverse::logit(scriptname, r$result[[start_index]], logger)
   clessnverse::logit(scriptname, r$result[[start_index - 1]], logger)
