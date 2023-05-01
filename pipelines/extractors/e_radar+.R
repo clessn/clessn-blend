@@ -431,7 +431,7 @@ get_content <- function(r, m){
 
   if(m$short_name == "TVA"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//div[contains(concat(" ", @class, "="), "story-body")]') %>%
+      rvest::html_nodes(xpath = '//div[@class="row story-row"]') %>%
       rvest::html_children() %>%
       rvest::html_nodes(":not(.bigbox-container):not(.article):not(.dfp-container)") %>%
       rvest::html_text()
