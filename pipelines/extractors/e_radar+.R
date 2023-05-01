@@ -600,7 +600,7 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     metadata$hashed_html <- hashed_html
 
-    pushed <- handleDuplicate("headline", m$short_name, doc, credentials, m$short_name, hashed_html)
+    pushed <- handleDuplicate("headline", root_key, doc, credentials, m$short_name, hashed_html)
 
     if(!pushed){
       pushed_headlines <<- append(pushed_headlines, key)
@@ -668,7 +668,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   # data <- hublot::filter_lake_items(credentials, filter = filter)
 
   # retrieve_lake_item 
-  r <- hublot::filter_lake_items(credentials, list(path = paste("radarplus", path, sep = "/"), key__contains = key))
+  r <- hublot::filter_lake_items(credentials, list(path = paste("radarplus", path, sep = "/"), key__contains = mediaSource))
 
   if(length(r$result) == 0){
     clessnverse::logit(scriptname, "No results found with the same key", logger)
@@ -682,6 +682,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   r$result[order(sapply(r$result, '[[', 3))]
 
   clessnverse::logit(scriptname, r$result[[start_index]], logger)
+  clessnverse::logit(scriptname, r$result[[start_index - 1]], logger)
   
   repeat{
     lake_item <- r$result[[start_index]]
