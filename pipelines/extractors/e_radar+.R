@@ -403,9 +403,9 @@ get_content <- function(r, m){
 
   if(m$short_name == "RCI"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//main[contains(concat(" ", "@class", "="), "document-simple-redactional-container")]') %>%
+      rvest::html_nodes(xpath = '//section[@class="redactionals document-content-style"]') %>%
       rvest::html_children() %>%
-      rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint):not(.signature-container-top)") %>%
+      rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
       rvest::html_text()
 
     if(length(article_content) > 0){
