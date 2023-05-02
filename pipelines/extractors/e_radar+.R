@@ -408,6 +408,14 @@ get_content <- function(r, m){
       rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
       rvest::html_text()
 
+    if(length(article_content) == 0){
+      article_content <<- r %>%
+        rvest::html_nodes(xpath = '//section[@class="sc-3sri0n-1 dIVQob"]') %>%
+        rvest::html_children() %>%
+        rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
+        rvest::html_text()
+    }
+
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
