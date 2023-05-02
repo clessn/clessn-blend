@@ -680,13 +680,13 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   metadata_index <<- 7
 
   if(path == "frontpage"){
-    r$result[order(sapply(r$result, '[[', 4))]
+    sorted_result <- r$result[order(sapply(r$result, '[[', 4))]
   } else {
-    r$result[order(sapply(r$result, '[[', 3))]
+    sorted_result <- r$result[order(sapply(r$result, '[[', 3))]
   }
   
   repeat{
-    lake_item <- r$result[[start_index]]
+    lake_item <- sorted_result[[start_index]]
 
     if(lake_item[[metadata_index]]$schema == opt$schema){
       break
