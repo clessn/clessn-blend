@@ -249,6 +249,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                   target_lang = "en", 
                   translate = TRUE
                 )
+                if (length(header_value2_en) == 0) error("null returned from translation api")
               },
               error = function(e) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
@@ -363,6 +364,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                   target_lang = "en", 
                   translate = TRUE
                 )
+                if (length(intervention_text_en) == 0) error("null returned from translation api")
               },
               error = function(e) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
@@ -772,6 +774,7 @@ process_debate_html <- function(lake_item, xml_core) {
                       target_lang = "en", 
                       translate = TRUE
                     )
+                    if (length(intervention_text_en) == 0) error("null returned from translation api")
                   },
                   error = function(e) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
@@ -814,6 +817,7 @@ process_debate_html <- function(lake_item, xml_core) {
                       target_lang = "en", 
                       translate = TRUE
                     )
+                    if (length(header_text_en) == 0) error("null returned from translation api")
                   },
                   error = function(e) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
@@ -1220,7 +1224,7 @@ tryCatch(
     # opt <<- list(
     #  backend = "hub",
     #  log_output = c("console"),
-    #  method = c("date_range", "2020-07-08", "2020-07-08"),
+    #  method = c("date_range", "2023-04-01", "2023-04-30"),
     #  schema = "202303",
     #  refresh_data = TRUE,
     #  translate = TRUE
