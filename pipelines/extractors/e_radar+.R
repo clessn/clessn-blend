@@ -754,7 +754,6 @@ main <- function() {
   
   for (m in medias_urls) {
     url <- paste(m$base, m$front, sep="")
-    clessnverse::logit(scriptname, paste("getting frontpage from", url, "with code", r$response$status_code), logger)
 
     metadata <- list(
       format = "",
@@ -780,6 +779,8 @@ main <- function() {
 
     if (r$response$status_code == 200) {
       headline_url <- find_headline(r, m)
+      
+      clessnverse::logit(scriptname, paste("getting frontpage from", url, "with code", r$response$status_code), logger)
 
       if(headline_url == ""){
         clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
