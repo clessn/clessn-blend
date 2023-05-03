@@ -244,7 +244,7 @@ process_debate_xml <- function(lake_item, xml_core) {
               {
                 header_value2_en <- clessnverse::translate_text(
                   text = clntxt(header_value2), 
-                  engine = "deeptranslate",
+                  engine = "azure",
                   source_lang = header_value2_lang, 
                   target_lang = "en", 
                   translate = TRUE
@@ -259,7 +259,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                 clessnverse::logit(scriptname, e$message, logger)
                 header_value2_en <<- clessnverse::translate_text(
                   text = clntxt(header_value2), 
-                  engine = "azure",
+                  engine = "deeptranslate",
                   source_lang = header_value2_lang, 
                   target_lang = "en", 
                   translate = TRUE
@@ -359,7 +359,7 @@ process_debate_xml <- function(lake_item, xml_core) {
               {
                 intervention_text_en <- clessnverse::translate_text(
                   text = clntxt(intervention_text), 
-                  engine = "deeptranslate",
+                  engine = "azure",
                   source_lang = intervention_text_lang, 
                   target_lang = "en", 
                   translate = TRUE
@@ -374,7 +374,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                 clessnverse::logit(scriptname, e$message, logger)
                 intervention_text_en <<- clessnverse::translate_text(
                   text = clntxt(intervention_text), 
-                  engine = "azure",
+                  engine = "deeptranslate",
                   source_lang = intervention_text_lang, 
                   target_lang = "en", 
                   translate = TRUE
@@ -769,7 +769,7 @@ process_debate_html <- function(lake_item, xml_core) {
                   {
                     intervention_text_en <- clessnverse::translate_text(
                       text = clntxt(intervention_text), 
-                      engine = "deeptranslate",
+                      engine = "azure",
                       source_lang = intervention_lang, 
                       target_lang = "en", 
                       translate = TRUE
@@ -784,7 +784,7 @@ process_debate_html <- function(lake_item, xml_core) {
                     clessnverse::logit(scriptname, e$message, logger)
                     intervention_text_en <<- clessnverse::translate_text(
                       text = clntxt(intervention_text), 
-                      engine = "azure",
+                      engine = "deeptranslate",
                       source_lang = intervention_lang, 
                       target_lang = "en", 
                       translate = TRUE
@@ -812,7 +812,7 @@ process_debate_html <- function(lake_item, xml_core) {
                   {
                     header_text_en <- clessnverse::translate_text(
                       text = clntxt(header_text), 
-                      engine = "deeptranslate",
+                      engine = "azure",
                       source_lang = header_text_lang, 
                       target_lang = "en", 
                       translate = TRUE
@@ -827,7 +827,7 @@ process_debate_html <- function(lake_item, xml_core) {
                     clessnverse::logit(scriptname, e$message, logger)
                     header_text_en <<- clessnverse::translate_text(
                       text = clntxt(header_text), 
-                      engine = "azure",
+                      engine = "deeptranslate",
                       source_lang = header_text_lang, 
                       target_lang = "en", 
                       translate = TRUE
