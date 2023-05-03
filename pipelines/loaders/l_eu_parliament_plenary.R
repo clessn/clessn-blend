@@ -364,7 +364,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                   target_lang = "en", 
                   translate = TRUE
                 )
-                if (length(intervention_text_en) == 0) error("null returned from translation api")
+                if (length(intervention_text_en) == 0) stop("null returned from translation api")
               },
               error = function(e) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
@@ -774,7 +774,7 @@ process_debate_html <- function(lake_item, xml_core) {
                       target_lang = "en", 
                       translate = TRUE
                     )
-                    if (length(intervention_text_en) == 0) error("null returned from translation api")
+                    if (length(intervention_text_en) == 0) stop("null returned from translation api")
                   },
                   error = function(e) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
