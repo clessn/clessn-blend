@@ -638,7 +638,7 @@ form_root_key <- function(url){
 push_to_lake <- function(type, key, metadata, credentials, doc){
   pushed <- FALSE
   counter <- 0
-
+  
   while(!pushed && counter < 20){
     if(counter > 0){
       Sys.sleep(20)
@@ -754,7 +754,7 @@ main <- function() {
   
   for (m in medias_urls) {
     url <- paste(m$base, m$front, sep="")
-    clessnverse::logit(scriptname, paste("getting frontpage from", url), logger)
+    clessnverse::logit(scriptname, paste("getting frontpage from", url, "with code", r$response$status_code), logger)
 
     metadata <- list(
       format = "",
