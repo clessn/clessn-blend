@@ -367,9 +367,9 @@ process_debate_xml <- function(lake_item, xml_core) {
                 if (length(intervention_text_en) == 0) stop("null returned from translation api")
               },
               error = function(e) {
-                clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
+                clessnverse::logit(scriptname, "there was a warning with the translation api : text to translate + error below:", logger)
                 status <<- 2
-                warning("there was an error with the deeptranslate_api : see logs")
+                warning("there was an error with the translation api : see logs")
                 clessnverse::logit(scriptname, clntxt(intervention_text), logger)
                 clessnverse::logit(scriptname, e$message, logger)
                 intervention_text_en <<- clessnverse::translate_text(
@@ -777,9 +777,9 @@ process_debate_html <- function(lake_item, xml_core) {
                     if (length(intervention_text_en) == 0) stop("null returned from translation api")
                   },
                   error = function(e) {
-                    clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
+                    clessnverse::logit(scriptname, "there was a warning with the translation api : text to translate + error below:", logger)
                     status <<- 2
-                    warning("there was an error with the deeptranslate_api : see logs")
+                    warning("there was an error with the translation api : see logs")
                     clessnverse::logit(scriptname, clntxt(intervention_text), logger)
                     clessnverse::logit(scriptname, e$message, logger)
                     intervention_text_en <<- clessnverse::translate_text(
@@ -822,7 +822,7 @@ process_debate_html <- function(lake_item, xml_core) {
                   error = function(e) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
                     status <<- 2
-                    warning("there was an error with the deeptranslate_api : see logs")
+                    warning("there was an error with the translation api : see logs")
                     clessnverse::logit(scriptname, clntxt(header_text), logger)
                     clessnverse::logit(scriptname, e$message, logger)
                     header_text_en <<- clessnverse::translate_text(
