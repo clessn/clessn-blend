@@ -375,9 +375,9 @@ find_headline <- function(r, m){
 get_content <- function(r, m){
   if(m$short_name == "CBC"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//div[@class="detailMainCol sclt-storycontent"]') %>%
+      rvest::html_nodes(xpath = '//main[@class="feed-content content"]') %>%
       rvest::html_children() %>%
-      rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp)") %>%
+      rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp):not(.byline):not(.bylineDetails):not(.video-time-container)") %>%
       rvest::html_text()
 
     if(length(article_content) > 0){
@@ -947,14 +947,18 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    # opt <<- list(
-    #     log_output = c("console,file"),
-    #     scraping_method = "frontpage",
-    #     refresh_data = TRUE
-    # )
-
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
+    }
+
+    if (opt$log_output == "console") {
+      opt <<- list(
+        log_output = c("file", "console"),
+        method = "frontpage",
+        refresh_data = TRUE,
+        translate = TRUE,
+        schema = "test"
+      )
     }
 
     if (!exists("logger") || is.null(logger) || logger == 0) {
@@ -963,6 +967,9 @@ tryCatch(
 
     # login to hublot
     clessnverse::logit(scriptname, "connecting to hub", logger)
+
+    clessnverse::logit(scriptname, "OPT:", logger)
+    clessnverse::logit(scriptname, opt, logger)
 
     # connect to hublot
     credentials <<- hublot::get_credentials(
