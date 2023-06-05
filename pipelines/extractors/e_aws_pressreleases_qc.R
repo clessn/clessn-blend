@@ -166,13 +166,18 @@ scrape_party_press_release <- function(party_acronym, party_url, scriptname, log
                     )
 
                     lake_item_data <- list(key = key, path = path, item = html)
+                    
+                    tmp <- tempfile()
+                    on.exit(unlink(tmp))
+                    
+                    write(html, file = tmp)
+                    
+                    aws.s3::put_object(
+                      tmp,
+                      key,
+                      "ellipse-donnees-brutes-1"
+                    )
 
-
-                    clessnverse::commit_lake_item(
-                        data = lake_item_data, 
-                        metadata = lake_item_metadata, 
-                        mode = opt$hub_mode, 
-                        credentials = credentials)
                 } else {
                     clessnverse::logit(scriptname, paste("no press release from", party_acronym, "at", urls_list[[i]]), logger)
                 } #if (!is.null(html)) 
