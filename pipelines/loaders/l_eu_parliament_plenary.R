@@ -17,6 +17,8 @@
 ###############################################################################
 
 clntxt <- function(x) {
+  x <- stringr::str_replace(x, "\\*", "a")
+  x <- stringr::str_replace(x, "\a", "")
   x <- gsub("\\\"", "", x)
   return(x)
 }
@@ -249,7 +251,7 @@ process_debate_xml <- function(lake_item, xml_core) {
                   target_lang = "en", 
                   translate = TRUE
                 )
-                if (length(header_value2_en) == 0) error("null returned from translation api")
+                if (length(header_value2_en) == 0) stop("null returned from translation api when translating header_value2")
               },
               error = function(e) {
                 clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api : text to translate + error below:", logger)
@@ -348,7 +350,6 @@ process_debate_xml <- function(lake_item, xml_core) {
         intervention_text <- gsub("^NA\n\n", "", intervention_text)
         intervention_text <- gsub("^\n\n", "", intervention_text)        
 
-        
         if (opt$translate && nchar(intervention_text) > 0) {
 
           #translate intervention_text
@@ -357,6 +358,7 @@ process_debate_xml <- function(lake_item, xml_core) {
           if (!is.na(intervention_text_lang) && intervention_text_lang != "en") {
             tryCatch(
               {
+                if (stringr::str_detect(intervention_text, "\\*")) print(intervention_text)
                 intervention_text_en <- clessnverse::translate_text(
                   text = clntxt(intervention_text), 
                   engine = "azure",
@@ -767,6 +769,7 @@ process_debate_html <- function(lake_item, xml_core) {
               if (!is.na(intervention_lang) && intervention_lang != "en") {
                 tryCatch(
                   {
+                    if (stringr::str_detect(intervention_text, "\\*")) print(intervention_text)
                     intervention_text_en <- clessnverse::translate_text(
                       text = clntxt(intervention_text), 
                       engine = "azure",
@@ -817,7 +820,7 @@ process_debate_html <- function(lake_item, xml_core) {
                       target_lang = "en", 
                       translate = TRUE
                     )
-                    if (length(header_text_en) == 0) error("null returned from translation api")
+                    if (length(header_text_en) == 0) stop("null returned from translation api")
                   },
                   error = function(e) {
                     clessnverse::logit(scriptname, "there was a warning with the deeptranslate_api: text to translate + error below:", logger)
@@ -1221,14 +1224,14 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    # opt <<- list(
-    #  backend = "hub",
-    #  log_output = c("console"),
-    #  method = c("date_range", "2023-04-01", "2023-04-30"),
-    #  schema = "202303",
-    #  refresh_data = TRUE,
-    #  translate = TRUE
-    # )
+    opt <<- list(
+     backend = "dataframe",
+     log_output = c("console"),
+     method = c("date_range", "2023-04-18", "2023-04-18"),
+     schema = "202303",
+     refresh_data = TRUE,
+     translate = TRUE
+    )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()

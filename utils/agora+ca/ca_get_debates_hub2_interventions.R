@@ -17,12 +17,12 @@ my_filter <- clessnhub::create_filter(
   type="parliament_debate", 
   schema="v2", 
   metadata=list(
-    institution="House of Commons of Canada", 
-    format="xml"),
+    institution="House of Commons of Canada"), 
+    #format="xml"),
   data=list(
     #eventID="432123HAN123"
-    eventDate__gte="2023-01-01"
-    #eventDate__lte="2022-06-30"
+    #eventDate__gte="2023-01-01"
+    eventDate__lte="2007-01-29"
   )
 )
 
