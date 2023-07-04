@@ -1,4 +1,4 @@
-FROM r-base:latest
+FROM r-base:4.3.1
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
