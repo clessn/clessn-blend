@@ -657,10 +657,12 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
         )
       },
       error = function(e) {
-        clessnverse::logit(scriptname, e$message, logger)
+        msg <- paste(e$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
+        clessnverse::logit(scriptname, msg, logger)
       },
       warning = function(w) {
-        clessnverse::logit(scriptname, w$message, logger)
+        msg <- paste(w$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
+        clessnverse::logit(scriptname, msg, logger)
       },
       finally = {}
     )
