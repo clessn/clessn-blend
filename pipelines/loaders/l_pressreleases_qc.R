@@ -215,6 +215,7 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
         clessnverse::logit(scriptname, paste("successful GET of", party_acronym, "press release", key), logger)
 
         index_html <- httr::content(r$result, as="text", encoding = "utf-8")
+        xml_root <- NULL
 
         if (grepl("text\\/html", r$result$headers$`content-type`)) {
             index_xml <- XML::htmlTreeParse(index_html, asText = TRUE, isHTML = TRUE, useInternalNodes = TRUE)
@@ -242,7 +243,13 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
 
         clessnverse::logit(scriptname, paste("Trying to extract", party_acronym,"press release content"), logger)
 
-        press_release_structured <- extract_press_release_info(party_acronym, xml_root)
+        press_release_structured <- NULL
+
+        if (!is.null(xml_root)) {
+            press_release_structured <- extract_press_release_info(party_acronym, xml_root)
+        } else {
+            clessnverse::logit(scriptname, paste("No content found in", party_acronym,"press release content in datalake", key), logger)
+        }
 
     } else {
         clessnverse::logit(scriptname, paste("Error getting", party_acronym, "press release page from data lake with key", key), logger)
@@ -305,7 +312,7 @@ main <- function() {
 
         press_release_structured <- parse_press_release(key, party_acronym, lake_file_url)
 
-        if (length(press_release_structured) > 0) {
+        if (!is.null(press_release_structured) && length(press_release_structured) > 0) {
             clessnverse::logit(scriptname,  paste("committing item #", i, "key = ", items_list$key[i], sep=" "), logger)
             clessnverse::commit_warehouse_row(warehouse_table, key, press_release_structured, refresh_data = opt$refresh_data, credentials)
         } else {
