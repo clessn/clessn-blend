@@ -1224,14 +1224,14 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-     backend = "dataframe",
-     log_output = c("console"),
-     method = c("date_range", "2023-04-18", "2023-04-18"),
-     schema = "202303",
-     refresh_data = TRUE,
-     translate = TRUE
-    )
+    # opt <<- list(
+    #  backend = "dataframe",
+    #  log_output = c("console"),
+    #  method = c("date_range", "2023-04-18", "2023-04-18"),
+    #  schema = "202303",
+    #  refresh_data = TRUE,
+    #  translate = TRUE
+    # )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()

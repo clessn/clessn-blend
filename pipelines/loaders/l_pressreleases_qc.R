@@ -228,12 +228,14 @@ parse_press_release <- function(key, party_acronym, lake_file_url) {
                     index_xml <- tidyjson::spread_all(index_html)
                     xml_root <- index_xml
                 } else {
-                    warning(paste(
-                        "not an xml nor an html document, press realease",
-                        key,
-                        "was probably deleted.  Skipping to prevent data loss")
+                    clessnverse::logit(
+                        scriptname, 
+                        paste(
+                            "not an xml nor an html document, press realease",
+                            key,
+                            "was probably deleted.  Skipping to prevent data loss"),
+                        logger
                     )
-                    return(1)
                 }     
             }
         }

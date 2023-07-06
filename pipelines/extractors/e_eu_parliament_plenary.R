@@ -81,11 +81,15 @@ extract_debates <- function(url_list) {
         credentials
       )
 
-      if (r) {
+      if (r == 0) {
         clessnverse::logit(scriptname, paste("successfuly pushed debate", event_id, "to datalake"), logger)
         harvested <<- harvested + 1
       } else {
-        clessnverse::logit(scriptname, paste("error while pushing debate", event_id, "to datalake"), logger)
+        if (!opt$refresh_data) clessnverse::logit(
+          scriptname, 
+          paste("warning while pushing debate", event_id, "to datalake because it already exists and opt$refresh_data = FALSE"), 
+          logger
+        )
       }
 
     } else {
@@ -196,7 +200,7 @@ tryCatch(
 
     # valid options for this script are
     #    log_output = c("file","console","hub")
-    #    scraping_option = c("range", "start_date", num_days, start_parliament, num_parliament, "html" | "xml") | "frontpage" (default)
+    #    method = c("range", "start_date", num_days, start_parliament, num_parliament, "html" | "xml") | "frontpage" (default)
     #    translate = "TRUE" | "FALSE"
     #    refresh_data = "TRUE" | "FALSE"
     #    
@@ -206,7 +210,7 @@ tryCatch(
     #opt <<- list(
     #   backend = "hub",
     #   log_output = c("console"),
-    #   method = c("range", "2019-07-01", 1, 9, 1, "xml"),
+    #   method = c("range", "2019-07-01", 30, 9, 1, "xml"),
     #   refresh_data = TRUE
     #)
 
