@@ -643,18 +643,29 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
     if(counter > 0){
       Sys.sleep(20)
     }
-    hub_response <- clessnverse::commit_lake_item(
-      data = list(
-        key = key,
-        path = paste("radarplus", type, sep = "/"),
-        item = doc
-      ),
-      metadata = metadata,
-      mode = if (opt$refresh_data) "refresh" else "newonly",
-      credentials
+    hub_response <- tryCatch(
+      expr = {
+        clessnverse::commit_lake_item(
+          data = list(
+            key = key,
+            path = paste("radarplus", type, sep = "/"),
+            item = doc
+          ),
+          metadata = metadata,
+          mode = if (opt$refresh_data) "refresh" else "newonly",
+          credentials
+        )
+      },
+      error = function(e) {
+        clessnverse::logit(scriptname, e$message, logger)
+      },
+      warning = function(w) {
+        clessnverse::logit(scriptname, w$message, logger)
+      },
+      finally = {}
     )
 
-    if (hub_response) {
+    if (hub_response == 0) {
       clessnverse::logit(scriptname, paste("successfuly pushed", type, key, "to datalake"), logger)
       if(type == "headline"){
         nb_headline <<- nb_headline + 1
