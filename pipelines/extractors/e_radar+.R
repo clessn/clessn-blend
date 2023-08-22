@@ -689,7 +689,35 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   # data <- hublot::filter_lake_items(credentials, filter = filter)
 
   # retrieve_lake_item 
-  r <- hublot::filter_lake_items(credentials, list(path = paste("radarplus", path, sep = "/"), key__contains = mediaSource))
+  counter <- 1
+  success <- FALSE
+  r <- NULL
+  while (counter < 20 && !success) {
+    if (counter > 1) Sys.sleep(20)
+    r <- tryCatch(
+      expr = {
+        clessnverse::logit(scriptname, "checking if datalake object already exists", logger)
+        hublot::filter_lake_items(
+          credentials, 
+          list(
+            path = paste("radarplus", path, sep = "/"), 
+            key__contains = mediaSource
+          )
+        )
+      },
+      warning = function(w) {
+        msg <- paste("warning filtering lake items on attempt", counter, ":", w$message)
+        clessnverse::logit(scriptname, msg, logger)
+      },
+      error = function(e) {
+        msg <- paste("error filtering lake items on attempt", counter, ":", e$message)
+        clessnverse::logit(scriptname, msg, logger)
+      },
+      finally = {
+      }
+    )
+    if (!is.null(r)) success <- TRUE else counter <- counter + 1
+  } 
 
   if(length(r$result) == 0){
     clessnverse::logit(scriptname, "No results found with the same key", logger)
@@ -897,7 +925,7 @@ main <- function() {
           doc <- httr::content(r$response, as = 'text')
         }
 
-        clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
+        clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
 
         key <- form_root_key(url)
 
@@ -922,7 +950,7 @@ main <- function() {
             harvest_headline(r, m, headline_url, headline_key)
         } else {
             failed_headlines_copy <<- append(failed_headlines_copy, m)
-            warning(paste("error while pushing frontpage", key, "to datalake"))
+            warning(paste("error while pushing headline", key, "to datalake"))
         }
 
       } else {
