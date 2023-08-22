@@ -25,14 +25,23 @@ df <- clessnverse::get_warehouse_table(
     table_name = my_table,
     data_filter = my_filter,
     credentials = my_credentials,
+    nbrows = 0
 )
 
 # Ou spécifier un filtre pour charger seulement les données dont on a besoin
 # Pour cela il faut connaitre les champs de la table
 # Pour voir un enregistrement dans la table et en connaitre les champs,
-# soit passer par l'admin de hublot: 
-# soit charger juste quelques (genre 1000) rows de la table sans filtre.
-# Pour voir les types de filtres, voir
+# 1. soit passer par l'admin de hublot: https://clhub.clessn.cloud/admin/
+#    et aller naviguer dans la table en question (ex: warehouse_agoraplus_quebec_national_assembly)
+#    ouvrir une observation et regarder sa structure.
+# 2. soit charger juste quelques (genre 1000) rows de la table sans filtre ici dans R
+#    et regarder la structure du dataframe.  Pour seulement charger quelques lignes, simplement
+#    donner une valeur à nbrows dans l'appel à la fonction clessnverse::get_warehouse_table
+#    par exemple nbrows = 10 chargera les 10 premières observations de la table dans un dataframe
+# 
+# Pour voir les types de filtres possibles (my_filter), 
+# voir https://github.com/clessn/hublotr#t%C3%A9l%C3%A9charger-un-subset-des-donn%C3%A9es-gr%C3%A2ce-au-filtrage
+#
 my_table <- "agoraplus_qcvintage_national_assembly"
 
 my_filter <- list(data__event_date__lt = "1981-12-07")
@@ -42,6 +51,7 @@ df <- clessnverse::get_warehouse_table(
     table_name = my_table,
     data_filter = my_filter,
     credentials = my_credentials,
+    nbrows = 0
 )
 
 # Si des datasets sont trop gros (comme QC Vintage), ça peut être nécessaire de les spliter
@@ -55,6 +65,7 @@ df1 <- clessnverse::get_warehouse_table(
     table_name = my_table,
     data_filter = my_filter,
     credentials = my_credentials,
+    nbrows = 0
 )
 
 # On combine les deux dataframe
