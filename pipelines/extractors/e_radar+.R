@@ -118,6 +118,10 @@ failed_headlines <<- list()
 duplicate_frontpages <- 0
 duplicate_headlines <- 0
 
+
+
+
+
 find_headline <- function(r, m){
   clessnverse::logit(scriptname, paste("Finding headline for", m$short_name), logger)
   found_supported_media <- FALSE
@@ -351,7 +355,7 @@ find_headline <- function(r, m){
 
   if(m$short_name == "TTS"){
     TTS_extracted_headline <- r %>%
-      rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "c-feature-mediacard")]') %>%
+      rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "tnt-headline")]') %>%
       rvest::html_attr("href")
     if(length(TTS_extracted_headline) > 0){
       if (grepl("^http.*", TTS_extracted_headline[[1]])) {
@@ -785,6 +789,11 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   clessnverse::logit(scriptname, "Not duplicated. Upload new one.", logger)
   return(FALSE)
 }
+
+
+
+
+
 ###############################################################################
 ########################               Main              ######################
 ###############################################################################
@@ -963,7 +972,10 @@ main <- function() {
     failed_headlines <- failed_headlines_copy
   }
   
-}
+} # <\main>
+
+
+
 
 tryCatch( 
   withCallingHandlers(
