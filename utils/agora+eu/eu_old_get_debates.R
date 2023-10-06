@@ -75,7 +75,7 @@ df <- clessnhub::get_items(
 #     "GET", 
 #     url, 
 #     add_headers(
-#         'X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775',
+#         'X-RapidAPI-Key' = '',
 #         'X-RapidAPI-Host' = 'just-translated.p.rapidapi.com'),
 #         query = queryString,
 #         content_type("application/octet-stream")
@@ -89,7 +89,7 @@ df <- clessnhub::get_items(
 #   lang = "fr",
 #   text = "Hello, how are you?"
 # )
-# response <- VERB("GET", url, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'just-translated.p.rapidapi.com'), query = queryString, content_type("application/octet-stream"))
+# response <- VERB("GET", url, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'just-translated.p.rapidapi.com'), query = queryString, content_type("application/octet-stream"))
 # content(response, "text")
 
 
@@ -99,7 +99,7 @@ df <- clessnhub::get_items(
 # url <- "https://ibmwatsonlanguagetranslatordimasv1.p.rapidapi.com/translateByModelId"
 # payload <- "modelId=%3CREQUIRED%3E&username=%3CREQUIRED%3E&text=%3CREQUIRED%3E&password=%3CREQUIRED%3E"
 # encode <- "form"
-# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'IBMWatsonLanguageTranslatordimasV1.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
+# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'IBMWatsonLanguageTranslatordimasV1.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
 # content(response, "text")
 
 
@@ -111,7 +111,7 @@ df <- clessnhub::get_items(
 # url <- "https://translef-translator.p.rapidapi.com/translate/text"
 # payload <- paste("language_code=de&text=", dfInterventions$data.interventionText[135483])
 # encode <- "form"
-# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'translef-translator.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
+# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'translef-translator.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
 # content(response, "text")
 
 
@@ -120,13 +120,13 @@ df <- clessnhub::get_items(
 # library(httr)
 # url <- "https://translo.p.rapidapi.com/api/v3/detect"
 # queryString <- list(text = dfInterventions$data.interventionText[135483])
-# response <- VERB("GET", url, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'translo.p.rapidapi.com'), query = queryString, content_type("application/octet-stream"))
+# response <- VERB("GET", url, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'translo.p.rapidapi.com'), query = queryString, content_type("application/octet-stream"))
 # content(response, "text")
 
 # url <- "https://translo.p.rapidapi.com/api/v3/translate"
 # payload <- paste("from=sk&to=en&text=",dfInterventions$data.interventionText[135483])
 # encode <- "form"
-# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'translo.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
+# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'translo.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
 # content(response, "text")
 
 
@@ -136,7 +136,7 @@ df <- clessnhub::get_items(
 # url <- "https://text-translator2.p.rapidapi.com/translate"
 # payload <- paste("source_language=en&target_language=fr&text=",gsub(" ", "%20", substring(dfInterventions$data.interventionText[99709],1, 2900)))
 # encode <- "form"
-# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 'X-RapidAPI-Host' = 'text-translator2.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
+# response <- VERB("POST", url, body = payload, add_headers('X-RapidAPI-Key' = '', 'X-RapidAPI-Host' = 'text-translator2.p.rapidapi.com'), content_type("application/x-www-form-urlencoded"), encode = encode)
 # content(response, "text")
 
 
@@ -148,7 +148,7 @@ df <- clessnhub::get_items(
 #     url, 
 #     body= paste("{\"q\":\"",df$data.interventionText[1],"\"}"),
 #     add_headers(
-#         'X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775',
+#         'X-RapidAPI-Key' = '',
 #         'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'),
 #         content_type("application/octet-stream"))
 # content(response, "text")
@@ -166,7 +166,7 @@ df <- clessnhub::get_items(
 #     "POST", 
 #     url, 
 #     body = payload,
-#     add_headers('X-RapidAPI-Key' = '21924b6e03msha14285d0411bf59p162e3ajsn902945780775', 
+#     add_headers('X-RapidAPI-Key' = '', 
 #     'X-RapidAPI-Host' = 'deep-translate1.p.rapidapi.com'), 
 #     content_type("application/json"), 
 #     encode = encode)
