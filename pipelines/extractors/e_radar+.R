@@ -205,8 +205,8 @@ find_headline <- function(r, m){
 
   if(m$short_name == "GAM"){
     GAM_extracted_headline <- r %>% 
-      rvest::html_nodes(xpath = '//div[@class="default__StyledLayoutContainer-qi2b9a-0 jQBUdK top-package-chain top-package-2col"]') %>%
-      rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
+      rvest::html_nodes(xpath = '//div[@class="Container__StyledContainer-sc-15gjlsr-0 hWPJHz Grid__StyledGrid-sc-140zq2o-0 fRHjkJ TopPackageBigStory__StyledWrapper-sc-1gza93-1 zUdgM big-story-content"]') %>%
+      rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa TopPackageBigStory__StyledCardLink-sc-1gza93-3 jSWywI top-package-premium-media"]') %>%
       rvest::html_attr("href")
 
 
@@ -355,8 +355,14 @@ find_headline <- function(r, m){
 
   if(m$short_name == "TTS"){
     TTS_extracted_headline <- r %>%
-      rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "tnt-headline")]') %>%
+      rvest::html_nodes(xpath = '//article[@class="tnt-asset-type-article packStory1 letterbox-style-white  tnt-section-news tnt-sub-section-world"]') %>%
+      #rvest::html_nodes(xpath = '//article[contains(concat(" ", @class, "="), "packStory1")]')
+      #rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "tnt-headline")]') %>%
+      rvest::html_nodes("a") %>%
       rvest::html_attr("href")
+    
+    TTS_extracted_headline <- TTS_extracted_headline[1]
+    
     if(length(TTS_extracted_headline) > 0){
       if (grepl("^http.*", TTS_extracted_headline[[1]])) {
         url <- TTS_extracted_headline[[1]]
@@ -1000,18 +1006,16 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
+    # opt <<- list(
+    #   log_output = c("file", "console"),
+    #   method = "frontpage",
+    #   refresh_data = TRUE,
+    #   translate = TRUE,
+    #   schema = "test"
+    # )
+
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
-    }
-
-    if (opt$log_output == "console") {
-      opt <<- list(
-        log_output = c("file", "console"),
-        method = "frontpage",
-        refresh_data = TRUE,
-        translate = TRUE,
-        schema = "test"
-      )
     }
 
     if (!exists("logger") || is.null(logger) || logger == 0) {

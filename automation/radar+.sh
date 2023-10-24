@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. $CLESSN_ROOT_DIR/clessn-blend/automation/.env
+
 basefolder="clessn-blend/pipelines"
 scriptname="radar+"
 
@@ -65,8 +67,8 @@ fi
 
 if [ $ret -ne 0 ]; then
   output=`tail -n 20 ~/logs/$prefix$scriptname.log`
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_RADARPLUS_ERRORS_WEBHOOK
 else
   output=`tail -n 16 ~/logs/$prefix$scriptname.log`
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_RADARPLUS_WEBHOOK
 fi

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. $CLESSN_ROOT_DIR/clessn-blend/automation/.env
+
 foldername="clessn-blend/scrapers/twitter_blender"
 
 generate_post_data()
@@ -46,10 +48,10 @@ if [ $ret -ne 0 ]; then
   output=`tail -n 10 ~/logs/$scriptname"_"$3"_"$4.log`
   echo $output
   echo $(generate_post_data)
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_ERRORS_WEBHOOK
 else
   output=`tail -n 2 ~/logs/$scriptname"_"$3"_"$4.log`
   echo $output
   echo $(generate_post_data)
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_WEBHOOK
 fi

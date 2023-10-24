@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. $CLESSN_ROOT_DIR/clessn-blend/automation/.env
+
 generate_post_data()
 {
   cat <<EOF
@@ -39,8 +41,8 @@ fi
 
 if [ $ret -ne 0 ]; then
   output=`tail -n 10 ~/logs/$scriptname.log`
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_ERRORS_WEBHOOK
 else
   output=`tail -n 2 ~/logs/$scriptname.log`
-  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_WEBHOOK
 fi

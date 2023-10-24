@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. $CLESSN_ROOT_DIR/clessn-blend/automation/.env
+
 generate_post_data()
 {
   cat <<EOF
@@ -10,9 +12,10 @@ EOF
 }
 
 scriptname="test.R"
+echo "testing new webhooks" > $scriptname.out
 
-
-ret=$?
+#ret=$?
+ret=2
 sed 's/\"/\\"/g' -i $scriptname.out
 output=`cat $scriptname.out`
 
@@ -31,7 +34,17 @@ if [ $ret -eq 2 ]; then
   output_msg="generated one or more warnings"
 fi
 
-curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" https://hooks.slack.com/services/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
+if [ $ret -eq 0 ]; then
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_WEBHOOK
+fi
+
+if [ $ret -eq 1 ]; then
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_ERRORS_WEBHOOK
+fi
+
+if [ $ret -eq 2 ]; then
+  curl -X POST -H 'Content-type: application/json' --data "$(generate_post_data)" $CLESSN_BLEND_WARNINGS_WEBHOOK
+fi
 
 if [ -f "$scriptname.out" ]; then
   rm -f "$scriptname.out"
