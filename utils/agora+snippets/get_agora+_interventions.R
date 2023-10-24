@@ -9,17 +9,16 @@ my_credentials <- hublot::get_credentials(
 
 # Choisir la table dasns l'entrepôt de données qui a été générée par un chargeur 
 # Simplement enlever le commentaire devant la table qu'on veut charger
-my_table <- "agoraplus_quebec_national_assembly"
+#my_table <- "agoraplus_quebec_national_assembly"
 #my_table <- "agoraplus_canada_house_of_commons"
 #my_table <- "agoraplus_qc_press_conferences"
 #my_table <- "agoraplus_qcvintage_national_assembly"
-#my_table <- "agoraplus_european_parliament"
+my_table <- "agoraplus_european_parliament"
 
-# On peut charger toute la table
-#my_table <- "agoraplus_qc_press_conferences"
+# On peut charger toute la table : Pour cela on crée un filtre vide
+my_filter <- list()
+my_filter <- list(data__event_date = "2016-05-09")
 
-# Pour cela on crée un filtre vide
-my_filter <- list(data__event_date__gt = "2023-01-01")
 
 df <- clessnverse::get_warehouse_table(
     table_name = my_table,
