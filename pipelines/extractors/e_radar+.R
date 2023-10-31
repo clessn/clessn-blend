@@ -112,18 +112,14 @@ medias_urls <- list(
   )
 )
 
-pushed_headlines <<- list()
-failed_headlines <<- list()
 
-duplicate_frontpages <- 0
-duplicate_headlines <- 0
 
 
 
 
 
 find_headline <- function(r, m){
-  clessnverse::logit(scriptname, paste("Finding headline for", m$short_name), logger)
+  clessnverse::logit(scriptname, paste("[find_headline]", "Finding headline for", m$short_name), logger)
   found_supported_media <- FALSE
 
   if (m$short_name == "RCI") {
@@ -156,7 +152,7 @@ find_headline <- function(r, m){
         rvest::html_attr("href")
 
     if(length(CBC_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "CBC: Scraping with card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0 failed, trying with primaryHeadline desktopHeadline", logger)
+      clessnverse::logit(scriptname, paste("[find_headline]", "CBC: Scraping with card cardFeatured cardFeaturedReversed sclt-featurednewsprimarytopstoriescontentlistcard0 failed, trying with primaryHeadline desktopHeadline"), logger)
       CBC_extracted_headline <<- r %>%
         rvest::html_nodes(xpath = '//*[@class="primaryHeadline desktopHeadline"]') %>%
         rvest::html_nodes('a') %>%
@@ -205,8 +201,10 @@ find_headline <- function(r, m){
 
   if(m$short_name == "GAM"){
     GAM_extracted_headline <- r %>% 
-      rvest::html_nodes(xpath = '//div[@class="Container__StyledContainer-sc-15gjlsr-0 hWPJHz Grid__StyledGrid-sc-140zq2o-0 fRHjkJ TopPackageBigStory__StyledWrapper-sc-1gza93-1 zUdgM big-story-content"]') %>%
-      rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa TopPackageBigStory__StyledCardLink-sc-1gza93-3 jSWywI top-package-premium-media"]') %>%
+      #rvest::html_nodes(xpath = '//div[@class="Container__StyledContainer-sc-15gjlsr-0 hWPJHz Grid__StyledGrid-sc-140zq2o-0 fRHjkJ TopPackageBigStory__StyledWrapper-sc-1gza93-1 zUdgM big-story-content"]') %>%
+      #rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa TopPackageBigStory__StyledCardLink-sc-1gza93-3 jSWywI top-package-premium-media"]') %>%
+      rvest::html_nodes(xpath = '//div[contains(@class,"TopPackageBigStory__StyledTopPackageBigStory")]') %>%
+      rvest::html_nodes(xpath = './a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
       rvest::html_attr("href")
 
 
@@ -233,10 +231,10 @@ find_headline <- function(r, m){
       rvest::html_attr("href")
 
     if(length(VS_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "VS: scraping with article-card__link failed, trying with article-card__image-link", logger)
+      clessnverse::logit(scriptname, paste("[find_headline]", "VS: scraping with article-card__link failed, trying with article-card__image-link"), logger)
       VS_extracted_headline <- r %>% 
         rvest::html_nodes(xpath = '//div[@class="article-card__details"]') %>%
-        rvest::html_nodes(xpath = '//a[@class="article-card__image-link"]') %>%
+        rvest::html_nodes(xpath = './a[@class="article-card__image-link"]') %>%
         rvest::html_attr("href")
     }
 
@@ -305,7 +303,7 @@ find_headline <- function(r, m){
       rvest::html_attr("href")
 
     if(length(CTV_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "CTV: Initial attempt failed, trying thorugh xpaths.", logger)
+      clessnverse::logit(scriptname, paste("[find_headline]", "CTV: Initial attempt failed, trying thorugh xpaths."), logger)
       CTV_extracted_headline <- r %>%
         rvest::html_nodes(xpath = '//div[@class="c-list__item__block"]') %>%
         rvest::html_nodes(xpath = '//a[@class="c-list__item__image"]') %>%
@@ -328,14 +326,14 @@ find_headline <- function(r, m){
       rvest::html_attr("href")
 
     if(length(GN_extracted_headline) == 0){  
-      clessnverse::logit(scriptname, "a.c-posts__headlineLink failed, trying a.l-highImpact__headlineLink", logger)
+      clessnverse::logit(scriptname, paste("[find_headline]", "a.c-posts__headlineLink failed, trying a.l-highImpact__headlineLink"), logger)
       GN_extracted_headline <- r %>%
         rvest::html_nodes(xpath = '//a[@class="l-highImpact__headlineLink"]') %>%
         rvest::html_attr("href")
     }
 
     if(length(GN_extracted_headline) == 0){
-      clessnverse::logit(scriptname, "a.l-highImpact__headlineLink failed, trying div.l-section__main a.c-posts__inner", logger)
+      clessnverse::logit(scriptname, paste("[find_headline]", "a.l-highImpact__headlineLink failed, trying div.l-section__main a.c-posts__inner"), logger)
       GN_extracted_headline <- r %>%
         rvest::html_nodes(xpath = '//div[@class="l-section__main"]') %>%
         rvest::html_nodes(xpath = '//a[@class="c-posts__inner"]') %>%
@@ -355,9 +353,10 @@ find_headline <- function(r, m){
 
   if(m$short_name == "TTS"){
     TTS_extracted_headline <- r %>%
-      rvest::html_nodes(xpath = '//article[@class="tnt-asset-type-article packStory1 letterbox-style-white  tnt-section-news tnt-sub-section-world"]') %>%
+      #rvest::html_nodes(xpath = '//article[@class="tnt-asset-type-article packStory1 letterbox-style-white  tnt-section-news tnt-sub-section-world"]') %>%
       #rvest::html_nodes(xpath = '//article[contains(concat(" ", @class, "="), "packStory1")]')
       #rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "tnt-headline")]') %>%
+      rvest::html_nodes(xpath = './/article[contains(@class, "packStory1")]') %>%
       rvest::html_nodes("a") %>%
       rvest::html_attr("href")
     
@@ -374,26 +373,31 @@ find_headline <- function(r, m){
   }
   
   if (!found_supported_media) {
-    clessnverse::logit(scriptname, paste("no supported media found", m$short_name), logger)
-    warning(paste("no supported media found", m$short_name))
+    clessnverse::logit(scriptname, paste("[find_headline]", "no supported media found", m$short_name), logger)
+    warning(paste("[find_headline]", "no supported media found", m$short_name))
     return("")
   }
 
   return(url)
 }
 
-get_content <- function(r, m){
+get_content <- function(url, r, m){
   if(m$short_name == "CBC"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//main[@class="feed-content content"]') %>%
+      #rvest::html_nodes(xpath = '//main[@class="feed-content content"]') %>%
+      rvest::html_nodes(xpath = '//div[contains(@class, "BodyHtmlForMainContent")]') %>%
       rvest::html_children() %>%
-      rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp):not(.byline):not(.bylineDetails):not(.video-time-container)") %>%
+      #rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp):not(.byline):not(.bylineDetails):not(.video-time-container)") %>%
       rvest::html_text()
 
-    if(length(article_content) > 0){
+    if (!is.null(article_content)) article_content <- paste(article_content, collapse = "\n")
+
+    if(!is.null(article_content) && length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -407,43 +411,89 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      article_content <<- r %>%
+      rvest::html_nodes(xpath = '//div[@class="article-main-txt composer-content"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(":not(.bigbox-container):not(.before-comments):not(#paywallArticleOffer)") %>%
+      rvest::html_text()
+
+      if(length(article_content) > 0){
+        return(article_content[[1]])
+      } else {
+        msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+        clessnverse::logit(scriptname, msg, logger)
+        warning(msg)
+      }
     }
   }
 
   if(m$short_name == "RCI"){
+    # article_content <<- r %>%
+    #   rvest::html_nodes(xpath = '//section[@class="redactionals document-content-style"]') %>%
+    #   rvest::html_children() %>%
+    #   rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
+    #   rvest::html_text()
+
+    # if(length(article_content) == 0){
+    #   article_content <<- r %>%
+    #     rvest::html_nodes(xpath = '//section[@class="sc-3sri0n-1 dIVQob"]') %>%
+    #     rvest::html_children() %>%
+    #     rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
+    #     rvest::html_text()
+    # }
+
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//section[@class="redactionals document-content-style"]') %>%
+      #rvest::html_nodes(xpath = '//main[@class="feed-content content"]') %>%
+      rvest::html_nodes(xpath = '//div[contains(@class, "BodyHtmlForMainContent")]') %>%
       rvest::html_children() %>%
-      rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
+      #rvest::html_nodes(":not(.formattedDate):not(.video-time-stamp):not(.timestamp):not(.byline):not(.bylineDetails):not(.video-time-container)") %>%
       rvest::html_text()
 
-    if(length(article_content) == 0){
-      article_content <<- r %>%
-        rvest::html_nodes(xpath = '//section[@class="sc-3sri0n-1 dIVQob"]') %>%
-        rvest::html_children() %>%
-        rvest::html_nodes(":not(.sc-1b0qtbq-0):not(.eDaVCP):not(.styled__AdAttachmentWrapperNoPrint)") %>%
-        rvest::html_text()
-    }
+    if (!is.null(article_content) && length(article_content) > 0) article_content <- paste(article_content, collapse = "\n")
 
-    if(length(article_content) > 0){
+
+    if(!is.null(article_content) && length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
   if(m$short_name == "NP"){
+    # article_content <<- r %>%
+    #   rvest::html_nodes(xpath = '//article[@class="article-content-story article-content-story--story"]') %>%
+    #   rvest::html_children() %>%
+    #   rvest::html_nodes(":not(.ad__section-border):not(.article-content__ad-group):not(.ad_counter_2)") %>%
+    #   rvest::html_text()
+
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//article[@class="article-content-story article-content-story--story"]') %>%
+      rvest::html_nodes(xpath = '//section[@class="article-content__content-group article-content__content-group--feature"]') %>%
       rvest::html_children() %>%
-      rvest::html_nodes(":not(.ad__section-border):not(.article-content__ad-group):not(.ad_counter_2)") %>%
+      #rvest::html_nodes(":not(.ad__section-border):not(.article-content__ad-group):not(.ad_counter_2)") %>%
       rvest::html_text()
 
-    if(length(article_content) > 0){
+
+    if (length(article_content) == 0) {
+      article_content <<- r %>%
+        rvest::html_nodes(xpath = '//section[@class="article-content__content-group article-content__content-group--story"]') %>%
+        rvest::html_children() %>%
+        #rvest::html_nodes(":not(.ad__section-border):not(.article-content__ad-group):not(.ad_counter_2)") %>%
+        rvest::html_text()
+    }
+
+
+    if (!is.null(article_content) && length(article_content) > 0) {
+      article_content <- paste(article_content, collapse = "\n")
+    }
+
+    if(!is.null(article_content) && length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -457,7 +507,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -469,7 +521,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -483,7 +537,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -497,7 +553,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -511,7 +569,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -525,7 +585,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -537,7 +599,9 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -551,19 +615,39 @@ get_content <- function(r, m){
     if(length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
   if(m$short_name == "TTS"){
     article_content <<- r %>%
-      rvest::html_nodes(xpath = '//div[@class="c-article-body__content"]') %>%
+      #rvest::html_nodes(xpath = '//div[@class="c-article-body__content"]') %>%
+      rvest::html_nodes(xpath = '//div[@id="article-body"]') %>%
+      rvest::html_children() %>%
       rvest::html_text()
 
-    if(length(article_content) > 0){
+    if (!is.null(article_content) && length(article_content) > 1) {
+      article_content <- gsub("\n(\\s*)", "", article_content) %>%
+        trimws()
+    }
+
+    if (!is.null(article_content) && length(article_content) > 1) {
+      article_content <- article_content[-c(1:2)] %>%
+        head(., -4) %>%
+        paste(., collapse = "/n")
+    }
+
+      
+
+
+    if(!is.null(article_content) && length(article_content) > 0){
       return(article_content[[1]])
     } else {
-      clessnverse::logit(scriptname, paste(m$short_name, ": Empty content", sep = ""), logger)
+      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+      clessnverse::logit(scriptname, msg, logger)
+      warning(msg)
     }
   }
 
@@ -571,7 +655,7 @@ get_content <- function(r, m){
 }
 
 harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
-  clessnverse::logit(scriptname, paste("getting headline from", url), logger)
+  clessnverse::logit(scriptname, paste("[harvest_headline]", "getting headline from", url), logger)
 
   r <- rvest::session(url)
 
@@ -602,7 +686,7 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
       doc <- httr::content(r$response, as = 'text')
     }
 
-    clessnverse::logit(scriptname, paste("pushing headline", url, "to hub"), logger)
+    clessnverse::logit(scriptname, paste("[harvest_headline]", "pushing headline", url, "to hub"), logger)
 
     key <- gsub(" |-|:|/|\\.", "_", paste(root_key, Sys.time(), sep="_"))
 
@@ -610,7 +694,7 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     hashed_html <- digest(doc, algo = "md5", serialize = F)
 
-    content <- get_content(r, m)
+    content <- get_content(url, r, m)
 
     if(length(content) > 0){
       hashed_html <- digest(content, algo = "md5", serialize = T)
@@ -618,20 +702,29 @@ harvest_headline <- function(r, m, url, root_key, frontpage_root_key) {
 
     metadata$hashed_html <- hashed_html
 
+    clessnverse::logit(scriptname, paste("[harvest_headline] about to handleDuplicate with", root_key, hashed_html), logger)
     pushed <- handleDuplicate("headline", root_key, doc, credentials, m$short_name, hashed_html)
+    clessnverse::logit(scriptname, paste("[harvest_headline] handleDuplicate with", root_key, hashed_html, "completed"), logger)
 
     if(!pushed){
+      clessnverse::logit(scriptname, paste("[harvest_headline] not pushed", root_key, hashed_html), logger)
+
+      clessnverse::logit(scriptname, "[harvest_headline] appending", logger)
       pushed_headlines <<- append(pushed_headlines, key)
+      clessnverse::logit(scriptname, paste("[harvest_headline] pushing", key), logger)
       pushed <- push_to_lake("headline", key, metadata, credentials, doc)
     }
     
     if(!pushed){
-      warning(paste("error while pushing headline", key, "to datalake"))
+      warning(paste("[harvest_headline]", "error while pushing headline", key, "to datalake"))
     }
   } else {
-      clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
-      warning(paste("there was an error getting url", url))
+      clessnverse::logit(scriptname, paste("[harvest_headline]", "there was an error getting url", url), logger)
+      warning(paste("[harvest_headline]", "there was an error getting url", url))
   }
+
+  clessnverse::logit(scriptname, "[harvest_headline] exitting function", logger)
+
 
 } #</my_function>
 
@@ -645,6 +738,7 @@ form_root_key <- function(url){
   return(key)
 }
 
+
 push_to_lake <- function(type, key, metadata, credentials, doc){
   pushed <- FALSE
   counter <- 0
@@ -653,6 +747,7 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
     if(counter > 0){
       Sys.sleep(20)
     }
+
     hub_response <- tryCatch(
       expr = {
         clessnverse::commit_lake_item(
@@ -667,18 +762,18 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
         )
       },
       error = function(e) {
-        msg <- paste(e$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
+        msg <- paste("[push_to_lake]", e$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
         clessnverse::logit(scriptname, msg, logger)
       },
       warning = function(w) {
-        msg <- paste(w$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
+        msg <- paste("[push_to_lake]", w$message, "during attempt", counter+1, "at pushing a", type, "to the datalake")
         clessnverse::logit(scriptname, msg, logger)
       },
       finally = {}
     )
 
-    if (hub_response == 0) {
-      clessnverse::logit(scriptname, paste("successfuly pushed", type, key, "to datalake"), logger)
+    if (hub_response == 0 || hub_response == TRUE) {
+      clessnverse::logit(scriptname, paste("[push_to_lake]", "successfuly pushed", type, key, "to datalake"), logger)
       if(type == "headline"){
         nb_headline <<- nb_headline + 1
       } else {
@@ -686,10 +781,11 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
       }
       return(TRUE)
     } else {
-      clessnverse::logit(scriptname, paste("error while pushing", type, key, "to datalake"), logger)
+      clessnverse::logit(scriptname, paste("[push_to_lake]", "error while pushing", type, key, "to datalake"), logger)
       counter <- counter + 1
     }
-  }
+  } # </while(!pushed && counter < 20)>
+
 
   return(FALSE)
 }
@@ -705,22 +801,25 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   while (counter < 20 && !success) {
     if (counter > 1) Sys.sleep(20)
     r <- tryCatch(
+      # we're looking for any lake item with a key for this media for today
       expr = {
-        clessnverse::logit(scriptname, "checking if datalake object already exists", logger)
+        clessnverse::logit(scriptname, paste("[handleDuplicate]", "checking if datalake object already exists"), logger)
         hublot::filter_lake_items(
           credentials, 
           list(
             path = paste("radarplus", path, sep = "/"), 
-            key__contains = mediaSource
+            #key__contains = key
+            #key__contains =  substr(key, 1, nchar(key) - 9)
+            key__contains = gsub(" |-|:|/|\\.", "_", paste(key, Sys.Date(), sep="_"))
           )
         )
       },
       warning = function(w) {
-        msg <- paste("warning filtering lake items on attempt", counter, ":", w$message)
+        msg <- paste("[handleDuplicate]", "warning filtering lake items on attempt", counter, ":", w$message)
         clessnverse::logit(scriptname, msg, logger)
       },
       error = function(e) {
-        msg <- paste("error filtering lake items on attempt", counter, ":", e$message)
+        msg <- paste("[handleDuplicate]", "error filtering lake items on attempt", counter, ":", e$message)
         clessnverse::logit(scriptname, msg, logger)
       },
       finally = {
@@ -730,7 +829,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   } 
 
   if(length(r$result) == 0){
-    clessnverse::logit(scriptname, "No results found with the same key", logger)
+    clessnverse::logit(scriptname, paste("[handleDuplicate]", "No results found with the same key"), logger)
     return(FALSE)
   }
 
@@ -747,14 +846,14 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   repeat{
     lake_item <- sorted_result[[start_index]]
 
-    if(lake_item[[metadata_index]]$schema == opt$schema){
+    if(lake_item$metadata$schema == opt$schema){
       break
     }
 
     start_index <- start_index - 1
 
     if(start_index == 0){
-      clessnverse::logit(scriptname, paste(key, ": no element with same schema found"), logger)
+      clessnverse::logit(scriptname, paste("[handleDuplicate]", key, ": no element with same schema found"), logger)
       return(FALSE)
     }
   }
@@ -762,37 +861,44 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
   in_lake_id <- "NOTHING"
 
   if(path == "frontpage") {
-    in_lake_id <- lake_item[[metadata_index]]$headline_root_key
+    in_lake_id <- lake_item$metadata$headline_root_key
   } else {
-    in_lake_id <- lake_item[[metadata_index]]$hashed_html
+    in_lake_id <- lake_item$metadata$hashed_html
   }
 
-  clessnverse::logit(scriptname, paste("Scraped id:", identifiant), logger)
-  clessnverse::logit(scriptname, paste("In lake id:", in_lake_id), logger)
+  clessnverse::logit(scriptname, paste("[handleDuplicate]", "Scraped id:", identifiant), logger)
+  clessnverse::logit(scriptname, paste("[handleDuplicate]", "In lake id:", in_lake_id), logger)
 
   same_id <- !is.null(in_lake_id) && identifiant == in_lake_id
 
   if(same_id){
-    clessnverse::logit(scriptname, "Duplicated. Modifying existing object", logger)
-    lake_item[[metadata_index]]$end_timestamp <- Sys.time()
-    if(is.na(lake_item[[metadata_index]]$duplicated_count) || is.null(lake_item[[metadata_index]]$duplicated_count)){
-      lake_item[[metadata_index]]$duplicated_count <- 1
+    clessnverse::logit(scriptname, paste("[handleDuplicate]", "Duplicated. Modifying existing object"), logger)
+    lake_item$metadata$end_timestamp <- Sys.time()
+    if(is.na(lake_item$metadata$duplicated_count) || is.null(lake_item$metadata$duplicated_count)){
+      lake_item$metadata$duplicated_count <- 1
     }
-    lake_item[[metadata_index]]$duplicated_count <- lake_item[[metadata_index]]$duplicated_count + 1
+    lake_item$metadata$duplicated_count <- lake_item$metadata$duplicated_count + 1
 
-    pushed <- push_to_lake(type = path, key = lake_item[[4]], metadata = lake_item[[metadata_index]], credentials, doc = doc)
+    clessnverse::logit(scriptname, paste("[handleDuplicate] about to push", key), logger)
+    pushed <- push_to_lake(type = path, key = lake_item[[4]], metadata = lake_item$metadata, credentials, doc = doc)
+    clessnverse::logit(scriptname, paste("[handleDuplicate] pushed", key), logger)
 
     if(path == "frontpage"){
       duplicate_frontpages <<- duplicate_frontpages + 1
     } else {
       duplicate_headlines <<- duplicate_headlines + 1
-      pushed_headlines <<- append(pushed_headlines, paste("*", lake_item[[4]], " DUPLICATED", "*", sep=""))
+      #pushed_headlines <<- append(pushed_headlines, paste("*", lake_item[[4]], " DUPLICATED", "*", sep=""))
+      pushed_headlines <<- append(pushed_headlines, paste(lake_item[[4]], "*", sep = ""))
     }
+
+    clessnverse::logit(scriptname, paste("[handleDuplicate] exitting function", key), logger)
 
     return(pushed)
   }
 
-  clessnverse::logit(scriptname, "Not duplicated. Upload new one.", logger)
+  clessnverse::logit(scriptname, paste("[handleDuplicate]", "Not duplicated. Upload new one."), logger)
+  clessnverse::logit(scriptname, paste("[handleDuplicate] exitting function", key), logger)
+
   return(FALSE)
 }
 
@@ -806,7 +912,7 @@ handleDuplicate <- function(path, key, doc, credentials, mediaSource, identifian
 
 main <- function() {
     
-  clessnverse::logit(scriptname, "starting main function", logger)
+  clessnverse::logit(scriptname, paste("[main]", "starting main function", logger))
   
   for (m in medias_urls) {
     url <- paste(m$base, m$front, sep="")
@@ -834,13 +940,14 @@ main <- function() {
     m <<- m
 
     if (r$response$status_code == 200) {
-      headline_url <- find_headline(r, m)
       
-      clessnverse::logit(scriptname, paste("getting frontpage from", url, "with code", r$response$status_code), logger)
+      clessnverse::logit(scriptname, paste("[main]", "collected frontpage from", url, "with code", r$response$status_code), logger)
+
+      headline_url <- find_headline(r, m)
 
       if(headline_url == ""){
-        clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
-        failed_headlines <<- append(failed_headlines, m)
+        clessnverse::logit(scriptname, paste("[main]", "No headline found for ", m$short_name, ", trying again at the end."), logger)
+        failed_headlines <<- append(failed_headlines, list(m))
         next
       }
 
@@ -849,7 +956,7 @@ main <- function() {
         doc <- httr::content(r$response, as = 'text')
       }
 
-      clessnverse::logit(scriptname, paste("pushing frontpage", url, "to hub"), logger)
+      clessnverse::logit(scriptname, paste("[main]", "pushing frontpage", url, "to hub"), logger)
 
       root_key <- form_root_key(url)
 
@@ -857,28 +964,38 @@ main <- function() {
 
       metadata$headline_root_key <- headline_key
       
+      clessnverse::logit(scriptname, paste("about to handle duplicates with", root_key, headline_key), logger)
+
       pushed <- handleDuplicate("frontpage", root_key, doc, credentials, m$short_name, headline_key)
 
+      clessnverse::logit(scriptname, paste("duplicates handled for", root_key, headline_key), logger)
+
       if(!pushed){
+        clessnverse::logit(scriptname, paste("data *NOT* pushed for", root_key, headline_key), logger)
+
         key <- gsub(" |-|:|/|\\.", "_", paste(root_key, Sys.time(), sep="_"))
 
-        clessnverse::logit(scriptname, key, logger)
+        clessnverse::logit(scriptname, paste("[main]", key), logger)
 
         if (opt$refresh_data) mode <- "refresh" else mode <- "newonly"
+
+        clessnverse::logit(scriptname, paste("pushing again with ", root_key, key), logger)
 
         pushed <- push_to_lake("frontpage", key, metadata, credentials, doc)
       }
 
       if(pushed){
+          clessnverse::logit(scriptname, "data pushed", logger)
+
           harvest_headline(r, m, headline_url, headline_key, root_key)
       } else {
-          failed_headlines <<- append(failed_headlines, m)
+          failed_headlines <<- append(failed_headlines, list(m))
           warning(paste("error while pushing frontpage", key, "to datalake"))
       }
 
     } else {
-       clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
-       failed_headlines <<- append(failed_headlines, m)
+       clessnverse::logit(scriptname, paste("[main]", "there was an error getting url", url), logger)
+       failed_headlines <<- append(failed_headlines, list(m))
        warning(paste("there was an error getting url", url))
     }
   }#</for>
@@ -888,6 +1005,8 @@ main <- function() {
     if(length(failed_headlines) == 0){
       break
     }
+
+    clessnverse::logit(scriptname, "Trying again to retrived failed headlines of the first pass", logger)
     Sys.sleep(30)
 
     minutes <- format(as.POSIXct(Sys.time()), format = "%M")
@@ -930,8 +1049,8 @@ main <- function() {
         headline_url <- find_headline(r, m)
 
         if(headline_url == ""){
-          clessnverse::logit(scriptname, paste("No headline found for ", m$short_name, ", trying again at the end."))
-          failed_headlines_copy <<- append(failed_headlines_copy, m)
+          clessnverse::logit(scriptname, paste("Still no headline found for ", m$short_name, "."))
+          failed_headlines_copy <<- append(failed_headlines_copy, list(m))
           next
         }
 
@@ -948,7 +1067,10 @@ main <- function() {
 
         metadata$headline_root_key <- headline_key
         
+        clessnverse::logit(scriptname, paste("[main] about to handleDuplicate with", key, headline_key), logger)
         pushed <- handleDuplicate("frontpage", key, doc, credentials, m$short_name, headline_key)
+        clessnverse::logit(scriptname, paste("[main] about to handleDuplicate with", key, headline_key), logger)
+
 
         if(!pushed){
           key <- gsub(" |-|:|/|\\.", "_", paste(key, Sys.time(), sep="_"))
@@ -962,15 +1084,15 @@ main <- function() {
         }      
 
         if(pushed){
-            harvest_headline(r, m, headline_url, headline_key)
+            harvest_headline(r, m, headline_url, headline_key, key)
         } else {
-            failed_headlines_copy <<- append(failed_headlines_copy, m)
+            failed_headlines_copy <<- append(failed_headlines_copy, list(m))
             warning(paste("error while pushing headline", key, "to datalake"))
         }
 
       } else {
         clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
-        failed_headlines_copy <<- append(failed_headlines_copy, m)
+        failed_headlines_copy <<- append(failed_headlines_copy, list(m))
         warning(paste("there was an error getting url", url))
       }
     }
@@ -989,6 +1111,12 @@ tryCatch(
     library(dplyr)
     library(digest)
 
+    pushed_headlines <<- list()
+    failed_headlines <<- list()
+
+    duplicate_frontpages <- 0
+    duplicate_headlines <- 0
+
     status <<- 0
     final_message <<- ""
     nb_frontpage <<- 0
@@ -1006,13 +1134,13 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    # opt <<- list(
-    #   log_output = c("file", "console"),
-    #   method = "frontpage",
-    #   refresh_data = TRUE,
-    #   translate = TRUE,
-    #   schema = "test"
-    # )
+    opt <<- list(
+      log_output = c("file", "console"),
+      method = "frontpage",
+      refresh_data = TRUE,
+      translate = TRUE,
+      schema = "prod"
+    )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -1049,7 +1177,7 @@ tryCatch(
   warning = function(w) {
     clessnverse::logit(scriptname, w$message, logger)
     print(w)
-    warnOutput <<- paste("WARNING: ", w$message)
+    warnOutput <<- paste("\nWARNING: ", w$message)
     final_message <<- if (final_message == "") warnOutput else paste(final_message, "\n", warnOutput, sep="")    
     status <<- 2
   }),
@@ -1057,7 +1185,7 @@ tryCatch(
   error = function(e) {
     clessnverse::logit(scriptname, e$message, logger)
     print(e)
-    errorOutput <<- paste("ERROR: ", e$message)
+    errorOutput <<- paste("\nERROR: ", e$message)
     final_message <<- if (final_message == "") errorOutput else paste(final_message, "\n", errorOutput, sep="")    
     status <<- 1
   },
@@ -1066,9 +1194,11 @@ tryCatch(
     # if status == 0, no errors happened. Add the breakdown of every media source to final message
     if(status == 0){
       for (pushed_headline in pushed_headlines) { 
-        final_message <<- if (final_message == "") pushed_headline else paste(final_message, "\n", pushed_headline, sep="")  
+       final_message <<- if (final_message == "") pushed_headline else paste(final_message, "\n", pushed_headline, sep="")  
       }
     }
+
+    #final_message <<- if (final_message == "") paste("Exit Status = ", status, sep="") else paste(final_message, "\n", "Exit Status = ", status, sep="")
 
     clessnverse::logit(scriptname, final_message, logger)
 
@@ -1097,8 +1227,7 @@ tryCatch(
     clessnverse::logit(scriptname, paste("Execution of", scriptname, "program terminated"), logger)
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
-    print(paste("exiting with status", status))
-    quit(status = status)
+    #quit(status = status)
   }
 )
 
