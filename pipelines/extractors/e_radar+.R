@@ -18,105 +18,6 @@
 ###############################################################################
 ########################      Functions and Globals      ######################
 ###############################################################################
-medias_urls <- list(
-   cbcnews = list(
-     long_name  = "CBC News",
-     short_name = "CBC",
-     country    = "CAN",
-     base       = "https://www.cbc.ca",
-     front      = "/news"
-   ),
-   jdm = list(
-     long_name  = "Le Journal de Montréal",
-     short_name = "JDM",
-     country    = "CAN",
-     base  = "https://www.journaldemontreal.com",
-     front = "/"
-   ),
-   radiocan = list(
-     long_name  = "Radio-Canada Info",
-     short_name = "RCI",
-     country    = "CAN",
-     base  = "https://ici.radio-canada.ca",
-     front = "/info"
-   ),
-  nationalPost = list(
-    long_name  = "National Post",
-    short_name = "NP",
-    country    = "CAN",
-    base  = "https://nationalpost.com",
-    front = "/"
-  ),
-  tvaNouvelles = list(
-    long_name  = "TVA Nouvelles",
-    short_name = "TVA",
-    country    = "CAN",
-    base  = "https://www.tvanouvelles.ca",
-    front = "/"
-  ),
-  globeAndMail = list(
-    long_name  = "The Globe and Mail",
-    short_name = "GAM",
-    country    = "CAN",
-    base  = "https://www.theglobeandmail.com",
-    front = "/"
-  ),
-  vancouverSun = list(
-    long_name  = "Vancouver Sun",
-    short_name = "VS",
-    country    = "CAN",
-    base  = "https://vancouversun.com",
-    front = "/"
-  ),
-  laPresse = list(
-    long_name  = "La Presse",
-    short_name = "LAP",
-    country    = "CAN",
-    base  = "https://www.lapresse.ca",
-    front = "/"
-  ),
-  leDevoir = list(
-    long_name  = "Le Devoir",
-    short_name = "LED",
-    country    = "CAN",
-    base  = "https://www.ledevoir.com",
-    front = "/"
-  ),
-  montrealGazette = list(
-    long_name  = "Montreal Gazette",
-    short_name = "MG",
-    country    = "CAN",
-    base  = "https://montrealgazette.com",
-    front = "/"
-  ),
-  CTVNews = list(
-    long_name  = "CTV News",
-    short_name = "CTV",
-    country    = "CAN",
-    base  = "https://www.ctvnews.ca",
-    front = "/"
-  ),
-  globalNews = list(
-    long_name  = "Global News",
-    short_name = "GN",
-    country    = "CAN",
-    base  = "https://globalnews.ca",
-    front = "/"
-  ),
-  theStar = list(
-    long_name  = "The Toronto Star",
-    short_name = "TTS",
-    country    = "CAN",
-    base  = "https://www.thestar.com",
-    front = "/"
-  )
-)
-
-
-
-
-
-
 
 find_headline <- function(r, m){
   clessnverse::logit(scriptname, paste("[find_headline]", "Finding headline for", m$short_name), logger)
@@ -124,9 +25,18 @@ find_headline <- function(r, m){
 
   if (m$short_name == "RCI") {
     RCI_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[@class="item--1"]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
-    
+
+    if(length(RCI_extracted_headline) == 0){
+      RCI_extracted_headline <- r %>% rvest::html_nodes(xpath = '//*[contains(concat(" ", @class, "="), "MainAsideGrid")]') %>% rvest::html_nodes("a") %>% rvest::html_attr("href")
+      RCI_extracted_headline <- RCI_extracted_headline[1]
+    }
+
     if(length(RCI_extracted_headline) > 0){
-      url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
+      if (grepl("^http.*", RCI_extracted_headline[[1]])) {
+        url <- RCI_extracted_headline[[1]]
+      } else {
+        url <- paste(m$base, RCI_extracted_headline[[1]], sep="")
+      }
       found_supported_media <- TRUE
     }
   }
@@ -204,8 +114,25 @@ find_headline <- function(r, m){
       #rvest::html_nodes(xpath = '//div[@class="Container__StyledContainer-sc-15gjlsr-0 hWPJHz Grid__StyledGrid-sc-140zq2o-0 fRHjkJ TopPackageBigStory__StyledWrapper-sc-1gza93-1 zUdgM big-story-content"]') %>%
       #rvest::html_nodes(xpath = '//a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa TopPackageBigStory__StyledCardLink-sc-1gza93-3 jSWywI top-package-premium-media"]') %>%
       rvest::html_nodes(xpath = '//div[contains(@class,"TopPackageBigStory__StyledTopPackageBigStory")]') %>%
-      rvest::html_nodes(xpath = './a[@class="CardLink__StyledCardLink-sc-2nzf9p-0 fowrAa"]') %>%
+      rvest::html_children() %>%
+      rvest::html_nodes(xpath = './a[contains(@class, "top-package-premium-media")]') %>%
       rvest::html_attr("href")
+
+    if (length(GAM_extracted_headline) == 0) {  
+      GAM_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[contains(@class,"TopPackageBigStory__StyledTopPackageBigStory")]') %>%
+        rvest::html_nodes(xpath = './a[contains(@class, "CardLink__StyledCardLink")]') %>%
+        rvest::html_attr("href")
+    }
+
+    if (length(GAM_extracted_headline) == 0) {  
+      GAM_extracted_headline <- r %>% 
+        rvest::html_nodes(xpath = '//div[contains(@class,"LayoutTopPackageCard__StyledContainer")]') %>%
+        rvest::html_nodes(xpath = './a[contains(@class, "CardLink__StyledCardLink")]') %>%
+        rvest::html_attr("href")
+
+      GAM_extracted_headline <- GAM_extracted_headline[1]
+    }
 
 
     if(length(GAM_extracted_headline) > 0){
@@ -371,15 +298,41 @@ find_headline <- function(r, m){
       found_supported_media <- TRUE
     }
   }
+
+
+  # if(m$short_name == "NYT"){
+  #   NYT_extracted_headline <- r %>%
+  #     #rvest::html_nodes(xpath = '//article[@class="tnt-asset-type-article packStory1 letterbox-style-white  tnt-section-news tnt-sub-section-world"]') %>%
+  #     #rvest::html_nodes(xpath = '//article[contains(concat(" ", @class, "="), "packStory1")]')
+  #     #rvest::html_nodes(xpath = '//a[contains(concat(" ", @class, "="), "tnt-headline")]') %>%
+  #     rvest::html_nodes(xpath = '//main[@id="site-content"]') %>%
+  #     rvest::html_nodes("a") %>%
+  #     rvest::html_attr("href")
+    
+  #   NYT_extracted_headline <- NYT_extracted_headline[1]
+    
+  #   if(length(NYT_extracted_headline) > 0){
+  #     if (grepl("^http.*", NYT_extracted_headline[[1]])) {
+  #       url <- NYT_extracted_headline[[1]]
+  #     } else {
+  #       url <- paste(m$base, NYT_extracted_headline[[1]], sep="")
+  #     }
+  #     found_supported_media <- TRUE
+  #   }
+  # }
   
   if (!found_supported_media) {
-    clessnverse::logit(scriptname, paste("[find_headline]", "no supported media found", m$short_name), logger)
-    warning(paste("[find_headline]", "no supported media found", m$short_name))
+    clessnverse::logit(scriptname, paste("[find_headline]", "no supported media found for", m$short_name), logger)
+    warning(paste("[find_headline]", "no supported media found for", m$short_name))
     return("")
   }
 
   return(url)
 }
+
+
+
+
 
 get_content <- function(url, r, m){
   if(m$short_name == "CBC"){
@@ -639,17 +592,33 @@ get_content <- function(url, r, m){
         paste(., collapse = "/n")
     }
 
-      
+  # if(m$short_name == "NYT"){
+  #   article_content <<- r %>%
+  #     #rvest::html_nodes(xpath = '//div[@class="c-article-body__content"]') %>%
+  #     rvest::html_nodes(xpath = '//script') 
+
+  #   grepl("articleBody", rvest::html_text(article_content))
+
+  #   if (!is.null(article_content) && length(article_content) > 1) {
+  #     article_content <- gsub("\n(\\s*)", "", article_content) %>%
+  #       trimws()
+  #   }
+
+  #   if (!is.null(article_content) && length(article_content) > 1) {
+  #     article_content <- article_content[-c(1:2)] %>%
+  #       head(., -4) %>%
+  #       paste(., collapse = "/n")
+  #   }      
 
 
-    if(!is.null(article_content) && length(article_content) > 0){
-      return(article_content[[1]])
-    } else {
-      msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
-      clessnverse::logit(scriptname, msg, logger)
-      warning(msg)
-    }
-  }
+  #   if(!is.null(article_content) && length(article_content) > 0){
+  #     return(article_content[[1]])
+  #   } else {
+  #     msg <- paste("[get_content]", m$short_name, ": Empty content on url", url)
+  #     clessnverse::logit(scriptname, msg, logger)
+  #     warning(msg)
+  #   }
+   }
 
   return(list())
 }
@@ -748,6 +717,8 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
       Sys.sleep(20)
     }
 
+    hub_response <- FALSE
+
     hub_response <- tryCatch(
       expr = {
         clessnverse::commit_lake_item(
@@ -772,7 +743,8 @@ push_to_lake <- function(type, key, metadata, credentials, doc){
       finally = {}
     )
 
-    if (hub_response == 0 || hub_response == TRUE) {
+    if ((!is.null(hub_response) && length(hub_response) > 0) && (hub_response == 0 || hub_response == TRUE)) {
+      pushed <- TRUE
       clessnverse::logit(scriptname, paste("[push_to_lake]", "successfuly pushed", type, key, "to datalake"), logger)
       if(type == "headline"){
         nb_headline <<- nb_headline + 1
@@ -1094,14 +1066,126 @@ main <- function() {
         clessnverse::logit(scriptname, paste("there was an error getting url", url), logger)
         failed_headlines_copy <<- append(failed_headlines_copy, list(m))
         warning(paste("there was an error getting url", url))
-      }
-    }
+      } #<\if (r$response$status_code == 200)>
+    } # <\for(m in failed_headlines)>
 
     failed_headlines <- failed_headlines_copy
-  }
+  } #<\repeat>
   
 } # <\main>
 
+
+
+
+###################################################
+# Execution starting point
+
+medias_urls <- list(
+   cbcnews = list(
+     long_name  = "CBC News",
+     short_name = "CBC",
+     country    = "CAN",
+     base       = "https://www.cbc.ca",
+     front      = "/news"
+   ),
+   jdm = list(
+     long_name  = "Le Journal de Montréal",
+     short_name = "JDM",
+     country    = "CAN",
+     base  = "https://www.journaldemontreal.com",
+     front = "/"
+   ),
+   radiocan = list(
+     long_name  = "Radio-Canada Info",
+     short_name = "RCI",
+     country    = "CAN",
+     base  = "https://ici.radio-canada.ca",
+     front = "/info"
+   ),
+  nationalPost = list(
+    long_name  = "National Post",
+    short_name = "NP",
+    country    = "CAN",
+    base  = "https://nationalpost.com",
+    front = "/"
+  ),
+  tvaNouvelles = list(
+    long_name  = "TVA Nouvelles",
+    short_name = "TVA",
+    country    = "CAN",
+    base  = "https://www.tvanouvelles.ca",
+    front = "/"
+  ),
+  globeAndMail = list(
+    long_name  = "The Globe and Mail",
+    short_name = "GAM",
+    country    = "CAN",
+    base  = "https://www.theglobeandmail.com",
+    front = "/"
+  ),
+  vancouverSun = list(
+    long_name  = "Vancouver Sun",
+    short_name = "VS",
+    country    = "CAN",
+    base  = "https://vancouversun.com",
+    front = "/"
+  ),
+  laPresse = list(
+    long_name  = "La Presse",
+    short_name = "LAP",
+    country    = "CAN",
+    base  = "https://www.lapresse.ca",
+    front = "/"
+  ),
+  leDevoir = list(
+    long_name  = "Le Devoir",
+    short_name = "LED",
+    country    = "CAN",
+    base  = "https://www.ledevoir.com",
+    front = "/"
+  ),
+  montrealGazette = list(
+    long_name  = "Montreal Gazette",
+    short_name = "MG",
+    country    = "CAN",
+    base  = "https://montrealgazette.com",
+    front = "/"
+  ),
+  CTVNews = list(
+    long_name  = "CTV News",
+    short_name = "CTV",
+    country    = "CAN",
+    base  = "https://www.ctvnews.ca",
+    front = "/"
+  ),
+  globalNews = list(
+    long_name  = "Global News",
+    short_name = "GN",
+    country    = "CAN",
+    base  = "https://globalnews.ca",
+    front = "/"
+  ),
+  theStar = list(
+    long_name  = "The Toronto Star",
+    short_name = "TTS",
+    country    = "CAN",
+    base  = "https://www.thestar.com",
+    front = "/"
+  )#,
+  # nyTimes = list(
+  #   long_name = "The New York Times",
+  #   short_name = "NYT",
+  #   country = "USA",
+  #   base = "https://www.nytimes.com",
+  #   front = "/"
+  # )
+)
+
+pushed_headlines <<- list()
+failed_headlines <<- list()
+
+duplicate_frontpages <<- 0
+duplicate_headlines <<- 0
 
 
 
@@ -1110,12 +1194,6 @@ tryCatch(
   {
     library(dplyr)
     library(digest)
-
-    pushed_headlines <<- list()
-    failed_headlines <<- list()
-
-    duplicate_frontpages <- 0
-    duplicate_headlines <- 0
 
     status <<- 0
     final_message <<- ""
@@ -1134,13 +1212,13 @@ tryCatch(
     #    you can use log_output = c("console") to debug your script if you want
     #    but set it to c("file") before putting in automated containerized production
 
-    opt <<- list(
-      log_output = c("file", "console"),
-      method = "frontpage",
-      refresh_data = TRUE,
-      translate = TRUE,
-      schema = "prod"
-    )
+    # opt <<- list(
+    #   log_output = c("file", "console"),
+    #   method = "frontpage",
+    #   refresh_data = TRUE,
+    #   translate = TRUE,
+    #   schema = "prod"
+    # )
 
     if (!exists("opt")) {
       opt <<- clessnverse::process_command_line_options()
@@ -1227,7 +1305,7 @@ tryCatch(
     clessnverse::logit(scriptname, paste("Execution of", scriptname, "program terminated"), logger)
     clessnverse::log_close(logger)
     if (exists("logger")) rm(logger)
-    #quit(status = status)
+    quit(status = status)
   }
 )
 
