@@ -182,6 +182,14 @@ find_headline <- function(r, m){
       rvest::html_nodes(xpath = '//a[@class="storyCard__cover homeHeadlinesCard__cover"]') %>%
       rvest::html_attr("href")
 
+    if(length(LAP_extracted_headline) == 0){
+      LAP_extracted_headline <- r %>%
+        rvest::html_nodes(xpath = '//div[@class="homeHeadlinesRow__main"]') %>%
+        rvest::html_nodes(xpath = '//article[@data-position="1"]') %>%
+        rvest::html_nodes(xpath = '//a[@class="storyCard__cover"]') %>%
+        rvest::html_attr("href")
+    }
+
     if(length(LAP_extracted_headline) > 0){
       if (grepl("^http.*", LAP_extracted_headline[[1]])) {
         url <- LAP_extracted_headline[[1]]
