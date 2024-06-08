@@ -18,11 +18,9 @@ my_filter <- clessnhub::create_filter(
   schema="v2", 
   metadata=list(
     institution="House of Commons of Canada"), 
-    #format="xml"),
   data=list(
-    #eventID="432123HAN123"
-    #eventDate__gte="2023-01-01"
-    eventDate__lte="2007-01-29"
+    eventDate__gte="2023-09-01",
+    eventDate__lte="2024-06-01"
   )
 )
 
@@ -34,7 +32,7 @@ df <- clessnhub::get_items(
 ) 
 
 df$data.interventionSeqNum <- as.numeric(df$data.interventionSeqNum)
-df <- df %>% arrange(data.interventionSeqNum)
+df <- df %>% arrange(data.eventID, data.interventionSeqNum)
 
 #for (i in 1:nrow(df)) {
 #  clessnhub::delete_item('agoraplus_interventions', df$key[i])
