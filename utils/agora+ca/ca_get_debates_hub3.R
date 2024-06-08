@@ -10,8 +10,8 @@ table_longname <- "clhub_tables_warehouse_agoraplus_canada_house_of_commons"
 hublot::count_table_items(table_longname, credentials)
 
 data_filter <-  list(
-    data__event_date__gte="2019-01-01", 
-    data__event_date__lte="2019-12-31"
+    data__event_date__gte="2023-04-01", 
+    data__event_date__lte="2024-06-02"
   )
 
 
@@ -39,8 +39,8 @@ df <- clessnverse::get_warehouse_table(
   table_name = table_name,
   credentials = credentials,
   data_filter = list(
-    data__event_date__gte="2019-01-01", 
-    data__event_date__lte="2019-12-31"
+    data__event_date__gte="2023-04-01", 
+    data__event_date__lte="2024-06-02"
   ),
   nbrows = 0
 )

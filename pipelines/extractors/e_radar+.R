@@ -31,6 +31,27 @@ find_headline <- function(r, m){
       RCI_extracted_headline <- RCI_extracted_headline[1]
     }
 
+    if (length(RCI_extracted_headline) == 0 || is.na(RCI_extracted_headline)) {
+      spans_with_ala <- r %>%
+        rvest::html_nodes("span") %>%
+        .[grepl("À la", rvest::html_text(.))]
+
+      links <- lapply(spans_with_ala, function(span) {
+        span %>%
+        rvest::html_node(xpath = "ancestor::header/following-sibling::*//a[@href]") %>%
+        rvest::html_attr("href")
+
+      })
+
+      # get the first that is not NA
+      target_url <- links[sapply(links, Negate(is.na))][1]
+      target_url <- target_url[[1]]
+
+      if (length(target_url) > 0) {
+        RCI_extracted_headline <- target_url
+      }
+    }
+
     if(length(RCI_extracted_headline) > 0){
       if (grepl("^http.*", RCI_extracted_headline[[1]])) {
         url <- RCI_extracted_headline[[1]]
