@@ -39,8 +39,8 @@ df <- clessnverse::get_warehouse_table(
   table_name = table_name,
   credentials = credentials,
   data_filter = list(
-    data__event_date__gte="2023-04-01", 
-    data__event_date__lte="2024-06-02"
+    #data__event_date__gte="2023-04-01", 
+    #data__event_date__lte="2024-06-02"
   ),
   nbrows = 0
 )
